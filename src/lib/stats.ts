@@ -1,0 +1,180 @@
+// Aggregation math for the attendance, behaviour and assessment views.
+
+import { Assessment, AttendanceEntry, BehaviourEvent, Mark, Student } from "./types";
+
+// ---------- attendance ----------
+
+export interface AttendanceSummary {
+  total: number;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  /** Present + Late as a fraction of unexcused sessions, 0..1. Null if no data. */
+  rate: number | null;
+}
+
+export function attendanceSummary(entries: AttendanceEntry[]): AttendanceSummary {
+  const s: AttendanceSummary = { total: entries.length, present: 0, absent: 0, late: 0, excused: 0, rate: null };
+  for (const e of entries) {
+    if (e.status === "P") s.present++;
+    else if (e.status === "A") s.absent++;
+    else if (e.status === "L") s.late++;
+    else s.excused++;
+  }
+  const counted = s.total - s.excused;
+  if (counted > 0) s.rate = (s.present + s.late) / counted;
+  return s;
+}
+
+export function attendanceByStudent(entries: AttendanceEntry[]): Map<string, AttendanceSummary> {
+  const grouped = new Map<string, AttendanceEntry[]>();
+  for (const e of entries) {
+    const list = grouped.get(e.studentId) ?? [];
+    list.push(e);
+    grouped.set(e.studentId, list);
+  }
+  return new Map([...grouped.entries()].map(([id, list]) => [id, attendanceSummary(list)]));
+}
+
+// ---------- behaviour ----------
+
+export interface BehaviourSummary {
+  positive: number;
+  negative: number;
+  points: number;
+}
+
+export function behaviourByStudent(events: BehaviourEvent[]): Map<string, BehaviourSummary> {
+  const out = new Map<string, BehaviourSummary>();
+  for (const e of events) {
+    const s = out.get(e.studentId) ?? { positive: 0, negative: 0, points: 0 };
+    if (e.points >= 0) s.positive++;
+    else s.negative++;
+    s.points += e.points;
+    out.set(e.studentId, s);
+  }
+  return out;
+}
+
+export function eventsOnDate(events: BehaviourEvent[], date: string): BehaviourEvent[] {
+  return events.filter((e) => e.timestamp.slice(0, 10) === date);
+}
+
+// ---------- assessments ----------
+
+export interface AssessmentStats {
+  assessmentId: string;
+  entered: number;
+  mean: number | null; // percentages 0..100
+  median: number | null;
+  min: number | null;
+  max: number | null;
+  stdev: number | null;
+}
+
+export function percentage(mark: Mark, assessment: Assessment): number | null {
+  if (mark.mark === null || assessment.totalMarks <= 0) return null;
+  return (mark.mark / assessment.totalMarks) * 100;
+}
+
+export function assessmentStats(assessment: Assessment, marks: Mark[]): AssessmentStats {
+  const pcts = marks
+    .filter((m) => m.assessmentId === assessment.id)
+    .map((m) => percentage(m, assessment))
+    .filter((v): v is number => v !== null)
+    .sort((a, b) => a - b);
+  const n = pcts.length;
+  if (n === 0) {
+    return { assessmentId: assessment.id, entered: 0, mean: null, median: null, min: null, max: null, stdev: null };
+  }
+  const mean = pcts.reduce((a, b) => a + b, 0) / n;
+  const median = n % 2 ? pcts[(n - 1) / 2] : (pcts[n / 2 - 1] + pcts[n / 2]) / 2;
+  const stdev = n > 1 ? Math.sqrt(pcts.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1)) : 0;
+  return { assessmentId: assessment.id, entered: n, mean, median, min: pcts[0], max: pcts[n - 1], stdev };
+}
+
+/** Histogram of percentages in fixed 10%-wide bins: [0-10), ... [90-100]. */
+export function histogram(pcts: number[]): { bin: string; count: number }[] {
+  const bins = new Array(10).fill(0);
+  for (const v of pcts) {
+    const idx = Math.min(9, Math.max(0, Math.floor(v / 10)));
+    bins[idx]++;
+  }
+  return bins.map((count, i) => ({ bin: i === 9 ? "90-100" : `${i * 10}-${i * 10 + 10}`, count }));
+}
+
+/** Weighted overall percentage per student across all assessments they have marks for. */
+export function overallPercent(studentId: string, assessments: Assessment[], marks: Mark[]): number | null {
+  let weightSum = 0;
+  let acc = 0;
+  for (const a of assessments) {
+    const m = marks.find((m) => m.assessmentId === a.id && m.studentId === studentId);
+    if (!m) continue;
+    const pct = percentage(m, a);
+    if (pct === null) continue;
+    const w = a.weight > 0 ? a.weight : 1;
+    acc += pct * w;
+    weightSum += w;
+  }
+  return weightSum > 0 ? acc / weightSum : null;
+}
+
+/** Per-student series of percentages in assessment date order (nulls skipped). */
+export function studentSeries(
+  studentId: string,
+  assessments: Assessment[],
+  marks: Mark[],
+): { assessment: Assessment; pct: number }[] {
+  const ordered = [...assessments].sort((a, b) => a.date.localeCompare(b.date));
+  const out: { assessment: Assessment; pct: number }[] = [];
+  for (const a of ordered) {
+    const m = marks.find((m) => m.assessmentId === a.id && m.studentId === studentId);
+    if (!m) continue;
+    const pct = percentage(m, a);
+    if (pct !== null) out.push({ assessment: a, pct });
+  }
+  return out;
+}
+
+export interface AtRiskFlag {
+  studentId: string;
+  reason: string;
+}
+
+/**
+ * Simple, explainable at-risk heuristics:
+ *  - latest result more than 15 points below the student's own average, or
+ *  - overall average more than 12 points below the class average, or
+ *  - three declining results in a row.
+ */
+export function atRiskStudents(students: Student[], assessments: Assessment[], marks: Mark[]): AtRiskFlag[] {
+  const flags: AtRiskFlag[] = [];
+  const overall = students
+    .map((s) => overallPercent(s.id, assessments, marks))
+    .filter((v): v is number => v !== null);
+  const classAvg = overall.length ? overall.reduce((a, b) => a + b, 0) / overall.length : null;
+
+  for (const s of students) {
+    const series = studentSeries(s.id, assessments, marks);
+    const own = overallPercent(s.id, assessments, marks);
+    if (series.length >= 2 && own !== null) {
+      const latest = series[series.length - 1].pct;
+      if (own - latest > 15) {
+        flags.push({ studentId: s.id, reason: `Latest result ${Math.round(latest)}% is well below their average ${Math.round(own)}%` });
+        continue;
+      }
+    }
+    if (own !== null && classAvg !== null && classAvg - own > 12) {
+      flags.push({ studentId: s.id, reason: `Average ${Math.round(own)}% is well below the class average ${Math.round(classAvg)}%` });
+      continue;
+    }
+    if (series.length >= 3) {
+      const last3 = series.slice(-3).map((p) => p.pct);
+      if (last3[0] > last3[1] && last3[1] > last3[2]) {
+        flags.push({ studentId: s.id, reason: "Three declining results in a row" });
+      }
+    }
+  }
+  return flags;
+}
