@@ -31,6 +31,15 @@ describe("seatSlots", () => {
     expect(seatSlots(mkDesk("d", 0, 0, "teacher"))).toHaveLength(0);
   });
 
+  it("reports each seat's cell size so it can fill the whole seat", () => {
+    // A double desk (160×60) splits into two 80×60 seat cells.
+    const [a, b] = seatSlots(mkDesk("d", 0, 0, "double"));
+    expect(a).toMatchObject({ w: 80, h: 60 });
+    expect(b).toMatchObject({ w: 80, h: 60 });
+    // A group of 4 (160×120) is a 2×2 grid of 80×60 cells.
+    expect(seatSlots(mkDesk("d", 0, 0, "group4"))[0]).toMatchObject({ w: 80, h: 60 });
+  });
+
   it("rotates seat positions with the desk", () => {
     const flat = seatSlots(mkDesk("d", 100, 100, "double"));
     const rotated = seatSlots({ ...mkDesk("d", 100, 100, "double"), rotation: 90 });

@@ -104,23 +104,113 @@ describe("desks + seating", () => {
 });
 
 describe("room.csv", () => {
-  it("defaults to front=top and no crop when missing", async () => {
+  const scales = { seatFontScale: 1, deskFontScale: 1, labelFontScale: 1 };
+
+  it("defaults to front=top, no crop and 1x fonts when missing", async () => {
     const config = await repo.loadRoomConfig(DIR, CLS);
-    expect(config).toEqual({ frontEdge: "top", crop: null });
+    expect(config).toEqual({ frontEdge: "top", crop: null, ...scales });
   });
 
   it("round-trips front edge and crop", async () => {
-    await repo.saveRoomConfig(DIR, CLS, { frontEdge: "left", crop: { x: 40, y: 60, w: 500, h: 400 } });
+    await repo.saveRoomConfig(DIR, CLS, { frontEdge: "left", crop: { x: 40, y: 60, w: 500, h: 400 }, ...scales });
     expect(await repo.loadRoomConfig(DIR, CLS)).toEqual({
       frontEdge: "left",
       crop: { x: 40, y: 60, w: 500, h: 400 },
+      ...scales,
     });
   });
 
   it("round-trips a cleared crop", async () => {
-    await repo.saveRoomConfig(DIR, CLS, { frontEdge: "bottom", crop: { x: 0, y: 0, w: 300, h: 300 } });
-    await repo.saveRoomConfig(DIR, CLS, { frontEdge: "bottom", crop: null });
-    expect(await repo.loadRoomConfig(DIR, CLS)).toEqual({ frontEdge: "bottom", crop: null });
+    await repo.saveRoomConfig(DIR, CLS, { frontEdge: "bottom", crop: { x: 0, y: 0, w: 300, h: 300 }, ...scales });
+    await repo.saveRoomConfig(DIR, CLS, { frontEdge: "bottom", crop: null, ...scales });
+    expect(await repo.loadRoomConfig(DIR, CLS)).toEqual({ frontEdge: "bottom", crop: null, ...scales });
+  });
+
+  it("round-trips per-room font scales", async () => {
+    await repo.saveRoomConfig(DIR, CLS, {
+      frontEdge: "top",
+      crop: null,
+      seatFontScale: 1.4,
+      deskFontScale: 0.8,
+      labelFontScale: 2,
+    });
+    const loaded = await repo.loadRoomConfig(DIR, CLS);
+    expect(loaded.seatFontScale).toBe(1.4);
+    expect(loaded.deskFontScale).toBe(0.8);
+    expect(loaded.labelFontScale).toBe(2);
+  });
+});
+
+describe("seating_prefs.csv", () => {
+  it("round-trips keep-apart, keep-together, front and gender rules", async () => {
+    await repo.saveSeatingPrefs(DIR, CLS, {
+      apartPairs: [["s1", "s2"]],
+      togetherPairs: [["s3", "s4"]],
+      frontIds: ["s5", "s6"],
+      alternateGender: true,
+    });
+    const loaded = await repo.loadSeatingPrefs(DIR, CLS);
+    expect(loaded.apartPairs).toEqual([["s1", "s2"]]);
+    expect(loaded.togetherPairs).toEqual([["s3", "s4"]]);
+    expect(loaded.frontIds).toEqual(["s5", "s6"]);
+    expect(loaded.alternateGender).toBe(true);
+  });
+
+  it("defaults to empty rules when missing", async () => {
+    expect(await repo.loadSeatingPrefs(DIR, CLS)).toEqual({
+      apartPairs: [],
+      togetherPairs: [],
+      frontIds: [],
+      alternateGender: false,
+    });
+  });
+});
+
+describe("lessons.csv", () => {
+  it("round-trips lesson seat/behaviour records", async () => {
+    const records = [
+      {
+        sessionId: "les-1",
+        date: "2026-07-01",
+        timestamp: "2026-07-01T09:00:00.000Z",
+        studentId: "s1",
+        deskId: "d1",
+        deskLabel: "Front left",
+        seatmates: "s2;s3",
+        points: -2,
+        positives: 1,
+        negatives: 2,
+      },
+    ];
+    await repo.saveLessons(DIR, CLS, records);
+    expect(await repo.loadLessons(DIR, CLS)).toEqual(records);
+  });
+});
+
+describe("layout templates", () => {
+  it("saves a room as a template and applies it to another class", async () => {
+    const desks = [
+      { id: "d1", label: "Front", shape: "double" as const, x: 120, y: 140, w: 160, h: 60, rotation: 0, color: "" },
+    ];
+    await repo.saveLayoutTemplate(DIR, "Exam rows", desks, {
+      frontEdge: "top",
+      crop: null,
+      seatFontScale: 1.2,
+      deskFontScale: 1,
+      labelFontScale: 1,
+    });
+    expect(await repo.listLayoutTemplates(DIR)).toContain("Exam rows");
+    const loaded = await repo.loadLayoutTemplate(DIR, "Exam rows");
+    expect(loaded.desks).toEqual(desks);
+    expect(loaded.config.seatFontScale).toBe(1.2);
+    expect(loaded.config.crop).toBeNull();
+  });
+
+  it("deletes a template so it no longer lists", async () => {
+    await repo.saveLayoutTemplate(DIR, "Temp", [], { frontEdge: "top", crop: null, seatFontScale: 1, deskFontScale: 1, labelFontScale: 1 });
+    expect(await repo.listLayoutTemplates(DIR)).toContain("Temp");
+    await repo.deleteLayoutTemplate(DIR, "Temp");
+    expect(await repo.listLayoutTemplates(DIR)).not.toContain("Temp");
   });
 });
 

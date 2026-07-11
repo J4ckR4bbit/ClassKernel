@@ -76,15 +76,71 @@ export interface RoomConfig {
   frontEdge: FrontEdge;
   /** Optional view crop: seating/lesson/print views show only this region, scaled up. */
   crop: { x: number; y: number; w: number; h: number } | null;
+  /** Multiplier applied to the name text on seats (1 = default). */
+  seatFontScale: number;
+  /** Multiplier applied to desk labels (1 = default). */
+  deskFontScale: number;
+  /** Multiplier applied to label-box text (1 = default). */
+  labelFontScale: number;
 }
 
-export const DEFAULT_ROOM_CONFIG: RoomConfig = { frontEdge: "top", crop: null };
+export const DEFAULT_ROOM_CONFIG: RoomConfig = {
+  frontEdge: "top",
+  crop: null,
+  seatFontScale: 1,
+  deskFontScale: 1,
+  labelFontScale: 1,
+};
 
 export interface SeatAssignment {
   planName: string;
   deskId: string;
   seatIndex: number;
   studentId: string;
+}
+
+/**
+ * Per-class random-seating configuration. Lives in Settings (out of sight of
+ * the class) so the "Randomise" button on the seating plan can reroll without
+ * ever exposing the constraints to students.
+ */
+export interface SeatingPrefs {
+  /** Pairs of student ids that must NOT sit next to each other. */
+  apartPairs: Array<[string, string]>;
+  /** Pairs of student ids that must share a desk. */
+  togetherPairs: Array<[string, string]>;
+  /** Students that must sit in the front band of the room. */
+  frontIds: string[];
+  /** Try to avoid same-gender desk mates where genders are known. */
+  alternateGender: boolean;
+}
+
+export const DEFAULT_SEATING_PREFS: SeatingPrefs = {
+  apartPairs: [],
+  togetherPairs: [],
+  frontIds: [],
+  alternateGender: false,
+};
+
+/**
+ * One row per student per ended lesson: where they sat and how they behaved.
+ * Accumulated by "End lesson" so seating can be analysed over time (which desk
+ * a student behaves best at, which pairings turn disruptive, and so on).
+ */
+export interface LessonRecord {
+  /** Groups every row saved by a single "End lesson" action. */
+  sessionId: string;
+  date: string; // YYYY-MM-DD
+  timestamp: string; // ISO 8601 of when the lesson was ended
+  studentId: string;
+  deskId: string;
+  /** The desk's label (or a fallback) — the human identifier used for tracking. */
+  deskLabel: string;
+  /** Semicolon-separated ids of the other students sharing that desk. */
+  seatmates: string;
+  points: number;
+  positives: number;
+  negatives: number;
 }
 
 export interface Assessment {

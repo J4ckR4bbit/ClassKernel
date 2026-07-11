@@ -9,6 +9,10 @@ export interface SeatSlot {
   /** Center of the seat in room coordinates (rotation applied). */
   x: number;
   y: number;
+  /** Size of this seat's cell within the desk (unrotated), so it can be drawn
+   *  as a rounded square that fills the whole seat. */
+  w: number;
+  h: number;
 }
 
 /** Compute the seat slot positions for a desk, honoring its rotation. */
@@ -18,6 +22,8 @@ export function seatSlots(desk: Desk): SeatSlot[] {
   // Lay seats out on an unrotated desk: 1 row for <=2 or 3-wide rows for groups.
   const cols = desk.shape === "group4" ? 2 : desk.shape === "group6" ? 3 : count;
   const rows = Math.ceil(count / cols);
+  const cellW = desk.w / cols;
+  const cellH = desk.h / rows;
   const slots: SeatSlot[] = [];
   for (let i = 0; i < count; i++) {
     const c = i % cols;
@@ -33,6 +39,8 @@ export function seatSlots(desk: Desk): SeatSlot[] {
       seatIndex: i,
       x: cx + lx * Math.cos(rad) - ly * Math.sin(rad),
       y: cy + lx * Math.sin(rad) + ly * Math.cos(rad),
+      w: cellW,
+      h: cellH,
     });
   }
   return slots;

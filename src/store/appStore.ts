@@ -10,10 +10,13 @@ import {
   BehaviourEvent,
   ClassInfo,
   DEFAULT_ROOM_CONFIG,
+  DEFAULT_SEATING_PREFS,
   Desk,
+  LessonRecord,
   Mark,
   RoomConfig,
   SeatAssignment,
+  SeatingPrefs,
   Student,
 } from "../lib/types";
 
@@ -46,9 +49,12 @@ export interface AppState {
   behaviourEvents: BehaviourEvent[];
   desks: Desk[];
   seating: SeatAssignment[];
+  seatingPrefs: SeatingPrefs;
+  lessons: LessonRecord[];
   assessments: Assessment[];
   marks: Mark[];
   roomConfig: RoomConfig;
+  layoutTemplates: string[];
 
   boot(): Promise<void>;
   chooseDataDir(path: string): Promise<void>;
@@ -69,8 +75,15 @@ export interface AppState {
   setDesks(desks: Desk[]): Promise<void>;
   setRoomConfig(config: RoomConfig): Promise<void>;
   setSeating(seats: SeatAssignment[]): Promise<void>;
+  setSeatingPrefs(prefs: SeatingPrefs): Promise<void>;
+  addLessonRecords(records: LessonRecord[]): Promise<void>;
   setAssessments(assessments: Assessment[]): Promise<void>;
   setMarks(marks: Mark[]): Promise<void>;
+
+  refreshLayoutTemplates(): Promise<void>;
+  saveLayoutTemplate(name: string): Promise<void>;
+  applyLayoutTemplate(name: string): Promise<void>;
+  deleteLayoutTemplate(name: string): Promise<void>;
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -90,9 +103,12 @@ export const useApp = create<AppState>((set, get) => ({
   behaviourEvents: [],
   desks: [],
   seating: [],
+  seatingPrefs: DEFAULT_SEATING_PREFS,
+  lessons: [],
   assessments: [],
   marks: [],
   roomConfig: DEFAULT_ROOM_CONFIG,
+  layoutTemplates: [],
 
   async boot() {
     if (!isTauri()) {
@@ -123,7 +139,8 @@ export const useApp = create<AppState>((set, get) => ({
     }
     const classes = await repo.listClasses(path);
     const behaviourCodes = await repo.loadBehaviourCodes(path);
-    set({ dataDir: path, classes, behaviourCodes, currentClass: null });
+    const layoutTemplates = await repo.listLayoutTemplates(path);
+    set({ dataDir: path, classes, behaviourCodes, layoutTemplates, currentClass: null });
     const active = classes.filter((c) => !c.archived);
     if (active.length > 0) await get().openClass(active[0].name);
   },
@@ -154,17 +171,32 @@ export const useApp = create<AppState>((set, get) => ({
   async openClass(name) {
     const { dataDir } = get();
     if (!dataDir) return;
-    const [students, attendance, behaviourEvents, desks, seating, assessments, marks, roomConfig] = await Promise.all([
-      repo.loadStudents(dataDir, name),
-      repo.loadAttendance(dataDir, name),
-      repo.loadBehaviourEvents(dataDir, name),
-      repo.loadDesks(dataDir, name),
-      repo.loadSeating(dataDir, name),
-      repo.loadAssessments(dataDir, name),
-      repo.loadMarks(dataDir, name),
-      repo.loadRoomConfig(dataDir, name),
-    ]);
-    set({ currentClass: name, students, attendance, behaviourEvents, desks, seating, assessments, marks, roomConfig });
+    const [students, attendance, behaviourEvents, desks, seating, seatingPrefs, lessons, assessments, marks, roomConfig] =
+      await Promise.all([
+        repo.loadStudents(dataDir, name),
+        repo.loadAttendance(dataDir, name),
+        repo.loadBehaviourEvents(dataDir, name),
+        repo.loadDesks(dataDir, name),
+        repo.loadSeating(dataDir, name),
+        repo.loadSeatingPrefs(dataDir, name),
+        repo.loadLessons(dataDir, name),
+        repo.loadAssessments(dataDir, name),
+        repo.loadMarks(dataDir, name),
+        repo.loadRoomConfig(dataDir, name),
+      ]);
+    set({
+      currentClass: name,
+      students,
+      attendance,
+      behaviourEvents,
+      desks,
+      seating,
+      seatingPrefs,
+      lessons,
+      assessments,
+      marks,
+      roomConfig,
+    });
   },
 
   async updateClassInfo(info) {
@@ -237,6 +269,49 @@ export const useApp = create<AppState>((set, get) => ({
     const { dataDir, currentClass } = get();
     set({ seating });
     if (dataDir && currentClass) await repo.saveSeating(dataDir, currentClass, seating);
+  },
+
+  async setSeatingPrefs(seatingPrefs) {
+    const { dataDir, currentClass } = get();
+    set({ seatingPrefs });
+    if (dataDir && currentClass) await repo.saveSeatingPrefs(dataDir, currentClass, seatingPrefs);
+  },
+
+  async addLessonRecords(records) {
+    const { dataDir, currentClass, lessons } = get();
+    const next = [...lessons, ...records];
+    set({ lessons: next });
+    if (dataDir && currentClass) await repo.saveLessons(dataDir, currentClass, next);
+  },
+
+  async refreshLayoutTemplates() {
+    const { dataDir } = get();
+    if (dataDir) set({ layoutTemplates: await repo.listLayoutTemplates(dataDir) });
+  },
+
+  async saveLayoutTemplate(name) {
+    const { dataDir, desks, roomConfig } = get();
+    if (!dataDir) return;
+    await repo.saveLayoutTemplate(dataDir, name, desks, roomConfig);
+    await get().refreshLayoutTemplates();
+  },
+
+  async applyLayoutTemplate(name) {
+    const { dataDir, currentClass, roomConfig } = get();
+    if (!dataDir || !currentClass) return;
+    const { desks, config } = await repo.loadLayoutTemplate(dataDir, name);
+    // Keep this class's own view crop; take everything else from the template.
+    const nextConfig: RoomConfig = { ...config, crop: roomConfig.crop };
+    set({ desks, roomConfig: nextConfig });
+    await repo.saveDesks(dataDir, currentClass, desks);
+    await repo.saveRoomConfig(dataDir, currentClass, nextConfig);
+  },
+
+  async deleteLayoutTemplate(name) {
+    const { dataDir } = get();
+    if (!dataDir) return;
+    await repo.deleteLayoutTemplate(dataDir, name);
+    await get().refreshLayoutTemplates();
   },
 
   async setAssessments(assessments) {
