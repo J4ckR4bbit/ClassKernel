@@ -25,7 +25,9 @@ import {
   DEFAULT_BEHAVIOURS,
   Desk,
   DeskShape,
+  FrontEdge,
   Mark,
+  RoomConfig,
   SeatAssignment,
   Student,
 } from "./types";
@@ -229,8 +231,8 @@ export async function saveBehaviourEvents(dataDir: string, className: string, ev
 
 // ---------- desks + seating ----------
 
-const DESK_COLS = ["desk_id", "label", "shape", "x", "y", "w", "h", "rotation"];
-const VALID_SHAPES: DeskShape[] = ["single", "double", "group4", "group6", "teacher", "door", "window"];
+const DESK_COLS = ["desk_id", "label", "shape", "x", "y", "w", "h", "rotation", "color"];
+const VALID_SHAPES: DeskShape[] = ["single", "double", "group4", "group6", "teacher", "door", "window", "label"];
 
 export async function loadDesks(dataDir: string, className: string): Promise<Desk[]> {
   const rows = await loadCsvFile(p(classDir(dataDir, className), "desks.csv"));
@@ -245,6 +247,7 @@ export async function loadDesks(dataDir: string, className: string): Promise<Des
       w: num(r.w, 80),
       h: num(r.h, 60),
       rotation: num(r.rotation),
+      color: r.color ?? "",
     }));
 }
 
@@ -258,8 +261,39 @@ export async function saveDesks(dataDir: string, className: string, desks: Desk[
     w: d.w,
     h: d.h,
     rotation: d.rotation,
+    color: d.color,
   }));
   await getFS().writeAtomic(p(classDir(dataDir, className), "desks.csv"), stringifyCsv(rows, DESK_COLS));
+}
+
+// ---------- room configuration (room.csv: key,value) ----------
+
+const ROOM_COLS = ["key", "value"];
+const VALID_EDGES: FrontEdge[] = ["top", "right", "bottom", "left"];
+
+export async function loadRoomConfig(dataDir: string, className: string): Promise<RoomConfig> {
+  const rows = await loadCsvFile(p(classDir(dataDir, className), "room.csv"));
+  const kv = new Map(rows.map((r) => [r.key, r.value ?? ""]));
+  const frontEdge = (VALID_EDGES.includes(kv.get("front_edge") as FrontEdge) ? kv.get("front_edge") : "top") as FrontEdge;
+  const cw = num(kv.get("crop_w"));
+  const ch = num(kv.get("crop_h"));
+  return {
+    frontEdge,
+    crop: cw > 0 && ch > 0 ? { x: num(kv.get("crop_x")), y: num(kv.get("crop_y")), w: cw, h: ch } : null,
+  };
+}
+
+export async function saveRoomConfig(dataDir: string, className: string, config: RoomConfig): Promise<void> {
+  const rows: Array<{ key: string; value: string | number }> = [{ key: "front_edge", value: config.frontEdge }];
+  if (config.crop) {
+    rows.push(
+      { key: "crop_x", value: config.crop.x },
+      { key: "crop_y", value: config.crop.y },
+      { key: "crop_w", value: config.crop.w },
+      { key: "crop_h", value: config.crop.h },
+    );
+  }
+  await getFS().writeAtomic(p(classDir(dataDir, className), "room.csv"), stringifyCsv(rows, ROOM_COLS));
 }
 
 const SEATING_COLS = ["plan_name", "desk_id", "seat_index", "student_id"];

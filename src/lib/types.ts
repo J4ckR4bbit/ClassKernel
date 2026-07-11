@@ -53,7 +53,8 @@ export type DeskShape =
   | "group6" // 6 seats
   | "teacher" // 0 seats
   | "door" // 0 seats, room marker
-  | "window"; // 0 seats, room marker
+  | "window" // 0 seats, room marker
+  | "label"; // 0 seats, free text box for labelling anything in the room
 
 export interface Desk {
   id: string;
@@ -64,7 +65,20 @@ export interface Desk {
   w: number;
   h: number;
   rotation: number; // degrees, multiples of 90
+  /** Optional custom fill colour (hex); empty string = default for the shape. */
+  color: string;
 }
+
+export type FrontEdge = "top" | "right" | "bottom" | "left";
+
+export interface RoomConfig {
+  /** Which edge of the canvas is the front of the room (whiteboard). */
+  frontEdge: FrontEdge;
+  /** Optional view crop: seating/lesson/print views show only this region, scaled up. */
+  crop: { x: number; y: number; w: number; h: number } | null;
+}
+
+export const DEFAULT_ROOM_CONFIG: RoomConfig = { frontEdge: "top", crop: null };
 
 export interface SeatAssignment {
   planName: string;
@@ -97,6 +111,7 @@ export const SEAT_COUNTS: Record<DeskShape, number> = {
   teacher: 0,
   door: 0,
   window: 0,
+  label: 0,
 };
 
 export const DEFAULT_DESK_SIZES: Record<DeskShape, { w: number; h: number }> = {
@@ -107,6 +122,7 @@ export const DEFAULT_DESK_SIZES: Record<DeskShape, { w: number; h: number }> = {
   teacher: { w: 140, h: 60 },
   door: { w: 80, h: 16 },
   window: { w: 160, h: 12 },
+  label: { w: 140, h: 40 },
 };
 
 export function studentName(s: Student): string {

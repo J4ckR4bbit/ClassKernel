@@ -29,6 +29,7 @@ export default function LessonView() {
     setAttendance,
     showToast,
     setView,
+    roomConfig,
   } = useApp();
   const planNames = useMemo(() => [...new Set(seating.map((s) => s.planName))].sort(), [seating]);
   const [plan, setPlan] = useState(planNames[0] ?? "Default");
@@ -99,6 +100,8 @@ export default function LessonView() {
       <div style={{ position: "relative" }}>
         <RoomCanvas
           desks={desks}
+          frontEdge={roomConfig.frontEdge}
+          crop={roomConfig.crop}
           seatContent={(deskId, seatIndex) => {
             const occ = planSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
             const s = occ ? byId.get(occ.studentId) : undefined;
@@ -118,7 +121,10 @@ export default function LessonView() {
         {popover && popStudent && (
           <div
             className="behaviour-popover"
-            style={{ left: Math.min(popover.x + 24, 620), top: Math.max(popover.y - 40, 4) }}
+            style={{
+              left: Math.max(4, Math.min(popover.x + 24, window.innerWidth - 230 - 48 - 280)),
+              top: Math.max(popover.y - 40, 4),
+            }}
           >
             <h4>
               {studentName(popStudent)}

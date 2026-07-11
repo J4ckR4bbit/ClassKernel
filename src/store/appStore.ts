@@ -9,8 +9,10 @@ import {
   BehaviourCode,
   BehaviourEvent,
   ClassInfo,
+  DEFAULT_ROOM_CONFIG,
   Desk,
   Mark,
+  RoomConfig,
   SeatAssignment,
   Student,
 } from "../lib/types";
@@ -46,6 +48,7 @@ export interface AppState {
   seating: SeatAssignment[];
   assessments: Assessment[];
   marks: Mark[];
+  roomConfig: RoomConfig;
 
   boot(): Promise<void>;
   chooseDataDir(path: string): Promise<void>;
@@ -64,6 +67,7 @@ export interface AppState {
   removeBehaviourEvent(timestamp: string, studentId: string, code: string): Promise<void>;
   setBehaviourCodes(codes: BehaviourCode[]): Promise<void>;
   setDesks(desks: Desk[]): Promise<void>;
+  setRoomConfig(config: RoomConfig): Promise<void>;
   setSeating(seats: SeatAssignment[]): Promise<void>;
   setAssessments(assessments: Assessment[]): Promise<void>;
   setMarks(marks: Mark[]): Promise<void>;
@@ -88,6 +92,7 @@ export const useApp = create<AppState>((set, get) => ({
   seating: [],
   assessments: [],
   marks: [],
+  roomConfig: DEFAULT_ROOM_CONFIG,
 
   async boot() {
     if (!isTauri()) {
@@ -149,7 +154,7 @@ export const useApp = create<AppState>((set, get) => ({
   async openClass(name) {
     const { dataDir } = get();
     if (!dataDir) return;
-    const [students, attendance, behaviourEvents, desks, seating, assessments, marks] = await Promise.all([
+    const [students, attendance, behaviourEvents, desks, seating, assessments, marks, roomConfig] = await Promise.all([
       repo.loadStudents(dataDir, name),
       repo.loadAttendance(dataDir, name),
       repo.loadBehaviourEvents(dataDir, name),
@@ -157,8 +162,9 @@ export const useApp = create<AppState>((set, get) => ({
       repo.loadSeating(dataDir, name),
       repo.loadAssessments(dataDir, name),
       repo.loadMarks(dataDir, name),
+      repo.loadRoomConfig(dataDir, name),
     ]);
-    set({ currentClass: name, students, attendance, behaviourEvents, desks, seating, assessments, marks });
+    set({ currentClass: name, students, attendance, behaviourEvents, desks, seating, assessments, marks, roomConfig });
   },
 
   async updateClassInfo(info) {
@@ -219,6 +225,12 @@ export const useApp = create<AppState>((set, get) => ({
     const { dataDir, currentClass } = get();
     set({ desks });
     if (dataDir && currentClass) await repo.saveDesks(dataDir, currentClass, desks);
+  },
+
+  async setRoomConfig(roomConfig) {
+    const { dataDir, currentClass } = get();
+    set({ roomConfig });
+    if (dataDir && currentClass) await repo.saveRoomConfig(dataDir, currentClass, roomConfig);
   },
 
   async setSeating(seating) {

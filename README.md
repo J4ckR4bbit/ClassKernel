@@ -6,8 +6,8 @@ Fast, lightweight, offline-first classroom management for teachers. Windows desk
 
 - **Student information** — roster per class with flags (SEN, medical, …) and notes; bulk import by pasting a list of names.
 - **Attendance register** — one-tap Present / Absent / Late / Excused per lesson, running rates and history per student.
-- **Room layout designer** — drag-and-drop desks (singles, doubles, group tables, teacher desk, doors, windows) onto a snap-to-grid canvas; rotate, label, duplicate.
-- **Seating plans** — multiple named plans per class. Seat students by hand, or use the **random assigner** with constraints: keep-apart pairs, keep-together pairs, front-of-room pins, mixed-gender desks. Print the plan for cover teachers.
+- **Room layout designer** — drag-and-drop desks (singles, doubles, group tables, teacher desk, doors, windows, free-text label boxes) onto a snap-to-grid canvas; rotate, recolour, label, duplicate. Put the front of the room on any edge, and set a **view crop** so seating views zoom to just the used part of the room.
+- **Seating plans** — multiple named plans per class. Seat students by hand, or use the **random assigner**: students are spread evenly across desks (front desks filled first) with constraints — keep-apart pairs, keep-together pairs, front-of-room pins, mixed-gender desks. Print the plan for cover teachers.
 - **Behaviour tracking on the seating plan** — in the Live lesson view every seat shows the student and their running points; tap a seat to log positive/negative behaviours (fully customisable buttons) or mark attendance. Filterable behaviour log behind it.
 - **Assessments** — create assessments, enter marks with a keyboard-first quick-marking tool (type, Enter, next student), and analyse everything on a dashboard: class means, mark distributions, per-student trends vs class average, attendance-vs-performance, at-risk flags.
 
@@ -23,7 +23,8 @@ ClassroomData/
     students.csv
     attendance.csv
     behaviour.csv
-    desks.csv                    # room layout geometry
+    desks.csv                    # room layout geometry (incl. colours, label boxes)
+    room.csv                     # front-of-room edge + view crop
     seating.csv                  # named seating plans
     assessments.csv
     marks.csv
