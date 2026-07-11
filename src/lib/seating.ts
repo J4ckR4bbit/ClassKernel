@@ -1,6 +1,7 @@
 // Seat geometry + the constrained random seat assigner.
 
-import { Desk, SEAT_COUNTS, SeatAssignment, Student } from "./types";
+import { Desk, FrontEdge, SEAT_COUNTS, SeatAssignment, Student } from "./types";
+import { ROOM_H, ROOM_W } from "./room";
 
 export interface SeatSlot {
   deskId: string;
@@ -41,15 +42,34 @@ export function allSeatSlots(desks: Desk[]): SeatSlot[] {
   return desks.flatMap(seatSlots);
 }
 
+/**
+ * How close a seat is to the front of the room: 0 at the front edge, growing
+ * toward the back. Which canvas edge is "front" is configurable per room.
+ */
+export function frontness(x: number, y: number, edge: FrontEdge): number {
+  switch (edge) {
+    case "top":
+      return y;
+    case "bottom":
+      return ROOM_H - y;
+    case "left":
+      return x;
+    case "right":
+      return ROOM_W - x;
+  }
+}
+
 export interface RandomSeatingOptions {
   /** Pairs of student ids that must NOT sit next to each other. */
   apartPairs: Array<[string, string]>;
   /** Pairs of student ids that must share a desk. */
   togetherPairs: Array<[string, string]>;
-  /** Students that must sit in the front band of the room (small y = front). */
+  /** Students that must sit in the front band of the room. */
   frontIds: string[];
   /** Try to avoid same-gender desk mates where genders are known. */
   alternateGender: boolean;
+  /** Which canvas edge is the front of the room. Default "top". */
+  frontEdge?: FrontEdge;
   /** Two seats closer than this (room units) count as "next to each other". */
   adjacencyDistance?: number;
 }
@@ -79,6 +99,7 @@ function violationsOf(
   };
   const posOf = new Map(placements.map((p) => [p.studentId, p.slot]));
   const adjacency = opts.adjacencyDistance ?? 95;
+  const edge = opts.frontEdge ?? "top";
 
   for (const [a, b] of opts.apartPairs) {
     const pa = posOf.get(a);
@@ -95,13 +116,13 @@ function violationsOf(
     if (pa.deskId !== pb.deskId) out.push(`${nameOf(a)} and ${nameOf(b)} are not sharing a desk`);
   }
   if (opts.frontIds.length && slots.length) {
-    const ys = slots.map((s) => s.y);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-    const frontLimit = minY + (maxY - minY) / 3 + 1;
+    const fronts = slots.map((s) => frontness(s.x, s.y, edge));
+    const minF = Math.min(...fronts);
+    const maxF = Math.max(...fronts);
+    const frontLimit = minF + (maxF - minF) / 3 + 1;
     for (const id of opts.frontIds) {
       const pos = posOf.get(id);
-      if (pos && pos.y > frontLimit) out.push(`${nameOf(id)} is not in the front of the room`);
+      if (pos && frontness(pos.x, pos.y, edge) > frontLimit) out.push(`${nameOf(id)} is not in the front of the room`);
     }
   }
   if (opts.alternateGender) {
@@ -134,8 +155,46 @@ function shuffle<T>(arr: T[], rand: () => number): T[] {
 }
 
 /**
- * Random seat assignment: shuffle-and-check with retries, keeping the attempt
- * with the fewest constraint violations. Deterministic when `rand` is provided.
+ * Decide how many students each desk takes: as even a spread as possible,
+ * with any remainder going to the desks closest to the front. E.g. six
+ * 4-seaters and 17 students → 3,3,3,3,3,2 with the 2 at the back desk.
+ * Returns the chosen seat slots, front-most desks first.
+ */
+export function spreadSlots(students: number, desks: Desk[], edge: FrontEdge): SeatSlot[] {
+  const seatDesks = desks
+    .filter((d) => SEAT_COUNTS[d.shape] > 0)
+    .map((d) => {
+      const slots = seatSlots(d);
+      const f = Math.min(...slots.map((s) => frontness(s.x, s.y, edge)));
+      return { desk: d, slots, front: f, take: 0 };
+    })
+    .sort((a, b) => a.front - b.front);
+
+  let remaining = Math.min(
+    students,
+    seatDesks.reduce((acc, d) => acc + d.slots.length, 0),
+  );
+  // Deal students one at a time to the emptiest desk with space; ties go to
+  // the desk nearest the front (the list is already in front-first order).
+  while (remaining > 0) {
+    let target = null;
+    for (const d of seatDesks) {
+      if (d.take >= d.slots.length) continue;
+      if (target === null || d.take < target.take) target = d;
+    }
+    if (!target) break;
+    target.take++;
+    remaining--;
+  }
+
+  return seatDesks.flatMap((d) => d.slots.slice(0, d.take));
+}
+
+/**
+ * Random seat assignment: students are spread evenly over the desks (front
+ * desks filled first), then shuffled over those seats with retries, keeping
+ * the attempt with the fewest constraint violations. Deterministic when
+ * `rand` is provided.
  */
 export function assignRandomSeats(
   students: Student[],
@@ -145,11 +204,14 @@ export function assignRandomSeats(
   maxAttempts = 400,
   rand: () => number = Math.random,
 ): RandomSeatingResult {
-  const slots = allSeatSlots(desks);
+  const edge = opts.frontEdge ?? "top";
+  const slots = spreadSlots(students.length, desks, edge);
   const seatable = students.slice(0, slots.length);
 
-  // Front-pinned students get the front-most slots offered first.
-  const slotsByY = [...slots].sort((a, b) => a.y - b.y);
+  // Front-pinned students get the front-most of the chosen slots first.
+  const slotsByFront = [...slots].sort(
+    (a, b) => frontness(a.x, a.y, edge) - frontness(b.x, b.y, edge),
+  );
 
   let best: Placement[] = [];
   let bestViolations: string[] | null = null;
@@ -163,8 +225,8 @@ export function assignRandomSeats(
     const placements: Placement[] = [];
     // Give the front students the front-most seats (randomised within the band),
     // then scatter everyone else over the remaining seats.
-    const frontSlots = shuffle(slotsByY.slice(0, Math.max(front.length, 0)), rand);
-    const restSlots = shuffle(slotsByY.slice(front.length), rand);
+    const frontSlots = shuffle(slotsByFront.slice(0, Math.max(front.length, 0)), rand);
+    const restSlots = shuffle(slotsByFront.slice(front.length), rand);
     front.forEach((s, i) => placements.push({ slot: frontSlots[i], studentId: s.id }));
     rest.forEach((s, i) => {
       if (restSlots[i]) placements.push({ slot: restSlots[i], studentId: s.id });

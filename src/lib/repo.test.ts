@@ -73,12 +73,23 @@ describe("attendance.csv", () => {
 });
 
 describe("desks + seating", () => {
-  it("round-trips desk geometry as numbers", async () => {
+  it("round-trips desk geometry, colour and label boxes", async () => {
     await repo.saveDesks(DIR, CLS, [
-      { id: "d1", label: "Front", shape: "double", x: 120, y: 140, w: 160, h: 60, rotation: 90 },
+      { id: "d1", label: "Front", shape: "double", x: 120, y: 140, w: 160, h: 60, rotation: 90, color: "#dcebf7" },
+      { id: "d2", label: "Book corner", shape: "label", x: 0, y: 0, w: 140, h: 40, rotation: 0, color: "" },
     ]);
     const desks = await repo.loadDesks(DIR, CLS);
-    expect(desks[0]).toMatchObject({ x: 120, y: 140, w: 160, h: 60, rotation: 90, shape: "double" });
+    expect(desks[0]).toMatchObject({ x: 120, y: 140, w: 160, h: 60, rotation: 90, shape: "double", color: "#dcebf7" });
+    expect(desks[1]).toMatchObject({ shape: "label", label: "Book corner", color: "" });
+  });
+
+  it("loads pre-colour desks.csv files (missing color column)", async () => {
+    await fs.writeAtomic(
+      `${DIR}/classes/${CLS}/desks.csv`,
+      "desk_id,label,shape,x,y,w,h,rotation\r\nd1,,single,20,40,80,60,0\r\n",
+    );
+    const desks = await repo.loadDesks(DIR, CLS);
+    expect(desks[0].color).toBe("");
   });
 
   it("round-trips seat assignments per plan", async () => {
@@ -89,6 +100,27 @@ describe("desks + seating", () => {
     const seats = await repo.loadSeating(DIR, CLS);
     expect(seats).toHaveLength(2);
     expect(seats.find((s) => s.planName === "Plan B")?.seatIndex).toBe(1);
+  });
+});
+
+describe("room.csv", () => {
+  it("defaults to front=top and no crop when missing", async () => {
+    const config = await repo.loadRoomConfig(DIR, CLS);
+    expect(config).toEqual({ frontEdge: "top", crop: null });
+  });
+
+  it("round-trips front edge and crop", async () => {
+    await repo.saveRoomConfig(DIR, CLS, { frontEdge: "left", crop: { x: 40, y: 60, w: 500, h: 400 } });
+    expect(await repo.loadRoomConfig(DIR, CLS)).toEqual({
+      frontEdge: "left",
+      crop: { x: 40, y: 60, w: 500, h: 400 },
+    });
+  });
+
+  it("round-trips a cleared crop", async () => {
+    await repo.saveRoomConfig(DIR, CLS, { frontEdge: "bottom", crop: { x: 0, y: 0, w: 300, h: 300 } });
+    await repo.saveRoomConfig(DIR, CLS, { frontEdge: "bottom", crop: null });
+    expect(await repo.loadRoomConfig(DIR, CLS)).toEqual({ frontEdge: "bottom", crop: null });
   });
 });
 

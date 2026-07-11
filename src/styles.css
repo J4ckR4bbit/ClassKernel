@@ -128,8 +128,12 @@ table.data td input:focus { background: #fff; }
 .seat-circle { fill: #fff; stroke: #b6c2cd; }
 .seat-circle.occupied { fill: var(--accent-soft); stroke: var(--accent); }
 .seat-circle.drop-target { stroke: var(--accent); stroke-width: 3; }
-.seat-name { font-size: 10.5px; text-anchor: middle; fill: var(--text); pointer-events: none; font-weight: 600; }
-.seat-points { font-size: 10px; text-anchor: middle; font-weight: 700; }
+.seat-name { font-size: 13px; text-anchor: middle; fill: #16202b; pointer-events: none; font-weight: 700; }
+.seat-points { font-size: 11px; text-anchor: middle; font-weight: 700; }
+.desk-body.label-block { fill: #fdf3cf; stroke: #d9c470; }
+.label-block-text { font-size: 14px; font-weight: 600; fill: #4c4018; text-anchor: middle; pointer-events: none; }
+.crop-rect { fill: rgba(44, 110, 73, 0.05); stroke: var(--accent); stroke-width: 2; stroke-dasharray: 8 6; cursor: move; }
+.crop-handle { fill: var(--accent); cursor: nwse-resize; }
 .palette { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .front-marker { fill: #8fa5b3; font-size: 11px; letter-spacing: 2px; text-anchor: middle; }
 

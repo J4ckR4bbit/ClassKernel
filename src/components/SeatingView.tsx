@@ -5,7 +5,7 @@ import { assignRandomSeats, allSeatSlots } from "../lib/seating";
 import RoomCanvas from "./RoomCanvas";
 
 export default function SeatingView() {
-  const { currentClass, students, desks, seating, setSeating, showToast, setView } = useApp();
+  const { currentClass, students, desks, seating, setSeating, showToast, setView, roomConfig } = useApp();
   // Plans exist in seating.csv once they have a row; freshly created empty
   // plans are tracked locally until their first seat is placed.
   const [extraPlans, setExtraPlans] = useState<string[]>([]);
@@ -123,6 +123,8 @@ export default function SeatingView() {
 
           <RoomCanvas
             desks={desks}
+            frontEdge={roomConfig.frontEdge}
+            crop={roomConfig.crop}
             seatContent={(deskId, seatIndex) => {
               const occ = occupantOf(deskId, seatIndex);
               const s = occ ? byId.get(occ.studentId) : undefined;
@@ -165,7 +167,7 @@ function RandomAssignModal({
   onClose: () => void;
   onAssign: (assignments: SeatAssignment[], violations: string[]) => void;
 }) {
-  const { desks } = useApp.getState();
+  const { desks, roomConfig } = useApp.getState();
   const [apartPairs, setApartPairs] = useState<Array<[string, string]>>([]);
   const [togetherPairs, setTogetherPairs] = useState<Array<[string, string]>>([]);
   const [frontIds, setFrontIds] = useState<string[]>([]);
@@ -194,6 +196,7 @@ function RandomAssignModal({
       togetherPairs,
       frontIds,
       alternateGender,
+      frontEdge: roomConfig.frontEdge,
     });
     setPreview({ assignments: result.assignments, violations: result.violations });
     return result;
@@ -209,6 +212,9 @@ function RandomAssignModal({
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" style={{ minWidth: 520 }} onClick={(e) => e.stopPropagation()}>
         <h2>Random seat assigner</h2>
+        <p className="muted" style={{ marginTop: 0 }}>
+          Students are spread evenly across the desks, filling the desks nearest the front of the room first.
+        </p>
 
         <div className="row" style={{ marginBottom: 8 }}>
           <select value={pairA} onChange={(e) => setPairA(e.target.value)}>

@@ -1,10 +1,9 @@
 import { ReactNode } from "react";
-import { Desk } from "../lib/types";
+import { Desk, FrontEdge } from "../lib/types";
 import { seatSlots } from "../lib/seating";
+import { GRID, ROOM_H, ROOM_W } from "../lib/room";
 
-export const ROOM_W = 900;
-export const ROOM_H = 640;
-export const GRID = 20;
+export { GRID, ROOM_H, ROOM_W };
 
 export interface SeatContent {
   label: string; // short name to show on the seat
@@ -17,7 +16,11 @@ interface Props {
   desks: Desk[];
   selectedDeskId?: string | null;
   editable?: boolean;
+  frontEdge?: FrontEdge;
+  /** Show only this region of the room, scaled up to the container width. */
+  crop?: { x: number; y: number; w: number; h: number } | null;
   seatContent?: (deskId: string, seatIndex: number) => SeatContent;
+  /** x/y are pixel coordinates relative to the .canvas-wrap element (popover anchoring). */
   onSeatClick?: (deskId: string, seatIndex: number, x: number, y: number) => void;
   onDeskPointerDown?: (deskId: string, e: React.PointerEvent) => void;
   onCanvasPointerDown?: (e: React.PointerEvent) => void;
@@ -26,17 +29,46 @@ interface Props {
   children?: ReactNode;
 }
 
-/** Convert a pointer event to room coordinates. */
+/** Convert a pointer event to room coordinates (designer canvas is unscaled). */
 export function toRoomCoords(e: { clientX: number; clientY: number; currentTarget: EventTarget }): { x: number; y: number } {
   const svg = e.currentTarget as SVGSVGElement;
   const rect = svg.getBoundingClientRect();
   return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 }
 
+const FRONT_TEXT = "▲ FRONT OF ROOM / WHITEBOARD ▲";
+
+/** Anchored to the visible region so it stays on screen when the view is cropped. */
+function FrontMarker({ edge, view }: { edge: FrontEdge; view: { x: number; y: number; w: number; h: number } }) {
+  const mid = { x: view.x + view.w / 2, y: view.y + view.h / 2 };
+  switch (edge) {
+    case "top":
+      return <text className="front-marker" x={mid.x} y={view.y + 14}>{FRONT_TEXT}</text>;
+    case "bottom":
+      return <text className="front-marker" x={mid.x} y={view.y + view.h - 5}>{FRONT_TEXT}</text>;
+    case "left":
+      return (
+        <text className="front-marker" x={view.x + 14} y={mid.y} transform={`rotate(-90 ${view.x + 14} ${mid.y})`}>
+          {FRONT_TEXT}
+        </text>
+      );
+    case "right": {
+      const rx = view.x + view.w - 14;
+      return (
+        <text className="front-marker" x={rx} y={mid.y} transform={`rotate(90 ${rx} ${mid.y})`}>
+          {FRONT_TEXT}
+        </text>
+      );
+    }
+  }
+}
+
 export default function RoomCanvas({
   desks,
   selectedDeskId,
   editable,
+  frontEdge = "top",
+  crop,
   seatContent,
   onSeatClick,
   onDeskPointerDown,
@@ -45,12 +77,15 @@ export default function RoomCanvas({
   onCanvasPointerUp,
   children,
 }: Props) {
+  const view = crop ?? { x: 0, y: 0, w: ROOM_W, h: ROOM_H };
+  const scaled = !!crop;
   return (
     <div className="canvas-wrap">
       <svg
         className="room-canvas"
-        width={ROOM_W}
-        height={ROOM_H}
+        {...(scaled
+          ? { viewBox: `${view.x} ${view.y} ${view.w} ${view.h}`, style: { width: "100%", height: "auto", aspectRatio: `${view.w} / ${view.h}` } }
+          : { width: ROOM_W, height: ROOM_H })}
         onPointerDown={onCanvasPointerDown}
         onPointerMove={onCanvasPointerMove}
         onPointerUp={onCanvasPointerUp}
@@ -66,9 +101,7 @@ export default function RoomCanvas({
             ))}
           </g>
         )}
-        <text className="front-marker" x={ROOM_W / 2} y={14}>
-          ▲ FRONT OF ROOM / WHITEBOARD ▲
-        </text>
+        <FrontMarker edge={frontEdge} view={view} />
 
         {desks.map((d) => (
           <DeskShapeView
@@ -103,19 +136,40 @@ function DeskShapeView({
   const cy = desk.y + desk.h / 2;
   const slots = seatSlots(desk);
   const bodyClass =
-    desk.shape === "teacher" ? "desk-body teacher" : desk.shape === "door" ? "desk-body door" : desk.shape === "window" ? "desk-body window" : "desk-body";
+    desk.shape === "teacher"
+      ? "desk-body teacher"
+      : desk.shape === "door"
+        ? "desk-body door"
+        : desk.shape === "window"
+          ? "desk-body window"
+          : desk.shape === "label"
+            ? "desk-body label-block"
+            : "desk-body";
   const caption =
-    desk.label || (desk.shape === "teacher" ? "Teacher" : desk.shape === "door" ? "Door" : desk.shape === "window" ? "Window" : "");
+    desk.label || (desk.shape === "teacher" ? "Teacher" : desk.shape === "door" ? "Door" : desk.shape === "window" ? "Window" : desk.shape === "label" ? "Label" : "");
 
   return (
     <g className={`desk ${selected ? "selected" : ""}`} onPointerDown={onPointerDown}>
       <g transform={`rotate(${desk.rotation} ${cx} ${cy})`}>
-        <rect className={bodyClass} x={desk.x} y={desk.y} width={desk.w} height={desk.h} rx={6} />
-        {caption && (
-          <text className="desk-label" x={cx} y={desk.shape === "door" || desk.shape === "window" ? cy + 3.5 : desk.y + 13}>
-            {caption}
-          </text>
-        )}
+        <rect
+          className={bodyClass}
+          x={desk.x}
+          y={desk.y}
+          width={desk.w}
+          height={desk.h}
+          rx={6}
+          style={desk.color ? { fill: desk.color } : undefined}
+        />
+        {caption &&
+          (desk.shape === "label" ? (
+            <text className="label-block-text" x={cx} y={cy + 4.5}>
+              {caption}
+            </text>
+          ) : (
+            <text className="desk-label" x={cx} y={desk.shape === "door" || desk.shape === "window" ? cy + 3.5 : desk.y + 13}>
+              {caption}
+            </text>
+          ))}
       </g>
       {slots.map((slot) => {
         const content = seatContent?.(desk.id, slot.seatIndex);
@@ -124,7 +178,16 @@ function DeskShapeView({
             key={slot.seatIndex}
             onClick={(e) => {
               e.stopPropagation();
-              onSeatClick?.(desk.id, slot.seatIndex, slot.x, slot.y);
+              // Report the click position relative to the canvas wrapper so
+              // popovers anchor correctly even when the view is crop-scaled.
+              const wrap = (e.target as Element).closest(".canvas-wrap");
+              const rect = wrap?.getBoundingClientRect();
+              onSeatClick?.(
+                desk.id,
+                slot.seatIndex,
+                rect ? e.clientX - rect.left : slot.x,
+                rect ? e.clientY - rect.top : slot.y,
+              );
             }}
             style={{ cursor: onSeatClick ? "pointer" : undefined }}
           >
@@ -132,10 +195,10 @@ function DeskShapeView({
               className={`seat-circle ${content?.occupied ? "occupied" : ""} ${content?.highlight ? "drop-target" : ""}`}
               cx={slot.x}
               cy={slot.y}
-              r={20}
+              r={23}
             />
             {content?.occupied && (
-              <text className="seat-name" x={slot.x} y={content.points !== undefined && content.points !== null ? slot.y : slot.y + 4}>
+              <text className="seat-name" x={slot.x} y={content.points !== undefined && content.points !== null ? slot.y + 1 : slot.y + 4}>
                 {content.label}
               </text>
             )}
@@ -143,7 +206,7 @@ function DeskShapeView({
               <text
                 className="seat-points"
                 x={slot.x}
-                y={slot.y + 13}
+                y={slot.y + 15}
                 fill={content.points > 0 ? "#2e9e5b" : content.points < 0 ? "#d65c5c" : "#7c8b99"}
               >
                 {content.points > 0 ? `+${content.points}` : content.points}
