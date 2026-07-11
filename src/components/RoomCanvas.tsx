@@ -1,12 +1,15 @@
 import { ReactNode } from "react";
 import { Desk, FrontEdge } from "../lib/types";
-import { seatSlots } from "../lib/seating";
+import { seatSlots, SeatSlot } from "../lib/seating";
 import { GRID, ROOM_H, ROOM_W } from "../lib/room";
 
 export { GRID, ROOM_H, ROOM_W };
 
 export interface SeatContent {
-  label: string; // short name to show on the seat
+  label: string; // short name to show on the seat (fallback when no name parts)
+  firstName?: string; // first name shown on the top line
+  lastName?: string; // surname shown smaller on the line below
+  badge?: string; // small marker in the seat corner (e.g. "✗" for absent)
   occupied: boolean;
   points?: number | null; // running behaviour points (lesson view)
   highlight?: boolean;
@@ -17,6 +20,10 @@ interface Props {
   selectedDeskId?: string | null;
   editable?: boolean;
   frontEdge?: FrontEdge;
+  /** Font size multipliers (1 = default) for names, desk labels and label boxes. */
+  seatFontScale?: number;
+  deskFontScale?: number;
+  labelFontScale?: number;
   /** Show only this region of the room, scaled up to the container width. */
   crop?: { x: number; y: number; w: number; h: number } | null;
   seatContent?: (deskId: string, seatIndex: number) => SeatContent;
@@ -68,6 +75,9 @@ export default function RoomCanvas({
   selectedDeskId,
   editable,
   frontEdge = "top",
+  seatFontScale = 1,
+  deskFontScale = 1,
+  labelFontScale = 1,
   crop,
   seatContent,
   onSeatClick,
@@ -108,6 +118,9 @@ export default function RoomCanvas({
             key={d.id}
             desk={d}
             selected={d.id === selectedDeskId}
+            seatFontScale={seatFontScale}
+            deskFontScale={deskFontScale}
+            labelFontScale={labelFontScale}
             seatContent={seatContent}
             onSeatClick={onSeatClick}
             onPointerDown={onDeskPointerDown ? (e) => onDeskPointerDown(d.id, e) : undefined}
@@ -122,12 +135,18 @@ export default function RoomCanvas({
 function DeskShapeView({
   desk,
   selected,
+  seatFontScale,
+  deskFontScale,
+  labelFontScale,
   seatContent,
   onSeatClick,
   onPointerDown,
 }: {
   desk: Desk;
   selected: boolean;
+  seatFontScale: number;
+  deskFontScale: number;
+  labelFontScale: number;
   seatContent?: (deskId: string, seatIndex: number) => SeatContent;
   onSeatClick?: (deskId: string, seatIndex: number, x: number, y: number) => void;
   onPointerDown?: (e: React.PointerEvent) => void;
@@ -162,59 +181,120 @@ function DeskShapeView({
         />
         {caption &&
           (desk.shape === "label" ? (
-            <text className="label-block-text" x={cx} y={cy + 4.5}>
+            <text className="label-block-text" x={cx} y={cy} dominantBaseline="central" style={{ fontSize: 14 * labelFontScale }}>
               {caption}
             </text>
           ) : (
-            <text className="desk-label" x={cx} y={desk.shape === "door" || desk.shape === "window" ? cy + 3.5 : desk.y + 13}>
+            <text
+              className="desk-label"
+              x={cx}
+              y={desk.shape === "door" || desk.shape === "window" ? cy + 3.5 : desk.y + 13}
+              style={{ fontSize: 11 * deskFontScale }}
+            >
               {caption}
             </text>
           ))}
       </g>
-      {slots.map((slot) => {
-        const content = seatContent?.(desk.id, slot.seatIndex);
+      {slots.map((slot) => (
+        <SeatView
+          key={slot.seatIndex}
+          slot={slot}
+          rotation={desk.rotation}
+          content={seatContent?.(desk.id, slot.seatIndex)}
+          fontScale={seatFontScale}
+          onSeatClick={onSeatClick ? (x, y) => onSeatClick(desk.id, slot.seatIndex, x, y) : undefined}
+        />
+      ))}
+    </g>
+  );
+}
+
+/** A single seat drawn as a rounded square filling its cell, with a two-line name. */
+function SeatView({
+  slot,
+  rotation,
+  content,
+  fontScale,
+  onSeatClick,
+}: {
+  slot: SeatSlot;
+  rotation: number;
+  content?: SeatContent;
+  fontScale: number;
+  onSeatClick?: (x: number, y: number) => void;
+}) {
+  // Rounded square that takes up (almost) the whole seat cell.
+  const inset = 5;
+  const rw = Math.max(20, slot.w - inset * 2);
+  const rh = Math.max(20, slot.h - inset * 2);
+  const rx = Math.min(14, Math.min(rw, rh) / 3);
+
+  const hasPoints = content?.points !== undefined && content?.points !== null;
+  const first = content?.firstName ?? content?.label ?? "";
+  const last = content?.lastName ?? "";
+
+  // Stack the text lines and centre the block vertically in the seat.
+  const lines: Array<{ text: string; size: number; className: string; fill?: string }> = [];
+  if (content?.occupied) {
+    if (first) lines.push({ text: first, size: 13 * fontScale, className: "seat-name" });
+    if (last) lines.push({ text: last, size: 10 * fontScale, className: "seat-surname" });
+    if (hasPoints) {
+      const pts = content!.points as number;
+      lines.push({
+        text: pts > 0 ? `+${pts}` : `${pts}`,
+        size: 11 * fontScale,
+        className: "seat-points",
+        fill: pts > 0 ? "#2e9e5b" : pts < 0 ? "#d65c5c" : "#7c8b99",
+      });
+    }
+  }
+  const lineHeights = lines.map((l) => l.size * 1.18);
+  const totalH = lineHeights.reduce((a, b) => a + b, 0);
+  let cursor = slot.y - totalH / 2;
+
+  return (
+    <g
+      onClick={(e) => {
+        e.stopPropagation();
+        // Report the click position relative to the canvas wrapper so popovers
+        // anchor correctly even when the view is crop-scaled.
+        const wrap = (e.target as Element).closest(".canvas-wrap");
+        const rect = wrap?.getBoundingClientRect();
+        onSeatClick?.(rect ? e.clientX - rect.left : slot.x, rect ? e.clientY - rect.top : slot.y);
+      }}
+      style={{ cursor: onSeatClick ? "pointer" : undefined }}
+    >
+      <rect
+        className={`seat-square ${content?.occupied ? "occupied" : ""} ${content?.highlight ? "drop-target" : ""}`}
+        x={slot.x - rw / 2}
+        y={slot.y - rh / 2}
+        width={rw}
+        height={rh}
+        rx={rx}
+        transform={rotation ? `rotate(${rotation} ${slot.x} ${slot.y})` : undefined}
+      />
+      {lines.map((l, i) => {
+        const y = cursor + lineHeights[i] / 2;
+        cursor += lineHeights[i];
         return (
-          <g
-            key={slot.seatIndex}
-            onClick={(e) => {
-              e.stopPropagation();
-              // Report the click position relative to the canvas wrapper so
-              // popovers anchor correctly even when the view is crop-scaled.
-              const wrap = (e.target as Element).closest(".canvas-wrap");
-              const rect = wrap?.getBoundingClientRect();
-              onSeatClick?.(
-                desk.id,
-                slot.seatIndex,
-                rect ? e.clientX - rect.left : slot.x,
-                rect ? e.clientY - rect.top : slot.y,
-              );
-            }}
-            style={{ cursor: onSeatClick ? "pointer" : undefined }}
+          <text
+            key={i}
+            className={l.className}
+            x={slot.x}
+            y={y}
+            dominantBaseline="central"
+            style={{ fontSize: l.size }}
+            fill={l.fill}
           >
-            <circle
-              className={`seat-circle ${content?.occupied ? "occupied" : ""} ${content?.highlight ? "drop-target" : ""}`}
-              cx={slot.x}
-              cy={slot.y}
-              r={23}
-            />
-            {content?.occupied && (
-              <text className="seat-name" x={slot.x} y={content.points !== undefined && content.points !== null ? slot.y + 1 : slot.y + 4}>
-                {content.label}
-              </text>
-            )}
-            {content?.occupied && content.points !== undefined && content.points !== null && (
-              <text
-                className="seat-points"
-                x={slot.x}
-                y={slot.y + 15}
-                fill={content.points > 0 ? "#2e9e5b" : content.points < 0 ? "#d65c5c" : "#7c8b99"}
-              >
-                {content.points > 0 ? `+${content.points}` : content.points}
-              </text>
-            )}
-          </g>
+            {l.text}
+          </text>
         );
       })}
+      {content?.occupied && content.badge && (
+        <text className="seat-badge" x={slot.x + rw / 2 - 7} y={slot.y - rh / 2 + 8} dominantBaseline="central">
+          {content.badge}
+        </text>
+      )}
     </g>
   );
 }

@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
-import { nowIso, today } from "../lib/id";
-import { AttendanceStatus, studentName } from "../lib/types";
+import { newId, nowIso, today } from "../lib/id";
+import { AttendanceStatus, LessonRecord, SEAT_COUNTS, studentName } from "../lib/types";
 import { eventsOnDate } from "../lib/stats";
 import RoomCanvas from "./RoomCanvas";
+
+const lessonKey = (className: string) => `organik.lessonStart.${className}`;
 
 interface Popover {
   studentId: string;
@@ -25,6 +27,7 @@ export default function LessonView() {
     behaviourCodes,
     behaviourEvents,
     addBehaviourEvent,
+    addLessonRecords,
     attendance,
     setAttendance,
     showToast,
@@ -36,11 +39,76 @@ export default function LessonView() {
   const activePlan = planNames.includes(plan) ? plan : planNames[0];
   const [popover, setPopover] = useState<Popover | null>(null);
 
+  // "This lesson" is everything logged since the last End-lesson reset (or the
+  // start of today if a lesson has never been ended for this class).
+  const [lessonStart, setLessonStart] = useState<string | null>(null);
+  useEffect(() => {
+    setLessonStart(currentClass ? localStorage.getItem(lessonKey(currentClass)) : null);
+  }, [currentClass]);
+
   const byId = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
   const planSeats = seating.filter((s) => s.planName === activePlan && s.studentId);
-  const todayEvents = eventsOnDate(behaviourEvents, today());
+  const lessonEvents = useMemo(
+    () => (lessonStart ? behaviourEvents.filter((e) => e.timestamp >= lessonStart) : eventsOnDate(behaviourEvents, today())),
+    [behaviourEvents, lessonStart],
+  );
   const pointsToday = new Map<string, number>();
-  for (const e of todayEvents) pointsToday.set(e.studentId, (pointsToday.get(e.studentId) ?? 0) + e.points);
+  for (const e of lessonEvents) pointsToday.set(e.studentId, (pointsToday.get(e.studentId) ?? 0) + e.points);
+
+  // Friendly fallback names for unlabelled desks, so lesson history is readable.
+  const deskFallback = useMemo(() => {
+    const m = new Map<string, string>();
+    let n = 0;
+    for (const d of desks) {
+      if (SEAT_COUNTS[d.shape] > 0) {
+        n++;
+        m.set(d.id, d.label.trim() || `Desk ${n}`);
+      }
+    }
+    return m;
+  }, [desks]);
+
+  const endLesson = async () => {
+    if (!currentClass || planSeats.length === 0) return;
+    if (
+      !confirm(
+        `End the lesson for ${currentClass}?\n\nThis saves each student's seat and this lesson's behaviour to the class history (used for seating insights), then starts a fresh count.`,
+      )
+    )
+      return;
+    const sessionId = newId("les");
+    const timestamp = nowIso();
+    const date = today();
+    const deskOccupants = new Map<string, string[]>();
+    for (const seat of planSeats) {
+      const list = deskOccupants.get(seat.deskId) ?? [];
+      list.push(seat.studentId);
+      deskOccupants.set(seat.deskId, list);
+    }
+    const records: LessonRecord[] = planSeats.map((seat) => {
+      const desk = desks.find((d) => d.id === seat.deskId);
+      const deskLabel = desk?.label.trim() || deskFallback.get(seat.deskId) || seat.deskId;
+      const seatmates = (deskOccupants.get(seat.deskId) ?? []).filter((id) => id !== seat.studentId).join(";");
+      const evs = lessonEvents.filter((e) => e.studentId === seat.studentId);
+      return {
+        sessionId,
+        date,
+        timestamp,
+        studentId: seat.studentId,
+        deskId: seat.deskId,
+        deskLabel,
+        seatmates,
+        points: evs.reduce((a, e) => a + e.points, 0),
+        positives: evs.filter((e) => e.points > 0).length,
+        negatives: evs.filter((e) => e.points < 0).length,
+      };
+    });
+    await addLessonRecords(records);
+    localStorage.setItem(lessonKey(currentClass), timestamp);
+    setLessonStart(timestamp);
+    setPopover(null);
+    showToast(`Lesson ended — saved ${records.length} seat records to history`);
+  };
 
   const attendanceToday = attendance.filter((e) => e.date === today());
   const statusOf = (id: string) => attendanceToday.find((e) => e.studentId === id)?.status;
@@ -93,8 +161,12 @@ export default function LessonView() {
         )}
         <div className="spacer" />
         <span className="muted">
-          {todayEvents.length} events logged today · tap a seat to record behaviour or attendance
+          {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson · tap a seat to record behaviour
+          or attendance
         </span>
+        <button className="danger" onClick={() => void endLesson()} disabled={planSeats.length === 0}>
+          ⏹ End lesson
+        </button>
       </div>
 
       <div style={{ position: "relative" }}>
@@ -102,12 +174,18 @@ export default function LessonView() {
           desks={desks}
           frontEdge={roomConfig.frontEdge}
           crop={roomConfig.crop}
+          seatFontScale={roomConfig.seatFontScale}
+          deskFontScale={roomConfig.deskFontScale}
+          labelFontScale={roomConfig.labelFontScale}
           seatContent={(deskId, seatIndex) => {
             const occ = planSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
             const s = occ ? byId.get(occ.studentId) : undefined;
             const status = s ? statusOf(s.id) : undefined;
             return {
-              label: s ? `${s.firstName} ${s.lastName.charAt(0)}`.trim() + (status === "A" ? " ✗" : "") : "",
+              label: s ? studentName(s) : "",
+              firstName: s?.firstName,
+              lastName: s?.lastName,
+              badge: status === "A" ? "✗" : undefined,
               occupied: !!s,
               points: s ? pointsToday.get(s.id) ?? 0 : null,
             };

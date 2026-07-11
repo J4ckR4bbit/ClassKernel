@@ -32,7 +32,18 @@ type Drag =
   | { kind: "crop-resize" };
 
 export default function LayoutDesigner() {
-  const { currentClass, desks, setDesks, roomConfig, setRoomConfig, showToast } = useApp();
+  const {
+    currentClass,
+    desks,
+    setDesks,
+    roomConfig,
+    setRoomConfig,
+    showToast,
+    layoutTemplates,
+    saveLayoutTemplate,
+    applyLayoutTemplate,
+    deleteLayoutTemplate,
+  } = useApp();
   const [selected, setSelected] = useState<string | null>(null);
   const drag = useRef<Drag | null>(null);
   // Local copies during drags so we only hit the disk on drop.
@@ -133,6 +144,41 @@ export default function LayoutDesigner() {
   };
 
   const rotateSelected = () => patchSelected({ rotation: ((selectedDesk?.rotation ?? 0) + 90) % 360 });
+
+  const resizeSelected = (dw: number, dh: number) => {
+    if (!selectedDesk) return;
+    patchSelected({
+      w: clamp(selectedDesk.w + dw, GRID, ROOM_W - selectedDesk.x),
+      h: clamp(selectedDesk.h + dh, GRID, ROOM_H - selectedDesk.y),
+    });
+  };
+
+  type ScaleKey = "seatFontScale" | "deskFontScale" | "labelFontScale";
+  const bumpFont = (key: ScaleKey, delta: number) => {
+    const v = Math.min(3, Math.max(0.5, Math.round((roomConfig[key] + delta) * 10) / 10));
+    void setRoomConfig({ ...roomConfig, [key]: v });
+  };
+
+  const saveTemplate = () => {
+    const raw = prompt("Save this room layout as a reusable template.\nName:")?.trim();
+    const name = raw?.replace(/[<>:"/\\|?*]/g, "").trim();
+    if (!name) return;
+    if (layoutTemplates.includes(name) && !confirm(`A template called "${name}" exists — overwrite it?`)) return;
+    void saveLayoutTemplate(name).then(() => showToast(`Layout saved as template "${name}"`));
+  };
+
+  const loadTemplate = (name: string) => {
+    if (!confirm(`Replace this room's layout with "${name}"? The current desks will be overwritten.`)) return;
+    void applyLayoutTemplate(name).then(() => {
+      setSelected(null);
+      showToast(`Applied layout "${name}"`);
+    });
+  };
+
+  const removeTemplate = (name: string) => {
+    if (!confirm(`Delete the saved layout template "${name}"?`)) return;
+    void deleteLayoutTemplate(name).then(() => showToast(`Template "${name}" deleted`));
+  };
 
   const deleteSelected = () => {
     if (!selectedDesk) return;
@@ -238,17 +284,55 @@ export default function LayoutDesigner() {
               Reset colour
             </button>
           )}
+          <span className="muted" style={{ marginLeft: 4 }}>
+            Size
+          </span>
+          <div className="stepper" title="Width">
+            <button onClick={() => resizeSelected(-GRID, 0)}>W−</button>
+            <span>{selectedDesk.w}</span>
+            <button onClick={() => resizeSelected(GRID, 0)}>W+</button>
+          </div>
+          <div className="stepper" title="Height">
+            <button onClick={() => resizeSelected(0, -GRID)}>H−</button>
+            <span>{selectedDesk.h}</span>
+            <button onClick={() => resizeSelected(0, GRID)}>H+</button>
+          </div>
           <button className="danger" onClick={deleteSelected}>
             ✕ Delete
           </button>
         </div>
       )}
 
+      <div className="palette layout-tools">
+        <span className="muted">Text size:</span>
+        <FontStepper label="Seats" value={roomConfig.seatFontScale} onBump={(d) => bumpFont("seatFontScale", d)} />
+        <FontStepper label="Desks" value={roomConfig.deskFontScale} onBump={(d) => bumpFont("deskFontScale", d)} />
+        <FontStepper label="Labels" value={roomConfig.labelFontScale} onBump={(d) => bumpFont("labelFontScale", d)} />
+        <span className="spacer" style={{ flex: 1 }} />
+        <span className="muted">Layouts:</span>
+        <button onClick={saveTemplate} disabled={desks.length === 0} title="Save this room to reuse in another class">
+          💾 Save as template
+        </button>
+        {layoutTemplates.map((name) => (
+          <span key={name} className="tag template-chip">
+            <span className="load" title="Apply this layout" onClick={() => loadTemplate(name)}>
+              {name}
+            </span>
+            <span className="del" title="Delete template" onClick={() => removeTemplate(name)}>
+              ✕
+            </span>
+          </span>
+        ))}
+      </div>
+
       <RoomCanvas
         desks={shown}
         selectedDeskId={selected}
         editable
         frontEdge={roomConfig.frontEdge}
+        seatFontScale={roomConfig.seatFontScale}
+        deskFontScale={roomConfig.deskFontScale}
+        labelFontScale={roomConfig.labelFontScale}
         onDeskPointerDown={startDeskDrag}
         onCanvasPointerDown={(e) => {
           if (e.target === e.currentTarget) setSelected(null);
@@ -279,11 +363,28 @@ export default function LayoutDesigner() {
         )}
       </RoomCanvas>
       <p className="muted">
-        Drag desks to arrange your room — they snap to the grid. Select a desk to rotate, recolour, label, duplicate
-        or delete it. Label boxes are free text blocks for anything in the room. Use “Front:” to say which edge the
-        whiteboard is on, and “Set view crop” (dashed rectangle — drag to move, corner square to resize) to zoom every
-        seating view to just the used part of the room.
+        Drag desks to arrange your room — they snap to the grid. Select a desk to rotate, recolour, resize (W/H),
+        label, duplicate or delete it. Label boxes are free text blocks for anything in the room. Use “Text size” to
+        scale seat names, desk labels and label boxes. Save a room as a template to reuse the same setup in another
+        class. Use “Front:” to say which edge the whiteboard is on, and “Set view crop” to zoom every seating view to
+        just the used part of the room.
       </p>
+    </div>
+  );
+}
+
+/** A −/value/+ stepper for one of the room's font-size multipliers. */
+function FontStepper({ label, value, onBump }: { label: string; value: number; onBump: (delta: number) => void }) {
+  return (
+    <div className="stepper" title={`${label} text size`}>
+      <span className="stepper-label">{label}</span>
+      <button onClick={() => onBump(-0.1)} disabled={value <= 0.5}>
+        −
+      </button>
+      <span>{Math.round(value * 100)}%</span>
+      <button onClick={() => onBump(0.1)} disabled={value >= 3}>
+        +
+      </button>
     </div>
   );
 }

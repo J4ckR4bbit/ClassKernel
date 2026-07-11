@@ -1,11 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
-import { SeatAssignment, Student, studentName } from "../lib/types";
+import { SeatAssignment, studentName } from "../lib/types";
 import { assignRandomSeats, allSeatSlots } from "../lib/seating";
 import RoomCanvas from "./RoomCanvas";
 
+const SHUFFLE_FRAMES = 12;
+const SHUFFLE_INTERVAL = 90;
+
 export default function SeatingView() {
-  const { currentClass, students, desks, seating, setSeating, showToast, setView, roomConfig } = useApp();
+  const { currentClass, students, desks, seating, setSeating, seatingPrefs, showToast, setView, roomConfig } = useApp();
   // Plans exist in seating.csv once they have a row; freshly created empty
   // plans are tracked locally until their first seat is placed.
   const [extraPlans, setExtraPlans] = useState<string[]>([]);
@@ -15,7 +18,10 @@ export default function SeatingView() {
   }, [seating, extraPlans]);
   const [plan, setPlan] = useState(planNames[0]);
   const [pickedStudent, setPickedStudent] = useState<string | null>(null);
-  const [showRandom, setShowRandom] = useState(false);
+  // While rerolling we flash the names across the target seats before settling,
+  // so the class can see the seating really is being shuffled.
+  const [shuffleFrame, setShuffleFrame] = useState<SeatAssignment[] | null>(null);
+  const shuffleTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const activePlan = planNames.includes(plan) ? plan : planNames[0];
 
   const planSeats = seating.filter((s) => s.planName === activePlan && s.studentId);
@@ -23,15 +29,23 @@ export default function SeatingView() {
   const seatedIds = new Set(planSeats.map((s) => s.studentId));
   const unseated = students.filter((s) => !seatedIds.has(s.id));
   const capacity = allSeatSlots(desks).length;
+  const isShuffling = shuffleFrame !== null;
+  // What the canvas actually draws: the live shuffle frame while rerolling.
+  const shownSeats = shuffleFrame ?? planSeats;
+
+  useEffect(() => () => void (shuffleTimer.current && clearInterval(shuffleTimer.current)), []);
 
   const occupantOf = (deskId: string, seatIndex: number) =>
     planSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
+  const shownOccupantOf = (deskId: string, seatIndex: number) =>
+    shownSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
 
   const replacePlan = (assignments: SeatAssignment[]) => {
     void setSeating([...seating.filter((s) => s.planName !== activePlan), ...assignments]);
   };
 
   const onSeatClick = (deskId: string, seatIndex: number) => {
+    if (isShuffling) return;
     const existing = occupantOf(deskId, seatIndex);
     if (pickedStudent) {
       // Place picked student here (displacing any occupant back to unseated).
@@ -56,7 +70,7 @@ export default function SeatingView() {
     }
     setExtraPlans([...extraPlans, name]);
     setPlan(name);
-    showToast(`Plan "${name}" created — seat students or use Random assign`);
+    showToast(`Plan "${name}" created — seat students or use Randomise`);
   };
 
   const deletePlan = () => {
@@ -68,25 +82,83 @@ export default function SeatingView() {
 
   const clearPlan = () => replacePlan([]);
 
+  // Reroll using the saved (hidden) preferences, with a shuffle animation.
+  const randomise = () => {
+    if (isShuffling) return;
+    setPickedStudent(null);
+    const result = assignRandomSeats(students, desks, activePlan, {
+      ...seatingPrefs,
+      frontEdge: roomConfig.frontEdge,
+    });
+    if (result.assignments.length === 0) {
+      showToast("Add desks and students first");
+      return;
+    }
+    const targetSeats = result.assignments.map((a) => ({ deskId: a.deskId, seatIndex: a.seatIndex }));
+    const ids = result.assignments.map((a) => a.studentId);
+    let frame = 0;
+    shuffleTimer.current = setInterval(() => {
+      frame++;
+      // Randomly scatter the names across the final set of seats each frame.
+      const shuffled = [...ids];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      setShuffleFrame(
+        targetSeats.map((s, i) => ({ planName: activePlan, deskId: s.deskId, seatIndex: s.seatIndex, studentId: shuffled[i] })),
+      );
+      if (frame >= SHUFFLE_FRAMES) {
+        if (shuffleTimer.current) clearInterval(shuffleTimer.current);
+        shuffleTimer.current = null;
+        setShuffleFrame(null);
+        replacePlan(result.assignments.map((a) => ({ ...a, planName: activePlan })));
+        showToast(
+          result.violations.length
+            ? `Seated with ${result.violations.length} unmet constraint${result.violations.length > 1 ? "s" : ""}`
+            : "Seating randomised",
+        );
+      }
+    }, SHUFFLE_INTERVAL);
+  };
+
   return (
     <div>
       <div className="view-header">
         <h1>{currentClass} — Seating</h1>
-        <select value={activePlan} onChange={(e) => setPlan(e.target.value)}>
+        <select value={activePlan} onChange={(e) => setPlan(e.target.value)} disabled={isShuffling}>
           {planNames.map((n) => (
             <option key={n}>{n}</option>
           ))}
         </select>
-        <button onClick={newPlan}>+ New plan</button>
-        <button onClick={deletePlan}>Delete plan</button>
+        <button onClick={newPlan} disabled={isShuffling}>
+          + New plan
+        </button>
+        <button onClick={deletePlan} disabled={isShuffling}>
+          Delete plan
+        </button>
         <div className="spacer" />
-        <button onClick={clearPlan} disabled={planSeats.length === 0}>
+        <button onClick={clearPlan} disabled={planSeats.length === 0 || isShuffling}>
           Clear seats
         </button>
-        <button onClick={() => setShowRandom(true)} disabled={desks.length === 0 || students.length === 0}>
-          🎲 Random assign…
+        <button
+          className="no-print"
+          onClick={() => setView("settings")}
+          title="Configure keep-apart, keep-together and front-of-room rules (kept in Settings, out of sight of the class)"
+        >
+          ⚙ Set up random…
         </button>
-        <button onClick={() => window.print()}>🖨 Print</button>
+        <button
+          className="primary"
+          onClick={randomise}
+          disabled={desks.length === 0 || students.length === 0 || isShuffling}
+          title="Reroll seating using your saved rules"
+        >
+          🎲 {isShuffling ? "Randomising…" : "Randomise"}
+        </button>
+        <button onClick={() => window.print()} disabled={isShuffling}>
+          🖨 Print
+        </button>
       </div>
 
       {desks.length === 0 ? (
@@ -106,7 +178,7 @@ export default function SeatingView() {
                   <span
                     key={s.id}
                     className={`chip ${pickedStudent === s.id ? "selected" : ""}`}
-                    onClick={() => setPickedStudent(pickedStudent === s.id ? null : s.id)}
+                    onClick={() => !isShuffling && setPickedStudent(pickedStudent === s.id ? null : s.id)}
                   >
                     {studentName(s)}
                   </span>
@@ -117,193 +189,35 @@ export default function SeatingView() {
             <p className="muted" style={{ margin: "8px 0 0" }}>
               {pickedStudent
                 ? `Click a seat to place ${studentName(byId.get(pickedStudent)!)} — or click their chip again to cancel.`
-                : `Click a student chip, then a seat. Click an occupied seat to pick that student up. Capacity: ${capacity} seats for ${students.length} students.`}
+                : `Click a student chip, then a seat. Click an occupied seat to pick that student up. “Randomise” rerolls using the rules in Settings. Capacity: ${capacity} seats for ${students.length} students.`}
             </p>
           </div>
 
-          <RoomCanvas
-            desks={desks}
-            frontEdge={roomConfig.frontEdge}
-            crop={roomConfig.crop}
-            seatContent={(deskId, seatIndex) => {
-              const occ = occupantOf(deskId, seatIndex);
-              const s = occ ? byId.get(occ.studentId) : undefined;
-              return {
-                label: s ? `${s.firstName} ${s.lastName.charAt(0)}`.trim() : "",
-                occupied: !!s,
-                highlight: !!pickedStudent && !occ,
-              };
-            }}
-            onSeatClick={onSeatClick}
-          />
+          <div className={`seating-canvas ${isShuffling ? "shuffling" : ""}`}>
+            <RoomCanvas
+              desks={desks}
+              frontEdge={roomConfig.frontEdge}
+              crop={roomConfig.crop}
+              seatFontScale={roomConfig.seatFontScale}
+              deskFontScale={roomConfig.deskFontScale}
+              labelFontScale={roomConfig.labelFontScale}
+              seatContent={(deskId, seatIndex) => {
+                const occ = shownOccupantOf(deskId, seatIndex);
+                const s = occ ? byId.get(occ.studentId) : undefined;
+                return {
+                  label: s ? studentName(s) : "",
+                  firstName: s?.firstName,
+                  lastName: s?.lastName,
+                  occupied: !!s,
+                  highlight: !!pickedStudent && !occ,
+                };
+              }}
+              onSeatClick={onSeatClick}
+            />
+            {isShuffling && <div className="shuffle-overlay no-print">🎲 Randomising seats…</div>}
+          </div>
         </>
       )}
-
-      {showRandom && (
-        <RandomAssignModal
-          students={students}
-          onClose={() => setShowRandom(false)}
-          onAssign={(assignments, violations) => {
-            replacePlan(assignments.map((a) => ({ ...a, planName: activePlan })));
-            setShowRandom(false);
-            showToast(
-              violations.length
-                ? `Seated with ${violations.length} unmet constraint${violations.length > 1 ? "s" : ""}`
-                : "Random seating applied",
-            );
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function RandomAssignModal({
-  students,
-  onClose,
-  onAssign,
-}: {
-  students: Student[];
-  onClose: () => void;
-  onAssign: (assignments: SeatAssignment[], violations: string[]) => void;
-}) {
-  const { desks, roomConfig } = useApp.getState();
-  const [apartPairs, setApartPairs] = useState<Array<[string, string]>>([]);
-  const [togetherPairs, setTogetherPairs] = useState<Array<[string, string]>>([]);
-  const [frontIds, setFrontIds] = useState<string[]>([]);
-  const [alternateGender, setAlternateGender] = useState(false);
-  const [pairA, setPairA] = useState("");
-  const [pairB, setPairB] = useState("");
-  const [preview, setPreview] = useState<{ assignments: SeatAssignment[]; violations: string[] } | null>(null);
-
-  const nameOf = (id: string) => {
-    const s = students.find((s) => s.id === id);
-    return s ? studentName(s) : id;
-  };
-
-  const addPair = (kind: "apart" | "together") => {
-    if (!pairA || !pairB || pairA === pairB) return;
-    const pair: [string, string] = [pairA, pairB];
-    if (kind === "apart") setApartPairs([...apartPairs, pair]);
-    else setTogetherPairs([...togetherPairs, pair]);
-    setPairA("");
-    setPairB("");
-  };
-
-  const roll = () => {
-    const result = assignRandomSeats(students, desks, "current", {
-      apartPairs,
-      togetherPairs,
-      frontIds,
-      alternateGender,
-      frontEdge: roomConfig.frontEdge,
-    });
-    setPreview({ assignments: result.assignments, violations: result.violations });
-    return result;
-  };
-
-  // The caller rewrites planName onto the active plan when applying.
-  const apply = () => {
-    const result = preview ?? roll();
-    onAssign(result.assignments, result.violations);
-  };
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" style={{ minWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-        <h2>Random seat assigner</h2>
-        <p className="muted" style={{ marginTop: 0 }}>
-          Students are spread evenly across the desks, filling the desks nearest the front of the room first.
-        </p>
-
-        <div className="row" style={{ marginBottom: 8 }}>
-          <select value={pairA} onChange={(e) => setPairA(e.target.value)}>
-            <option value="">— student —</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {studentName(s)}
-              </option>
-            ))}
-          </select>
-          <select value={pairB} onChange={(e) => setPairB(e.target.value)}>
-            <option value="">— student —</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {studentName(s)}
-              </option>
-            ))}
-          </select>
-          <button onClick={() => addPair("apart")} disabled={!pairA || !pairB || pairA === pairB}>
-            Keep apart
-          </button>
-          <button onClick={() => addPair("together")} disabled={!pairA || !pairB || pairA === pairB}>
-            Keep together
-          </button>
-        </div>
-
-        {(apartPairs.length > 0 || togetherPairs.length > 0) && (
-          <div style={{ marginBottom: 8 }}>
-            {apartPairs.map((p, i) => (
-              <span key={`a${i}`} className="tag warn" style={{ cursor: "pointer" }} onClick={() => setApartPairs(apartPairs.filter((_, j) => j !== i))} title="Click to remove">
-                ⇹ {nameOf(p[0])} ↔ {nameOf(p[1])} ✕
-              </span>
-            ))}
-            {togetherPairs.map((p, i) => (
-              <span key={`t${i}`} className="tag" style={{ cursor: "pointer" }} onClick={() => setTogetherPairs(togetherPairs.filter((_, j) => j !== i))} title="Click to remove">
-                ⇆ {nameOf(p[0])} + {nameOf(p[1])} ✕
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div style={{ marginBottom: 8 }}>
-          <b>Front of room:</b>{" "}
-          <span className="muted">click students who should sit near the front</span>
-          <div className="roster-chips" style={{ marginTop: 6 }}>
-            {students.map((s) => (
-              <span
-                key={s.id}
-                className={`chip ${frontIds.includes(s.id) ? "selected" : ""}`}
-                onClick={() =>
-                  setFrontIds(frontIds.includes(s.id) ? frontIds.filter((id) => id !== s.id) : [...frontIds, s.id])
-                }
-              >
-                {studentName(s)}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <label className="row" style={{ marginBottom: 8 }}>
-          <input type="checkbox" checked={alternateGender} onChange={(e) => setAlternateGender(e.target.checked)} />
-          Avoid single-gender desks (where gender is recorded)
-        </label>
-
-        {preview && (
-          <div className="panel" style={{ marginBottom: 0 }}>
-            {preview.violations.length === 0 ? (
-              <span style={{ color: "var(--accent)" }}>✓ All constraints satisfied</span>
-            ) : (
-              <>
-                <b>Unmet constraints ({preview.violations.length}):</b>
-                <ul style={{ margin: "6px 0 0" }}>
-                  {preview.violations.map((v, i) => (
-                    <li key={i}>{v}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="actions">
-          <button onClick={onClose}>Cancel</button>
-          <button onClick={roll}>🎲 {preview ? "Re-roll" : "Roll"}</button>
-          <button className="primary" onClick={apply}>
-            Apply seating
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

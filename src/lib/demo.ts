@@ -3,7 +3,7 @@
 
 import { newId, nowIso } from "./id";
 import * as repo from "./repo";
-import { Assessment, AttendanceEntry, BehaviourEvent, Desk, Mark, SeatAssignment, Student } from "./types";
+import { Assessment, AttendanceEntry, BehaviourEvent, Desk, LessonRecord, Mark, SeatAssignment, Student } from "./types";
 
 export const DEMO_DIR = "/demo/ClassroomData";
 
@@ -92,6 +92,70 @@ export async function seedDemoData(): Promise<string> {
     }
   }
   await repo.saveSeating(dataDir, className, seating);
+
+  // Per-class random-seating rules (shown in Settings): pin the SEN student to
+  // the front, and start with no keep-apart pairs so the insights can suggest one.
+  await repo.saveSeatingPrefs(dataDir, className, {
+    apartPairs: [],
+    togetherPairs: [],
+    frontIds: [students[3].id],
+    alternateGender: false,
+  });
+
+  // A few weeks of ended lessons so the seating insights have something to
+  // chew on. Students[0] & [1] behave badly whenever they share the front desk,
+  // but well once they're split up — exactly the pattern the analysis flags.
+  const doubleDesks = desks.filter((d) => d.shape === "double");
+  const deskLabel = new Map(doubleDesks.map((d, i) => [d.id, `Row ${Math.floor(i / 3) + 1}·${(i % 3) + 1}`]));
+  const seatByDesk = new Map<string, SeatAssignment[]>();
+  for (const s of seating) {
+    const list = seatByDesk.get(s.deskId) ?? [];
+    list.push(s);
+    seatByDesk.set(s.deskId, list);
+  }
+  const troublemakers = new Set([students[0].id, students[1].id]);
+  const lessons: LessonRecord[] = [];
+  for (let sess = 0; sess < 5; sess++) {
+    const sessionId = newId("les");
+    const t = new Date();
+    t.setDate(t.getDate() - (5 - sess) * 3);
+    const timestamp = t.toISOString();
+    const date = timestamp.slice(0, 10);
+    const together = sess < 3; // first three lessons they sit together
+    for (const seat of seating) {
+      const s = students.find((st) => st.id === seat.studentId);
+      if (!s) continue;
+      let label = deskLabel.get(seat.deskId) ?? "Desk";
+      let points = Math.round((rand() - 0.4) * 4);
+      let seatmates = (seatByDesk.get(seat.deskId) ?? []).filter((x) => x.studentId !== seat.studentId).map((x) => x.studentId);
+      if (troublemakers.has(seat.studentId)) {
+        if (together) {
+          label = "Row 1·1";
+          points = -3;
+          seatmates = [seat.studentId === students[0].id ? students[1].id : students[0].id];
+        } else {
+          // Split to opposite corners and settle down.
+          label = seat.studentId === students[0].id ? "Row 4·3" : "Row 4·1";
+          points = 3;
+          seatmates = [];
+        }
+      }
+      const deskId = troublemakers.has(seat.studentId) && !together ? `apart-${seat.studentId}` : seat.deskId;
+      lessons.push({
+        sessionId,
+        date,
+        timestamp,
+        studentId: seat.studentId,
+        deskId,
+        deskLabel: label,
+        seatmates: seatmates.join(";"),
+        points,
+        positives: points > 0 ? 1 : 0,
+        negatives: points < 0 ? 1 : 0,
+      });
+    }
+  }
+  await repo.saveLessons(dataDir, className, lessons);
 
   const behaviourCodes = await repo.loadBehaviourCodes(dataDir);
   const events: BehaviourEvent[] = [];
