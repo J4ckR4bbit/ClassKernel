@@ -100,6 +100,10 @@ table.data tr:last-child td { border-bottom: none; }
 table.data td input { width: 100%; border-color: transparent; background: transparent; padding: 3px 4px; }
 table.data td input:hover { border-color: var(--border); background: #fff; }
 table.data td input:focus { background: #fff; }
+table.data td.drag-handle { width: 26px; text-align: center; color: var(--text-dim); cursor: grab; user-select: none; }
+table.data td.drag-handle:active { cursor: grabbing; }
+table.data tr.dragging { opacity: 0.4; }
+table.data tr.drag-over td { box-shadow: inset 0 2px 0 var(--accent); }
 
 .modal-backdrop { position: fixed; inset: 0; background: rgba(10, 20, 30, 0.4); display: grid; place-items: center; z-index: 50; }
 .modal { background: var(--panel); border-radius: var(--radius); padding: 20px; min-width: 380px; max-width: 90vw; max-height: 85vh; overflow: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
