@@ -41,6 +41,8 @@ export interface AppState {
   classes: ClassInfo[];
   currentClass: string | null;
   view: View;
+  /** Distraction-free teaching layout: hides all chrome, shows only the seating view. */
+  focusMode: boolean;
   toast: string | null;
 
   behaviourCodes: BehaviourCode[];
@@ -60,6 +62,7 @@ export interface AppState {
   chooseDataDir(path: string): Promise<void>;
   pickAndSetDataDir(): Promise<void>;
   setView(view: View): void;
+  setFocusMode(on: boolean): void;
   showToast(message: string): void;
 
   createClass(info: ClassInfo): Promise<void>;
@@ -95,6 +98,7 @@ export const useApp = create<AppState>((set, get) => ({
   classes: [],
   currentClass: null,
   view: "roster",
+  focusMode: false,
   toast: null,
 
   behaviourCodes: [],
@@ -152,6 +156,10 @@ export const useApp = create<AppState>((set, get) => ({
 
   setView(view) {
     set({ view });
+  },
+
+  setFocusMode(on) {
+    set({ focusMode: on });
   },
 
   showToast(message) {

@@ -167,6 +167,12 @@ table.data td input:focus { background: #fff; }
 }
 .chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+/* ---------- teaching (focus) mode ---------- */
+.focus-shell { height: 100%; overflow: auto; background: var(--bg); padding: 10px 14px; display: flex; flex-direction: column; }
+.focus-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.focus-bar .spacer { flex: 1; }
+.focus-canvas-wrap { width: 100%; max-width: min(100%, 1100px); margin: 0 auto; }
+
 /* ---------- lesson view ---------- */
 .behaviour-popover {
   position: absolute; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
