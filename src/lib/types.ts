@@ -111,15 +111,12 @@ export interface SeatingPrefs {
   togetherPairs: Array<[string, string]>;
   /** Students that must sit in the front band of the room. */
   frontIds: string[];
-  /** Try to avoid same-gender desk mates where genders are known. */
-  alternateGender: boolean;
 }
 
 export const DEFAULT_SEATING_PREFS: SeatingPrefs = {
   apartPairs: [],
   togetherPairs: [],
   frontIds: [],
-  alternateGender: false,
 };
 
 /**
