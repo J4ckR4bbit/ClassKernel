@@ -167,6 +167,12 @@ table.data td input:focus { background: #fff; }
 }
 .chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+/* ---------- teaching (focus) mode ---------- */
+.focus-shell { height: 100%; overflow: auto; background: var(--bg); padding: 10px 14px; display: flex; flex-direction: column; }
+.focus-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.focus-bar .spacer { flex: 1; }
+.focus-canvas-wrap { width: 100%; max-width: min(100%, 1100px); margin: 0 auto; }
+
 /* ---------- lesson view ---------- */
 .behaviour-popover {
   position: absolute; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
@@ -181,6 +187,15 @@ table.data td input:focus { background: #fff; }
 .quick-mark-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
 .quick-mark-row.active { background: var(--accent-soft); }
 .quick-mark-row .name { width: 220px; }
+
+/* ---------- home ---------- */
+.home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.class-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.class-card-head h3 { margin: 0 0 2px; font-size: 17px; }
+.class-card-actions { display: flex; flex-direction: column; gap: 8px; }
+.class-card-actions button { width: 100%; padding: 9px 12px; font-size: 14px; }
+.class-card-open { align-self: flex-start; background: none; border: none; color: var(--accent); padding: 0; font-size: 13px; }
+.class-card-open:hover { text-decoration: underline; border: none; }
 
 /* ---------- settings ---------- */
 .settings-tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--border); margin-bottom: 16px; }

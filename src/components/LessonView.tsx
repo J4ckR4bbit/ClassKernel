@@ -3,7 +3,7 @@ import { useApp } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
 import { AttendanceStatus, LessonRecord, SEAT_COUNTS, studentName } from "../lib/types";
 import { eventsOnDate } from "../lib/stats";
-import RoomCanvas from "./RoomCanvas";
+import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
 
 const lessonKey = (className: string) => `organik.lessonStart.${className}`;
 
@@ -33,6 +33,8 @@ export default function LessonView() {
     showToast,
     setView,
     roomConfig,
+    focusMode,
+    setFocusMode,
   } = useApp();
   const planNames = useMemo(() => [...new Set(seating.map((s) => s.planName))].sort(), [seating]);
   const [plan, setPlan] = useState(planNames[0] ?? "Default");
@@ -132,12 +134,23 @@ export default function LessonView() {
   const positives = behaviourCodes.filter((c) => c.kind === "positive");
   const negatives = behaviourCodes.filter((c) => c.kind === "negative");
 
+  // In teaching mode the whole room scales to fit when no crop is set; otherwise
+  // it honours the class's view crop just like the normal live lesson.
+  const effectiveCrop = focusMode ? roomConfig.crop ?? { x: 0, y: 0, w: ROOM_W, h: ROOM_H } : roomConfig.crop;
+
   if (desks.length === 0 || planSeats.length === 0) {
     return (
       <div>
-        <div className="view-header">
-          <h1>{currentClass} — Live lesson</h1>
-        </div>
+        {focusMode ? (
+          <div className="focus-bar">
+            <button onClick={() => setFocusMode(false)}>✕ Exit teaching mode</button>
+            <span className="muted">Set up a room layout and seating plan to teach from.</span>
+          </div>
+        ) : (
+          <div className="view-header">
+            <h1>{currentClass} — Live lesson</h1>
+          </div>
+        )}
         <div className="panel">
           You need a room layout and a seating plan first.{" "}
           <button className="small" onClick={() => setView(desks.length === 0 ? "layout" : "seating")}>
@@ -150,30 +163,55 @@ export default function LessonView() {
 
   return (
     <div>
-      <div className="view-header">
-        <h1>{currentClass} — Live lesson</h1>
-        {planNames.length > 1 && (
-          <select value={activePlan} onChange={(e) => setPlan(e.target.value)}>
-            {planNames.map((n) => (
-              <option key={n}>{n}</option>
-            ))}
-          </select>
-        )}
-        <div className="spacer" />
-        <span className="muted">
-          {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson · tap a seat to record behaviour
-          or attendance
-        </span>
-        <button className="danger" onClick={() => void endLesson()} disabled={planSeats.length === 0}>
-          ⏹ End lesson
-        </button>
-      </div>
+      {focusMode ? (
+        <div className="focus-bar">
+          <button onClick={() => setFocusMode(false)} title="Back to the full app (or press Esc)">
+            ✕ Exit teaching mode
+          </button>
+          {planNames.length > 1 && (
+            <select value={activePlan} onChange={(e) => setPlan(e.target.value)}>
+              {planNames.map((n) => (
+                <option key={n}>{n}</option>
+              ))}
+            </select>
+          )}
+          <div className="spacer" />
+          <span className="muted">
+            {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson
+          </span>
+          <button className="danger" onClick={() => void endLesson()}>
+            ⏹ End lesson
+          </button>
+        </div>
+      ) : (
+        <div className="view-header">
+          <h1>{currentClass} — Live lesson</h1>
+          {planNames.length > 1 && (
+            <select value={activePlan} onChange={(e) => setPlan(e.target.value)}>
+              {planNames.map((n) => (
+                <option key={n}>{n}</option>
+              ))}
+            </select>
+          )}
+          <div className="spacer" />
+          <span className="muted">
+            {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson · tap a seat to record
+            behaviour or attendance
+          </span>
+          <button onClick={() => setFocusMode(true)} title="Distraction-free view for teaching, beside your notes">
+            ⛶ Teaching mode
+          </button>
+          <button className="danger" onClick={() => void endLesson()} disabled={planSeats.length === 0}>
+            ⏹ End lesson
+          </button>
+        </div>
+      )}
 
-      <div style={{ position: "relative" }}>
+      <div className={focusMode ? "focus-canvas-wrap" : ""} style={{ position: "relative" }}>
         <RoomCanvas
           desks={desks}
           frontEdge={roomConfig.frontEdge}
-          crop={roomConfig.crop}
+          crop={effectiveCrop}
           seatFontScale={roomConfig.seatFontScale}
           deskFontScale={roomConfig.deskFontScale}
           labelFontScale={roomConfig.labelFontScale}

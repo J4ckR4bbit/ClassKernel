@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useApp } from "./store/appStore";
 import Onboarding from "./components/Onboarding";
 import Sidebar from "./components/Sidebar";
+import HomeView from "./components/HomeView";
 import RosterView from "./components/RosterView";
 import AttendanceView from "./components/AttendanceView";
 import LayoutDesigner from "./components/LayoutDesigner";
@@ -14,14 +15,35 @@ import ClassNotesView from "./components/ClassNotesView";
 import SettingsView from "./components/SettingsView";
 
 export default function App() {
-  const { booted, dataDir, currentClass, view, toast, demoMode, boot } = useApp();
+  const { booted, dataDir, currentClass, view, toast, demoMode, focusMode, setFocusMode, boot } = useApp();
 
   useEffect(() => {
     void boot();
   }, [boot]);
 
+  // Escape always leaves the distraction-free teaching layout.
+  useEffect(() => {
+    if (!focusMode) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFocusMode(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [focusMode, setFocusMode]);
+
   if (!booted) return <div className="boot-screen">Loading…</div>;
   if (!dataDir) return <Onboarding />;
+
+  // Teaching mode: just the live-lesson seating view, no sidebar or chrome, so
+  // it can sit beside notes/slides. LessonView renders its own compact bar.
+  if (focusMode && currentClass) {
+    return (
+      <div className="focus-shell">
+        <LessonView />
+        {toast && <div className="toast">{toast}</div>}
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -32,13 +54,14 @@ export default function App() {
             Demo mode — running in a browser without the desktop backend; data lives in memory only.
           </div>
         )}
-        {!currentClass && view !== "settings" ? (
+        {!currentClass && view !== "settings" && view !== "home" ? (
           <div className="empty-state">
             <h2>No class selected</h2>
             <p>Create a class from the sidebar to get started.</p>
           </div>
         ) : (
           <>
+            {view === "home" && <HomeView />}
             {view === "roster" && <RosterView />}
             {view === "attendance" && <AttendanceView />}
             {view === "layout" && <LayoutDesigner />}

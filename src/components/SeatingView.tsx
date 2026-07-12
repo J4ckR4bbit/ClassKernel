@@ -8,7 +8,19 @@ const SHUFFLE_FRAMES = 12;
 const SHUFFLE_INTERVAL = 90;
 
 export default function SeatingView() {
-  const { currentClass, students, desks, seating, setSeating, seatingPrefs, showToast, setView, roomConfig } = useApp();
+  const {
+    currentClass,
+    students,
+    desks,
+    seating,
+    setSeating,
+    seatingPrefs,
+    showToast,
+    setView,
+    roomConfig,
+    pendingRandomise,
+    setPendingRandomise,
+  } = useApp();
   // Plans exist in seating.csv once they have a row; freshly created empty
   // plans are tracked locally until their first seat is placed.
   const [extraPlans, setExtraPlans] = useState<string[]>([]);
@@ -121,6 +133,16 @@ export default function SeatingView() {
       }
     }, SHUFFLE_INTERVAL);
   };
+
+  // Arriving from the Home "Randomise seating" button: run the animated reroll
+  // once the class's desks and students are loaded, then clear the request.
+  useEffect(() => {
+    if (pendingRandomise && desks.length > 0 && students.length > 0 && !isShuffling) {
+      setPendingRandomise(false);
+      randomise();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingRandomise, desks.length, students.length]);
 
   return (
     <div>
