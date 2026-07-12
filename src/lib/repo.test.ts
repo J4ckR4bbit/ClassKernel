@@ -142,18 +142,16 @@ describe("room.csv", () => {
 });
 
 describe("seating_prefs.csv", () => {
-  it("round-trips keep-apart, keep-together, front and gender rules", async () => {
+  it("round-trips keep-apart, keep-together and front rules", async () => {
     await repo.saveSeatingPrefs(DIR, CLS, {
       apartPairs: [["s1", "s2"]],
       togetherPairs: [["s3", "s4"]],
       frontIds: ["s5", "s6"],
-      alternateGender: true,
     });
     const loaded = await repo.loadSeatingPrefs(DIR, CLS);
     expect(loaded.apartPairs).toEqual([["s1", "s2"]]);
     expect(loaded.togetherPairs).toEqual([["s3", "s4"]]);
     expect(loaded.frontIds).toEqual(["s5", "s6"]);
-    expect(loaded.alternateGender).toBe(true);
   });
 
   it("defaults to empty rules when missing", async () => {
@@ -161,7 +159,6 @@ describe("seating_prefs.csv", () => {
       apartPairs: [],
       togetherPairs: [],
       frontIds: [],
-      alternateGender: false,
     });
   });
 });

@@ -74,8 +74,6 @@ export interface RandomSeatingOptions {
   togetherPairs: Array<[string, string]>;
   /** Students that must sit in the front band of the room. */
   frontIds: string[];
-  /** Try to avoid same-gender desk mates where genders are known. */
-  alternateGender: boolean;
   /** Which canvas edge is the front of the room. Default "top". */
   frontEdge?: FrontEdge;
   /** Two seats closer than this (room units) count as "next to each other". */
@@ -131,23 +129,6 @@ function violationsOf(
     for (const id of opts.frontIds) {
       const pos = posOf.get(id);
       if (pos && frontness(pos.x, pos.y, edge) > frontLimit) out.push(`${nameOf(id)} is not in the front of the room`);
-    }
-  }
-  if (opts.alternateGender) {
-    const byId = new Map(students.map((s) => [s.id, s]));
-    const byDesk = new Map<string, Placement[]>();
-    for (const p of placements) {
-      const list = byDesk.get(p.slot.deskId) ?? [];
-      list.push(p);
-      byDesk.set(p.slot.deskId, list);
-    }
-    for (const [, mates] of byDesk) {
-      const genders = mates
-        .map((m) => byId.get(m.studentId)?.gender.trim().toUpperCase())
-        .filter((g): g is string => !!g);
-      if (genders.length >= 2 && new Set(genders).size === 1) {
-        out.push(`Desk with ${mates.map((m) => nameOf(m.studentId)).join(", ")} is single-gender`);
-      }
     }
   }
   return out;

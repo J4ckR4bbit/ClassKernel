@@ -99,7 +99,6 @@ export async function seedDemoData(): Promise<string> {
     apartPairs: [],
     togetherPairs: [],
     frontIds: [students[3].id],
-    alternateGender: false,
   });
 
   // A few weeks of ended lessons so the seating insights have something to

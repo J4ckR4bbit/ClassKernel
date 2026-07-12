@@ -65,7 +65,6 @@ describe("assignRandomSeats", () => {
       apartPairs: [],
       togetherPairs: [],
       frontIds: [],
-      alternateGender: false,
     }, 100, mulberry32(1));
     expect(result.assignments).toHaveLength(8);
     expect(new Set(result.assignments.map((a) => a.studentId)).size).toBe(8);
@@ -78,7 +77,6 @@ describe("assignRandomSeats", () => {
       apartPairs: [["s0", "s1"]],
       togetherPairs: [],
       frontIds: [],
-      alternateGender: false,
     }, 400, mulberry32(2));
     expect(result.violations).toEqual([]);
     const deskOf = (id: string) => result.assignments.find((a) => a.studentId === id)?.deskId;
@@ -91,7 +89,6 @@ describe("assignRandomSeats", () => {
       apartPairs: [],
       togetherPairs: [["s2", "s3"]],
       frontIds: [],
-      alternateGender: false,
     }, 400, mulberry32(3));
     expect(result.violations).toEqual([]);
     const deskOf = (id: string) => result.assignments.find((a) => a.studentId === id)?.deskId;
@@ -104,23 +101,11 @@ describe("assignRandomSeats", () => {
       apartPairs: [],
       togetherPairs: [],
       frontIds: ["s7"],
-      alternateGender: false,
     }, 400, mulberry32(4));
     expect(result.violations).toEqual([]);
     const a = result.assignments.find((a) => a.studentId === "s7")!;
     // Front row desks are d1/d2 (y=0).
     expect(["d1", "d2"]).toContain(a.deskId);
-  });
-
-  it("mixes genders on desks when asked and possible", () => {
-    const students = Array.from({ length: 8 }, (_, i) => mkStudent(`s${i}`, i % 2 ? "M" : "F"));
-    const result = assignRandomSeats(students, desks, "P", {
-      apartPairs: [],
-      togetherPairs: [],
-      frontIds: [],
-      alternateGender: true,
-    }, 800, mulberry32(5));
-    expect(result.violations).toEqual([]);
   });
 
   it("reports violations instead of failing when constraints are impossible", () => {
@@ -130,7 +115,6 @@ describe("assignRandomSeats", () => {
       apartPairs: [["s0", "s1"]],
       togetherPairs: [],
       frontIds: [],
-      alternateGender: false,
     }, 50, mulberry32(6));
     expect(result.assignments).toHaveLength(2);
     expect(result.violations.length).toBeGreaterThan(0);
@@ -152,7 +136,6 @@ describe("assignRandomSeats", () => {
       apartPairs: [],
       togetherPairs: [],
       frontIds: [],
-      alternateGender: false,
     }, 50, mulberry32(8));
     expect(result.assignments).toHaveLength(17);
     const perDesk = new Map<string, number>();
@@ -173,7 +156,6 @@ describe("assignRandomSeats", () => {
       apartPairs: [],
       togetherPairs: [],
       frontIds: ["s4"],
-      alternateGender: false,
       frontEdge: "left",
     }, 400, mulberry32(9));
     expect(result.violations).toEqual([]);
@@ -199,7 +181,6 @@ describe("assignRandomSeats", () => {
       apartPairs: [],
       togetherPairs: [],
       frontIds: [],
-      alternateGender: false,
     }, 50, mulberry32(7));
     expect(result.assignments).toHaveLength(8);
   });

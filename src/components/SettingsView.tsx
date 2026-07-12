@@ -66,9 +66,26 @@ export default function SettingsView() {
 
 function GeneralSettings() {
   const { behaviourCodes, setBehaviourCodes, dataDir, classes } = useApp();
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   const update = (code: string, patch: Partial<BehaviourCode>) => {
     void setBehaviourCodes(behaviourCodes.map((c) => (c.code === code ? { ...c, ...patch } : c)));
+  };
+
+  // Reorder by drag: the array order is the button order everywhere (and how
+  // it's written to behaviours.csv), so moving a row persists immediately.
+  const move = (from: number, to: number) => {
+    if (from === to || from < 0 || to < 0) return;
+    const next = [...behaviourCodes];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    void setBehaviourCodes(next);
+  };
+
+  const endDrag = () => {
+    setDragIndex(null);
+    setOverIndex(null);
   };
 
   const add = (kind: "positive" | "negative") => {
@@ -91,11 +108,12 @@ function GeneralSettings() {
         <h3>Behaviour buttons</h3>
         <p className="muted">
           These are the buttons shown on the seating plan during a lesson. Shared across all your classes (stored in{" "}
-          <code>behaviours.csv</code>).
+          <code>behaviours.csv</code>). Drag the <span aria-hidden>⠿</span> handle to reorder them.
         </p>
         <table className="data">
           <thead>
             <tr>
+              <th style={{ width: 26 }}></th>
               <th style={{ width: 90 }}>Code</th>
               <th>Label</th>
               <th style={{ width: 110 }}>Type</th>
@@ -105,8 +123,31 @@ function GeneralSettings() {
             </tr>
           </thead>
           <tbody>
-            {behaviourCodes.map((c) => (
-              <tr key={c.code}>
+            {behaviourCodes.map((c, i) => (
+              <tr
+                key={c.code}
+                className={`${dragIndex === i ? "dragging" : ""} ${overIndex === i && dragIndex !== i ? "drag-over" : ""}`}
+                onDragOver={(e) => {
+                  if (dragIndex === null) return;
+                  e.preventDefault();
+                  setOverIndex(i);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragIndex !== null) move(dragIndex, i);
+                  endDrag();
+                }}
+              >
+                <td
+                  className="drag-handle"
+                  draggable
+                  onDragStart={() => setDragIndex(i)}
+                  onDragEnd={endDrag}
+                  title="Drag to reorder"
+                  aria-label="Drag to reorder"
+                >
+                  ⠿
+                </td>
                 <td>
                   <b>{c.code}</b>
                 </td>
@@ -296,15 +337,6 @@ function SeatingPrefsEditor({
           </span>
         ))}
       </div>
-
-      <label className="row">
-        <input
-          type="checkbox"
-          checked={prefs.alternateGender}
-          onChange={(e) => onChange({ ...prefs, alternateGender: e.target.checked })}
-        />
-        Avoid single-gender desks (where gender is recorded)
-      </label>
     </div>
   );
 }

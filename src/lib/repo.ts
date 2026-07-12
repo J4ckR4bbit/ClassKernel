@@ -343,7 +343,7 @@ export async function saveSeating(dataDir: string, className: string, seats: Sea
 
 // ---------- random-seating preferences (per class) ----------
 // Stored as a tall type/a/b table so it opens cleanly in Excel:
-//   apart,<idA>,<idB>   together,<idA>,<idB>   front,<id>,   alt,true,
+//   apart,<idA>,<idB>   together,<idA>,<idB>   front,<id>,
 
 const SEATING_PREFS_COLS = ["type", "a", "b"];
 
@@ -354,14 +354,12 @@ export async function loadSeatingPrefs(dataDir: string, className: string): Prom
     if (r.type === "apart" && r.a && r.b) prefs.apartPairs.push([r.a, r.b]);
     else if (r.type === "together" && r.a && r.b) prefs.togetherPairs.push([r.a, r.b]);
     else if (r.type === "front" && r.a) prefs.frontIds.push(r.a);
-    else if (r.type === "alt") prefs.alternateGender = r.a === "true";
   }
   return prefs;
 }
 
 export async function saveSeatingPrefs(dataDir: string, className: string, prefs: SeatingPrefs): Promise<void> {
   const rows: Array<{ type: string; a: string; b: string }> = [
-    { type: "alt", a: String(prefs.alternateGender), b: "" },
     ...prefs.apartPairs.map(([a, b]) => ({ type: "apart", a, b })),
     ...prefs.togetherPairs.map(([a, b]) => ({ type: "together", a, b })),
     ...prefs.frontIds.map((a) => ({ type: "front", a, b: "" })),
