@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useApp } from "./store/appStore";
 import Onboarding from "./components/Onboarding";
 import Sidebar from "./components/Sidebar";
+import HomeView from "./components/HomeView";
 import RosterView from "./components/RosterView";
 import AttendanceView from "./components/AttendanceView";
 import LayoutDesigner from "./components/LayoutDesigner";
@@ -53,13 +54,14 @@ export default function App() {
             Demo mode — running in a browser without the desktop backend; data lives in memory only.
           </div>
         )}
-        {!currentClass && view !== "settings" ? (
+        {!currentClass && view !== "settings" && view !== "home" ? (
           <div className="empty-state">
             <h2>No class selected</h2>
             <p>Create a class from the sidebar to get started.</p>
           </div>
         ) : (
           <>
+            {view === "home" && <HomeView />}
             {view === "roster" && <RosterView />}
             {view === "attendance" && <AttendanceView />}
             {view === "layout" && <LayoutDesigner />}

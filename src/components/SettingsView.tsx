@@ -1,12 +1,23 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
 import { BehaviourCode, SeatingPrefs, Student, studentName } from "../lib/types";
+import RosterView from "./RosterView";
+import LayoutDesigner from "./LayoutDesigner";
+
+type SettingsTab = "general" | "students" | "layout" | "seating";
+
+const TABS: Array<{ id: SettingsTab; label: string; perClass: boolean }> = [
+  { id: "general", label: "General", perClass: false },
+  { id: "students", label: "Students", perClass: true },
+  { id: "layout", label: "Room layout", perClass: true },
+  { id: "seating", label: "Seating rules", perClass: true },
+];
 
 export default function SettingsView() {
-  const { classes, currentClass } = useApp();
+  const { classes, currentClass, openClass } = useApp();
   const active = useMemo(() => classes.filter((c) => !c.archived), [classes]);
-  // Default to the open class's seating tab; behaviour/data live under "General".
-  const [tab, setTab] = useState<string>(currentClass ?? "general");
+  const [tab, setTab] = useState<SettingsTab>("general");
+  const perClass = TABS.find((t) => t.id === tab)?.perClass;
 
   return (
     <div>
@@ -15,21 +26,40 @@ export default function SettingsView() {
       </div>
 
       <div className="settings-tabs">
-        <button className={`settings-tab ${tab === "general" ? "active" : ""}`} onClick={() => setTab("general")}>
-          General
-        </button>
-        {active.map((c) => (
-          <button
-            key={c.name}
-            className={`settings-tab ${tab === c.name ? "active" : ""}`}
-            onClick={() => setTab(c.name)}
-          >
-            🎲 {c.name}
+        {TABS.map((t) => (
+          <button key={t.id} className={`settings-tab ${tab === t.id ? "active" : ""}`} onClick={() => setTab(t.id)}>
+            {t.label}
           </button>
         ))}
       </div>
 
-      {tab === "general" ? <GeneralSettings /> : <ClassSeatingSettings className={tab} />}
+      {perClass && active.length > 0 && (
+        <div className="row" style={{ marginBottom: 12 }}>
+          <span className="muted">Editing class:</span>
+          <select value={currentClass ?? ""} onChange={(e) => void openClass(e.target.value)}>
+            {!currentClass && <option value="">— pick a class —</option>}
+            {active.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {tab === "general" && <GeneralSettings />}
+      {tab !== "general" &&
+        (active.length === 0 ? (
+          <div className="panel muted">Create a class first, then set it up here.</div>
+        ) : !currentClass ? (
+          <div className="panel muted">Pick a class above to edit its {TABS.find((t) => t.id === tab)?.label.toLowerCase()}.</div>
+        ) : tab === "students" ? (
+          <RosterView />
+        ) : tab === "layout" ? (
+          <LayoutDesigner />
+        ) : (
+          <ClassSeatingSettings />
+        ))}
     </div>
   );
 }
@@ -147,22 +177,8 @@ function GeneralSettings() {
  * seating plan) so the constraints stay out of sight of the class — students
  * only ever see the "Randomise" button reroll.
  */
-function ClassSeatingSettings({ className }: { className: string }) {
-  const { currentClass, openClass, students, seatingPrefs, setSeatingPrefs } = useApp();
-
-  // The store only holds one class's data at a time, so make sure this class is
-  // the open one before we read/edit its students and preferences.
-  if (currentClass !== className) {
-    return (
-      <div className="panel">
-        <p className="muted">Load this class to edit its seating rules.</p>
-        <button className="primary" onClick={() => void openClass(className)}>
-          Open {className}
-        </button>
-      </div>
-    );
-  }
-
+function ClassSeatingSettings() {
+  const { students, seatingPrefs, setSeatingPrefs } = useApp();
   return <SeatingPrefsEditor students={students} prefs={seatingPrefs} onChange={setSeatingPrefs} />;
 }
 

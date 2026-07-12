@@ -21,6 +21,7 @@ import {
 } from "../lib/types";
 
 export type View =
+  | "home"
   | "roster"
   | "attendance"
   | "layout"
@@ -43,6 +44,8 @@ export interface AppState {
   view: View;
   /** Distraction-free teaching layout: hides all chrome, shows only the seating view. */
   focusMode: boolean;
+  /** Set by Home to ask the Seating view to auto-run an animated reroll on arrival. */
+  pendingRandomise: boolean;
   toast: string | null;
 
   behaviourCodes: BehaviourCode[];
@@ -63,6 +66,7 @@ export interface AppState {
   pickAndSetDataDir(): Promise<void>;
   setView(view: View): void;
   setFocusMode(on: boolean): void;
+  setPendingRandomise(on: boolean): void;
   showToast(message: string): void;
 
   createClass(info: ClassInfo): Promise<void>;
@@ -97,8 +101,9 @@ export const useApp = create<AppState>((set, get) => ({
   dataDir: null,
   classes: [],
   currentClass: null,
-  view: "roster",
+  view: "home",
   focusMode: false,
+  pendingRandomise: false,
   toast: null,
 
   behaviourCodes: [],
@@ -160,6 +165,10 @@ export const useApp = create<AppState>((set, get) => ({
 
   setFocusMode(on) {
     set({ focusMode: on });
+  },
+
+  setPendingRandomise(on) {
+    set({ pendingRandomise: on });
   },
 
   showToast(message) {
