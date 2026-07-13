@@ -4,18 +4,23 @@ import {
   atRiskStudents,
   attendanceSummary,
   behaviourByStudent,
+  gridCompletion,
   histogram,
   overallPercent,
+  questionAverages,
+  rankStudents,
+  studentProvisional,
 } from "./stats";
-import { Assessment, AttendanceEntry, Mark, Student } from "./types";
+import { Assessment, AssessmentQuestion, AttendanceEntry, Mark, QuestionMark, Student } from "./types";
 
-const mkAssessment = (id: string, total: number, weight = 1, date = "2026-01-01"): Assessment => ({
+const mkAssessment = (id: string, total: number, date = "2026-01-01"): Assessment => ({
   id,
   title: id,
   date,
   totalMarks: total,
-  weight,
   category: "Test",
+  questionCount: 1,
+  contentArea: "",
 });
 
 describe("attendanceSummary", () => {
@@ -80,13 +85,13 @@ describe("histogram", () => {
 });
 
 describe("overallPercent", () => {
-  it("weights assessments by their weight", () => {
-    const assessments = [mkAssessment("a1", 100, 1), mkAssessment("a2", 100, 3)];
+  it("averages assessment percentages equally", () => {
+    const assessments = [mkAssessment("a1", 100), mkAssessment("a2", 50)];
     const marks: Mark[] = [
-      { assessmentId: "a1", studentId: "s1", mark: 100, comment: "" }, // 100% * w1
-      { assessmentId: "a2", studentId: "s1", mark: 60, comment: "" }, // 60% * w3
+      { assessmentId: "a1", studentId: "s1", mark: 100, comment: "" }, // 100%
+      { assessmentId: "a2", studentId: "s1", mark: 30, comment: "" }, // 60%
     ];
-    expect(overallPercent("s1", assessments, marks)).toBeCloseTo((100 + 180) / 4);
+    expect(overallPercent("s1", assessments, marks)).toBeCloseTo(80);
   });
 
   it("returns null with no marks", () => {
@@ -102,9 +107,9 @@ describe("atRiskStudents", () => {
 
   it("flags a sudden drop against the student's own average", () => {
     const assessments = [
-      mkAssessment("a1", 100, 1, "2026-01-01"),
-      mkAssessment("a2", 100, 1, "2026-02-01"),
-      mkAssessment("a3", 100, 1, "2026-03-01"),
+      mkAssessment("a1", 100, "2026-01-01"),
+      mkAssessment("a2", 100, "2026-02-01"),
+      mkAssessment("a3", 100, "2026-03-01"),
     ];
     const marks: Mark[] = [
       { assessmentId: "a1", studentId: "s1", mark: 80, comment: "" },
@@ -121,9 +126,9 @@ describe("atRiskStudents", () => {
 
   it("flags three declining results in a row", () => {
     const assessments = [
-      mkAssessment("a1", 100, 1, "2026-01-01"),
-      mkAssessment("a2", 100, 1, "2026-02-01"),
-      mkAssessment("a3", 100, 1, "2026-03-01"),
+      mkAssessment("a1", 100, "2026-01-01"),
+      mkAssessment("a2", 100, "2026-02-01"),
+      mkAssessment("a3", 100, "2026-03-01"),
     ];
     const marks: Mark[] = [
       { assessmentId: "a1", studentId: "s1", mark: 80, comment: "" },
@@ -136,5 +141,67 @@ describe("atRiskStudents", () => {
     const flags = atRiskStudents(students, assessments, marks);
     expect(flags.some((f) => f.studentId === "s1")).toBe(true);
     expect(flags.some((f) => f.studentId === "s2")).toBe(false);
+  });
+});
+
+describe("per-question grid helpers", () => {
+  const questions: AssessmentQuestion[] = [
+    { assessmentId: "a1", number: 1, topic: "Kinematics", marks: 10, cognitiveLevel: "L1" },
+    { assessmentId: "a1", number: 2, topic: "Kinematics", marks: 20, cognitiveLevel: "L2" },
+  ];
+  // s1 = 8 + 10 = 18/30; s2 = 6 + 18 = 24/30; s3 = only Q1 (5/10); s4 = nothing.
+  const qmarks: QuestionMark[] = [
+    { assessmentId: "a1", studentId: "s1", number: 1, mark: 8 },
+    { assessmentId: "a1", studentId: "s1", number: 2, mark: 10 },
+    { assessmentId: "a1", studentId: "s2", number: 1, mark: 6 },
+    { assessmentId: "a1", studentId: "s2", number: 2, mark: 18 },
+    { assessmentId: "a1", studentId: "s3", number: 1, mark: 5 },
+    { assessmentId: "a1", studentId: "s3", number: 2, mark: null },
+  ];
+  const ids = ["s1", "s2", "s3", "s4"];
+
+  it("questionAverages gives mean mark and % per question", () => {
+    const avg = questionAverages(questions, qmarks);
+    expect(avg[0]).toMatchObject({ number: 1, entered: 3 });
+    expect(avg[0].meanMark).toBeCloseTo((8 + 6 + 5) / 3);
+    expect(avg[0].meanPct).toBeCloseTo(((8 + 6 + 5) / 3 / 10) * 100);
+    expect(avg[1]).toMatchObject({ number: 2, entered: 2 });
+    expect(avg[1].meanMark).toBeCloseTo((10 + 18) / 2);
+  });
+
+  it("studentProvisional uses only answered questions", () => {
+    expect(studentProvisional("s2", questions, qmarks)).toMatchObject({ total: 24, maxSoFar: 30, answered: 2 });
+    // s3 answered only Q1 → 5/10 = 50%.
+    const p3 = studentProvisional("s3", questions, qmarks);
+    expect(p3).toMatchObject({ total: 5, maxSoFar: 10, answered: 1 });
+    expect(p3.pct).toBeCloseTo(50);
+    // s4 answered nothing.
+    expect(studentProvisional("s4", questions, qmarks)).toMatchObject({ total: 0, maxSoFar: 0, answered: 0, pct: null });
+  });
+
+  it("rankStudents ranks by total, excludes non-starters, averages ties", () => {
+    const ranks = rankStudents(ids, questions, qmarks);
+    expect(ranks.get("s2")).toBe(1); // 24, highest
+    expect(ranks.get("s1")).toBe(2); // 18
+    expect(ranks.get("s3")).toBe(3); // 5
+    expect(ranks.has("s4")).toBe(false); // no marks → unranked
+  });
+
+  it("rankStudents averages tied totals", () => {
+    const tied: QuestionMark[] = [
+      { assessmentId: "a1", studentId: "s1", number: 1, mark: 10 },
+      { assessmentId: "a1", studentId: "s2", number: 1, mark: 10 },
+      { assessmentId: "a1", studentId: "s3", number: 1, mark: 4 },
+    ];
+    const ranks = rankStudents(["s1", "s2", "s3"], questions, tied);
+    expect(ranks.get("s1")).toBe(1.5); // tied for 1st/2nd
+    expect(ranks.get("s2")).toBe(1.5);
+    expect(ranks.get("s3")).toBe(3);
+  });
+
+  it("gridCompletion is filled cells over total cells", () => {
+    // 4 students × 2 questions = 8 cells; filled = 5 (s1×2, s2×2, s3×1).
+    expect(gridCompletion(ids, questions, qmarks)).toBeCloseTo(5 / 8);
+    expect(gridCompletion([], questions, qmarks)).toBe(1);
   });
 });

@@ -145,8 +145,11 @@ export interface Assessment {
   title: string;
   date: string; // YYYY-MM-DD
   totalMarks: number;
-  weight: number;
   category: string;
+  /** How many questions the test breaks into. 1 = a single overall mark. */
+  questionCount: number;
+  /** Content area the whole test sits in (e.g. "Chemistry"). "" = mixed/none. */
+  contentArea: string;
 }
 
 export interface Mark {
@@ -155,6 +158,68 @@ export interface Mark {
   mark: number | null; // null = not entered / absent
   comment: string;
 }
+
+/**
+ * One question within a multi-question assessment. Questions are numbered from
+ * 1; a student's total for the assessment is the sum of their per-question
+ * marks (mirrored into marks.csv so the dashboard keeps working unchanged).
+ */
+export interface AssessmentQuestion {
+  assessmentId: string;
+  number: number; // 1-based
+  /** Subtopic name from the topic bank (or free text). */
+  topic: string;
+  marks: number; // out of
+  /** Cognitive-level code, e.g. "L1" (see CognitiveLevel). */
+  cognitiveLevel: string;
+}
+
+/** A single student's mark on a single question. null = not entered / absent. */
+export interface QuestionMark {
+  assessmentId: string;
+  studentId: string;
+  number: number; // question number
+  mark: number | null;
+}
+
+/**
+ * One assessable subtopic in the app-wide topic bank, keyed by grade. Content
+ * areas (e.g. Chemistry) group subtopics (e.g. Acids & Bases). An area with no
+ * subtopics yet is represented by a row with an empty `subtopic`.
+ */
+export interface TopicEntry {
+  grade: string; // matches ClassInfo.year
+  area: string; // content area, e.g. "Chemistry"
+  subtopic: string; // "" = area placeholder (no subtopics yet)
+  /** Optional short label shown in the marking grid, e.g. "pJWEP". */
+  short: string;
+}
+
+/** Default content areas used to scaffold a grade the first time it's edited. */
+export const DEFAULT_TOPIC_AREAS = ["Chemistry", "Physics", "Science Skills"];
+
+/** A cognitive level a question can be tagged with (app-wide, editable). */
+export interface CognitiveLevel {
+  code: string;
+  label: string;
+}
+
+export const DEFAULT_COGNITIVE_LEVELS: CognitiveLevel[] = [
+  { code: "L1", label: "Recall" },
+  { code: "L2", label: "Comprehension" },
+  { code: "L3", label: "Analysis / Application" },
+  { code: "L4", label: "Evaluation / Synthesis" },
+];
+
+/** App-wide user preferences (settings.csv). */
+export interface UserPrefs {
+  /** In the marking grid, which direction Enter moves. Tab does the opposite. */
+  markGridEnter: "across" | "down";
+}
+
+export const DEFAULT_USER_PREFS: UserPrefs = {
+  markGridEnter: "across",
+};
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {
   single: 1,

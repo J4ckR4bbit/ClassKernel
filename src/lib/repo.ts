@@ -11,8 +11,11 @@
 //   classes/<class>/seating.csv           plan_name,desk_id,seat_index,student_id
 //   classes/<class>/seating_prefs.csv     type,a,b   (random-seating constraints)
 //   classes/<class>/lessons.csv           session_id,date,timestamp,student_id,desk_id,desk_label,seatmates,points,positives,negatives
-//   classes/<class>/assessments.csv       assessment_id,title,date,total_marks,weight,category
+//   classes/<class>/assessments.csv       assessment_id,title,date,total_marks,category,question_count,content_area
+//   classes/<class>/assessment_questions.csv  assessment_id,q_number,topic,marks,cognitive_level
+//   classes/<class>/question_marks.csv    assessment_id,student_id,q_number,mark
 //   classes/<class>/marks.csv             assessment_id,student_id,mark,comment
+//   behaviours.csv, topics.csv, cognitive_levels.csv, settings.csv   app-wide (root)
 //   layouts/<name>/desks.csv + room.csv   reusable room templates
 //   backups/<stamp>/...                   rolling snapshots
 
@@ -20,12 +23,15 @@ import { getFS } from "./fs";
 import { parseCsv, stringifyCsv, num, numOrNull } from "./csv";
 import {
   Assessment,
+  AssessmentQuestion,
   AttendanceEntry,
   AttendanceStatus,
   BehaviourCode,
   BehaviourEvent,
   ClassInfo,
+  CognitiveLevel,
   DEFAULT_BEHAVIOURS,
+  DEFAULT_COGNITIVE_LEVELS,
   DEFAULT_ROOM_CONFIG,
   DEFAULT_SEATING_PREFS,
   Desk,
@@ -33,10 +39,13 @@ import {
   FrontEdge,
   LessonRecord,
   Mark,
+  QuestionMark,
   RoomConfig,
   SeatAssignment,
   SeatingPrefs,
   Student,
+  TopicEntry,
+  UserPrefs,
 } from "./types";
 
 export const BACKUPS_TO_KEEP = 14;
@@ -52,6 +61,9 @@ export async function ensureDataDir(dataDir: string): Promise<void> {
   await fs.mkdirs(p(dataDir, "backups"));
   if (!(await fs.exists(p(dataDir, "behaviours.csv")))) {
     await saveBehaviourCodes(dataDir, DEFAULT_BEHAVIOURS);
+  }
+  if (!(await fs.exists(p(dataDir, "cognitive_levels.csv")))) {
+    await saveCognitiveLevels(dataDir, DEFAULT_COGNITIVE_LEVELS);
   }
 }
 
@@ -507,7 +519,7 @@ export async function deleteLayoutTemplate(dataDir: string, name: string): Promi
 
 // ---------- assessments + marks ----------
 
-const ASSESSMENT_COLS = ["assessment_id", "title", "date", "total_marks", "weight", "category"];
+const ASSESSMENT_COLS = ["assessment_id", "title", "date", "total_marks", "category", "question_count", "content_area"];
 
 export async function loadAssessments(dataDir: string, className: string): Promise<Assessment[]> {
   const rows = await loadCsvFile(p(classDir(dataDir, className), "assessments.csv"));
@@ -518,8 +530,9 @@ export async function loadAssessments(dataDir: string, className: string): Promi
       title: r.title ?? "",
       date: r.date ?? "",
       totalMarks: num(r.total_marks, 100),
-      weight: num(r.weight, 1),
       category: r.category ?? "",
+      questionCount: Math.max(1, num(r.question_count, 1)),
+      contentArea: r.content_area ?? "",
     }));
 }
 
@@ -529,10 +542,70 @@ export async function saveAssessments(dataDir: string, className: string, assess
     title: a.title,
     date: a.date,
     total_marks: a.totalMarks,
-    weight: a.weight,
     category: a.category,
+    question_count: a.questionCount,
+    content_area: a.contentArea,
   }));
   await getFS().writeAtomic(p(classDir(dataDir, className), "assessments.csv"), stringifyCsv(rows, ASSESSMENT_COLS));
+}
+
+// ---------- assessment questions + per-question marks (per class) ----------
+
+const QUESTION_COLS = ["assessment_id", "q_number", "topic", "marks", "cognitive_level"];
+
+export async function loadAssessmentQuestions(dataDir: string, className: string): Promise<AssessmentQuestion[]> {
+  const rows = await loadCsvFile(p(classDir(dataDir, className), "assessment_questions.csv"));
+  return rows
+    .filter((r) => r.assessment_id && r.q_number)
+    .map((r) => ({
+      assessmentId: r.assessment_id,
+      number: num(r.q_number),
+      topic: r.topic ?? "",
+      marks: num(r.marks),
+      cognitiveLevel: r.cognitive_level ?? "",
+    }));
+}
+
+export async function saveAssessmentQuestions(
+  dataDir: string,
+  className: string,
+  questions: AssessmentQuestion[],
+): Promise<void> {
+  const rows = questions.map((q) => ({
+    assessment_id: q.assessmentId,
+    q_number: q.number,
+    topic: q.topic,
+    marks: q.marks,
+    cognitive_level: q.cognitiveLevel,
+  }));
+  await getFS().writeAtomic(
+    p(classDir(dataDir, className), "assessment_questions.csv"),
+    stringifyCsv(rows, QUESTION_COLS),
+  );
+}
+
+const QUESTION_MARK_COLS = ["assessment_id", "student_id", "q_number", "mark"];
+
+export async function loadQuestionMarks(dataDir: string, className: string): Promise<QuestionMark[]> {
+  const rows = await loadCsvFile(p(classDir(dataDir, className), "question_marks.csv"));
+  return rows
+    .filter((r) => r.assessment_id && r.student_id && r.q_number)
+    .map((r) => ({
+      assessmentId: r.assessment_id,
+      studentId: r.student_id,
+      number: num(r.q_number),
+      mark: numOrNull(r.mark),
+    }));
+}
+
+export async function saveQuestionMarks(dataDir: string, className: string, marks: QuestionMark[]): Promise<void> {
+  const rows = marks.map((m) => ({
+    assessment_id: m.assessmentId,
+    student_id: m.studentId,
+    q_number: m.number,
+    mark: m.mark === null ? "" : m.mark,
+  }));
+  await getFS().writeAtomic(p(classDir(dataDir, className), "question_marks.csv"), stringifyCsv(rows, QUESTION_MARK_COLS));
 }
 
 const MARK_COLS = ["assessment_id", "student_id", "mark", "comment"];
@@ -557,4 +630,60 @@ export async function saveMarks(dataDir: string, className: string, marks: Mark[
     comment: m.comment,
   }));
   await getFS().writeAtomic(p(classDir(dataDir, className), "marks.csv"), stringifyCsv(rows, MARK_COLS));
+}
+
+// ---------- assessable topic bank (app-wide, keyed by grade) ----------
+// Tall grade/area/subtopic/short table so it opens cleanly in Excel. An area
+// with no subtopics yet is kept alive by a row with an empty subtopic.
+
+const TOPIC_COLS = ["grade", "area", "subtopic", "short"];
+
+export async function loadTopics(dataDir: string): Promise<TopicEntry[]> {
+  const rows = await loadCsvFile(p(dataDir, "topics.csv"));
+  return rows
+    .filter((r) => r.grade && r.area)
+    .map((r) => ({
+      grade: r.grade,
+      area: r.area,
+      subtopic: r.subtopic ?? "",
+      short: r.short ?? "",
+    }));
+}
+
+export async function saveTopics(dataDir: string, topics: TopicEntry[]): Promise<void> {
+  const rows = topics.map((t) => ({ grade: t.grade, area: t.area, subtopic: t.subtopic, short: t.short }));
+  await getFS().writeAtomic(p(dataDir, "topics.csv"), stringifyCsv(rows, TOPIC_COLS));
+}
+
+// ---------- cognitive levels (app-wide, editable) ----------
+
+const COGNITIVE_LEVEL_COLS = ["code", "label"];
+
+export async function loadCognitiveLevels(dataDir: string): Promise<CognitiveLevel[]> {
+  const rows = await loadCsvFile(p(dataDir, "cognitive_levels.csv"));
+  const levels = rows.filter((r) => r.code).map((r) => ({ code: r.code, label: r.label ?? r.code }));
+  return levels.length ? levels : DEFAULT_COGNITIVE_LEVELS;
+}
+
+export async function saveCognitiveLevels(dataDir: string, levels: CognitiveLevel[]): Promise<void> {
+  const rows = levels.map((l) => ({ code: l.code, label: l.label }));
+  await getFS().writeAtomic(p(dataDir, "cognitive_levels.csv"), stringifyCsv(rows, COGNITIVE_LEVEL_COLS));
+}
+
+// ---------- app-wide user preferences (settings.csv: key,value) ----------
+
+const SETTINGS_COLS = ["key", "value"];
+
+export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
+  const rows = await loadCsvFile(p(dataDir, "settings.csv"));
+  const kv = new Map(rows.map((r) => [r.key, r.value ?? ""]));
+  const enter = kv.get("mark_entry_enter");
+  return {
+    markGridEnter: enter === "down" ? "down" : "across",
+  };
+}
+
+export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<void> {
+  const rows: Array<{ key: string; value: string }> = [{ key: "mark_entry_enter", value: prefs.markGridEnter }];
+  await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
 }

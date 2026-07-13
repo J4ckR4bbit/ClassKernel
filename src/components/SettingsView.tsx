@@ -1,16 +1,18 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
-import { BehaviourCode, SeatingPrefs, Student, studentName } from "../lib/types";
+import { BehaviourCode, CognitiveLevel, DEFAULT_TOPIC_AREAS, SeatingPrefs, Student, TopicEntry, studentName } from "../lib/types";
+import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
 import RosterView from "./RosterView";
 import LayoutDesigner from "./LayoutDesigner";
 
-type SettingsTab = "general" | "students" | "layout" | "seating";
+type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments";
 
 const TABS: Array<{ id: SettingsTab; label: string; perClass: boolean }> = [
   { id: "general", label: "General", perClass: false },
   { id: "students", label: "Students", perClass: true },
   { id: "layout", label: "Room layout", perClass: true },
   { id: "seating", label: "Seating rules", perClass: true },
+  { id: "assessments", label: "Assessments", perClass: false },
 ];
 
 export default function SettingsView() {
@@ -48,7 +50,8 @@ export default function SettingsView() {
       )}
 
       {tab === "general" && <GeneralSettings />}
-      {tab !== "general" &&
+      {tab === "assessments" && <AssessmentSettings />}
+      {perClass &&
         (active.length === 0 ? (
           <div className="panel muted">Create a class first, then set it up here.</div>
         ) : !currentClass ? (
@@ -338,5 +341,178 @@ function SeatingPrefsEditor({
         ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * App-wide assessment settings: the per-grade topic bank used by question
+ * dropdowns, the editable cognitive-level list, and the marking-grid key
+ * behaviour. All shared across classes.
+ */
+function AssessmentSettings() {
+  const { classes, topics, setTopics, cognitiveLevels, setCognitiveLevels, userPrefs, setUserPrefs } = useApp();
+
+  const grades = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of classes) if (c.year) set.add(c.year);
+    for (const g of gradesInTopics(topics)) set.add(g);
+    return [...set].sort();
+  }, [classes, topics]);
+
+  const [pickedGrade, setPickedGrade] = useState("");
+  const grade = pickedGrade || grades[0] || "";
+  const areas = areasForGrade(topics, grade);
+
+  const addGrade = () => {
+    const g = prompt("Grade / year (e.g. 8 or 12):")?.trim();
+    if (!g) return;
+    setPickedGrade(g);
+    if (!areasForGrade(topics, g).length) {
+      void setTopics([...topics, ...DEFAULT_TOPIC_AREAS.map((area) => ({ grade: g, area, subtopic: "", short: "" }))]);
+    }
+  };
+
+  const addArea = () => {
+    const area = prompt("New content area (e.g. Chemistry):")?.trim();
+    if (!area || !grade || topics.some((t) => t.grade === grade && t.area === area)) return;
+    void setTopics([...topics, { grade, area, subtopic: "", short: "" }]);
+  };
+
+  const removeArea = (area: string) => {
+    if (!confirm(`Remove "${area}" and its subtopics for grade ${grade}?`)) return;
+    void setTopics(topics.filter((t) => !(t.grade === grade && t.area === area)));
+  };
+
+  const addSubtopic = (area: string) => {
+    const subtopic = prompt(`New subtopic under ${area}:`)?.trim();
+    if (!subtopic || topics.some((t) => t.grade === grade && t.area === area && t.subtopic === subtopic)) return;
+    const short = prompt("Short label shown in the marking grid (optional):")?.trim() ?? "";
+    // drop the area placeholder now that it has a real subtopic
+    const cleaned = topics.filter((t) => !(t.grade === grade && t.area === area && t.subtopic === ""));
+    void setTopics([...cleaned, { grade, area, subtopic, short }]);
+  };
+
+  const removeSubtopic = (area: string, subtopic: string) => {
+    let next = topics.filter((t) => !(t.grade === grade && t.area === area && t.subtopic === subtopic));
+    if (!next.some((t) => t.grade === grade && t.area === area)) {
+      next = [...next, { grade, area, subtopic: "", short: "" } as TopicEntry];
+    }
+    void setTopics(next);
+  };
+
+  const updateLevel = (i: number, patch: Partial<CognitiveLevel>) =>
+    void setCognitiveLevels(cognitiveLevels.map((l, j) => (j === i ? { ...l, ...patch } : l)));
+  const addLevel = () => void setCognitiveLevels([...cognitiveLevels, { code: `L${cognitiveLevels.length + 1}`, label: "" }]);
+  const removeLevel = (i: number) => void setCognitiveLevels(cognitiveLevels.filter((_, j) => j !== i));
+
+  return (
+    <>
+      <div className="panel">
+        <h3>Assessable topics by grade</h3>
+        <p className="muted" style={{ marginTop: 0 }}>
+          Shared across all classes and used to tag each question. Grade comes from a class's Year. Stored in{" "}
+          <code>topics.csv</code>.
+        </p>
+        <div className="row" style={{ marginBottom: 12 }}>
+          <span className="muted">Grade:</span>
+          <select value={grade} onChange={(e) => setPickedGrade(e.target.value)}>
+            {grades.length === 0 && <option value="">— none —</option>}
+            {grades.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+          <button className="small" onClick={addGrade}>
+            + Grade
+          </button>
+        </div>
+
+        {!grade ? (
+          <p className="muted">Add a grade to start building its topic list.</p>
+        ) : (
+          <>
+            {areas.map((area) => (
+              <div key={area} style={{ marginBottom: 12 }}>
+                <div className="row">
+                  <b>{area}</b>
+                  <button className="small danger" onClick={() => removeArea(area)}>
+                    ✕
+                  </button>
+                </div>
+                <div className="roster-chips" style={{ margin: "6px 0" }}>
+                  {subtopicsForGrade(topics, grade, area).map((s) => (
+                    <span
+                      key={s.subtopic}
+                      className="chip"
+                      style={{ cursor: "pointer" }}
+                      title={s.short ? `short: ${s.short} — click to remove` : "click to remove"}
+                      onClick={() => removeSubtopic(area, s.subtopic)}
+                    >
+                      {s.subtopic}
+                      {s.short ? ` (${s.short})` : ""} ✕
+                    </span>
+                  ))}
+                  <button className="small" onClick={() => addSubtopic(area)}>
+                    + subtopic
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button onClick={addArea}>+ Content area</button>
+          </>
+        )}
+      </div>
+
+      <div className="panel">
+        <h3>Cognitive levels</h3>
+        <p className="muted" style={{ marginTop: 0 }}>
+          Offered when tagging each question. Stored in <code>cognitive_levels.csv</code>.
+        </p>
+        <table className="data">
+          <thead>
+            <tr>
+              <th style={{ width: 90 }}>Code</th>
+              <th>Label</th>
+              <th style={{ width: 40 }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {cognitiveLevels.map((l, i) => (
+              <tr key={i}>
+                <td>
+                  <input value={l.code} onChange={(e) => updateLevel(i, { code: e.target.value })} />
+                </td>
+                <td>
+                  <input value={l.label} onChange={(e) => updateLevel(i, { label: e.target.value })} />
+                </td>
+                <td>
+                  <button className="small danger" onClick={() => removeLevel(i)}>
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="row" style={{ marginTop: 10 }}>
+          <button onClick={addLevel}>+ Level</button>
+        </div>
+      </div>
+
+      <div className="panel">
+        <h3>Mark entry</h3>
+        <label className="row">
+          <span>After typing a mark in the grid, Enter moves</span>
+          <select value={userPrefs.markGridEnter} onChange={(e) => void setUserPrefs({ ...userPrefs, markGridEnter: e.target.value as "across" | "down" })}>
+            <option value="across">across (to the next question)</option>
+            <option value="down">down (to the next student)</option>
+          </select>
+        </label>
+        <p className="muted" style={{ marginBottom: 0 }}>
+          Tab always moves the other way. Arrow keys move one cell.
+        </p>
+      </div>
+    </>
   );
 }

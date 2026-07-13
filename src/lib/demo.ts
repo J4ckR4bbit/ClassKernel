@@ -3,7 +3,19 @@
 
 import { newId, nowIso } from "./id";
 import * as repo from "./repo";
-import { Assessment, AttendanceEntry, BehaviourEvent, Desk, LessonRecord, Mark, SeatAssignment, Student } from "./types";
+import {
+  Assessment,
+  AssessmentQuestion,
+  AttendanceEntry,
+  BehaviourEvent,
+  Desk,
+  LessonRecord,
+  Mark,
+  QuestionMark,
+  SeatAssignment,
+  Student,
+  TopicEntry,
+} from "./types";
 
 export const DEMO_DIR = "/demo/ClassroomData";
 
@@ -169,24 +181,80 @@ export async function seedDemoData(): Promise<string> {
   events.push({ timestamp: nowIso(), studentId: students[0].id, code: "EFF", points: 1, note: "Excellent start" });
   await repo.saveBehaviourEvents(dataDir, className, events);
 
-  const assessments: Assessment[] = [
-    { id: newId("a"), title: "Cells test", date: shiftDate(-42), totalMarks: 40, weight: 1, category: "Test" },
-    { id: newId("a"), title: "Forces quiz", date: shiftDate(-28), totalMarks: 20, weight: 0.5, category: "Quiz" },
-    { id: newId("a"), title: "Energy project", date: shiftDate(-14), totalMarks: 50, weight: 1.5, category: "Project" },
-    { id: newId("a"), title: "Mid-term exam", date: shiftDate(-2), totalMarks: 80, weight: 2, category: "Exam" },
+  // App-wide topic bank for this grade, used by the multi-question test below
+  // and by the New assessment dialog's content-area / topic dropdowns.
+  const topics: TopicEntry[] = [
+    { grade: "7", area: "Physics", subtopic: "Forces", short: "For" },
+    { grade: "7", area: "Physics", subtopic: "Energy", short: "Nrg" },
+    { grade: "7", area: "Physics", subtopic: "Electricity", short: "Elec" },
+    { grade: "7", area: "Chemistry", subtopic: "Particles", short: "Part" },
+    { grade: "7", area: "Chemistry", subtopic: "Acids & Bases", short: "A&B" },
+    { grade: "7", area: "Science Skills", subtopic: "Graphs", short: "Graph" },
+    { grade: "7", area: "Science Skills", subtopic: "Variables", short: "Var" },
   ];
+  await repo.saveTopics(dataDir, topics);
+
+  // A per-student ability so a student marks consistently across assessments.
+  const abilities = students.map((_, i) => 0.45 + 0.5 * rand() + (i % 5 === 0 ? -0.08 : 0));
+
+  // One multi-question test (à la a physics class test) so the marking grid,
+  // per-question stats and ranking are all demoable.
+  const forcesId = newId("a");
+  const forcesQuestions: AssessmentQuestion[] = [
+    { assessmentId: forcesId, number: 1, topic: "Forces", marks: 6, cognitiveLevel: "L1" },
+    { assessmentId: forcesId, number: 2, topic: "Forces", marks: 10, cognitiveLevel: "L2" },
+    { assessmentId: forcesId, number: 3, topic: "Energy", marks: 8, cognitiveLevel: "L2" },
+    { assessmentId: forcesId, number: 4, topic: "Energy", marks: 12, cognitiveLevel: "L3" },
+    { assessmentId: forcesId, number: 5, topic: "Electricity", marks: 4, cognitiveLevel: "L1" },
+    { assessmentId: forcesId, number: 6, topic: "Electricity", marks: 10, cognitiveLevel: "L4" },
+  ];
+  const forcesTotal = forcesQuestions.reduce((s, q) => s + q.marks, 0);
+  const forces: Assessment = {
+    id: forcesId,
+    title: "Forces & energy test",
+    date: shiftDate(-21),
+    totalMarks: forcesTotal,
+    category: "Test",
+    questionCount: forcesQuestions.length,
+    contentArea: "Physics",
+  };
+
+  const singleAssessments: Assessment[] = [
+    { id: newId("a"), title: "Cells test", date: shiftDate(-42), totalMarks: 40, category: "Test", questionCount: 1, contentArea: "" },
+    { id: newId("a"), title: "Energy project", date: shiftDate(-14), totalMarks: 50, category: "Project", questionCount: 1, contentArea: "Physics" },
+    { id: newId("a"), title: "Mid-term exam", date: shiftDate(-2), totalMarks: 80, category: "Exam", questionCount: 1, contentArea: "" },
+  ];
+  const assessments: Assessment[] = [forces, ...singleAssessments];
   await repo.saveAssessments(dataDir, className, assessments);
+  await repo.saveAssessmentQuestions(dataDir, className, forcesQuestions);
 
   const marks: Mark[] = [];
+  const questionMarks: QuestionMark[] = [];
+
+  // Single-mark assessments.
   students.forEach((s, i) => {
-    const ability = 0.45 + 0.5 * rand() + (i % 5 === 0 ? -0.08 : 0);
-    assessments.forEach((a, ai) => {
+    singleAssessments.forEach((a, ai) => {
       if (rand() < 0.05) return; // occasional missing mark
-      const drift = (ai - 1.5) * (i % 7 === 0 ? -0.05 : 0.02);
-      const pct = Math.max(0.15, Math.min(0.99, ability + drift + (rand() - 0.5) * 0.16));
+      const drift = (ai - 1) * (i % 7 === 0 ? -0.05 : 0.02);
+      const pct = Math.max(0.15, Math.min(0.99, abilities[i] + drift + (rand() - 0.5) * 0.16));
       marks.push({ assessmentId: a.id, studentId: s.id, mark: Math.round(pct * a.totalMarks), comment: "" });
     });
   });
+
+  // The multi-question test: per-question marks plus each student's total.
+  students.forEach((s, i) => {
+    if (rand() < 0.1) return; // a couple didn't sit the test
+    let total = 0;
+    forcesQuestions.forEach((q) => {
+      const pct = Math.max(0.1, Math.min(1, abilities[i] + (rand() - 0.5) * 0.28));
+      const m = Math.round(pct * q.marks);
+      questionMarks.push({ assessmentId: forcesId, studentId: s.id, number: q.number, mark: m });
+      total += m;
+    });
+    marks.push({ assessmentId: forcesId, studentId: s.id, mark: total, comment: "" });
+  });
+
+  await repo.saveQuestionMarks(dataDir, className, questionMarks);
   await repo.saveMarks(dataDir, className, marks);
 
   return dataDir;
