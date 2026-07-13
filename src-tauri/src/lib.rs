@@ -29,7 +29,7 @@ fn write_atomic(path: String, contents: String) -> Result<(), String> {
     if let Some(parent) = target.parent() {
         fs::create_dir_all(parent).map_err(err)?;
     }
-    let tmp = target.with_extension("tmp.organik");
+    let tmp = target.with_extension("tmp.classkernel");
     fs::write(&tmp, contents.as_bytes()).map_err(err)?;
     // On Windows, rename fails if the target exists; fall back to
     // remove-then-rename (the temp file already holds the full contents, so
@@ -86,7 +86,7 @@ fn copy_dir_recursive(src: &Path, dest: &Path, skip_dir_name: &str) -> Result<()
             copy_dir_recursive(&src_path, &dest_path, skip_dir_name)?;
         } else if file_type.is_file() {
             // Skip leftover temp files from interrupted atomic writes.
-            if name.to_string_lossy().ends_with(".tmp.organik") {
+            if name.to_string_lossy().ends_with(".tmp.classkernel") {
                 continue;
             }
             fs::copy(&src_path, &dest_path).map_err(err)?;

@@ -29,7 +29,7 @@ export default function HomeView() {
   return (
     <div>
       <div className="view-header">
-        <h1>Organik Classroom</h1>
+        <h1>ClassKernel</h1>
         <div className="spacer" />
         <button className="primary" onClick={() => setShowNew(true)}>
           + New class

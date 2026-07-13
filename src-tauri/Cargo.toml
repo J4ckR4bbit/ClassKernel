@@ -1,11 +1,11 @@
 [package]
-name = "organik"
+name = "classkernel"
 version = "0.1.0"
 description = "Fast, offline-first classroom management for teachers"
 edition = "2021"
 
 [lib]
-name = "organik_lib"
+name = "classkernel_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

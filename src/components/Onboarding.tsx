@@ -20,7 +20,7 @@ export default function Onboarding() {
   return (
     <div className="boot-screen">
       <div className="panel" style={{ maxWidth: 520 }}>
-        <h2>Welcome to Organik Classroom</h2>
+        <h2>Welcome to ClassKernel</h2>
         <p className="muted">
           Choose the folder where your classroom data will live. Everything is stored as plain
           <b> .csv</b> and <b>.md</b> files — pick a folder inside <b>OneDrive</b> or{" "}

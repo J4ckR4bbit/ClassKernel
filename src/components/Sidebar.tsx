@@ -26,7 +26,7 @@ export default function Sidebar() {
   return (
     <nav className="sidebar">
       <div className="brand">
-        Organik Classroom
+        ClassKernel
         <small>fast · offline · portable</small>
       </div>
 

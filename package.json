@@ -1,5 +1,5 @@
 {
-  "name": "organik",
+  "name": "classkernel",
   "private": true,
   "version": "0.1.0",
   "description": "Fast, offline-first classroom management for teachers. All data in portable .md/.csv files.",

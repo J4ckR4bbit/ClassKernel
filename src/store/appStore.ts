@@ -39,7 +39,7 @@ export type View =
   | "notes"
   | "settings";
 
-const DATA_DIR_KEY = "organik.dataDir";
+const DATA_DIR_KEY = "classkernel.dataDir";
 
 export interface AppState {
   booted: boolean;
