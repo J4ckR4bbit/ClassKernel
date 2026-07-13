@@ -1,4 +1,4 @@
-# Shipping Organik Classroom to the Microsoft Store
+# Shipping ClassKernel to the Microsoft Store
 
 The Store accepts two packaging routes for a Tauri app. Both start from the CI-built
 NSIS installer (or a local `npx tauri build` on Windows).
@@ -6,9 +6,9 @@ NSIS installer (or a local `npx tauri build` on Windows).
 ## Route A (recommended): MSIX package
 
 1. **Get a Partner Center account** — a one-time individual developer fee. Reserve the
-   app name ("Organik Classroom") under *Apps and games → New product*.
+   app name ("ClassKernel") under *Apps and games → New product*.
 2. **Build the app** on Windows: `npm ci && npx tauri build`. The raw binaries are in
-   `src-tauri/target/release/` (`organik.exe` plus the WebView2 loader is not needed —
+   `src-tauri/target/release/` (`classkernel.exe` plus the WebView2 loader is not needed —
    WebView2 ships with Windows 10/11).
 3. **Package as MSIX** with the [MSIX Packaging Tool](https://apps.microsoft.com/detail/9N5LW3JBCXKF)
    (free, from the Store): point it at the NSIS installer, let it run the install in the

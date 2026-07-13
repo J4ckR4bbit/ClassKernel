@@ -5,7 +5,7 @@ import { AttendanceStatus, LessonRecord, SEAT_COUNTS, studentName } from "../lib
 import { eventsOnDate } from "../lib/stats";
 import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
 
-const lessonKey = (className: string) => `organik.lessonStart.${className}`;
+const lessonKey = (className: string) => `classkernel.lessonStart.${className}`;
 
 interface Popover {
   studentId: string;

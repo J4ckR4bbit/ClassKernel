@@ -1,4 +1,4 @@
-# Organik Classroom
+# ClassKernel
 
 Fast, lightweight, offline-first classroom management for teachers. Windows desktop app built with Tauri 2 — ~10 MB, instant startup, **no accounts, no server, no internet required**.
 
