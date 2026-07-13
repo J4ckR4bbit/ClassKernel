@@ -132,7 +132,7 @@ export default function DashboardView() {
       <div className="stat-tiles">
         <div className="stat-tile">
           <div className="value">{classAvg !== null ? `${Math.round(classAvg)}%` : "—"}</div>
-          <div className="label">class average (weighted)</div>
+          <div className="label">class average</div>
         </div>
         <div className="stat-tile">
           <div className="value">{classAttRate !== null ? `${Math.round(classAttRate * 100)}%` : "—"}</div>

@@ -1,6 +1,6 @@
 // Aggregation math for the attendance, behaviour and assessment views.
 
-import { Assessment, AttendanceEntry, BehaviourEvent, Mark, Student } from "./types";
+import { Assessment, AssessmentQuestion, AttendanceEntry, BehaviourEvent, Mark, QuestionMark, Student } from "./types";
 
 // ---------- attendance ----------
 
@@ -104,20 +104,19 @@ export function histogram(pcts: number[]): { bin: string; count: number }[] {
   return bins.map((count, i) => ({ bin: i === 9 ? "90-100" : `${i * 10}-${i * 10 + 10}`, count }));
 }
 
-/** Weighted overall percentage per student across all assessments they have marks for. */
+/** Mean overall percentage per student across all assessments they have marks for. */
 export function overallPercent(studentId: string, assessments: Assessment[], marks: Mark[]): number | null {
-  let weightSum = 0;
+  let count = 0;
   let acc = 0;
   for (const a of assessments) {
     const m = marks.find((m) => m.assessmentId === a.id && m.studentId === studentId);
     if (!m) continue;
     const pct = percentage(m, a);
     if (pct === null) continue;
-    const w = a.weight > 0 ? a.weight : 1;
-    acc += pct * w;
-    weightSum += w;
+    acc += pct;
+    count += 1;
   }
-  return weightSum > 0 ? acc / weightSum : null;
+  return count > 0 ? acc / count : null;
 }
 
 /** Per-student series of percentages in assessment date order (nulls skipped). */
@@ -177,4 +176,131 @@ export function atRiskStudents(students: Student[], assessments: Assessment[], m
     }
   }
   return flags;
+}
+
+// ---------- per-question marking grid ----------
+// These helpers power the live stats on the multi-question marking grid. They
+// expect the questions and question-marks for a single assessment (the grid
+// filters them by assessment id before calling in).
+
+/** Build a `studentId|questionNumber -> mark` index for O(1) cell lookups. */
+function markIndex(qmarks: QuestionMark[]): Map<string, number> {
+  const idx = new Map<string, number>();
+  for (const m of qmarks) {
+    if (m.mark != null) idx.set(`${m.studentId}|${m.number}`, m.mark);
+  }
+  return idx;
+}
+
+export interface QuestionAverage {
+  number: number;
+  /** Students with a mark entered for this question. */
+  entered: number;
+  meanMark: number | null;
+  meanPct: number | null;
+}
+
+/** Per question: mean mark and mean % across students who have a mark for it. */
+export function questionAverages(questions: AssessmentQuestion[], qmarks: QuestionMark[]): QuestionAverage[] {
+  const idx = markIndex(qmarks);
+  const studentIds = [...new Set(qmarks.map((m) => m.studentId))];
+  return questions.map((q) => {
+    const vals = studentIds
+      .map((id) => idx.get(`${id}|${q.number}`))
+      .filter((v): v is number => v !== undefined);
+    if (vals.length === 0) return { number: q.number, entered: 0, meanMark: null, meanPct: null };
+    const meanMark = vals.reduce((a, b) => a + b, 0) / vals.length;
+    return {
+      number: q.number,
+      entered: vals.length,
+      meanMark,
+      meanPct: q.marks > 0 ? (meanMark / q.marks) * 100 : null,
+    };
+  });
+}
+
+export interface Provisional {
+  /** Sum of the student's entered marks. */
+  total: number;
+  /** Sum of the max marks of the questions they have answered. */
+  maxSoFar: number;
+  /** total / maxSoFar as a percentage — a mark based only on questions entered. */
+  pct: number | null;
+  /** How many questions the student has a mark for. */
+  answered: number;
+}
+
+/** A student's running total and an entered-only provisional percentage. */
+export function studentProvisional(
+  studentId: string,
+  questions: AssessmentQuestion[],
+  qmarks: QuestionMark[],
+): Provisional {
+  const idx = markIndex(qmarks);
+  let total = 0;
+  let maxSoFar = 0;
+  let answered = 0;
+  for (const q of questions) {
+    const v = idx.get(`${studentId}|${q.number}`);
+    if (v === undefined) continue;
+    total += v;
+    maxSoFar += q.marks;
+    answered += 1;
+  }
+  return { total, maxSoFar, pct: maxSoFar > 0 ? (total / maxSoFar) * 100 : null, answered };
+}
+
+/**
+ * Rank students by their current total (highest = rank 1). Students who have no
+ * marks entered (didn't sit / not started) are left out. Ties share the average
+ * of the positions they span, matching the reference marksheet (e.g. two tied
+ * for 3rd/4th both get 3.5).
+ */
+export function rankStudents(
+  studentIds: string[],
+  questions: AssessmentQuestion[],
+  qmarks: QuestionMark[],
+): Map<string, number> {
+  const idx = markIndex(qmarks);
+  const totals: Array<{ id: string; total: number }> = [];
+  for (const id of studentIds) {
+    let total = 0;
+    let answered = 0;
+    for (const q of questions) {
+      const v = idx.get(`${id}|${q.number}`);
+      if (v === undefined) continue;
+      total += v;
+      answered += 1;
+    }
+    if (answered > 0) totals.push({ id, total });
+  }
+  totals.sort((a, b) => b.total - a.total);
+  const ranks = new Map<string, number>();
+  let i = 0;
+  while (i < totals.length) {
+    let j = i;
+    while (j + 1 < totals.length && totals[j + 1].total === totals[i].total) j++;
+    const avgRank = (i + 1 + (j + 1)) / 2; // positions are 0-based, ranks 1-based
+    for (let k = i; k <= j; k++) ranks.set(totals[k].id, avgRank);
+    i = j + 1;
+  }
+  return ranks;
+}
+
+/** Fraction of grid cells that have a mark entered (0..1). 1 = fully entered. */
+export function gridCompletion(
+  studentIds: string[],
+  questions: AssessmentQuestion[],
+  qmarks: QuestionMark[],
+): number {
+  const cells = studentIds.length * questions.length;
+  if (cells === 0) return 1;
+  const idx = markIndex(qmarks);
+  let filled = 0;
+  for (const id of studentIds) {
+    for (const q of questions) {
+      if (idx.has(`${id}|${q.number}`)) filled++;
+    }
+  }
+  return filled / cells;
 }

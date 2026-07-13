@@ -5,19 +5,25 @@ import * as repo from "../lib/repo";
 import { seedDemoData } from "../lib/demo";
 import {
   Assessment,
+  AssessmentQuestion,
   AttendanceEntry,
   BehaviourCode,
   BehaviourEvent,
   ClassInfo,
+  CognitiveLevel,
   DEFAULT_ROOM_CONFIG,
   DEFAULT_SEATING_PREFS,
+  DEFAULT_USER_PREFS,
   Desk,
   LessonRecord,
   Mark,
+  QuestionMark,
   RoomConfig,
   SeatAssignment,
   SeatingPrefs,
   Student,
+  TopicEntry,
+  UserPrefs,
 } from "../lib/types";
 
 export type View =
@@ -58,8 +64,14 @@ export interface AppState {
   lessons: LessonRecord[];
   assessments: Assessment[];
   marks: Mark[];
+  assessmentQuestions: AssessmentQuestion[];
+  questionMarks: QuestionMark[];
   roomConfig: RoomConfig;
   layoutTemplates: string[];
+  // App-wide, loaded once with the data folder.
+  topics: TopicEntry[];
+  cognitiveLevels: CognitiveLevel[];
+  userPrefs: UserPrefs;
 
   boot(): Promise<void>;
   chooseDataDir(path: string): Promise<void>;
@@ -86,6 +98,11 @@ export interface AppState {
   addLessonRecords(records: LessonRecord[]): Promise<void>;
   setAssessments(assessments: Assessment[]): Promise<void>;
   setMarks(marks: Mark[]): Promise<void>;
+  setAssessmentQuestions(questions: AssessmentQuestion[]): Promise<void>;
+  setQuestionMarks(marks: QuestionMark[]): Promise<void>;
+  setTopics(topics: TopicEntry[]): Promise<void>;
+  setCognitiveLevels(levels: CognitiveLevel[]): Promise<void>;
+  setUserPrefs(prefs: UserPrefs): Promise<void>;
 
   refreshLayoutTemplates(): Promise<void>;
   saveLayoutTemplate(name: string): Promise<void>;
@@ -116,8 +133,13 @@ export const useApp = create<AppState>((set, get) => ({
   lessons: [],
   assessments: [],
   marks: [],
+  assessmentQuestions: [],
+  questionMarks: [],
   roomConfig: DEFAULT_ROOM_CONFIG,
   layoutTemplates: [],
+  topics: [],
+  cognitiveLevels: [],
+  userPrefs: DEFAULT_USER_PREFS,
 
   async boot() {
     if (!isTauri()) {
@@ -149,7 +171,10 @@ export const useApp = create<AppState>((set, get) => ({
     const classes = await repo.listClasses(path);
     const behaviourCodes = await repo.loadBehaviourCodes(path);
     const layoutTemplates = await repo.listLayoutTemplates(path);
-    set({ dataDir: path, classes, behaviourCodes, layoutTemplates, currentClass: null });
+    const topics = await repo.loadTopics(path);
+    const cognitiveLevels = await repo.loadCognitiveLevels(path);
+    const userPrefs = await repo.loadUserPrefs(path);
+    set({ dataDir: path, classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, currentClass: null });
     const active = classes.filter((c) => !c.archived);
     if (active.length > 0) await get().openClass(active[0].name);
   },
@@ -188,19 +213,33 @@ export const useApp = create<AppState>((set, get) => ({
   async openClass(name) {
     const { dataDir } = get();
     if (!dataDir) return;
-    const [students, attendance, behaviourEvents, desks, seating, seatingPrefs, lessons, assessments, marks, roomConfig] =
-      await Promise.all([
-        repo.loadStudents(dataDir, name),
-        repo.loadAttendance(dataDir, name),
-        repo.loadBehaviourEvents(dataDir, name),
-        repo.loadDesks(dataDir, name),
-        repo.loadSeating(dataDir, name),
-        repo.loadSeatingPrefs(dataDir, name),
-        repo.loadLessons(dataDir, name),
-        repo.loadAssessments(dataDir, name),
-        repo.loadMarks(dataDir, name),
-        repo.loadRoomConfig(dataDir, name),
-      ]);
+    const [
+      students,
+      attendance,
+      behaviourEvents,
+      desks,
+      seating,
+      seatingPrefs,
+      lessons,
+      assessments,
+      marks,
+      assessmentQuestions,
+      questionMarks,
+      roomConfig,
+    ] = await Promise.all([
+      repo.loadStudents(dataDir, name),
+      repo.loadAttendance(dataDir, name),
+      repo.loadBehaviourEvents(dataDir, name),
+      repo.loadDesks(dataDir, name),
+      repo.loadSeating(dataDir, name),
+      repo.loadSeatingPrefs(dataDir, name),
+      repo.loadLessons(dataDir, name),
+      repo.loadAssessments(dataDir, name),
+      repo.loadMarks(dataDir, name),
+      repo.loadAssessmentQuestions(dataDir, name),
+      repo.loadQuestionMarks(dataDir, name),
+      repo.loadRoomConfig(dataDir, name),
+    ]);
     set({
       currentClass: name,
       students,
@@ -212,6 +251,8 @@ export const useApp = create<AppState>((set, get) => ({
       lessons,
       assessments,
       marks,
+      assessmentQuestions,
+      questionMarks,
       roomConfig,
     });
   },
@@ -341,5 +382,35 @@ export const useApp = create<AppState>((set, get) => ({
     const { dataDir, currentClass } = get();
     set({ marks });
     if (dataDir && currentClass) await repo.saveMarks(dataDir, currentClass, marks);
+  },
+
+  async setAssessmentQuestions(assessmentQuestions) {
+    const { dataDir, currentClass } = get();
+    set({ assessmentQuestions });
+    if (dataDir && currentClass) await repo.saveAssessmentQuestions(dataDir, currentClass, assessmentQuestions);
+  },
+
+  async setQuestionMarks(questionMarks) {
+    const { dataDir, currentClass } = get();
+    set({ questionMarks });
+    if (dataDir && currentClass) await repo.saveQuestionMarks(dataDir, currentClass, questionMarks);
+  },
+
+  async setTopics(topics) {
+    const { dataDir } = get();
+    set({ topics });
+    if (dataDir) await repo.saveTopics(dataDir, topics);
+  },
+
+  async setCognitiveLevels(cognitiveLevels) {
+    const { dataDir } = get();
+    set({ cognitiveLevels });
+    if (dataDir) await repo.saveCognitiveLevels(dataDir, cognitiveLevels);
+  },
+
+  async setUserPrefs(userPrefs) {
+    const { dataDir } = get();
+    set({ userPrefs });
+    if (dataDir) await repo.saveUserPrefs(dataDir, userPrefs);
   },
 }));

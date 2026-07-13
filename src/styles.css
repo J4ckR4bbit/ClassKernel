@@ -218,6 +218,41 @@ table.data tr.drag-over td { box-shadow: inset 0 2px 0 var(--accent); }
 .desk-pill.good { background: #e3f0e8; border-color: #9cc7ac; color: #1f6b3f; }
 .desk-pill.bad { background: #f7e0dd; border-color: #d9a59c; color: #9c2f1f; }
 
+/* ---------- multi-question marking grid ---------- */
+.mark-grid-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); }
+.mark-grid { border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.mark-grid th, .mark-grid td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); padding: 4px 6px; text-align: center; white-space: nowrap; }
+.mark-grid thead th { background: #f0f2f5; font-weight: 600; font-size: 12px; vertical-align: top; }
+.mark-grid .q-sub { font-weight: 400; color: var(--text-dim); font-size: 11px; }
+.mark-grid .topic-row th { background: #f6f8fa; color: var(--text-dim); font-weight: 500; font-size: 11px; }
+.mark-grid .col-no { width: 40px; min-width: 40px; }
+.mark-grid .col-name { width: 116px; min-width: 116px; text-align: left; }
+.mark-grid .col-q { width: 48px; min-width: 48px; }
+.mark-grid .col-total { width: 54px; min-width: 54px; font-variant-numeric: tabular-nums; }
+.mark-grid tbody td.col-name { font-size: 12.5px; }
+.mark-grid tbody tr:hover td { background: #fafbfc; }
+
+/* frozen columns: names on the left, totals on the right */
+.mark-grid .sticky-left, .mark-grid .sticky-right { position: sticky; background: var(--panel); z-index: 1; }
+.mark-grid thead .sticky-left, .mark-grid thead .sticky-right { background: #f0f2f5; z-index: 3; }
+.mark-grid .topic-row .sticky-left { background: #f6f8fa; }
+.mark-grid tbody tr:hover .sticky-left, .mark-grid tbody tr:hover .sticky-right { background: #fafbfc; }
+.mark-grid .sticky-left { left: 0; }
+.mark-grid .sticky-left.second { left: 40px; }
+.mark-grid .sticky-left.third { left: 156px; }
+.mark-grid .sticky-left.third { border-right: 2px solid var(--border); }
+.mark-grid .sticky-right { right: 0; }
+.mark-grid .sticky-right.second { right: 54px; }
+.mark-grid .sticky-right.third { right: 108px; }
+.mark-grid .sticky-right.third { border-left: 2px solid var(--border); }
+.mark-grid tfoot .avg-row th, .mark-grid tfoot .avg-row td { background: #f6f8fa; color: var(--text-dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+.mark-grid tfoot .sticky-left { background: #f6f8fa; text-align: left; }
+
+.mark-grid .grid-input { width: 100%; border: 1px solid transparent; background: transparent; padding: 3px 2px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; border-radius: 4px; }
+.mark-grid .grid-input:hover { border-color: var(--border); background: #fff; }
+.mark-grid .grid-input:focus { border-color: var(--accent); background: #fff; outline: none; }
+.mark-grid .grid-input.over { color: var(--danger); font-weight: 700; }
+
 /* ---------- print ---------- */
 @media print {
   .sidebar, .view-header button, .palette, .demo-banner, .no-print { display: none !important; }

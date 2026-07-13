@@ -225,6 +225,81 @@ describe("marks.csv", () => {
   });
 });
 
+describe("assessments.csv", () => {
+  it("round-trips question count and content area", async () => {
+    await repo.saveAssessments(DIR, CLS, [
+      { id: "a1", title: "Phys Test 1", date: "2026-02-01", totalMarks: 85, category: "Test", questionCount: 6, contentArea: "Physics" },
+    ]);
+    const loaded = await repo.loadAssessments(DIR, CLS);
+    expect(loaded[0]).toEqual({
+      id: "a1",
+      title: "Phys Test 1",
+      date: "2026-02-01",
+      totalMarks: 85,
+      category: "Test",
+      questionCount: 6,
+      contentArea: "Physics",
+    });
+  });
+
+  it("defaults questionCount to 1 for legacy rows without the column", async () => {
+    // Simulate an old file that predates questionCount/content_area.
+    await fs.writeAtomic(
+      `${DIR}/classes/${CLS}/assessments.csv`,
+      "assessment_id,title,date,total_marks,weight,category\r\na1,Old,2026-01-01,50,2,Quiz\r\n",
+    );
+    const loaded = await repo.loadAssessments(DIR, CLS);
+    expect(loaded[0]).toMatchObject({ id: "a1", totalMarks: 50, questionCount: 1, contentArea: "" });
+  });
+});
+
+describe("assessment_questions.csv + question_marks.csv", () => {
+  it("round-trips question definitions", async () => {
+    const questions = [
+      { assessmentId: "a1", number: 1, topic: "Kinematics", marks: 6, cognitiveLevel: "L1" },
+      { assessmentId: "a1", number: 2, topic: "Momentum", marks: 28, cognitiveLevel: "L3" },
+    ];
+    await repo.saveAssessmentQuestions(DIR, CLS, questions);
+    expect(await repo.loadAssessmentQuestions(DIR, CLS)).toEqual(questions);
+  });
+
+  it("keeps empty per-question marks as null", async () => {
+    const qm = [
+      { assessmentId: "a1", studentId: "s1", number: 1, mark: 4 },
+      { assessmentId: "a1", studentId: "s2", number: 1, mark: null },
+      { assessmentId: "a1", studentId: "s3", number: 1, mark: 0 },
+    ];
+    await repo.saveQuestionMarks(DIR, CLS, qm);
+    const loaded = await repo.loadQuestionMarks(DIR, CLS);
+    expect(loaded.find((m) => m.studentId === "s2")?.mark).toBeNull();
+    expect(loaded.find((m) => m.studentId === "s3")?.mark).toBe(0);
+  });
+});
+
+describe("app-wide topic bank, cognitive levels, settings", () => {
+  it("round-trips topics keyed by grade", async () => {
+    const topics = [
+      { grade: "12", area: "Physics", subtopic: "Kinematics", short: "Kin" },
+      { grade: "12", area: "Chemistry", subtopic: "", short: "" }, // area placeholder
+    ];
+    await repo.saveTopics(DIR, topics);
+    expect(await repo.loadTopics(DIR)).toEqual(topics);
+  });
+
+  it("seeds default cognitive levels and round-trips edits", async () => {
+    const seeded = await repo.loadCognitiveLevels(DIR);
+    expect(seeded.length).toBe(4);
+    await repo.saveCognitiveLevels(DIR, [{ code: "L1", label: "Knowledge" }]);
+    expect(await repo.loadCognitiveLevels(DIR)).toEqual([{ code: "L1", label: "Knowledge" }]);
+  });
+
+  it("round-trips the mark-grid navigation preference", async () => {
+    expect((await repo.loadUserPrefs(DIR)).markGridEnter).toBe("across"); // default
+    await repo.saveUserPrefs(DIR, { markGridEnter: "down" });
+    expect((await repo.loadUserPrefs(DIR)).markGridEnter).toBe("down");
+  });
+});
+
 describe("rename", () => {
   it("moves the whole class folder", async () => {
     await repo.saveStudents(DIR, CLS, [{ id: "s1", firstName: "A", lastName: "B", gender: "", flags: "", notes: "" }]);
