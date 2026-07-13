@@ -330,8 +330,8 @@ table.data tr.drag-over td { box-shadow: inset 0 2px 0 var(--accent); }
   display: flex; justify-content: center; background: var(--flip-color, #1F497D); color: #fff;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
-.flip-digit .fc.top { top: 0; align-items: flex-end; border-radius: 7px 7px 0 0; }
-.flip-digit .fc.bottom { bottom: 0; align-items: flex-start; border-radius: 0 0 7px 7px; }
+.flip-digit .fc.top { top: 0; align-items: flex-start; border-radius: 7px 7px 0 0; }
+.flip-digit .fc.bottom { bottom: 0; align-items: flex-end; border-radius: 0 0 7px 7px; }
 .flip-digit .fc.top::after {
   content: ""; position: absolute; inset: auto 0 0 0; height: 1px; background: rgba(0, 0, 0, 0.35);
 }
