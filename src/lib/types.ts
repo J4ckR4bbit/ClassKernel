@@ -211,6 +211,27 @@ export const DEFAULT_COGNITIVE_LEVELS: CognitiveLevel[] = [
   { code: "L4", label: "Evaluation / Synthesis" },
 ];
 
+/** How the running countdown is drawn. */
+export type TimerDisplay = "circle" | "hourglass" | "flip";
+
+/**
+ * A reusable timer configuration (timer_presets.csv, app-wide). A test is run
+ * as an optional reading phase followed by a writing phase; either can be 0.
+ */
+export interface TimerPreset {
+  name: string;
+  readingMinutes: number;
+  writingMinutes: number;
+  display: TimerDisplay;
+  /** Play a chime at phase changes and when time is up. */
+  chime: boolean;
+}
+
+export const DEFAULT_TIMER_PRESETS: TimerPreset[] = [
+  { name: "Essay (10 read · 40 write)", readingMinutes: 10, writingMinutes: 40, display: "circle", chime: true },
+  { name: "Comprehension (5 read · 25 write)", readingMinutes: 5, writingMinutes: 25, display: "hourglass", chime: true },
+];
+
 /** App-wide user preferences (settings.csv). */
 export interface UserPrefs {
   /** In the marking grid, which direction Enter moves. Tab does the opposite. */

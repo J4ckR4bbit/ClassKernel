@@ -44,6 +44,7 @@ import {
   SeatAssignment,
   SeatingPrefs,
   Student,
+  TimerPreset,
   TopicEntry,
   UserPrefs,
 } from "./types";
@@ -668,6 +669,34 @@ export async function loadCognitiveLevels(dataDir: string): Promise<CognitiveLev
 export async function saveCognitiveLevels(dataDir: string, levels: CognitiveLevel[]): Promise<void> {
   const rows = levels.map((l) => ({ code: l.code, label: l.label }));
   await getFS().writeAtomic(p(dataDir, "cognitive_levels.csv"), stringifyCsv(rows, COGNITIVE_LEVEL_COLS));
+}
+
+// ---------- timer presets (app-wide, reusable clock configurations) ----------
+
+const TIMER_PRESET_COLS = ["name", "reading_minutes", "writing_minutes", "display", "chime"];
+
+export async function loadTimerPresets(dataDir: string): Promise<TimerPreset[]> {
+  const rows = await loadCsvFile(p(dataDir, "timer_presets.csv"));
+  return rows
+    .filter((r) => r.name)
+    .map((r) => ({
+      name: r.name,
+      readingMinutes: num(r.reading_minutes),
+      writingMinutes: num(r.writing_minutes),
+      display: r.display === "hourglass" || r.display === "flip" ? r.display : "circle",
+      chime: r.chime !== "false",
+    }));
+}
+
+export async function saveTimerPresets(dataDir: string, presets: TimerPreset[]): Promise<void> {
+  const rows = presets.map((t) => ({
+    name: t.name,
+    reading_minutes: t.readingMinutes,
+    writing_minutes: t.writingMinutes,
+    display: t.display,
+    chime: t.chime ? "true" : "false",
+  }));
+  await getFS().writeAtomic(p(dataDir, "timer_presets.csv"), stringifyCsv(rows, TIMER_PRESET_COLS));
 }
 
 // ---------- app-wide user preferences (settings.csv: key,value) ----------

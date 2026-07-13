@@ -12,6 +12,7 @@ import BehaviourLogView from "./components/BehaviourLogView";
 import AssessmentsView from "./components/AssessmentsView";
 import DashboardView from "./components/DashboardView";
 import ClassNotesView from "./components/ClassNotesView";
+import TimerView from "./components/TimerView";
 import SettingsView from "./components/SettingsView";
 
 export default function App() {
@@ -54,7 +55,7 @@ export default function App() {
             Demo mode — running in a browser without the desktop backend; data lives in memory only.
           </div>
         )}
-        {!currentClass && view !== "settings" && view !== "home" ? (
+        {!currentClass && view !== "settings" && view !== "home" && view !== "timer" ? (
           <div className="empty-state">
             <h2>No class selected</h2>
             <p>Create a class from the sidebar to get started.</p>
@@ -71,6 +72,7 @@ export default function App() {
             {view === "assessments" && <AssessmentsView />}
             {view === "dashboard" && <DashboardView />}
             {view === "notes" && <ClassNotesView />}
+            {view === "timer" && <TimerView />}
             {view === "settings" && <SettingsView />}
           </>
         )}

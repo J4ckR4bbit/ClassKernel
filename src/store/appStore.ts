@@ -22,6 +22,7 @@ import {
   SeatAssignment,
   SeatingPrefs,
   Student,
+  TimerPreset,
   TopicEntry,
   UserPrefs,
 } from "../lib/types";
@@ -37,6 +38,7 @@ export type View =
   | "assessments"
   | "dashboard"
   | "notes"
+  | "timer"
   | "settings";
 
 const DATA_DIR_KEY = "classkernel.dataDir";
@@ -72,6 +74,7 @@ export interface AppState {
   topics: TopicEntry[];
   cognitiveLevels: CognitiveLevel[];
   userPrefs: UserPrefs;
+  timerPresets: TimerPreset[];
 
   boot(): Promise<void>;
   chooseDataDir(path: string): Promise<void>;
@@ -103,6 +106,7 @@ export interface AppState {
   setTopics(topics: TopicEntry[]): Promise<void>;
   setCognitiveLevels(levels: CognitiveLevel[]): Promise<void>;
   setUserPrefs(prefs: UserPrefs): Promise<void>;
+  setTimerPresets(presets: TimerPreset[]): Promise<void>;
 
   refreshLayoutTemplates(): Promise<void>;
   saveLayoutTemplate(name: string): Promise<void>;
@@ -140,6 +144,7 @@ export const useApp = create<AppState>((set, get) => ({
   topics: [],
   cognitiveLevels: [],
   userPrefs: DEFAULT_USER_PREFS,
+  timerPresets: [],
 
   async boot() {
     if (!isTauri()) {
@@ -174,7 +179,8 @@ export const useApp = create<AppState>((set, get) => ({
     const topics = await repo.loadTopics(path);
     const cognitiveLevels = await repo.loadCognitiveLevels(path);
     const userPrefs = await repo.loadUserPrefs(path);
-    set({ dataDir: path, classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, currentClass: null });
+    const timerPresets = await repo.loadTimerPresets(path);
+    set({ dataDir: path, classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, currentClass: null });
     const active = classes.filter((c) => !c.archived);
     if (active.length > 0) await get().openClass(active[0].name);
   },
@@ -412,5 +418,11 @@ export const useApp = create<AppState>((set, get) => ({
     const { dataDir } = get();
     set({ userPrefs });
     if (dataDir) await repo.saveUserPrefs(dataDir, userPrefs);
+  },
+
+  async setTimerPresets(timerPresets) {
+    const { dataDir } = get();
+    set({ timerPresets });
+    if (dataDir) await repo.saveTimerPresets(dataDir, timerPresets);
   },
 }));
