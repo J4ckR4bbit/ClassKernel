@@ -3,6 +3,7 @@ import { useApp } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
 import { AttendanceStatus, LessonRecord, SEAT_COUNTS, studentName } from "../lib/types";
 import { eventsOnDate } from "../lib/stats";
+import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
 import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
 
 const lessonKey = (className: string) => `classkernel.lessonStart.${className}`;
@@ -40,6 +41,8 @@ export default function LessonView() {
   const [plan, setPlan] = useState(planNames[0] ?? "Default");
   const activePlan = planNames.includes(plan) ? plan : planNames[0];
   const [popover, setPopover] = useState<Popover | null>(null);
+  // Reroll the seating in place, with the same animation as the seating plan.
+  const { shuffleFrame, isShuffling, randomise } = useSeatingShuffle();
 
   // "This lesson" is everything logged since the last End-lesson reset (or the
   // start of today if a lesson has never been ended for this class).
@@ -50,6 +53,8 @@ export default function LessonView() {
 
   const byId = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
   const planSeats = seating.filter((s) => s.planName === activePlan && s.studentId);
+  // While rerolling, draw the live shuffle frame instead of the saved seats.
+  const shownSeats = shuffleFrame ?? planSeats;
   const lessonEvents = useMemo(
     () => (lessonStart ? behaviourEvents.filter((e) => e.timestamp >= lessonStart) : eventsOnDate(behaviourEvents, today())),
     [behaviourEvents, lessonStart],
@@ -179,7 +184,10 @@ export default function LessonView() {
           <span className="muted">
             {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson
           </span>
-          <button className="danger" onClick={() => void endLesson()}>
+          <button onClick={() => randomise(activePlan)} disabled={isShuffling} title="Reshuffle the seating">
+            🎲 {isShuffling ? "Randomising…" : "Randomise"}
+          </button>
+          <button className="danger" onClick={() => void endLesson()} disabled={isShuffling}>
             ⏹ End lesson
           </button>
         </div>
@@ -198,16 +206,23 @@ export default function LessonView() {
             {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson · tap a seat to record
             behaviour or attendance
           </span>
+          <button onClick={() => randomise(activePlan)} disabled={isShuffling} title="Reshuffle the seating using your saved rules">
+            🎲 {isShuffling ? "Randomising…" : "Randomise"}
+          </button>
           <button onClick={() => setFocusMode(true)} title="Distraction-free view for teaching, beside your notes">
             ⛶ Teaching mode
           </button>
-          <button className="danger" onClick={() => void endLesson()} disabled={planSeats.length === 0}>
+          <button className="danger" onClick={() => void endLesson()} disabled={planSeats.length === 0 || isShuffling}>
             ⏹ End lesson
           </button>
         </div>
       )}
 
-      <div className={focusMode ? "focus-canvas-wrap" : ""} style={{ position: "relative" }}>
+      <div
+        className={`seating-canvas ${focusMode ? "focus-canvas-wrap" : ""} ${isShuffling ? "shuffling" : ""}`}
+        style={{ position: "relative" }}
+      >
+        {isShuffling && <div className="shuffle-overlay no-print">🎲 Randomising seats…</div>}
         <RoomCanvas
           desks={desks}
           frontEdge={roomConfig.frontEdge}
@@ -216,19 +231,20 @@ export default function LessonView() {
           deskFontScale={roomConfig.deskFontScale}
           labelFontScale={roomConfig.labelFontScale}
           seatContent={(deskId, seatIndex) => {
-            const occ = planSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
+            const occ = shownSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
             const s = occ ? byId.get(occ.studentId) : undefined;
             const status = s ? statusOf(s.id) : undefined;
             return {
               label: s ? studentName(s) : "",
               firstName: s?.firstName,
               lastName: s?.lastName,
-              badge: status === "A" ? "✗" : undefined,
+              badge: status === "A" && !isShuffling ? "✗" : undefined,
               occupied: !!s,
-              points: s ? pointsToday.get(s.id) ?? 0 : null,
+              points: s && !isShuffling ? pointsToday.get(s.id) ?? 0 : null,
             };
           }}
           onSeatClick={(deskId, seatIndex, x, y) => {
+            if (isShuffling) return;
             const occ = planSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
             if (occ) setPopover({ studentId: occ.studentId, x, y });
           }}

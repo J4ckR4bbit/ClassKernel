@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
 import { SeatAssignment, studentName } from "../lib/types";
-import { assignRandomSeats, allSeatSlots } from "../lib/seating";
+import { allSeatSlots } from "../lib/seating";
+import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
 import RoomCanvas from "./RoomCanvas";
-
-const SHUFFLE_FRAMES = 12;
-const SHUFFLE_INTERVAL = 90;
 
 export default function SeatingView() {
   const {
@@ -14,7 +12,6 @@ export default function SeatingView() {
     desks,
     seating,
     setSeating,
-    seatingPrefs,
     showToast,
     setView,
     roomConfig,
@@ -30,10 +27,9 @@ export default function SeatingView() {
   }, [seating, extraPlans]);
   const [plan, setPlan] = useState(planNames[0]);
   const [pickedStudent, setPickedStudent] = useState<string | null>(null);
-  // While rerolling we flash the names across the target seats before settling,
-  // so the class can see the seating really is being shuffled.
-  const [shuffleFrame, setShuffleFrame] = useState<SeatAssignment[] | null>(null);
-  const shuffleTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Animated reroll (flashes names across seats before settling) shared with the
+  // live-lesson view.
+  const { shuffleFrame, isShuffling, randomise } = useSeatingShuffle();
   const activePlan = planNames.includes(plan) ? plan : planNames[0];
 
   const planSeats = seating.filter((s) => s.planName === activePlan && s.studentId);
@@ -41,11 +37,8 @@ export default function SeatingView() {
   const seatedIds = new Set(planSeats.map((s) => s.studentId));
   const unseated = students.filter((s) => !seatedIds.has(s.id));
   const capacity = allSeatSlots(desks).length;
-  const isShuffling = shuffleFrame !== null;
   // What the canvas actually draws: the live shuffle frame while rerolling.
   const shownSeats = shuffleFrame ?? planSeats;
-
-  useEffect(() => () => void (shuffleTimer.current && clearInterval(shuffleTimer.current)), []);
 
   const occupantOf = (deskId: string, seatIndex: number) =>
     planSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
@@ -94,44 +87,9 @@ export default function SeatingView() {
 
   const clearPlan = () => replacePlan([]);
 
-  // Reroll using the saved (hidden) preferences, with a shuffle animation.
-  const randomise = () => {
-    if (isShuffling) return;
+  const runRandomise = () => {
     setPickedStudent(null);
-    const result = assignRandomSeats(students, desks, activePlan, {
-      ...seatingPrefs,
-      frontEdge: roomConfig.frontEdge,
-    });
-    if (result.assignments.length === 0) {
-      showToast("Add desks and students first");
-      return;
-    }
-    const targetSeats = result.assignments.map((a) => ({ deskId: a.deskId, seatIndex: a.seatIndex }));
-    const ids = result.assignments.map((a) => a.studentId);
-    let frame = 0;
-    shuffleTimer.current = setInterval(() => {
-      frame++;
-      // Randomly scatter the names across the final set of seats each frame.
-      const shuffled = [...ids];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      setShuffleFrame(
-        targetSeats.map((s, i) => ({ planName: activePlan, deskId: s.deskId, seatIndex: s.seatIndex, studentId: shuffled[i] })),
-      );
-      if (frame >= SHUFFLE_FRAMES) {
-        if (shuffleTimer.current) clearInterval(shuffleTimer.current);
-        shuffleTimer.current = null;
-        setShuffleFrame(null);
-        replacePlan(result.assignments.map((a) => ({ ...a, planName: activePlan })));
-        showToast(
-          result.violations.length
-            ? `Seated with ${result.violations.length} unmet constraint${result.violations.length > 1 ? "s" : ""}`
-            : "Seating randomised",
-        );
-      }
-    }, SHUFFLE_INTERVAL);
+    randomise(activePlan);
   };
 
   // Arriving from the Home "Randomise seating" button: run the animated reroll
@@ -139,7 +97,7 @@ export default function SeatingView() {
   useEffect(() => {
     if (pendingRandomise && desks.length > 0 && students.length > 0 && !isShuffling) {
       setPendingRandomise(false);
-      randomise();
+      randomise(activePlan);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingRandomise, desks.length, students.length]);
@@ -164,15 +122,8 @@ export default function SeatingView() {
           Clear seats
         </button>
         <button
-          className="no-print"
-          onClick={() => setView("settings")}
-          title="Configure keep-apart, keep-together and front-of-room rules (kept in Settings, out of sight of the class)"
-        >
-          ⚙ Set up random…
-        </button>
-        <button
           className="primary"
-          onClick={randomise}
+          onClick={runRandomise}
           disabled={desks.length === 0 || students.length === 0 || isShuffling}
           title="Reroll seating using your saved rules"
         >
