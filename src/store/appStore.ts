@@ -93,6 +93,7 @@ export interface AppState {
   setAttendance(entries: AttendanceEntry[]): Promise<void>;
   addBehaviourEvent(event: BehaviourEvent): Promise<void>;
   removeBehaviourEvent(timestamp: string, studentId: string, code: string): Promise<void>;
+  setBehaviourEvents(events: BehaviourEvent[]): Promise<void>;
   setBehaviourCodes(codes: BehaviourCode[]): Promise<void>;
   setDesks(desks: Desk[]): Promise<void>;
   setRoomConfig(config: RoomConfig): Promise<void>;
@@ -309,6 +310,12 @@ export const useApp = create<AppState>((set, get) => ({
     const next = behaviourEvents.filter((_, i) => i !== idx);
     set({ behaviourEvents: next });
     if (dataDir && currentClass) await repo.saveBehaviourEvents(dataDir, currentClass, next);
+  },
+
+  async setBehaviourEvents(events) {
+    const { dataDir, currentClass } = get();
+    set({ behaviourEvents: events });
+    if (dataDir && currentClass) await repo.saveBehaviourEvents(dataDir, currentClass, events);
   },
 
   async setBehaviourCodes(codes) {
