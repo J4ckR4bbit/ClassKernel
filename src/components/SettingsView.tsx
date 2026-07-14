@@ -68,12 +68,30 @@ export default function SettingsView() {
 }
 
 function GeneralSettings() {
-  const { behaviourCodes, setBehaviourCodes, dataDir, classes } = useApp();
+  const { behaviourCodes, setBehaviourCodes, behaviourEvents, setBehaviourEvents, currentClass, dataDir, classes, showToast } =
+    useApp();
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
 
   const update = (code: string, patch: Partial<BehaviourCode>) => {
     void setBehaviourCodes(behaviourCodes.map((c) => (c.code === code ? { ...c, ...patch } : c)));
+  };
+
+  // Commit an edited Code acronym: normalise, reject empty/duplicate, and rewrite
+  // the open class's logged events so their label is preserved. Returns the value
+  // the input should show (old code on revert).
+  const commitCode = (oldCode: string, raw: string): string => {
+    const next = raw.trim().toUpperCase();
+    if (!next || next === oldCode) return oldCode;
+    if (behaviourCodes.some((c) => c.code === next)) {
+      showToast(`A behaviour with code "${next}" already exists`);
+      return oldCode;
+    }
+    void setBehaviourCodes(behaviourCodes.map((c) => (c.code === oldCode ? { ...c, code: next } : c)));
+    if (currentClass && behaviourEvents.some((e) => e.code === oldCode)) {
+      void setBehaviourEvents(behaviourEvents.map((e) => (e.code === oldCode ? { ...e, code: next } : e)));
+    }
+    return next;
   };
 
   // Reorder by drag: the array order is the button order everywhere (and how
@@ -152,7 +170,18 @@ function GeneralSettings() {
                   ⠿
                 </td>
                 <td>
-                  <b>{c.code}</b>
+                  <input
+                    key={`code-${c.code}`}
+                    className="code-input"
+                    defaultValue={c.code}
+                    title="Short acronym shown on the button — edit and click away to rename"
+                    onBlur={(e) => {
+                      e.target.value = commitCode(c.code, e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    }}
+                  />
                 </td>
                 <td>
                   <input value={c.label} onChange={(e) => update(c.code, { label: e.target.value })} />
@@ -195,6 +224,9 @@ function GeneralSettings() {
           <button onClick={() => add("positive")}>+ Positive behaviour</button>
           <button onClick={() => add("negative")}>+ Negative behaviour</button>
         </div>
+        <p className="muted" style={{ marginBottom: 0 }}>
+          Renaming a Code updates this class's logged history; other classes keep the old code in their behaviour log.
+        </p>
       </div>
 
       <div className="panel">
@@ -350,7 +382,7 @@ function SeatingPrefsEditor({
  * behaviour. All shared across classes.
  */
 function AssessmentSettings() {
-  const { classes, topics, setTopics, cognitiveLevels, setCognitiveLevels, userPrefs, setUserPrefs } = useApp();
+  const { classes, topics, setTopics, cognitiveLevels, setCognitiveLevels, userPrefs, setUserPrefs, showToast } = useApp();
 
   const grades = useMemo(() => {
     const set = new Set<string>();
@@ -383,14 +415,37 @@ function AssessmentSettings() {
     void setTopics(topics.filter((t) => !(t.grade === grade && t.area === area)));
   };
 
-  const addSubtopic = (area: string) => {
-    const subtopic = prompt(`New subtopic under ${area}:`)?.trim();
-    if (!subtopic || topics.some((t) => t.grade === grade && t.area === area && t.subtopic === subtopic)) return;
-    const short = prompt("Short label shown in the marking grid (optional):")?.trim() ?? "";
-    // drop the area placeholder now that it has a real subtopic
+  // Add one or many subtopics to an area (used by the table's row + paste input).
+  const addSubtopics = (area: string, rows: Array<{ subtopic: string; short: string }>) => {
+    const existing = new Set(subtopicsForGrade(topics, grade, area).map((s) => s.subtopic));
+    const toAdd: TopicEntry[] = [];
+    for (const r of rows) {
+      const subtopic = r.subtopic.trim();
+      if (!subtopic || existing.has(subtopic) || toAdd.some((t) => t.subtopic === subtopic)) continue;
+      toAdd.push({ grade, area, subtopic, short: r.short.trim() });
+    }
+    if (toAdd.length === 0) return;
+    // drop the area placeholder now that it has real subtopics
     const cleaned = topics.filter((t) => !(t.grade === grade && t.area === area && t.subtopic === ""));
-    void setTopics([...cleaned, { grade, area, subtopic, short }]);
+    void setTopics([...cleaned, ...toAdd]);
   };
+
+  const renameSubtopic = (area: string, oldSub: string, raw: string) => {
+    const newSub = raw.trim();
+    if (!newSub || newSub === oldSub) return;
+    if (topics.some((t) => t.grade === grade && t.area === area && t.subtopic === newSub)) {
+      showToast(`"${newSub}" already exists in ${area}`);
+      return;
+    }
+    void setTopics(
+      topics.map((t) => (t.grade === grade && t.area === area && t.subtopic === oldSub ? { ...t, subtopic: newSub } : t)),
+    );
+  };
+
+  const setShort = (area: string, subtopic: string, short: string) =>
+    void setTopics(
+      topics.map((t) => (t.grade === grade && t.area === area && t.subtopic === subtopic ? { ...t, short: short.trim() } : t)),
+    );
 
   const removeSubtopic = (area: string, subtopic: string) => {
     let next = topics.filter((t) => !(t.grade === grade && t.area === area && t.subtopic === subtopic));
@@ -432,31 +487,25 @@ function AssessmentSettings() {
           <p className="muted">Add a grade to start building its topic list.</p>
         ) : (
           <>
+            <p className="muted" style={{ marginTop: 0 }}>
+              Type subtopics into a table, or paste a column straight from a spreadsheet. Paste two tab-separated
+              columns to fill Subtopic and Short at once.
+            </p>
             {areas.map((area) => (
-              <div key={area} style={{ marginBottom: 12 }}>
+              <div key={area} className="topic-area">
                 <div className="row">
                   <b>{area}</b>
                   <button className="small danger" onClick={() => removeArea(area)}>
                     ✕
                   </button>
                 </div>
-                <div className="roster-chips" style={{ margin: "6px 0" }}>
-                  {subtopicsForGrade(topics, grade, area).map((s) => (
-                    <span
-                      key={s.subtopic}
-                      className="chip"
-                      style={{ cursor: "pointer" }}
-                      title={s.short ? `short: ${s.short} — click to remove` : "click to remove"}
-                      onClick={() => removeSubtopic(area, s.subtopic)}
-                    >
-                      {s.subtopic}
-                      {s.short ? ` (${s.short})` : ""} ✕
-                    </span>
-                  ))}
-                  <button className="small" onClick={() => addSubtopic(area)}>
-                    + subtopic
-                  </button>
-                </div>
+                <TopicAreaTable
+                  rows={subtopicsForGrade(topics, grade, area)}
+                  onRename={(oldSub, val) => renameSubtopic(area, oldSub, val)}
+                  onSetShort={(sub, val) => setShort(area, sub, val)}
+                  onRemove={(sub) => removeSubtopic(area, sub)}
+                  onAdd={(rows) => addSubtopics(area, rows)}
+                />
               </div>
             ))}
             <button onClick={addArea}>+ Content area</button>
@@ -514,5 +563,130 @@ function AssessmentSettings() {
         </p>
       </div>
     </>
+  );
+}
+
+/** Split pasted spreadsheet text into subtopic rows (line → Subtopic[\tShort]). */
+function parseTopicPaste(text: string): Array<{ subtopic: string; short: string }> {
+  return text
+    .split(/\r?\n/)
+    .map((line) => {
+      const [subtopic = "", short = ""] = line.split("\t");
+      return { subtopic: subtopic.trim(), short: short.trim() };
+    })
+    .filter((r) => r.subtopic);
+}
+
+/**
+ * Editable, paste-friendly table of subtopics for one content area. Existing
+ * rows commit on blur (rename / set short); the bottom row accepts a single
+ * entry or a whole pasted column/spreadsheet selection.
+ */
+function TopicAreaTable({
+  rows,
+  onRename,
+  onSetShort,
+  onRemove,
+  onAdd,
+}: {
+  rows: Array<{ subtopic: string; short: string }>;
+  onRename: (oldSub: string, value: string) => void;
+  onSetShort: (sub: string, value: string) => void;
+  onRemove: (sub: string) => void;
+  onAdd: (rows: Array<{ subtopic: string; short: string }>) => void;
+}) {
+  const [newSub, setNewSub] = useState("");
+  const [newShort, setNewShort] = useState("");
+
+  const addOne = () => {
+    if (!newSub.trim()) return;
+    onAdd([{ subtopic: newSub, short: newShort }]);
+    setNewSub("");
+    setNewShort("");
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const text = e.clipboardData.getData("text");
+    if (!/[\n\t]/.test(text)) return; // single value → let the normal paste happen
+    e.preventDefault();
+    const parsed = parseTopicPaste(text);
+    if (parsed.length) onAdd(parsed);
+  };
+
+  return (
+    <table className="data topic-table">
+      <thead>
+        <tr>
+          <th>Subtopic</th>
+          <th style={{ width: 150 }}>Short label</th>
+          <th style={{ width: 36 }}></th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.subtopic}>
+            <td>
+              <input
+                key={`sub-${r.subtopic}`}
+                defaultValue={r.subtopic}
+                onBlur={(e) => {
+                  // A successful rename remounts this row (its key changes); a
+                  // rejected one leaves state untouched, so revert the field.
+                  onRename(r.subtopic, e.target.value);
+                  e.target.value = r.subtopic;
+                }}
+              />
+            </td>
+            <td>
+              <input
+                key={`short-${r.subtopic}`}
+                defaultValue={r.short}
+                placeholder="—"
+                onBlur={(e) => onSetShort(r.subtopic, e.target.value)}
+              />
+            </td>
+            <td>
+              <button className="small danger" onClick={() => onRemove(r.subtopic)} title="Remove subtopic">
+                ✕
+              </button>
+            </td>
+          </tr>
+        ))}
+        <tr className="topic-add-row">
+          <td>
+            <input
+              placeholder="add a subtopic — or paste a list"
+              value={newSub}
+              onChange={(e) => setNewSub(e.target.value)}
+              onPaste={handlePaste}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addOne();
+                }
+              }}
+            />
+          </td>
+          <td>
+            <input
+              placeholder="short"
+              value={newShort}
+              onChange={(e) => setNewShort(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addOne();
+                }
+              }}
+            />
+          </td>
+          <td>
+            <button className="small" onClick={addOne} title="Add subtopic">
+              +
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   );
 }
