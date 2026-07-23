@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { BehaviourCode, CognitiveLevel, DEFAULT_TOPIC_AREAS, SeatingPrefs, Student, TopicEntry, studentName } from "../lib/types";
 import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
@@ -72,6 +72,8 @@ function GeneralSettings() {
     useApp();
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  // Row elements, kept so a pointer drag can hit-test which row it is over.
+  const rowRefs = useRef<Array<HTMLTableRowElement | null>>([]);
 
   const update = (code: string, patch: Partial<BehaviourCode>) => {
     void setBehaviourCodes(behaviourCodes.map((c) => (c.code === code ? { ...c, ...patch } : c)));
@@ -104,7 +106,33 @@ function GeneralSettings() {
     void setBehaviourCodes(next);
   };
 
+  // Reordering uses pointer events rather than native HTML5 drag-and-drop:
+  // the latter never fires reliably inside the Tauri WebView (the handle looks
+  // grabbable but the row won't move), so we drive it the same way the room
+  // layout designer drags desks.
+  const rowIndexAt = (clientY: number): number => {
+    const rows = rowRefs.current;
+    for (let i = 0; i < rows.length; i++) {
+      const el = rows[i];
+      if (el && clientY < el.getBoundingClientRect().top + el.offsetHeight / 2) return i;
+    }
+    return Math.max(0, rows.length - 1);
+  };
+
+  const startDrag = (i: number, e: React.PointerEvent) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragIndex(i);
+    setOverIndex(i);
+  };
+
+  const dragMove = (e: React.PointerEvent) => {
+    if (dragIndex === null) return;
+    setOverIndex(rowIndexAt(e.clientY));
+  };
+
   const endDrag = () => {
+    if (dragIndex !== null && overIndex !== null) move(dragIndex, overIndex);
     setDragIndex(null);
     setOverIndex(null);
   };
@@ -147,23 +175,17 @@ function GeneralSettings() {
             {behaviourCodes.map((c, i) => (
               <tr
                 key={c.code}
+                ref={(el) => {
+                  rowRefs.current[i] = el;
+                }}
                 className={`${dragIndex === i ? "dragging" : ""} ${overIndex === i && dragIndex !== i ? "drag-over" : ""}`}
-                onDragOver={(e) => {
-                  if (dragIndex === null) return;
-                  e.preventDefault();
-                  setOverIndex(i);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (dragIndex !== null) move(dragIndex, i);
-                  endDrag();
-                }}
               >
                 <td
                   className="drag-handle"
-                  draggable
-                  onDragStart={() => setDragIndex(i)}
-                  onDragEnd={endDrag}
+                  onPointerDown={(e) => startDrag(i, e)}
+                  onPointerMove={dragMove}
+                  onPointerUp={endDrag}
+                  onPointerCancel={endDrag}
                   title="Drag to reorder"
                   aria-label="Drag to reorder"
                 >

@@ -10,6 +10,7 @@ import {
   questionAverages,
   rankStudents,
   studentProvisional,
+  symbolForPct,
 } from "./stats";
 import { Assessment, AssessmentQuestion, AttendanceEntry, Mark, QuestionMark, Student } from "./types";
 
@@ -203,5 +204,25 @@ describe("per-question grid helpers", () => {
     // 4 students × 2 questions = 8 cells; filled = 5 (s1×2, s2×2, s3×1).
     expect(gridCompletion(ids, questions, qmarks)).toBeCloseTo(5 / 8);
     expect(gridCompletion([], questions, qmarks)).toBe(1);
+  });
+});
+
+describe("symbolForPct", () => {
+  it("maps percentages to the SA 7-level code at each boundary", () => {
+    expect(symbolForPct(100)).toBe("7");
+    expect(symbolForPct(80)).toBe("7");
+    expect(symbolForPct(79.9)).toBe("6");
+    expect(symbolForPct(70)).toBe("6");
+    expect(symbolForPct(60)).toBe("5");
+    expect(symbolForPct(50)).toBe("4");
+    expect(symbolForPct(40)).toBe("3");
+    expect(symbolForPct(30)).toBe("2");
+    expect(symbolForPct(29.9)).toBe("1");
+    expect(symbolForPct(0)).toBe("1");
+  });
+
+  it("is blank when there's no percentage to grade", () => {
+    expect(symbolForPct(null)).toBe("");
+    expect(symbolForPct(NaN)).toBe("");
   });
 });
