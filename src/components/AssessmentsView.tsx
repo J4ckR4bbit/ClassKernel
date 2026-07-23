@@ -2,7 +2,7 @@ import { type KeyboardEvent as ReactKeyboardEvent, useMemo, useRef, useState } f
 import { useApp } from "../store/appStore";
 import { newId, today } from "../lib/id";
 import { Assessment, AssessmentQuestion, Mark, QuestionMark, studentName } from "../lib/types";
-import { assessmentStats, gridCompletion, questionAverages, rankStudents, studentProvisional } from "../lib/stats";
+import { assessmentStats, gridCompletion, questionAverages, rankStudents, studentProvisional, symbolForPct } from "../lib/stats";
 import { areasForGrade, shortLabel, subtopicsForGrade } from "../lib/topics";
 
 export default function AssessmentsView() {
@@ -206,6 +206,21 @@ interface QRow {
   topic: string;
   marks: string;
   cognitiveLevel: string;
+}
+
+/**
+ * Clamp a typed grid cell to [0, max], mirroring the reference app: over-max or
+ * negative entries are silently corrected rather than flagged. In-range text is
+ * returned untouched so part-typed values (e.g. "1.") aren't disturbed.
+ */
+function clampCell(raw: string, max: number): string {
+  const t = raw.trim();
+  if (t === "") return "";
+  const n = Number(t);
+  if (!Number.isFinite(n)) return raw;
+  if (n > max) return String(max);
+  if (n < 0) return "0";
+  return raw;
 }
 
 /**
@@ -496,8 +511,11 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
                   <div className="q-sub">/{q.marks}</div>
                 </th>
               ))}
-              <th className="col-total sticky-right third">Total</th>
-              <th className="col-total sticky-right second">%</th>
+              <th className="col-total sticky-right fourth">Total</th>
+              <th className="col-total sticky-right third">%</th>
+              <th className="col-total sticky-right second" title="SA achievement code (7 = 80%+ … 1 = below 30%)">
+                Sym
+              </th>
               <th className="col-total sticky-right">Rank</th>
             </tr>
             <tr className="topic-row">
@@ -509,6 +527,7 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
                   {shortLabel(topics, grade, q.topic)}
                 </th>
               ))}
+              <th className="sticky-right fourth"></th>
               <th className="sticky-right third"></th>
               <th className="sticky-right second"></th>
               <th className="sticky-right"></th>
@@ -537,21 +556,26 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
                           autoFocus={r === 0 && c === 0}
                           defaultValue={v ?? ""}
                           onFocus={(e) => e.currentTarget.select()}
-                          onChange={(e) => setCell(s.id, q.number, e.target.value)}
+                          onChange={(e) => {
+                            const fixed = clampCell(e.target.value, q.marks);
+                            if (fixed !== e.target.value) e.target.value = fixed;
+                            setCell(s.id, q.number, fixed);
+                          }}
                           onKeyDown={(e) => onKey(e, r, c)}
                         />
                       </td>
                     );
                   })}
-                  <td className="col-total sticky-right third">{p.answered ? p.total : ""}</td>
-                  <td className="col-total sticky-right second">{p.pct !== null ? `${Math.round(p.pct)}` : ""}</td>
+                  <td className="col-total sticky-right fourth">{p.answered ? p.total : ""}</td>
+                  <td className="col-total sticky-right third">{p.pct !== null ? `${Math.round(p.pct)}` : ""}</td>
+                  <td className="col-total sticky-right second">{p.answered ? symbolForPct(p.pct) : ""}</td>
                   <td className="col-total sticky-right">{rank ?? ""}</td>
                 </tr>
               );
             })}
             {nRows === 0 && (
               <tr>
-                <td colSpan={nCols + 6} className="muted" style={{ padding: 16 }}>
+                <td colSpan={nCols + 7} className="muted" style={{ padding: 16 }}>
                   Add students to the class first.
                 </td>
               </tr>
@@ -567,6 +591,7 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
                   {a.meanMark !== null ? Math.round(a.meanMark * 10) / 10 : ""}
                 </td>
               ))}
+              <td className="sticky-right fourth"></td>
               <td className="sticky-right third"></td>
               <td className="sticky-right second"></td>
               <td className="sticky-right"></td>
@@ -580,8 +605,9 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
                   {a.meanPct !== null ? Math.round(a.meanPct) : ""}
                 </td>
               ))}
-              <td className="sticky-right third"></td>
-              <td className="sticky-right second">{classMean ?? ""}</td>
+              <td className="sticky-right fourth"></td>
+              <td className="sticky-right third">{classMean ?? ""}</td>
+              <td className="sticky-right second">{classMean !== null ? symbolForPct(classMean) : ""}</td>
               <td className="sticky-right"></td>
             </tr>
           </tfoot>

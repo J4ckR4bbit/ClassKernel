@@ -78,6 +78,22 @@ export function percentage(mark: Mark, assessment: Assessment): number | null {
   return (mark.mark / assessment.totalMarks) * 100;
 }
 
+/**
+ * The South African 7-level achievement code for a percentage, matching the
+ * "Sym" column of the reference mark-entry app. 7 = 80–100% down to 1 = 0–29%.
+ * Returns "" when there's no percentage to grade (e.g. nothing entered).
+ */
+export function symbolForPct(pct: number | null): string {
+  if (pct === null || !Number.isFinite(pct)) return "";
+  if (pct >= 80) return "7";
+  if (pct >= 70) return "6";
+  if (pct >= 60) return "5";
+  if (pct >= 50) return "4";
+  if (pct >= 40) return "3";
+  if (pct >= 30) return "2";
+  return "1";
+}
+
 export function assessmentStats(assessment: Assessment, marks: Mark[]): AssessmentStats {
   const pcts = marks
     .filter((m) => m.assessmentId === assessment.id)
