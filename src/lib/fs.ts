@@ -12,6 +12,8 @@ export interface AppFS {
   readText(path: string): Promise<string>;
   /** Write via temp file + rename so cloud-sync clients never see half a file. */
   writeAtomic(path: string, contents: string): Promise<void>;
+  /** Same, for generated binaries (spreadsheet exports). */
+  writeBinary(path: string, bytes: Uint8Array): Promise<void>;
   exists(path: string): Promise<boolean>;
   mkdirs(path: string): Promise<void>;
   listDir(path: string): Promise<DirEntry[]>;
@@ -20,6 +22,8 @@ export interface AppFS {
   snapshot(dataDir: string, stamp: string, keep: number): Promise<string>;
   /** Open a native folder picker; null if cancelled or unsupported. */
   pickFolder(): Promise<string | null>;
+  /** Open a native "save as" dialog for a generated file; null if cancelled or unsupported. */
+  pickSaveFile(defaultName: string, extension: string, label: string): Promise<string | null>;
 }
 
 export function isTauri(): boolean {
@@ -36,6 +40,10 @@ class TauriFS implements AppFS {
   }
   writeAtomic(path: string, contents: string) {
     return this.invoke<void>("write_atomic", { path, contents });
+  }
+  writeBinary(path: string, bytes: Uint8Array) {
+    // The IPC bridge is JSON, so bytes travel as a plain number array.
+    return this.invoke<void>("write_binary", { path, bytes: Array.from(bytes) });
   }
   exists(path: string) {
     return this.invoke<boolean>("path_exists", { path });
@@ -57,11 +65,18 @@ class TauriFS implements AppFS {
     const picked = await open({ directory: true, multiple: false, title: "Choose your classroom data folder" });
     return typeof picked === "string" ? picked : null;
   }
+  async pickSaveFile(defaultName: string, extension: string, label: string): Promise<string | null> {
+    const { save } = await import("@tauri-apps/plugin-dialog");
+    const picked = await save({ defaultPath: defaultName, filters: [{ name: label, extensions: [extension] }] });
+    return typeof picked === "string" ? picked : null;
+  }
 }
 
 /** In-memory FS used by unit tests and the browser demo mode. */
 export class MemFS implements AppFS {
   files = new Map<string, string>();
+  /** Generated binaries (spreadsheet exports) kept separately from text files. */
+  blobs = new Map<string, Uint8Array>();
   dirs = new Set<string>();
 
   private norm(p: string): string {
@@ -78,9 +93,14 @@ export class MemFS implements AppFS {
     await this.mkdirs(p.slice(0, p.lastIndexOf("/")));
     this.files.set(p, contents);
   }
+  async writeBinary(path: string, bytes: Uint8Array): Promise<void> {
+    const p = this.norm(path);
+    await this.mkdirs(p.slice(0, p.lastIndexOf("/")));
+    this.blobs.set(p, bytes);
+  }
   async exists(path: string): Promise<boolean> {
     const p = this.norm(path);
-    return this.files.has(p) || this.dirs.has(p);
+    return this.files.has(p) || this.blobs.has(p) || this.dirs.has(p);
   }
   async mkdirs(path: string): Promise<void> {
     const p = this.norm(path);
@@ -93,7 +113,7 @@ export class MemFS implements AppFS {
   async listDir(path: string): Promise<DirEntry[]> {
     const p = this.norm(path);
     const seen = new Map<string, boolean>();
-    for (const f of this.files.keys()) {
+    for (const f of [...this.files.keys(), ...this.blobs.keys()]) {
       if (f.startsWith(p + "/")) {
         const rest = f.slice(p.length + 1);
         const head = rest.split("/")[0];
@@ -131,6 +151,10 @@ export class MemFS implements AppFS {
     return dest;
   }
   async pickFolder(): Promise<string | null> {
+    return null;
+  }
+  async pickSaveFile(): Promise<string | null> {
+    // No native dialog outside the desktop app; callers fall back to a download.
     return null;
   }
 }

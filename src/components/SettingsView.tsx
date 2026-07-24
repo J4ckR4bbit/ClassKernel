@@ -4,8 +4,9 @@ import { BehaviourCode, CognitiveLevel, DEFAULT_TOPIC_AREAS, SeatingPrefs, Stude
 import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
 import RosterView from "./RosterView";
 import LayoutDesigner from "./LayoutDesigner";
+import ExportView from "./ExportView";
 
-type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments";
+type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments" | "export";
 
 const TABS: Array<{ id: SettingsTab; label: string; perClass: boolean }> = [
   { id: "general", label: "General", perClass: false },
@@ -13,6 +14,7 @@ const TABS: Array<{ id: SettingsTab; label: string; perClass: boolean }> = [
   { id: "layout", label: "Room layout", perClass: true },
   { id: "seating", label: "Seating rules", perClass: true },
   { id: "assessments", label: "Assessments", perClass: false },
+  { id: "export", label: "Export", perClass: false },
 ];
 
 export default function SettingsView() {
@@ -51,6 +53,7 @@ export default function SettingsView() {
 
       {tab === "general" && <GeneralSettings />}
       {tab === "assessments" && <AssessmentSettings />}
+      {tab === "export" && <ExportView />}
       {perClass &&
         (active.length === 0 ? (
           <div className="panel muted">Create a class first, then set it up here.</div>
