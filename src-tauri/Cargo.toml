@@ -17,22 +17,6 @@ tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-# Google Drive sync. All HTTP lives here in Rust rather than in the webview:
-# the app's CSP has no connect-src (see tauri.conf.json), so the frontend
-# cannot make outbound requests at all, and the access token never reaches JS.
-# rustls rather than native-tls keeps the Windows build free of OpenSSL.
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "charset", "http2"] }
-tokio = { version = "1", features = ["rt", "time"] }
-md-5 = "0.10"
-sha2 = "0.10"
-base64 = "0.22"
-rand = "0.8"
-urlencoding = "2"
-opener = "0.7"
-# One cross-platform API over Windows Credential Manager / macOS Keychain /
-# Secret Service, so the refresh token is never written to the data folder.
-keyring = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service", "crypto-rust"] }
-
 [profile.release]
 codegen-units = 1
 lto = true

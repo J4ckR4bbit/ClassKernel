@@ -7,7 +7,6 @@ import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics"
 import RosterView from "./RosterView";
 import LayoutDesigner from "./LayoutDesigner";
 import ExportView from "./ExportView";
-import GoogleDriveSettings from "./GoogleDriveSettings";
 
 type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments" | "export";
 
@@ -362,10 +361,9 @@ function GeneralSettings() {
           Data folder: <code>{dataDir}</code>
         </p>
         <p className="muted">
-          Everything lives in plain .csv / .md files in that folder — open them in Excel or Notepad any time. A
-          snapshot copy is made into <code>backups/</code> every time the app starts (the newest 14 are kept). For
-          off-machine backup either turn on Google Drive sync below, or put this folder inside OneDrive or Google
-          Drive for Desktop and let their client mirror it — but not both.
+          Everything lives in plain .csv / .md files in that folder — open them in Excel or Notepad any time. Put the
+          folder inside OneDrive or Google Drive and the sync client backs it up automatically. A snapshot copy is
+          made into <code>backups/</code> every time the app starts (the newest 14 are kept).
         </p>
         <p className="muted">
           Student information (names, flags, notes, marks) is stored in these files as plain, readable text — treat
@@ -377,8 +375,6 @@ function GeneralSettings() {
         </p>
         <BackupRestore dataDir={dataDir} onRestore={chooseDataDir} confirmDialog={confirmDialog} showToast={showToast} />
       </div>
-
-      <GoogleDriveSettings />
     </>
   );
 }
