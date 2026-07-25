@@ -93,6 +93,15 @@ describe("what sync ignores", () => {
     expect(isIgnoredFile(conflictCopyPath("desks.csv", "2026-07-25_143000"))).toBe(true);
   });
 
+  it("skips generated spreadsheet exports", () => {
+    // Settings → Export can write into <dataDir>/exports/, and the Save-as
+    // dialog can put an .xlsx anywhere. Sync carries UTF-8 text, so reading a
+    // binary zip would fail on every pass.
+    expect(isIgnoredDir("exports")).toBe(true);
+    expect(isIgnoredFile("ClassKernel export 2026-07-25.xlsx")).toBe(true);
+    expect(isIgnoredFile("REPORT.XLSX")).toBe(true);
+  });
+
   it("syncs the real data files", () => {
     expect(isIgnoredFile("attendance.csv")).toBe(false);
     expect(isIgnoredDir("classes")).toBe(false);

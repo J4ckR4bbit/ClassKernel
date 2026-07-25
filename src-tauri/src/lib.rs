@@ -54,6 +54,26 @@ fn write_atomic(path: String, contents: String) -> Result<(), String> {
     }
 }
 
+/// Same as write_atomic, for generated binaries (spreadsheet exports). The
+/// target may be anywhere the user picked in the save dialog, not just the
+/// data folder.
+#[tauri::command]
+fn write_binary(path: String, bytes: Vec<u8>) -> Result<(), String> {
+    let target = PathBuf::from(&path);
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent).map_err(err)?;
+    }
+    let tmp = target.with_extension("tmp.classkernel");
+    fs::write(&tmp, &bytes).map_err(err)?;
+    match fs::rename(&tmp, &target) {
+        Ok(()) => Ok(()),
+        Err(_) => {
+            let _ = fs::remove_file(&target);
+            fs::rename(&tmp, &target).map_err(err)
+        }
+    }
+}
+
 #[tauri::command]
 fn path_exists(path: String) -> bool {
     Path::new(&path).exists()
@@ -297,6 +317,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             read_text,
             write_atomic,
+            write_binary,
             path_exists,
             mkdirs,
             list_dir,

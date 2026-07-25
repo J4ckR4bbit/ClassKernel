@@ -303,6 +303,21 @@ describe("syncOnce — what it leaves alone", () => {
     expect(drive.livePaths()).toEqual([META_FILE]);
   });
 
+  it("ignores spreadsheet exports saved into the data folder", async () => {
+    // Settings → Export writes .xlsx into <dataDir>/exports/, and its Save-as
+    // dialog can drop one next to the CSVs. Sync carries UTF-8 text, so it must
+    // pass these by rather than choke on a binary zip every pass.
+    await fs.writeBinary(`${DIR}/exports/ClassKernel export 2026-07-25.xlsx`, new Uint8Array([0x50, 0x4b, 3, 4]));
+    await fs.writeBinary(`${DIR}/classes/7B/marks.xlsx`, new Uint8Array([0x50, 0x4b, 3, 4]));
+    await fs.writeAtomic(`${DIR}/classes/7B/attendance.csv`, REGISTER);
+
+    const result = await sync();
+
+    expect(result.errors).toEqual([]);
+    expect(result.pushed).toEqual(["classes/7B/attendance.csv"]);
+    expect(drive.livePaths()).toEqual([META_FILE, "classes/7B/attendance.csv"]);
+  });
+
   it("reports a failure for one file without abandoning the rest", async () => {
     await fs.writeAtomic(`${DIR}/classes/7B/attendance.csv`, REGISTER);
     await fs.writeAtomic(`${DIR}/classes/8A/attendance.csv`, REGISTER);

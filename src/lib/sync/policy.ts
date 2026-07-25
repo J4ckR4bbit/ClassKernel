@@ -77,20 +77,36 @@ export function hasExplicitPolicy(relPath: string): boolean {
 const IGNORED_DIRS = new Set([
   // Per-device rolling snapshots: large, and each machine wants its own.
   "backups",
+  // Spreadsheet exports (Settings → Export). Generated output, not source
+  // data: regenerable from what is synced, and .xlsx is a binary zip that the
+  // text-based sync below cannot carry anyway.
+  "exports",
 ]);
+
+/**
+ * Sync moves text. Everything the app treats as data is .csv or .md, and the
+ * engine reads and writes it as UTF-8 strings, so a binary file is not merely
+ * unsupported — reading one fails outright and would leave sync stuck
+ * reporting an error every pass. Spreadsheet exports normally land in
+ * `exports/`, but the Save-as dialog lets them go anywhere, so filter on the
+ * extension too.
+ */
+const BINARY_EXTENSIONS = [".xlsx", ".xls", ".xlsm", ".zip", ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".docx"];
 
 export function isIgnoredDir(name: string): boolean {
   return IGNORED_DIRS.has(name) || name.startsWith(".");
 }
 
 export function isIgnoredFile(name: string): boolean {
+  const lower = name.toLowerCase();
   return (
     name.startsWith(".") ||
     name.endsWith(".tmp.classkernel") ||
     // Conflict copies stay on the machine that produced them; uploading them
     // would let them ping-pong between devices forever.
     name.includes(".conflict-") ||
-    name === META_FILE
+    name === META_FILE ||
+    BINARY_EXTENSIONS.some((ext) => lower.endsWith(ext))
   );
 }
 
