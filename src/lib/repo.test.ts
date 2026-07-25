@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { MemFS, getFS, setFS } from "./fs";
 import * as repo from "./repo";
-import { AttendanceEntry, DEFAULT_USER_PREFS, Mark, Student } from "./types";
+import { AttendanceEntry, BathroomVisit, DEFAULT_USER_PREFS, Mark, Student } from "./types";
 
 const DIR = "/data";
 const CLS = "7B-Science";
@@ -69,6 +69,29 @@ describe("attendance.csv", () => {
     ];
     await repo.saveAttendance(DIR, CLS, entries);
     expect(await repo.loadAttendance(DIR, CLS)).toEqual(entries);
+  });
+});
+
+describe("bathroom.csv", () => {
+  it("round-trips visits and keeps an unfinished visit open", async () => {
+    const visits: BathroomVisit[] = [
+      { date: "2026-07-01", studentId: "s1", start: "2026-07-01T09:00:00.000Z", end: "2026-07-01T09:04:30.000Z" },
+      { date: "2026-07-01", studentId: "s2", start: "2026-07-01T09:10:00.000Z", end: "" },
+    ];
+    await repo.saveBathroomVisits(DIR, CLS, visits);
+    expect(await repo.loadBathroomVisits(DIR, CLS)).toEqual(visits);
+  });
+
+  it("writes the finished duration into the CSV for Excel", async () => {
+    await repo.saveBathroomVisits(DIR, CLS, [
+      { date: "2026-07-01", studentId: "s1", start: "2026-07-01T09:00:00.000Z", end: "2026-07-01T09:04:30.000Z" },
+      { date: "2026-07-01", studentId: "s2", start: "2026-07-01T09:10:00.000Z", end: "" },
+    ]);
+    const raw = await fs.readText(`${DIR}/classes/${CLS}/bathroom.csv`);
+    const lines = raw.trim().split("\r\n");
+    expect(lines[0]).toBe("date,student_id,start,end,duration_seconds");
+    expect(lines[1].endsWith(",270")).toBe(true); // 4m30s
+    expect(lines[2].endsWith(",")).toBe(true); // still out: duration left blank
   });
 });
 

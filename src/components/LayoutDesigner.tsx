@@ -15,6 +15,16 @@ const PALETTE: Array<{ shape: DeskShape; label: string }> = [
   { shape: "label", label: "+ Label box" },
 ];
 
+/** Preset desk fills: one soft pastel per hue so a colour-coded room stays calm. */
+const PASTEL_PRESETS: Array<{ name: string; hex: string }> = [
+  { name: "Rose", hex: "#f7d9e0" },
+  { name: "Peach", hex: "#fde3cf" },
+  { name: "Butter", hex: "#fbf0c4" },
+  { name: "Mint", hex: "#d7ecda" },
+  { name: "Sky", hex: "#d6e8f7" },
+  { name: "Lilac", hex: "#e5def4" },
+];
+
 const EDGES: Array<{ value: FrontEdge; label: string }> = [
   { value: "top", label: "Front: top" },
   { value: "right", label: "Front: right" },
@@ -296,9 +306,21 @@ export default function LayoutDesigner() {
             value={selectedDesk.label}
             onChange={(e) => patchSelected({ label: e.target.value })}
           />
+          <div className="swatch-row" role="group" aria-label="Preset fill colours">
+            {PASTEL_PRESETS.map((c) => (
+              <button
+                key={c.hex}
+                className={`swatch ${selectedDesk.color === c.hex ? "on" : ""}`}
+                style={{ background: c.hex }}
+                title={c.name}
+                aria-label={`Fill ${c.name}`}
+                onClick={() => patchSelected({ color: c.hex })}
+              />
+            ))}
+          </div>
           <input
             type="color"
-            title="Fill colour"
+            title="Custom fill colour"
             value={selectedDesk.color || "#eef2f6"}
             onChange={(e) => patchSelected({ color: e.target.value })}
             style={{ padding: 1, width: 52, height: 36 }}

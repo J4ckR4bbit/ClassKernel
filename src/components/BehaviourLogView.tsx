@@ -1,12 +1,21 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
 import { studentName } from "../lib/types";
-import { behaviourByStudent } from "../lib/stats";
+import { behaviourByStudent, formatDuration, visitSeconds } from "../lib/stats";
 import PrivacyGate from "./PrivacyGate";
 
 export default function BehaviourLogView() {
-  const { currentClass, students, behaviourEvents, behaviourCodes, removeBehaviourEvent, addBehaviourEvent, showToast } =
-    useApp();
+  const {
+    currentClass,
+    students,
+    behaviourEvents,
+    behaviourCodes,
+    removeBehaviourEvent,
+    addBehaviourEvent,
+    bathroomVisits,
+    setBathroomVisits,
+    showToast,
+  } = useApp();
   const [studentFilter, setStudentFilter] = useState("");
   const [codeFilter, setCodeFilter] = useState("");
   const [from, setFrom] = useState("");
@@ -23,6 +32,19 @@ export default function BehaviourLogView() {
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
   const codeOf = (code: string) => behaviourCodes.find((c) => c.code === code);
+
+  // The bathroom log honours the same student and date filters as the events.
+  const bathroomFiltered = bathroomVisits
+    .filter((v) => !studentFilter || v.studentId === studentFilter)
+    .filter((v) => !from || v.date >= from)
+    .filter((v) => !to || v.date <= to)
+    .sort((a, b) => b.start.localeCompare(a.start));
+
+  const deleteVisit = (studentId: string, start: string) => {
+    const previous = bathroomVisits;
+    void setBathroomVisits(bathroomVisits.filter((v) => !(v.studentId === studentId && v.start === start)));
+    showToast("Bathroom visit deleted", { label: "Undo", run: () => void setBathroomVisits(previous) });
+  };
 
   return (
     <div>
@@ -127,6 +149,56 @@ export default function BehaviourLogView() {
         </tbody>
       </table>
       {filtered.length > 300 && <p className="muted">Showing the latest 300 of {filtered.length} events.</p>}
+
+      <h2 className="section-heading">🚻 Bathroom log</h2>
+      <table className="data">
+        <thead>
+          <tr>
+            <th style={{ width: 110 }}>Date</th>
+            <th style={{ width: 200 }}>Student</th>
+            <th style={{ width: 90 }}>Out</th>
+            <th style={{ width: 90 }}>Back</th>
+            <th>Duration</th>
+            <th style={{ width: 40 }}></th>
+          </tr>
+        </thead>
+        <tbody>
+          {bathroomFiltered.slice(0, 300).map((v) => {
+            const s = byId.get(v.studentId);
+            return (
+              <tr key={`${v.studentId}-${v.start}`}>
+                <td className="muted">{v.date}</td>
+                <td>{s ? studentName(s) : v.studentId}</td>
+                <td className="muted">{v.start.slice(11, 16)}</td>
+                <td className="muted">{v.end ? v.end.slice(11, 16) : "—"}</td>
+                <td>
+                  {v.end ? (
+                    formatDuration(visitSeconds(v))
+                  ) : (
+                    <span className="tag warn">still out</span>
+                  )}
+                </td>
+                <td>
+                  <button
+                    className="small danger"
+                    title="Delete this visit"
+                    onClick={() => deleteVisit(v.studentId, v.start)}
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+          {bathroomFiltered.length === 0 && (
+            <tr>
+              <td colSpan={6} className="muted" style={{ textAlign: "center", padding: 24 }}>
+                No bathroom visits match — start a timer from a seat in the Live lesson view.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
       </PrivacyGate>
     </div>
   );

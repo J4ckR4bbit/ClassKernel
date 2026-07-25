@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { backupStamp } from "../lib/id";
+import { backupStamp, nowIso, today } from "../lib/id";
 import { getFS, isTauri } from "../lib/fs";
 import * as repo from "../lib/repo";
 import { seedDemoData } from "../lib/demo";
@@ -7,6 +7,7 @@ import {
   Assessment,
   AssessmentQuestion,
   AttendanceEntry,
+  BathroomVisit,
   BehaviourCode,
   BehaviourEvent,
   ClassInfo,
@@ -89,6 +90,7 @@ export interface AppState {
   students: Student[];
   attendance: AttendanceEntry[];
   behaviourEvents: BehaviourEvent[];
+  bathroomVisits: BathroomVisit[];
   desks: Desk[];
   seating: SeatAssignment[];
   seatingPrefs: SeatingPrefs;
@@ -130,6 +132,11 @@ export interface AppState {
   removeBehaviourEvent(timestamp: string, studentId: string, code: string): Promise<void>;
   setBehaviourEvents(events: BehaviourEvent[]): Promise<void>;
   setBehaviourCodes(codes: BehaviourCode[]): Promise<void>;
+  setBathroomVisits(visits: BathroomVisit[]): Promise<void>;
+  /** Begin a bathroom trip for the student (no-op if one is already running). */
+  startBathroomVisit(studentId: string): Promise<void>;
+  /** Close the student's running bathroom trip, stamping the return time. */
+  endBathroomVisit(studentId: string): Promise<void>;
   setDesks(desks: Desk[]): Promise<void>;
   setRoomConfig(config: RoomConfig): Promise<void>;
   setSeating(seats: SeatAssignment[]): Promise<void>;
@@ -189,6 +196,7 @@ export const useApp = create<AppState>((set, get) => {
   students: [],
   attendance: [],
   behaviourEvents: [],
+  bathroomVisits: [],
   desks: [],
   seating: [],
   seatingPrefs: DEFAULT_SEATING_PREFS,
@@ -342,6 +350,7 @@ export const useApp = create<AppState>((set, get) => {
       students,
       attendance,
       behaviourEvents,
+      bathroomVisits,
       desks,
       seating,
       seatingPrefs,
@@ -355,6 +364,7 @@ export const useApp = create<AppState>((set, get) => {
       repo.loadStudents(dataDir, name),
       repo.loadAttendance(dataDir, name),
       repo.loadBehaviourEvents(dataDir, name),
+      repo.loadBathroomVisits(dataDir, name),
       repo.loadDesks(dataDir, name),
       repo.loadSeating(dataDir, name),
       repo.loadSeatingPrefs(dataDir, name),
@@ -370,6 +380,7 @@ export const useApp = create<AppState>((set, get) => {
       students,
       attendance,
       behaviourEvents,
+      bathroomVisits,
       desks,
       seating,
       seatingPrefs,
@@ -441,6 +452,26 @@ export const useApp = create<AppState>((set, get) => {
     const { dataDir } = get();
     set({ behaviourCodes: codes });
     if (dataDir) await guarded("behaviour buttons", () => repo.saveBehaviourCodes(dataDir, codes));
+  },
+
+  async setBathroomVisits(bathroomVisits) {
+    const { dataDir, currentClass } = get();
+    set({ bathroomVisits });
+    if (dataDir && currentClass) await guarded("the bathroom log", () => repo.saveBathroomVisits(dataDir, currentClass, bathroomVisits));
+  },
+
+  async startBathroomVisit(studentId) {
+    const { bathroomVisits } = get();
+    if (bathroomVisits.some((v) => v.studentId === studentId && !v.end)) return;
+    await get().setBathroomVisits([...bathroomVisits, { date: today(), studentId, start: nowIso(), end: "" }]);
+  },
+
+  async endBathroomVisit(studentId) {
+    const { bathroomVisits } = get();
+    if (!bathroomVisits.some((v) => v.studentId === studentId && !v.end)) return;
+    await get().setBathroomVisits(
+      bathroomVisits.map((v) => (v.studentId === studentId && !v.end ? { ...v, end: nowIso() } : v)),
+    );
   },
 
   async setDesks(desks) {

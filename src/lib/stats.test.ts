@@ -4,6 +4,7 @@ import {
   atRiskStudents,
   attendanceSummary,
   behaviourByStudent,
+  formatDuration,
   gridCompletion,
   histogram,
   overallPercent,
@@ -11,6 +12,7 @@ import {
   rankStudents,
   studentProvisional,
   symbolForPct,
+  visitSeconds,
 } from "./stats";
 import { Assessment, AssessmentQuestion, AttendanceEntry, Mark, QuestionMark, Student } from "./types";
 
@@ -224,5 +226,29 @@ describe("symbolForPct", () => {
   it("is blank when there's no percentage to grade", () => {
     expect(symbolForPct(null)).toBe("");
     expect(symbolForPct(NaN)).toBe("");
+  });
+});
+
+describe("bathroom visit durations", () => {
+  const visit = { date: "2026-07-01", studentId: "s1", start: "2026-07-01T09:00:00.000Z", end: "" };
+
+  it("measures a finished visit from start to end", () => {
+    expect(visitSeconds({ ...visit, end: "2026-07-01T09:04:30.000Z" })).toBe(270);
+  });
+
+  it("measures a still-open visit against the given clock", () => {
+    expect(visitSeconds(visit, Date.parse("2026-07-01T09:01:15.000Z"))).toBe(75);
+  });
+
+  it("never goes negative and shrugs off unparseable timestamps", () => {
+    expect(visitSeconds({ ...visit, end: "2026-07-01T08:00:00.000Z" })).toBe(0);
+    expect(visitSeconds({ ...visit, start: "garbage" })).toBe(0);
+  });
+
+  it("formats seconds as m:ss and hours as h:mm:ss", () => {
+    expect(formatDuration(0)).toBe("0:00");
+    expect(formatDuration(75)).toBe("1:15");
+    expect(formatDuration(270)).toBe("4:30");
+    expect(formatDuration(3661)).toBe("1:01:01");
   });
 });

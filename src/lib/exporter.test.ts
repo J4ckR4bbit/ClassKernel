@@ -44,6 +44,10 @@ beforeEach(async () => {
     { timestamp: "2026-01-10T09:15:00.000Z", studentId: "s1", code: "EFF", points: 1, note: "" },
     { timestamp: "2026-03-05T10:20:00.000Z", studentId: "s2", code: "TALK", points: -1, note: "chatting" },
   ]);
+  await repo.saveBathroomVisits(DIR, CLS, [
+    { date: "2026-01-10", studentId: "s1", start: "2026-01-10T09:30:00.000Z", end: "2026-01-10T09:34:10.000Z" },
+    { date: "2026-03-05", studentId: "s2", start: "2026-03-05T11:00:00.000Z", end: "" },
+  ]);
   await repo.saveAssessments(DIR, CLS, [
     { id: "a1", title: "Topic test 1", date: "2026-01-20", totalMarks: 20, category: "Test", questionCount: 2, contentArea: "Chemistry" },
     { id: "a2", title: "Topic test 2", date: "2026-03-20", totalMarks: 50, category: "Test", questionCount: 1, contentArea: "Physics" },
@@ -153,6 +157,18 @@ describe("buildSheets", () => {
     expect(cell(s, 1, "Time")).toBe("10:20");
   });
 
+  it("logs bathroom trips with durations, flagging one still out", () => {
+    const s = sheet(buildSheets(data, { sections: ["bathroom"] }), "Bathroom log");
+    expect(s.rows).toHaveLength(2);
+    expect(cell(s, 0, "Student")).toBe("Anna Brown");
+    expect(cell(s, 0, "Out")).toBe("09:30");
+    expect(cell(s, 0, "Back")).toBe("09:34");
+    expect(cell(s, 0, "Duration")).toBe("4:10");
+    expect(cell(s, 0, "Seconds")).toBe(250);
+    expect(cell(s, 1, "Duration")).toBe("still out");
+    expect(cell(s, 1, "Seconds")).toBeNull();
+  });
+
   it("writes marks as numbers with percentage and symbol", () => {
     const s = sheet(buildSheets(data, { sections: ["marks"] }), "Marks");
     // 2 assessments x 2 students, oldest assessment first
@@ -231,6 +247,7 @@ describe("date range", () => {
     const sheets = buildSheets(data, { sections: ALL, from: "2026-01-01", to: "2026-01-31" });
     expect(sheet(sheets, "Attendance").rows).toHaveLength(2);
     expect(sheet(sheets, "Behaviour log").rows).toHaveLength(1);
+    expect(sheet(sheets, "Bathroom log").rows).toHaveLength(1);
     expect(sheet(sheets, "Assessments").rows).toHaveLength(1);
     // Only the January test remains, so Marks drops to one row per student.
     expect(sheet(sheets, "Marks").rows).toHaveLength(2);

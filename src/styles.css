@@ -164,6 +164,11 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .layout-tools { align-items: center; }
 .front-marker { fill: #8fa5b3; font-size: 11px; letter-spacing: 2px; text-anchor: middle; }
 
+.swatch-row { display: inline-flex; align-items: center; gap: 6px; padding: 0 2px; }
+.swatch { width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 50%; border: 1px solid rgba(29, 39, 51, 0.18); }
+.swatch:hover { border-color: var(--accent); transform: scale(1.08); }
+.swatch.on { outline: 2px solid var(--accent); outline-offset: 1px; border-color: #fff; }
+
 .stepper { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--border); border-radius: var(--radius); padding: 2px; background: var(--panel); }
 .stepper .stepper-label { font-size: 12px; color: var(--text-dim); padding: 0 4px; }
 .stepper > span:not(.stepper-label) { min-width: 40px; text-align: center; font-size: 12.5px; font-variant-numeric: tabular-nums; }
@@ -207,6 +212,21 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .behaviour-popover .att-legend { margin: 4px 0 8px; }
 .bh-btn { display: block; width: 100%; text-align: left; margin-bottom: 6px; border-radius: 6px; color: #fff; border: none; padding: 9px 12px; }
 .bh-btn:hover { filter: brightness(1.1); }
+
+/* bathroom timer */
+.bathroom-btn {
+  display: block; width: 100%; text-align: left; margin-bottom: 8px; border-radius: 6px;
+  background: #fdf0dd; border: 1px solid #d9b36a; color: #7a5208; padding: 9px 12px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.bathroom-btn:hover { border-color: #b9821b; }
+.bathroom-btn.out { background: #7a5208; border-color: #7a5208; color: #fff; }
+.bathroom-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.bathroom-chip {
+  background: #fdf0dd; border-color: #d9b36a; color: #7a5208;
+  font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.bathroom-chip:hover { border-color: #b9821b; }
 
 /* ---------- marking ---------- */
 .mark-grid input.mark-input { width: 70px; text-align: right; }

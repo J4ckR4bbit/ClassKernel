@@ -7,6 +7,7 @@ import {
   Assessment,
   AssessmentQuestion,
   AttendanceEntry,
+  BathroomVisit,
   BehaviourEvent,
   Desk,
   LessonRecord,
@@ -180,6 +181,21 @@ export async function seedDemoData(): Promise<string> {
   }
   events.push({ timestamp: nowIso(), studentId: students[0].id, code: "EFF", points: 1, note: "Excellent start" });
   await repo.saveBehaviourEvents(dataDir, className, events);
+
+  // A few timed bathroom trips so the lesson view's log has history.
+  const bathroom: BathroomVisit[] = [0, 1, 2].map((i) => {
+    const out = new Date();
+    out.setDate(out.getDate() - i);
+    out.setHours(10, 12 + i * 9, 0, 0);
+    const back = new Date(out.getTime() + (2 + i) * 60000 + 24000);
+    return {
+      date: out.toISOString().slice(0, 10),
+      studentId: students[(i * 5) % students.length].id,
+      start: out.toISOString(),
+      end: back.toISOString(),
+    };
+  });
+  await repo.saveBathroomVisits(dataDir, className, bathroom);
 
   // App-wide topic bank for this grade, used by the multi-question test below
   // and by the New assessment dialog's content-area / topic dropdowns.

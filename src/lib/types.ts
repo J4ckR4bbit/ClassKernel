@@ -46,6 +46,18 @@ export interface BehaviourEvent {
   note: string;
 }
 
+/**
+ * One bathroom trip, started from the live-lesson seat popover. A row with an
+ * empty `end` is a trip still running (the student is out right now), which
+ * also means an unfinished timer survives view switches and app restarts.
+ */
+export interface BathroomVisit {
+  date: string; // YYYY-MM-DD
+  studentId: string;
+  start: string; // ISO 8601
+  end: string; // ISO 8601; "" while the student is still out
+}
+
 export type DeskShape =
   | "single" // 1 seat
   | "double" // 2 seats

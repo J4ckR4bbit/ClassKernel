@@ -7,6 +7,7 @@
 //   classes/<class>/students.csv          id,first_name,last_name,gender,flags,notes
 //   classes/<class>/attendance.csv        date,student_id,status,note
 //   classes/<class>/behaviour.csv         timestamp,student_id,code,points,note
+//   classes/<class>/bathroom.csv          date,student_id,start,end,duration_seconds
 //   classes/<class>/desks.csv             desk_id,label,shape,x,y,w,h,rotation
 //   classes/<class>/seating.csv           plan_name,desk_id,seat_index,student_id
 //   classes/<class>/seating_prefs.csv     type,a,b   (random-seating constraints)
@@ -21,11 +22,13 @@
 
 import { getFS } from "./fs";
 import { parseCsv, stringifyCsv, num, numOrNull } from "./csv";
+import { visitSeconds } from "./stats";
 import {
   Assessment,
   AssessmentQuestion,
   AttendanceEntry,
   AttendanceStatus,
+  BathroomVisit,
   BehaviourCode,
   BehaviourEvent,
   ClassInfo,
@@ -248,6 +251,34 @@ export async function saveBehaviourEvents(dataDir: string, className: string, ev
     note: e.note,
   }));
   await getFS().writeAtomic(p(classDir(dataDir, className), "behaviour.csv"), stringifyCsv(rows, BEHAVIOUR_EVENT_COLS));
+}
+
+// ---------- bathroom visits (per class) ----------
+
+const BATHROOM_COLS = ["date", "student_id", "start", "end", "duration_seconds"];
+
+export async function loadBathroomVisits(dataDir: string, className: string): Promise<BathroomVisit[]> {
+  const rows = await loadCsvFile(p(classDir(dataDir, className), "bathroom.csv"));
+  return rows
+    .filter((r) => r.student_id && r.start)
+    .map((r) => ({
+      date: r.date ?? "",
+      studentId: r.student_id,
+      start: r.start,
+      end: r.end ?? "",
+    }));
+}
+
+export async function saveBathroomVisits(dataDir: string, className: string, visits: BathroomVisit[]): Promise<void> {
+  const rows = visits.map((v) => ({
+    date: v.date,
+    student_id: v.studentId,
+    start: v.start,
+    end: v.end,
+    // Pre-computed so the CSV is immediately usable in Excel; blank while out.
+    duration_seconds: v.end ? visitSeconds(v) : "",
+  }));
+  await getFS().writeAtomic(p(classDir(dataDir, className), "bathroom.csv"), stringifyCsv(rows, BATHROOM_COLS));
 }
 
 // ---------- desks + seating ----------
