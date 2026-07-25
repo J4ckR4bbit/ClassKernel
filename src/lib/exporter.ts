@@ -8,13 +8,14 @@
 
 import * as repo from "./repo";
 import { deskSitCounts, pairInsights, studentDeskStats } from "./lessons";
-import { assessmentStats, attendanceByStudent, behaviourByStudent, percentage, symbolForPct } from "./stats";
+import { assessmentStats, attendanceByStudent, behaviourByStudent, formatDuration, percentage, symbolForPct, visitSeconds } from "./stats";
 import { SheetSpec } from "./xlsx";
 import {
   Assessment,
   AssessmentQuestion,
   AttendanceEntry,
   AttendanceStatus,
+  BathroomVisit,
   BehaviourCode,
   BehaviourEvent,
   ClassInfo,
@@ -34,6 +35,7 @@ export type ExportSection =
   | "attendanceSummary"
   | "behaviour"
   | "behaviourSummary"
+  | "bathroom"
   | "assessments"
   | "marks"
   | "questionMarks"
@@ -60,6 +62,7 @@ export const EXPORT_SECTIONS: SectionInfo[] = [
   { id: "attendanceSummary", label: "Attendance summary", description: "Per student: present / absent / late / excused and rate", sheetNames: ["Attendance summary"], defaultOn: true },
   { id: "behaviour", label: "Behaviour log", description: "Every logged behaviour event with its points", sheetNames: ["Behaviour log"], defaultOn: true },
   { id: "behaviourSummary", label: "Behaviour summary", description: "Per student: positives, negatives and net points", sheetNames: ["Behaviour summary"], defaultOn: true },
+  { id: "bathroom", label: "Bathroom log", description: "Every timed bathroom trip: when they left, came back and for how long", sheetNames: ["Bathroom log"], defaultOn: true },
   { id: "assessments", label: "Assessments", description: "Each test with mean, median, range and spread", sheetNames: ["Assessments"], defaultOn: true },
   { id: "marks", label: "Marks", description: "Per student per assessment: mark, percentage and symbol", sheetNames: ["Marks"], defaultOn: true },
   { id: "questionMarks", label: "Question marks", description: "Per question marks with topic and cognitive level (large)", sheetNames: ["Question marks"], defaultOn: false },
@@ -87,6 +90,7 @@ export interface ClassBundle {
   students: Student[];
   attendance: AttendanceEntry[];
   behaviour: BehaviourEvent[];
+  bathroom: BathroomVisit[];
   assessments: Assessment[];
   marks: Mark[];
   questions: AssessmentQuestion[];
@@ -115,11 +119,12 @@ export async function loadExportData(dataDir: string, classNames: string[]): Pro
       notes: "",
       archived: false,
     };
-    const [students, attendance, behaviour, assessments, marks, questions, questionMarks, seating, desks, lessons] =
+    const [students, attendance, behaviour, bathroom, assessments, marks, questions, questionMarks, seating, desks, lessons] =
       await Promise.all([
         repo.loadStudents(dataDir, name),
         repo.loadAttendance(dataDir, name),
         repo.loadBehaviourEvents(dataDir, name),
+        repo.loadBathroomVisits(dataDir, name),
         repo.loadAssessments(dataDir, name),
         repo.loadMarks(dataDir, name),
         repo.loadAssessmentQuestions(dataDir, name),
@@ -128,7 +133,7 @@ export async function loadExportData(dataDir: string, classNames: string[]): Pro
         repo.loadDesks(dataDir, name),
         repo.loadLessons(dataDir, name),
       ]);
-    bundles.push({ info, students, attendance, behaviour, assessments, marks, questions, questionMarks, seating, desks, lessons });
+    bundles.push({ info, students, attendance, behaviour, bathroom, assessments, marks, questions, questionMarks, seating, desks, lessons });
   }
   return { bundles, behaviourCodes };
 }
@@ -170,6 +175,7 @@ function windowed(bundle: ClassBundle, from?: string, to?: string): ClassBundle 
     ...bundle,
     attendance: bundle.attendance.filter((e) => inRange(e.date, from, to)),
     behaviour: bundle.behaviour.filter((e) => inRange(e.timestamp, from, to)),
+    bathroom: bundle.bathroom.filter((v) => inRange(v.date, from, to)),
     lessons: bundle.lessons.filter((l) => inRange(l.date, from, to)),
     assessments,
     marks: bundle.marks.filter((m) => ids.has(m.assessmentId)),
@@ -323,6 +329,28 @@ const behaviourSummarySheet: Builder = (bundles) => [
         const sum = byStudent.get(s.id);
         return [b.info.name, s.id, studentName(s), sum?.positive ?? 0, sum?.negative ?? 0, sum?.points ?? 0];
       });
+    }),
+  },
+];
+
+const bathroomSheet: Builder = (bundles) => [
+  {
+    name: "Bathroom log",
+    columns: ["Class", "Date", "Student ID", "Student", "Out", "Back", "Duration", "Seconds"],
+    rows: bundles.flatMap((b) => {
+      const nameOf = nameLookup(b.students);
+      return [...b.bathroom]
+        .sort((x, y) => x.start.localeCompare(y.start))
+        .map((v) => [
+          b.info.name,
+          v.date,
+          v.studentId,
+          nameOf(v.studentId),
+          v.start.slice(11, 16),
+          v.end ? v.end.slice(11, 16) : "",
+          v.end ? formatDuration(visitSeconds(v)) : "still out",
+          v.end ? visitSeconds(v) : null,
+        ]);
     }),
   },
 ];
@@ -612,6 +640,7 @@ const BUILDERS: Record<ExportSection, Builder> = {
   attendanceSummary: attendanceSummarySheet,
   behaviour: behaviourSheet,
   behaviourSummary: behaviourSummarySheet,
+  bathroom: bathroomSheet,
   assessments: assessmentsSheet,
   marks: marksSheet,
   questionMarks: questionMarksSheet,

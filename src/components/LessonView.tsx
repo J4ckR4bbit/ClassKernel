@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
 import { AttendanceStatus, LessonRecord, SEAT_COUNTS, studentName } from "../lib/types";
-import { eventsOnDate } from "../lib/stats";
+import { eventsOnDate, formatDuration, visitSeconds } from "../lib/stats";
 import { displayStudentName, seatSurname, textColorFor } from "../lib/privacy";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
 import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
@@ -31,6 +31,9 @@ export default function LessonView() {
     behaviourEvents,
     addBehaviourEvent,
     removeBehaviourEvent,
+    bathroomVisits,
+    startBathroomVisit,
+    endBathroomVisit,
     addLessonRecords,
     attendance,
     setAttendance,
@@ -129,6 +132,32 @@ export default function LessonView() {
 
   const attendanceToday = attendance.filter((e) => e.date === today());
   const statusOf = (id: string) => attendanceToday.find((e) => e.studentId === id)?.status;
+
+  // Bathroom timers: a visit without an end time is a student who is out now.
+  const outNow = bathroomVisits.filter((v) => !v.end);
+  const outVisitOf = (id: string) => outNow.find((v) => v.studentId === id);
+  // Re-render every second while somebody is out so the timers count up live.
+  const [, setClock] = useState(0);
+  useEffect(() => {
+    if (outNow.length === 0) return;
+    const t = setInterval(() => setClock((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [outNow.length]);
+
+  const toggleBathroom = (studentId: string) => {
+    const s = byId.get(studentId);
+    // Same rule as behaviour toasts: no names on screen in privacy mode.
+    const suffix = !userPrefs.privacyMode && s ? studentName(s) : "recorded";
+    const open = outVisitOf(studentId);
+    if (open) {
+      void endBathroomVisit(studentId);
+      showToast(`🚻 Back after ${formatDuration(visitSeconds(open))} — ${suffix}`);
+    } else {
+      void startBathroomVisit(studentId);
+      showToast(`🚻 Bathroom timer started — ${suffix}`);
+    }
+    setPopover(null);
+  };
 
   const logBehaviour = (studentId: string, code: string) => {
     const c = behaviourCodes.find((c) => c.code === code);
@@ -262,6 +291,25 @@ export default function LessonView() {
         </div>
       )}
 
+      {outNow.length > 0 && (
+        <div className="bathroom-bar no-print">
+          <span className="muted">🚻 Out now:</span>
+          {outNow.map((v) => {
+            const s = byId.get(v.studentId);
+            return (
+              <button
+                key={`${v.studentId}-${v.start}`}
+                className="bathroom-chip"
+                title="Tap when the student is back"
+                onClick={() => toggleBathroom(v.studentId)}
+              >
+                {s ? displayStudentName(s, userPrefs.seatNameStyle) : v.studentId} · {formatDuration(visitSeconds(v))} ✓
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div
         ref={canvasBoxRef}
         className={`seating-canvas ${focusMode ? "focus-canvas-wrap" : ""} ${isShuffling ? "shuffling" : ""}`}
@@ -283,7 +331,7 @@ export default function LessonView() {
               label: s ? displayStudentName(s, userPrefs.seatNameStyle) : "",
               firstName: s?.firstName,
               lastName: s ? seatSurname(s, userPrefs.seatNameStyle) : undefined,
-              badge: status === "A" && !isShuffling ? "✗" : undefined,
+              badge: !isShuffling && s && outVisitOf(s.id) ? "🚻" : status === "A" && !isShuffling ? "✗" : undefined,
               occupied: !!s,
               points: s && !isShuffling && pointsVisible ? pointsToday.get(s.id) ?? 0 : null,
             };
@@ -330,6 +378,15 @@ export default function LessonView() {
               ))}
             </div>
             <div className="att-legend">P present · A absent · L late · E excused</div>
+            <button
+              className={`bathroom-btn ${outVisitOf(popStudent.id) ? "out" : ""}`}
+              title="Time a bathroom trip; it's saved to the bathroom log when the student is back"
+              onClick={() => toggleBathroom(popStudent.id)}
+            >
+              {outVisitOf(popStudent.id)
+                ? `🚻 Back from bathroom · ${formatDuration(visitSeconds(outVisitOf(popStudent.id)!))}`
+                : "🚻 Bathroom — start timer"}
+            </button>
             {positives.map((c) => (
               <button
                 key={c.code}

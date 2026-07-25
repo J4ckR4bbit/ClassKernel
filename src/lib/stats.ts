@@ -1,6 +1,6 @@
 // Aggregation math for the attendance, behaviour and assessment views.
 
-import { Assessment, AssessmentQuestion, AttendanceEntry, BehaviourEvent, Mark, QuestionMark, Student } from "./types";
+import { Assessment, AssessmentQuestion, AttendanceEntry, BathroomVisit, BehaviourEvent, Mark, QuestionMark, Student } from "./types";
 
 // ---------- attendance ----------
 
@@ -59,6 +59,25 @@ export function behaviourByStudent(events: BehaviourEvent[]): Map<string, Behavi
 
 export function eventsOnDate(events: BehaviourEvent[], date: string): BehaviourEvent[] {
   return events.filter((e) => e.timestamp.slice(0, 10) === date);
+}
+
+// ---------- bathroom visits ----------
+
+/** Whole seconds a visit has lasted; a still-open visit runs against `now`. */
+export function visitSeconds(visit: BathroomVisit, now: number = Date.now()): number {
+  const start = Date.parse(visit.start);
+  const end = visit.end ? Date.parse(visit.end) : now;
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
+  return Math.max(0, Math.round((end - start) / 1000));
+}
+
+/** m:ss (or h:mm:ss past an hour) for live timers and logged durations. */
+export function formatDuration(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h > 0 ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
 }
 
 // ---------- assessments ----------
