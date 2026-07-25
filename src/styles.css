@@ -419,6 +419,17 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 }
 .picker-name { font-size: clamp(40px, 8vw, 110px); font-weight: 800; line-height: 1.1; min-height: 1.2em; color: var(--text-dim); }
 .picker-name.settled { color: var(--accent); }
+.picker-tally { display: flex; align-items: baseline; gap: 18px; font-size: 22px; font-weight: 700; }
+.picker-tally .yes { color: var(--accent); }
+.picker-tally .no { color: var(--danger); }
+.picker-tally .muted { font-size: 15px; font-weight: 400; }
+/* Answering / not answering is the common case, so those two get big buttons. */
+.picker-answer { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.picker-answer button { font-size: 16px; font-weight: 600; padding: 14px 22px; border: none; border-radius: 10px; }
+.picker-answer button:hover { filter: brightness(1.08); }
+.picker-answer .picker-other { border: 1px solid var(--border); background: var(--panel); font-weight: 500; }
+.picker-more { display: grid; grid-template-columns: repeat(2, minmax(190px, 1fr)); gap: 8px; width: 100%; }
+.picker-more .bh-btn { margin-bottom: 0; }
 .picker-actions { display: flex; gap: 12px; }
 .picker-actions .primary { font-size: 16px; padding: 12px 26px; }
 .picker-options { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; color: var(--text-dim); }

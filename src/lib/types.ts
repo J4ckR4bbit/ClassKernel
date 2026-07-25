@@ -305,6 +305,28 @@ export function studentName(s: Student): string {
   return `${s.firstName} ${s.lastName}`.trim();
 }
 
+/**
+ * The two behaviours the random-student picker records: whether a student who
+ * was cold-called could answer or not. They are ordinary catalogue entries, so
+ * the label, points and colour stay editable in Settings — only the codes are
+ * fixed, because that is how the picker (and the answer tally) find them.
+ */
+export const ANSWERED_BEHAVIOUR: BehaviourCode = {
+  code: "Q+",
+  label: "Asked and answered",
+  kind: "positive",
+  points: 1,
+  color: "#4f9e2e",
+};
+export const NO_ANSWER_BEHAVIOUR: BehaviourCode = {
+  code: "Q-",
+  label: "Unable to answer",
+  kind: "negative",
+  points: -1,
+  color: "#c96a4e",
+};
+export const ANSWER_BEHAVIOURS: BehaviourCode[] = [ANSWERED_BEHAVIOUR, NO_ANSWER_BEHAVIOUR];
+
 export const DEFAULT_BEHAVIOURS: BehaviourCode[] = [
   { code: "EFF", label: "Great effort", kind: "positive", points: 1, color: "#2e9e5b" },
   { code: "HELP", label: "Helping others", kind: "positive", points: 1, color: "#2e9e8a" },
@@ -314,4 +336,5 @@ export const DEFAULT_BEHAVIOURS: BehaviourCode[] = [
   { code: "DISR", label: "Disruptive", kind: "negative", points: -2, color: "#e06c3a" },
   { code: "HW-", label: "Missing homework", kind: "negative", points: -1, color: "#d65c5c" },
   { code: "LATE", label: "Late to lesson", kind: "negative", points: -1, color: "#b85c8a" },
+  ...ANSWER_BEHAVIOURS,
 ];

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
-import { AttendanceStatus, LessonRecord, SEAT_COUNTS, studentName } from "../lib/types";
+import { AttendanceStatus, BehaviourCode, LessonRecord, SEAT_COUNTS, studentName } from "../lib/types";
 import { eventsOnDate, formatDuration, visitSeconds } from "../lib/stats";
 import { displayStudentName, seatSurname, textColorFor } from "../lib/privacy";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
@@ -159,9 +159,7 @@ export default function LessonView() {
     setPopover(null);
   };
 
-  const logBehaviour = (studentId: string, code: string) => {
-    const c = behaviourCodes.find((c) => c.code === code);
-    if (!c) return;
+  const logBehaviour = (studentId: string, c: BehaviourCode) => {
     const timestamp = nowIso();
     void addBehaviourEvent({ timestamp, studentId, code: c.code, points: c.points, note: "" });
     const s = byId.get(studentId);
@@ -392,7 +390,7 @@ export default function LessonView() {
                 key={c.code}
                 className="bh-btn"
                 style={{ background: c.color, color: textColorFor(c.color) }}
-                onClick={() => logBehaviour(popStudent.id, c.code)}
+                onClick={() => logBehaviour(popStudent.id, c)}
               >
                 +{c.points} {c.label}
               </button>
@@ -402,7 +400,7 @@ export default function LessonView() {
                 key={c.code}
                 className="bh-btn"
                 style={{ background: c.color, color: textColorFor(c.color) }}
-                onClick={() => logBehaviour(popStudent.id, c.code)}
+                onClick={() => logBehaviour(popStudent.id, c)}
               >
                 {c.points} {c.label}
               </button>
@@ -413,7 +411,14 @@ export default function LessonView() {
           </div>
         )}
       </div>
-      {pickerOpen && <StudentPicker onClose={() => setPickerOpen(false)} />}
+      {pickerOpen && (
+        <StudentPicker
+          onClose={() => setPickerOpen(false)}
+          lessonEvents={lessonEvents}
+          showTally={pointsVisible}
+          onLogBehaviour={logBehaviour}
+        />
+      )}
     </div>
   );
 }

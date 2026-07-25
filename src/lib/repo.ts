@@ -24,6 +24,7 @@ import { getFS } from "./fs";
 import { parseCsv, stringifyCsv, num, numOrNull } from "./csv";
 import { visitSeconds } from "./stats";
 import {
+  ANSWER_BEHAVIOURS,
   Assessment,
   AssessmentQuestion,
   AttendanceEntry,
@@ -66,6 +67,12 @@ export async function ensureDataDir(dataDir: string): Promise<void> {
   await fs.mkdirs(p(dataDir, "backups"));
   if (!(await fs.exists(p(dataDir, "behaviours.csv")))) {
     await saveBehaviourCodes(dataDir, DEFAULT_BEHAVIOURS);
+  } else {
+    // A folder created before the picker recorded answers has no Q+/Q- rows.
+    // Add them so its buttons are labelled and editable like every other one.
+    const codes = await loadBehaviourCodes(dataDir);
+    const missing = ANSWER_BEHAVIOURS.filter((a) => !codes.some((c) => c.code === a.code));
+    if (missing.length > 0) await saveBehaviourCodes(dataDir, [...codes, ...missing]);
   }
   if (!(await fs.exists(p(dataDir, "cognitive_levels.csv")))) {
     await saveCognitiveLevels(dataDir, DEFAULT_COGNITIVE_LEVELS);
