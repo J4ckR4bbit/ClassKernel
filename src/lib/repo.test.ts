@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { MemFS, setFS } from "./fs";
+import { MemFS, getFS, setFS } from "./fs";
 import * as repo from "./repo";
-import { AttendanceEntry, Mark, Student } from "./types";
+import { AttendanceEntry, DEFAULT_USER_PREFS, Mark, Student } from "./types";
 
 const DIR = "/data";
 const CLS = "7B-Science";
@@ -295,8 +295,71 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
 
   it("round-trips the mark-grid navigation preference", async () => {
     expect((await repo.loadUserPrefs(DIR)).markGridEnter).toBe("across"); // default
-    await repo.saveUserPrefs(DIR, { markGridEnter: "down" });
+    await repo.saveUserPrefs(DIR, { ...DEFAULT_USER_PREFS, markGridEnter: "down" });
     expect((await repo.loadUserPrefs(DIR)).markGridEnter).toBe("down");
+  });
+
+  it("defaults privacy on when settings.csv is missing or predates the privacy keys", async () => {
+    // No settings file at all.
+    const fresh = await repo.loadUserPrefs(DIR);
+    expect(fresh.privacyMode).toBe(true);
+    expect(fresh.seatNameStyle).toBe("full");
+    expect(fresh.showSeatPoints).toBe(false);
+    expect(fresh.popoverShowFlags).toBe(false);
+    expect(fresh.popoverShowNotes).toBe(false);
+    expect(fresh.uiScale).toBe(1);
+    // A legacy file holding only the old key: privacy still defaults on.
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nmark_entry_enter,down\n");
+    const legacy = await repo.loadUserPrefs(DIR);
+    expect(legacy.markGridEnter).toBe("down");
+    expect(legacy.privacyMode).toBe(true);
+  });
+
+  it("round-trips all privacy and display preferences", async () => {
+    const prefs = {
+      markGridEnter: "down" as const,
+      privacyMode: false,
+      seatNameStyle: "firstInitial" as const,
+      showSeatPoints: true,
+      popoverShowFlags: true,
+      popoverShowNotes: true,
+      uiScale: 1.5,
+    };
+    await repo.saveUserPrefs(DIR, prefs);
+    expect(await repo.loadUserPrefs(DIR)).toEqual(prefs);
+  });
+
+  it("clamps a bad ui_scale back into range", async () => {
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nui_scale,9\n");
+    expect((await repo.loadUserPrefs(DIR)).uiScale).toBe(2);
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nui_scale,-3\n");
+    expect((await repo.loadUserPrefs(DIR)).uiScale).toBe(1);
+  });
+});
+
+describe("backups", () => {
+  it("restores a snapshot over the live files, taking a safety copy first", async () => {
+    const s1: Student = { id: "s1", firstName: "Amelia", lastName: "Adams", gender: "", flags: "SEN", notes: "" };
+    await repo.saveStudents(DIR, CLS, [s1]);
+    // Fake the app-start snapshot of the current state (the desktop backend
+    // does this in Rust; MemFS snapshots don't copy).
+    const snap = `${DIR}/backups/2026-01-01_080000`;
+    await getFS().writeAtomic(`${snap}/classes/${CLS}/students.csv`, await getFS().readText(`${DIR}/classes/${CLS}/students.csv`));
+    // The live file is then wrecked.
+    await repo.saveStudents(DIR, CLS, []);
+    expect(await repo.loadStudents(DIR, CLS)).toHaveLength(0);
+    expect(await repo.listBackups(DIR)).toEqual(["2026-01-01_080000"]);
+
+    await repo.restoreBackup(DIR, "2026-01-01_080000", "pre-restore-test");
+    expect(await repo.loadStudents(DIR, CLS)).toEqual([s1]);
+    // The safety copy holds the pre-restore (empty) state and is listed.
+    const safety = await getFS().readText(`${DIR}/backups/pre-restore-test/classes/${CLS}/students.csv`);
+    expect(safety).not.toContain("s1");
+    expect(await repo.listBackups(DIR)).toContain("pre-restore-test");
+  });
+
+  it("rejects a restore of a missing snapshot", async () => {
+    await expect(repo.restoreBackup(DIR, "nope", "safety")).rejects.toThrow(/not found/i);
   });
 });
 

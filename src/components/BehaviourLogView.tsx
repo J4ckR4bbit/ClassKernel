@@ -2,9 +2,11 @@ import { useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
 import { studentName } from "../lib/types";
 import { behaviourByStudent } from "../lib/stats";
+import PrivacyGate from "./PrivacyGate";
 
 export default function BehaviourLogView() {
-  const { currentClass, students, behaviourEvents, behaviourCodes, removeBehaviourEvent } = useApp();
+  const { currentClass, students, behaviourEvents, behaviourCodes, removeBehaviourEvent, addBehaviourEvent, showToast } =
+    useApp();
   const [studentFilter, setStudentFilter] = useState("");
   const [codeFilter, setCodeFilter] = useState("");
   const [from, setFrom] = useState("");
@@ -24,6 +26,7 @@ export default function BehaviourLogView() {
 
   return (
     <div>
+      <PrivacyGate label="the behaviour history">
       <div className="view-header">
         <h1>{currentClass} — Behaviour log</h1>
         <div className="spacer" />
@@ -43,8 +46,12 @@ export default function BehaviourLogView() {
             </option>
           ))}
         </select>
-        <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} title="From date" />
-        <input type="date" value={to} onChange={(e) => setTo(e.target.value)} title="To date" />
+        <label className="field-label">
+          From <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </label>
+        <label className="field-label">
+          To <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        </label>
       </div>
 
       {studentFilter && summaries.get(studentFilter) && (
@@ -98,7 +105,11 @@ export default function BehaviourLogView() {
                   <button
                     className="small danger"
                     title="Delete this event"
-                    onClick={() => void removeBehaviourEvent(e.timestamp, e.studentId, e.code)}
+                    onClick={() => {
+                      const deleted = { ...e };
+                      void removeBehaviourEvent(e.timestamp, e.studentId, e.code);
+                      showToast("Behaviour event deleted", { label: "Undo", run: () => void addBehaviourEvent(deleted) });
+                    }}
                   >
                     ✕
                   </button>
@@ -116,6 +127,7 @@ export default function BehaviourLogView() {
         </tbody>
       </table>
       {filtered.length > 300 && <p className="muted">Showing the latest 300 of {filtered.length} events.</p>}
+      </PrivacyGate>
     </div>
   );
 }

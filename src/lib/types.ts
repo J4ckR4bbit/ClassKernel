@@ -232,14 +232,39 @@ export const DEFAULT_TIMER_PRESETS: TimerPreset[] = [
   { name: "Comprehension (5 read · 25 write)", readingMinutes: 5, writingMinutes: 25, display: "hourglass", chime: true },
 ];
 
+/** How student names are shown on seat tiles on class-facing screens. */
+export type SeatNameStyle = "full" | "firstInitial" | "first";
+
 /** App-wide user preferences (settings.csv). */
 export interface UserPrefs {
   /** In the marking grid, which direction Enter moves. Tab does the opposite. */
   markGridEnter: "across" | "down";
+  /**
+   * Treat the screen as visible to the whole class: cover marks/analysis views
+   * until explicitly revealed, keep flags/notes out of the lesson popover and
+   * student names out of toasts. On by default; the granular prefs below let a
+   * teacher selectively re-show individual pieces without turning this off.
+   */
+  privacyMode: boolean;
+  seatNameStyle: SeatNameStyle;
+  /** Show each student's running behaviour points on their seat tile. */
+  showSeatPoints: boolean;
+  /** Show the student's flags (e.g. SEN/Medical) in the lesson seat popover. */
+  popoverShowFlags: boolean;
+  /** Show the student's notes in the lesson seat popover. */
+  popoverShowNotes: boolean;
+  /** Whole-app display scale for large touch panels (1–2). */
+  uiScale: number;
 }
 
 export const DEFAULT_USER_PREFS: UserPrefs = {
   markGridEnter: "across",
+  privacyMode: true,
+  seatNameStyle: "full",
+  showSeatPoints: false,
+  popoverShowFlags: false,
+  popoverShowNotes: false,
+  uiScale: 1,
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {

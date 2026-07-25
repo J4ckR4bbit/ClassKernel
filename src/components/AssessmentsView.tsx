@@ -4,9 +4,10 @@ import { newId, today } from "../lib/id";
 import { Assessment, AssessmentQuestion, Mark, QuestionMark, studentName } from "../lib/types";
 import { assessmentStats, gridCompletion, questionAverages, rankStudents, studentProvisional, symbolForPct } from "../lib/stats";
 import { areasForGrade, shortLabel, subtopicsForGrade } from "../lib/topics";
+import PrivacyGate from "./PrivacyGate";
 
 export default function AssessmentsView() {
-  const { currentClass, classes, students, assessments, setAssessments, marks, setMarks, assessmentQuestions, setAssessmentQuestions, questionMarks, setQuestionMarks, showToast } = useApp();
+  const { currentClass, classes, students, assessments, setAssessments, marks, setMarks, assessmentQuestions, setAssessmentQuestions, questionMarks, setQuestionMarks, showToast, confirmDialog } = useApp();
   const [showNew, setShowNew] = useState(false);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const [setupId, setSetupId] = useState<string | null>(null);
@@ -19,8 +20,14 @@ export default function AssessmentsView() {
   const questionsFor = (id: string) =>
     assessmentQuestions.filter((q) => q.assessmentId === id).sort((a, b) => a.number - b.number);
 
-  const deleteAssessment = (a: Assessment) => {
-    if (!confirm(`Delete "${a.title}" and its marks?`)) return;
+  const deleteAssessment = async (a: Assessment) => {
+    const ok = await confirmDialog({
+      title: `Delete "${a.title}"?`,
+      body: "The assessment and every mark entered for it are deleted.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     void setAssessments(assessments.filter((x) => x.id !== a.id));
     void setMarks(marks.filter((m) => m.assessmentId !== a.id));
     void setAssessmentQuestions(assessmentQuestions.filter((q) => q.assessmentId !== a.id));
@@ -41,10 +48,14 @@ export default function AssessmentsView() {
 
   if (marking) {
     const done = () => { setMarkingId(null); showToast("Marks saved"); };
-    return marking.questionCount > 1 ? (
-      <QuestionGrid assessment={marking} grade={grade} onDone={done} onEditQuestions={() => { setMarkingId(null); setSetupId(marking.id); }} />
-    ) : (
-      <QuickMarking assessment={marking} onDone={done} />
+    return (
+      <PrivacyGate label="marks and rankings">
+        {marking.questionCount > 1 ? (
+          <QuestionGrid assessment={marking} grade={grade} onDone={done} onEditQuestions={() => { setMarkingId(null); setSetupId(marking.id); }} />
+        ) : (
+          <QuickMarking assessment={marking} onDone={done} />
+        )}
+      </PrivacyGate>
     );
   }
 
@@ -95,7 +106,7 @@ export default function AssessmentsView() {
                         Questions
                       </button>
                     )}
-                    <button className="small danger" onClick={() => deleteAssessment(a)}>
+                    <button className="small danger" onClick={() => void deleteAssessment(a)}>
                       ✕
                     </button>
                   </div>
@@ -613,6 +624,10 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
           </tfoot>
         </table>
       </div>
+      <p className="muted">
+        <b>Sym</b> is the SA achievement code: 7 = 80%+, 6 = 70–79, 5 = 60–69, 4 = 50–59, 3 = 40–49, 2 = 30–39, 1 =
+        below 30%.
+      </p>
       <p className="muted">
         {userPrefs.markGridEnter === "across"
           ? "Enter moves across the questions; Tab moves down to the next student."

@@ -3,9 +3,10 @@ import { useApp } from "../store/appStore";
 import { newId } from "../lib/id";
 import { Student } from "../lib/types";
 import { attendanceByStudent, behaviourByStudent } from "../lib/stats";
+import PrivacyGate from "./PrivacyGate";
 
 export default function RosterView() {
-  const { currentClass, students, setStudents, attendance, behaviourEvents, showToast } = useApp();
+  const { currentClass, students, setStudents, attendance, behaviourEvents, showToast, confirmDialog } = useApp();
   const [showImport, setShowImport] = useState(false);
   const attSummaries = attendanceByStudent(attendance);
   const bhSummaries = behaviourByStudent(behaviourEvents);
@@ -18,14 +19,23 @@ export default function RosterView() {
     void setStudents([...students, { id: newId("s"), firstName: "", lastName: "", gender: "", flags: "", notes: "" }]);
   };
 
-  const remove = (id: string) => {
+  const remove = async (id: string) => {
     const s = students.find((s) => s.id === id);
-    if (!confirm(`Remove ${s?.firstName} ${s?.lastName}? Their attendance/behaviour/mark history stays in the CSV files.`)) return;
+    const ok = await confirmDialog({
+      title: `Remove ${s?.firstName} ${s?.lastName}?`,
+      body: "Their attendance, behaviour and mark history stays in the CSV files.",
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
+    const previous = students;
     void setStudents(students.filter((s) => s.id !== id));
+    showToast("Student removed", { label: "Undo", run: () => void setStudents(previous) });
   };
 
   return (
     <div>
+      <PrivacyGate label="names, flags and notes">
       <div className="view-header">
         <h1>{currentClass} — Students</h1>
         <span className="muted">{students.length} students</span>
@@ -36,6 +46,10 @@ export default function RosterView() {
         </button>
       </div>
 
+      <p className="muted field-hint">
+        Flags are short tags separated by semicolons, e.g. <b>SEN;Medical</b> — notes are free text. Both stay off
+        class-facing screens unless you choose otherwise in Settings.
+      </p>
       <table className="data">
         <thead>
           <tr>
@@ -86,7 +100,7 @@ export default function RosterView() {
                   )}
                 </td>
                 <td>
-                  <button className="small danger" onClick={() => remove(s.id)} title="Remove student">
+                  <button className="small danger" onClick={() => void remove(s.id)} title="Remove student">
                     ✕
                   </button>
                 </td>
@@ -103,6 +117,7 @@ export default function RosterView() {
         </tbody>
       </table>
 
+      </PrivacyGate>
       {showImport && (
         <ImportModal
           onClose={() => setShowImport(false)}

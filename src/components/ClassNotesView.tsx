@@ -4,7 +4,7 @@ import { useApp } from "../store/appStore";
 
 /** Class details + free-form markdown notes (stored as class.md). */
 export default function ClassNotesView() {
-  const { currentClass, classes, updateClassInfo, renameClass, showToast } = useApp();
+  const { currentClass, classes, updateClassInfo, renameClass, showToast, promptDialog } = useApp();
   const info = classes.find((c) => c.name === currentClass);
   const [notes, setNotes] = useState(info?.notes ?? "");
   const [year, setYear] = useState(info?.year ?? "");
@@ -27,7 +27,9 @@ export default function ClassNotesView() {
   };
 
   const rename = async () => {
-    const next = prompt("New class name (also renames its folder):", info.name)?.trim();
+    const next = (
+      await promptDialog({ title: "Rename class", body: "Also renames the class's folder on disk.", initial: info.name })
+    )?.trim();
     if (!next || next === info.name) return;
     await renameClass(info.name, next.replace(/[<>:"/\\|?*]/g, ""));
     showToast("Class renamed");

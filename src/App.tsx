@@ -14,23 +14,70 @@ import DashboardView from "./components/DashboardView";
 import ClassNotesView from "./components/ClassNotesView";
 import TimerView from "./components/TimerView";
 import SettingsView from "./components/SettingsView";
+import AppDialog from "./components/AppDialog";
+
+/** Toast + dialog + save-error UI shared by both shells. */
+function Overlays() {
+  const { toast, saveError, retrySave } = useApp();
+  return (
+    <>
+      {saveError && (
+        <div className="save-error-banner">
+          Couldn't save {saveError.label} to disk — your changes are only in memory.
+          <button onClick={() => void retrySave()}>Try again</button>
+        </div>
+      )}
+      {toast && (
+        <div className="toast">
+          {toast.message}
+          {toast.actionLabel && (
+            <button
+              className="toast-action"
+              onClick={() => {
+                toast.onAction?.();
+                useApp.setState({ toast: null });
+              }}
+            >
+              {toast.actionLabel}
+            </button>
+          )}
+        </div>
+      )}
+      <AppDialog />
+    </>
+  );
+}
 
 export default function App() {
-  const { booted, dataDir, currentClass, view, toast, demoMode, focusMode, setFocusMode, boot } = useApp();
+  const { booted, dataDir, currentClass, view, demoMode, focusMode, setFocusMode, boot, userPrefs } = useApp();
 
   useEffect(() => {
     void boot();
   }, [boot]);
 
-  // Escape always leaves the distraction-free teaching layout.
+  // Escape always leaves the distraction-free teaching layout (unless a
+  // dialog is open — then it just closes the dialog).
   useEffect(() => {
     if (!focusMode) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setFocusMode(false);
+      if (e.key === "Escape" && !useApp.getState().dialog) setFocusMode(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [focusMode, setFocusMode]);
+
+  // Whole-app display scale for large touch panels. `zoom` scales layout,
+  // inline px styles and SVG coherently, which a root font-size change can't
+  // do with this all-px stylesheet.
+  const scale = userPrefs.uiScale;
+  useEffect(() => {
+    const root = document.documentElement;
+    if (scale && scale !== 1) root.style.setProperty("zoom", String(scale));
+    else root.style.removeProperty("zoom");
+    return () => {
+      root.style.removeProperty("zoom");
+    };
+  }, [scale]);
 
   if (!booted) return <div className="boot-screen">Loading…</div>;
   if (!dataDir) return <Onboarding />;
@@ -41,7 +88,7 @@ export default function App() {
     return (
       <div className="focus-shell">
         <LessonView />
-        {toast && <div className="toast">{toast}</div>}
+        <Overlays />
       </div>
     );
   }
@@ -77,7 +124,7 @@ export default function App() {
           </>
         )}
       </main>
-      {toast && <div className="toast">{toast}</div>}
+      <Overlays />
     </div>
   );
 }

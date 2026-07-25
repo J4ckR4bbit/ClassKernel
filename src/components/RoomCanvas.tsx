@@ -36,11 +36,20 @@ interface Props {
   children?: ReactNode;
 }
 
+/**
+ * Client position → the unscaled designer canvas's room coordinates. Divides
+ * out the app display zoom (client rects are in zoomed pixels; the SVG's
+ * layout width is not).
+ */
+export function svgPointFromClient(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {
+  const rect = svg.getBoundingClientRect();
+  const zoom = svg.clientWidth > 0 ? rect.width / svg.clientWidth : 1;
+  return { x: (clientX - rect.left) / zoom, y: (clientY - rect.top) / zoom };
+}
+
 /** Convert a pointer event to room coordinates (designer canvas is unscaled). */
 export function toRoomCoords(e: { clientX: number; clientY: number; currentTarget: EventTarget }): { x: number; y: number } {
-  const svg = e.currentTarget as SVGSVGElement;
-  const rect = svg.getBoundingClientRect();
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  return svgPointFromClient(e.currentTarget as SVGSVGElement, e.clientX, e.clientY);
 }
 
 const FRONT_TEXT = "▲ FRONT OF ROOM / WHITEBOARD ▲";
@@ -257,10 +266,15 @@ function SeatView({
       onClick={(e) => {
         e.stopPropagation();
         // Report the click position relative to the canvas wrapper so popovers
-        // anchor correctly even when the view is crop-scaled.
+        // anchor correctly even when the view is crop-scaled. Divide out the
+        // app zoom (rect is in zoomed pixels, CSS left/top are not).
         const wrap = (e.target as Element).closest(".canvas-wrap");
         const rect = wrap?.getBoundingClientRect();
-        onSeatClick?.(rect ? e.clientX - rect.left : slot.x, rect ? e.clientY - rect.top : slot.y);
+        const zoom = wrap instanceof HTMLElement && wrap.offsetWidth > 0 && rect ? rect.width / wrap.offsetWidth : 1;
+        onSeatClick?.(
+          rect ? (e.clientX - rect.left) / zoom : slot.x,
+          rect ? (e.clientY - rect.top) / zoom : slot.y,
+        );
       }}
       style={{ cursor: onSeatClick ? "pointer" : undefined }}
     >
