@@ -74,6 +74,10 @@ export default function LessonView() {
   // Whether the class-facing seat tiles show the running points scoreboard.
   const pointsVisible = userPrefs.privacyMode ? userPrefs.showSeatPoints : true;
 
+  // In teaching mode the lesson buttons sit on whichever edge Settings says,
+  // so they land under the hand of whoever is standing at the board.
+  const shellClass = focusMode ? `focus-layout bar-${userPrefs.lessonBarSide}` : "";
+
   // Friendly fallback names for unlabelled desks, so lesson history is readable.
   const deskFallback = useMemo(() => {
     const m = new Map<string, string>();
@@ -210,7 +214,7 @@ export default function LessonView() {
 
   if (desks.length === 0 || planSeats.length === 0) {
     return (
-      <div>
+      <div className={shellClass}>
         {focusMode ? (
           <div className="focus-bar">
             <button onClick={() => setFocusMode(false)}>✕ Exit teaching mode</button>
@@ -232,7 +236,7 @@ export default function LessonView() {
   }
 
   return (
-    <div>
+    <div className={shellClass}>
       {focusMode ? (
         <div className="focus-bar">
           <button onClick={() => setFocusMode(false)} title="Back to the full app (or press Esc)">

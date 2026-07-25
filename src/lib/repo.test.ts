@@ -349,9 +349,17 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       popoverShowFlags: true,
       popoverShowNotes: true,
       uiScale: 1.5,
+      lessonBarSide: "left" as const,
     };
     await repo.saveUserPrefs(DIR, prefs);
     expect(await repo.loadUserPrefs(DIR)).toEqual(prefs);
+  });
+
+  it("falls back to a top lesson bar when the setting is missing or unknown", async () => {
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nui_scale,1\n");
+    expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("top");
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nlesson_bar_side,sideways\n");
+    expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("top");
   });
 
   it("clamps a bad ui_scale back into range", async () => {

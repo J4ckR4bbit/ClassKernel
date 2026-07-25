@@ -249,6 +249,11 @@ export const DEFAULT_TIMER_PRESETS: TimerPreset[] = [
 /** How student names are shown on seat tiles on class-facing screens. */
 export type SeatNameStyle = "full" | "firstInitial" | "first";
 
+/** Which edge of the teaching-mode screen the lesson buttons sit on. */
+export type LessonBarSide = "top" | "right" | "bottom" | "left";
+
+export const LESSON_BAR_SIDES: LessonBarSide[] = ["top", "right", "bottom", "left"];
+
 /** App-wide user preferences (settings.csv). */
 export interface UserPrefs {
   /** In the marking grid, which direction Enter moves. Tab does the opposite. */
@@ -269,6 +274,8 @@ export interface UserPrefs {
   popoverShowNotes: boolean;
   /** Whole-app display scale for large touch panels (1–2). */
   uiScale: number;
+  /** Where the lesson buttons sit around the seating plan in teaching mode. */
+  lessonBarSide: LessonBarSide;
 }
 
 export const DEFAULT_USER_PREFS: UserPrefs = {
@@ -279,6 +286,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   popoverShowFlags: false,
   popoverShowNotes: false,
   uiScale: 1,
+  lessonBarSide: "top",
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {

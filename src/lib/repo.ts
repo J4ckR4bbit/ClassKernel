@@ -41,6 +41,8 @@ import {
   Desk,
   DeskShape,
   FrontEdge,
+  LESSON_BAR_SIDES,
+  LessonBarSide,
   LessonRecord,
   Mark,
   QuestionMark,
@@ -803,6 +805,7 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
   const enter = kv.get("mark_entry_enter");
   const style = kv.get("seat_name_style") as SeatNameStyle;
   const uiScale = num(kv.get("ui_scale"), 1);
+  const barSide = kv.get("lesson_bar_side") as LessonBarSide;
   return {
     markGridEnter: enter === "down" ? "down" : "across",
     // A missing key means privacy on: existing installs get it without migration.
@@ -812,6 +815,7 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
     popoverShowFlags: kv.get("popover_flags") === "true",
     popoverShowNotes: kv.get("popover_notes") === "true",
     uiScale: Math.min(2, Math.max(1, uiScale > 0 ? uiScale : 1)),
+    lessonBarSide: LESSON_BAR_SIDES.includes(barSide) ? barSide : "top",
   };
 }
 
@@ -824,6 +828,7 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "popover_flags", value: prefs.popoverShowFlags ? "true" : "false" },
     { key: "popover_notes", value: prefs.popoverShowNotes ? "true" : "false" },
     { key: "ui_scale", value: String(prefs.uiScale) },
+    { key: "lesson_bar_side", value: prefs.lessonBarSide },
   ];
   await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
 }
