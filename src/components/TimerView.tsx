@@ -197,7 +197,7 @@ function fmtClock(d: Date): string {
 }
 
 export default function TimerView() {
-  const { timerPresets, setTimerPresets, showToast } = useApp();
+  const { timerPresets, setTimerPresets, showToast, promptDialog } = useApp();
 
   // setup fields
   const [readingMin, setReadingMin] = useState(10);
@@ -318,8 +318,8 @@ export default function TimerView() {
     setChimeOn(p.chime);
   };
 
-  const savePreset = () => {
-    const name = window.prompt("Name this timer preset", `${readingMin} read · ${writingMin} write`);
+  const savePreset = async () => {
+    const name = await promptDialog({ title: "Save timer preset", initial: `${readingMin} read · ${writingMin} write` });
     if (!name) return;
     const preset: TimerPreset = {
       name: name.trim(),
@@ -414,7 +414,7 @@ export default function TimerView() {
                 </option>
               ))}
             </select>
-            <button onClick={savePreset}>Save current settings</button>
+            <button onClick={() => void savePreset()}>Save current settings</button>
           </div>
           {timerPresets.length > 0 && (
             <ul className="preset-list">

@@ -25,6 +25,7 @@ import {
   studentSeries,
 } from "../lib/stats";
 import SeatingInsights from "./SeatingInsights";
+import PrivacyGate from "./PrivacyGate";
 
 // Chart colors validated with the dataviz palette checker (light surface):
 const C_PRIMARY = "#2e9455"; // green — main data series
@@ -114,10 +115,10 @@ export default function DashboardView() {
         </div>
         <div className="panel muted">Create assessments and enter marks to see the marks analysis dashboard.</div>
         {lessons.length > 0 && (
-          <>
+          <PrivacyGate label="behaviour and seating history">
             <h2 className="section-heading">Seating insights</h2>
             <SeatingInsights />
-          </>
+          </PrivacyGate>
         )}
       </div>
     );
@@ -129,6 +130,7 @@ export default function DashboardView() {
         <h1>{currentClass} — Dashboard</h1>
       </div>
 
+      <PrivacyGate label="marks, attendance and behaviour analysis">
       <div className="stat-tiles">
         <div className="stat-tile">
           <div className="value">{classAvg !== null ? `${Math.round(classAvg)}%` : "—"}</div>
@@ -306,6 +308,7 @@ export default function DashboardView() {
 
       <h2 className="section-heading">Seating insights</h2>
       <SeatingInsights />
+      </PrivacyGate>
     </div>
   );
 }

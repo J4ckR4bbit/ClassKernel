@@ -42,6 +42,7 @@ import {
   QuestionMark,
   RoomConfig,
   SeatAssignment,
+  SeatNameStyle,
   SeatingPrefs,
   Student,
   TimerPreset,
@@ -699,20 +700,88 @@ export async function saveTimerPresets(dataDir: string, presets: TimerPreset[]):
   await getFS().writeAtomic(p(dataDir, "timer_presets.csv"), stringifyCsv(rows, TIMER_PRESET_COLS));
 }
 
+// ---------- backup snapshots (backups/<stamp>/) ----------
+// Snapshots are taken automatically at every app start (fs.snapshot). Restore
+// is done here in TS with the plain FS primitives so it behaves identically on
+// the desktop backend and the in-memory FS (demo mode / tests).
+
+/** Newest-first list of snapshot folder names under backups/. */
+export async function listBackups(dataDir: string): Promise<string[]> {
+  const fs = getFS();
+  const dir = p(dataDir, "backups");
+  if (!(await fs.exists(dir))) return [];
+  const entries = await fs.listDir(dir);
+  return entries
+    .filter((e) => e.isDir && !e.name.startsWith("."))
+    .map((e) => e.name)
+    .sort((a, b) => b.localeCompare(a));
+}
+
+/** Recursively copy every file under src into dest, skipping skipNames at the top level. */
+async function copyTree(src: string, dest: string, skipNames: string[] = []): Promise<void> {
+  const fs = getFS();
+  const entries = await fs.listDir(src);
+  for (const e of entries) {
+    if (skipNames.includes(e.name) || e.name.endsWith(".tmp.classkernel")) continue;
+    const from = p(src, e.name);
+    const to = p(dest, e.name);
+    if (e.isDir) {
+      await fs.mkdirs(to);
+      await copyTree(from, to);
+    } else {
+      await fs.writeAtomic(to, await fs.readText(from));
+    }
+  }
+}
+
+/**
+ * Copy a snapshot's files back over the live data folder. A safety copy of the
+ * current state is written to backups/<safetyStamp> first, so a restore is
+ * itself undoable. Files created since the snapshot are left in place.
+ */
+export async function restoreBackup(dataDir: string, stamp: string, safetyStamp: string): Promise<void> {
+  const fs = getFS();
+  const snapDir = p(dataDir, "backups", stamp);
+  if (!(await fs.exists(snapDir))) throw new Error(`Backup not found: ${stamp}`);
+  const safetyDir = p(dataDir, "backups", safetyStamp);
+  await fs.mkdirs(safetyDir);
+  await copyTree(dataDir, safetyDir, ["backups"]);
+  await copyTree(snapDir, dataDir, ["backups"]);
+}
+
 // ---------- app-wide user preferences (settings.csv: key,value) ----------
 
 const SETTINGS_COLS = ["key", "value"];
+
+const SEAT_NAME_STYLES: SeatNameStyle[] = ["full", "firstInitial", "first"];
 
 export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
   const rows = await loadCsvFile(p(dataDir, "settings.csv"));
   const kv = new Map(rows.map((r) => [r.key, r.value ?? ""]));
   const enter = kv.get("mark_entry_enter");
+  const style = kv.get("seat_name_style") as SeatNameStyle;
+  const uiScale = num(kv.get("ui_scale"), 1);
   return {
     markGridEnter: enter === "down" ? "down" : "across",
+    // A missing key means privacy on: existing installs get it without migration.
+    privacyMode: kv.get("privacy_mode") !== "false",
+    seatNameStyle: SEAT_NAME_STYLES.includes(style) ? style : "full",
+    showSeatPoints: kv.get("seat_points") === "true",
+    popoverShowFlags: kv.get("popover_flags") === "true",
+    popoverShowNotes: kv.get("popover_notes") === "true",
+    uiScale: Math.min(2, Math.max(1, uiScale > 0 ? uiScale : 1)),
   };
 }
 
 export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<void> {
-  const rows: Array<{ key: string; value: string }> = [{ key: "mark_entry_enter", value: prefs.markGridEnter }];
+  const rows: Array<{ key: string; value: string }> = [
+    { key: "mark_entry_enter", value: prefs.markGridEnter },
+    { key: "privacy_mode", value: prefs.privacyMode ? "true" : "false" },
+    { key: "seat_name_style", value: prefs.seatNameStyle },
+    { key: "seat_points", value: prefs.showSeatPoints ? "true" : "false" },
+    { key: "popover_flags", value: prefs.popoverShowFlags ? "true" : "false" },
+    { key: "popover_notes", value: prefs.popoverShowNotes ? "true" : "false" },
+    { key: "ui_scale", value: String(prefs.uiScale) },
+  ];
   await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
 }

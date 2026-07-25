@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
 import { AttendanceStatus, LessonRecord, SEAT_COUNTS, studentName } from "../lib/types";
 import { eventsOnDate } from "../lib/stats";
+import { displayStudentName, seatSurname, textColorFor } from "../lib/privacy";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
 import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
+import StudentPicker, { pickedKey } from "./StudentPicker";
 
 const lessonKey = (className: string) => `classkernel.lessonStart.${className}`;
 
@@ -28,6 +30,7 @@ export default function LessonView() {
     behaviourCodes,
     behaviourEvents,
     addBehaviourEvent,
+    removeBehaviourEvent,
     addLessonRecords,
     attendance,
     setAttendance,
@@ -36,11 +39,14 @@ export default function LessonView() {
     roomConfig,
     focusMode,
     setFocusMode,
+    userPrefs,
+    confirmDialog,
   } = useApp();
   const planNames = useMemo(() => [...new Set(seating.map((s) => s.planName))].sort(), [seating]);
   const [plan, setPlan] = useState(planNames[0] ?? "Default");
   const activePlan = planNames.includes(plan) ? plan : planNames[0];
   const [popover, setPopover] = useState<Popover | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   // Reroll the seating in place, with the same animation as the seating plan.
   const { shuffleFrame, isShuffling, randomise } = useSeatingShuffle();
 
@@ -62,6 +68,9 @@ export default function LessonView() {
   const pointsToday = new Map<string, number>();
   for (const e of lessonEvents) pointsToday.set(e.studentId, (pointsToday.get(e.studentId) ?? 0) + e.points);
 
+  // Whether the class-facing seat tiles show the running points scoreboard.
+  const pointsVisible = userPrefs.privacyMode ? userPrefs.showSeatPoints : true;
+
   // Friendly fallback names for unlabelled desks, so lesson history is readable.
   const deskFallback = useMemo(() => {
     const m = new Map<string, string>();
@@ -77,12 +86,12 @@ export default function LessonView() {
 
   const endLesson = async () => {
     if (!currentClass || planSeats.length === 0) return;
-    if (
-      !confirm(
-        `End the lesson for ${currentClass}?\n\nThis saves each student's seat and this lesson's behaviour to the class history (used for seating insights), then starts a fresh count.`,
-      )
-    )
-      return;
+    const ok = await confirmDialog({
+      title: `End the lesson for ${currentClass}?`,
+      body: "This saves each student's seat and this lesson's behaviour to the class history (used for seating insights), then starts a fresh count.",
+      confirmLabel: "End lesson",
+    });
+    if (!ok) return;
     const sessionId = newId("les");
     const timestamp = nowIso();
     const date = today();
@@ -112,6 +121,7 @@ export default function LessonView() {
     });
     await addLessonRecords(records);
     localStorage.setItem(lessonKey(currentClass), timestamp);
+    localStorage.removeItem(pickedKey(currentClass));
     setLessonStart(timestamp);
     setPopover(null);
     showToast(`Lesson ended — saved ${records.length} seat records to history`);
@@ -123,9 +133,16 @@ export default function LessonView() {
   const logBehaviour = (studentId: string, code: string) => {
     const c = behaviourCodes.find((c) => c.code === code);
     if (!c) return;
-    void addBehaviourEvent({ timestamp: nowIso(), studentId, code: c.code, points: c.points, note: "" });
+    const timestamp = nowIso();
+    void addBehaviourEvent({ timestamp, studentId, code: c.code, points: c.points, note: "" });
     const s = byId.get(studentId);
-    showToast(`${c.points > 0 ? "+" : ""}${c.points} ${c.label} — ${s ? studentName(s) : ""}`);
+    // In privacy mode the toast stays nameless — the teacher just tapped that
+    // student's seat, so the name adds nothing the class should see.
+    const suffix = !userPrefs.privacyMode && s ? studentName(s) : "recorded";
+    showToast(`${c.points > 0 ? "+" : ""}${c.points} ${c.label} — ${suffix}`, {
+      label: "Undo",
+      run: () => void removeBehaviourEvent(timestamp, studentId, c.code),
+    });
     setPopover(null);
   };
 
@@ -138,10 +155,31 @@ export default function LessonView() {
   const popStudent = popover ? byId.get(popover.studentId) : undefined;
   const positives = behaviourCodes.filter((c) => c.kind === "positive");
   const negatives = behaviourCodes.filter((c) => c.kind === "negative");
+  const showFlags = popStudent?.flags && (!userPrefs.privacyMode || userPrefs.popoverShowFlags);
+  const showNotes = popStudent?.notes && (!userPrefs.privacyMode || userPrefs.popoverShowNotes);
 
-  // In teaching mode the whole room scales to fit when no crop is set; otherwise
-  // it honours the class's view crop just like the normal live lesson.
-  const effectiveCrop = focusMode ? roomConfig.crop ?? { x: 0, y: 0, w: ROOM_W, h: ROOM_H } : roomConfig.crop;
+  // Always render in scaled (viewBox) mode so the room fills the pane on any
+  // screen size — with no crop set, the whole room is the view.
+  const effectiveCrop = roomConfig.crop ?? { x: 0, y: 0, w: ROOM_W, h: ROOM_H };
+
+  // Clamp the popover inside the canvas container once its size is known.
+  const canvasBoxRef = useRef<HTMLDivElement | null>(null);
+  const popRef = useRef<HTMLDivElement | null>(null);
+  const [popPos, setPopPos] = useState<{ left: number; top: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!popover || !canvasBoxRef.current || !popRef.current) {
+      setPopPos(null);
+      return;
+    }
+    // offsetWidth/Height are layout pixels, matching the CSS left/top we set
+    // (getBoundingClientRect would be scaled by the app zoom).
+    const wrap = canvasBoxRef.current;
+    const pop = popRef.current;
+    setPopPos({
+      left: Math.max(4, Math.min(popover.x + 24, wrap.offsetWidth - pop.offsetWidth - 4)),
+      top: Math.max(4, Math.min(popover.y - 40, wrap.offsetHeight - pop.offsetHeight - 4)),
+    });
+  }, [popover]);
 
   if (desks.length === 0 || planSeats.length === 0) {
     return (
@@ -184,6 +222,9 @@ export default function LessonView() {
           <span className="muted">
             {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson
           </span>
+          <button onClick={() => setPickerOpen(true)} disabled={isShuffling} title="Choose a random student">
+            🙋 Pick a student
+          </button>
           <button onClick={() => randomise(activePlan)} disabled={isShuffling} title="Reshuffle the seating">
             🎲 {isShuffling ? "Randomising…" : "Randomise"}
           </button>
@@ -206,6 +247,9 @@ export default function LessonView() {
             {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson · tap a seat to record
             behaviour or attendance
           </span>
+          <button onClick={() => setPickerOpen(true)} disabled={isShuffling} title="Choose a random student">
+            🙋 Pick a student
+          </button>
           <button onClick={() => randomise(activePlan)} disabled={isShuffling} title="Reshuffle the seating using your saved rules">
             🎲 {isShuffling ? "Randomising…" : "Randomise"}
           </button>
@@ -219,6 +263,7 @@ export default function LessonView() {
       )}
 
       <div
+        ref={canvasBoxRef}
         className={`seating-canvas ${focusMode ? "focus-canvas-wrap" : ""} ${isShuffling ? "shuffling" : ""}`}
         style={{ position: "relative" }}
       >
@@ -235,12 +280,12 @@ export default function LessonView() {
             const s = occ ? byId.get(occ.studentId) : undefined;
             const status = s ? statusOf(s.id) : undefined;
             return {
-              label: s ? studentName(s) : "",
+              label: s ? displayStudentName(s, userPrefs.seatNameStyle) : "",
               firstName: s?.firstName,
-              lastName: s?.lastName,
+              lastName: s ? seatSurname(s, userPrefs.seatNameStyle) : undefined,
               badge: status === "A" && !isShuffling ? "✗" : undefined,
               occupied: !!s,
-              points: s && !isShuffling ? pointsToday.get(s.id) ?? 0 : null,
+              points: s && !isShuffling && pointsVisible ? pointsToday.get(s.id) ?? 0 : null,
             };
           }}
           onSeatClick={(deskId, seatIndex, x, y) => {
@@ -252,15 +297,17 @@ export default function LessonView() {
 
         {popover && popStudent && (
           <div
+            ref={popRef}
             className="behaviour-popover"
             style={{
-              left: Math.max(4, Math.min(popover.x + 24, window.innerWidth - 230 - 48 - 280)),
-              top: Math.max(popover.y - 40, 4),
+              left: popPos?.left ?? popover.x + 24,
+              top: popPos?.top ?? Math.max(popover.y - 40, 4),
+              visibility: popPos ? "visible" : "hidden",
             }}
           >
             <h4>
               {studentName(popStudent)}
-              {popStudent.flags &&
+              {showFlags &&
                 popStudent.flags
                   .split(";")
                   .filter(Boolean)
@@ -270,8 +317,8 @@ export default function LessonView() {
                     </span>
                   ))}
             </h4>
-            {popStudent.notes && <p className="muted" style={{ marginTop: 0 }}>{popStudent.notes}</p>}
-            <div className="row" style={{ marginBottom: 8 }}>
+            {showNotes && <p className="muted" style={{ marginTop: 0 }}>{popStudent.notes}</p>}
+            <div className="row" style={{ marginBottom: 2 }}>
               {(["P", "A", "L", "E"] as AttendanceStatus[]).map((code) => (
                 <button
                   key={code}
@@ -282,13 +329,24 @@ export default function LessonView() {
                 </button>
               ))}
             </div>
+            <div className="att-legend">P present · A absent · L late · E excused</div>
             {positives.map((c) => (
-              <button key={c.code} className="bh-btn" style={{ background: c.color }} onClick={() => logBehaviour(popStudent.id, c.code)}>
+              <button
+                key={c.code}
+                className="bh-btn"
+                style={{ background: c.color, color: textColorFor(c.color) }}
+                onClick={() => logBehaviour(popStudent.id, c.code)}
+              >
                 +{c.points} {c.label}
               </button>
             ))}
             {negatives.map((c) => (
-              <button key={c.code} className="bh-btn" style={{ background: c.color }} onClick={() => logBehaviour(popStudent.id, c.code)}>
+              <button
+                key={c.code}
+                className="bh-btn"
+                style={{ background: c.color, color: textColorFor(c.color) }}
+                onClick={() => logBehaviour(popStudent.id, c.code)}
+              >
                 {c.points} {c.label}
               </button>
             ))}
@@ -298,6 +356,7 @@ export default function LessonView() {
           </div>
         )}
       </div>
+      {pickerOpen && <StudentPicker onClose={() => setPickerOpen(false)} />}
     </div>
   );
 }

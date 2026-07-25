@@ -1,6 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
-import { BehaviourCode, CognitiveLevel, DEFAULT_TOPIC_AREAS, SeatingPrefs, Student, TopicEntry, studentName } from "../lib/types";
+import { BehaviourCode, CognitiveLevel, DEFAULT_TOPIC_AREAS, SeatNameStyle, SeatingPrefs, Student, TopicEntry, studentName } from "../lib/types";
+import * as repo from "../lib/repo";
+import { backupStamp } from "../lib/id";
 import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
 import RosterView from "./RosterView";
 import LayoutDesigner from "./LayoutDesigner";
@@ -68,8 +70,21 @@ export default function SettingsView() {
 }
 
 function GeneralSettings() {
-  const { behaviourCodes, setBehaviourCodes, behaviourEvents, setBehaviourEvents, currentClass, dataDir, classes, showToast } =
-    useApp();
+  const {
+    behaviourCodes,
+    setBehaviourCodes,
+    behaviourEvents,
+    setBehaviourEvents,
+    currentClass,
+    dataDir,
+    classes,
+    showToast,
+    userPrefs,
+    setUserPrefs,
+    confirmDialog,
+    promptDialog,
+    chooseDataDir,
+  } = useApp();
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   // Row elements, kept so a pointer drag can hit-test which row it is over.
@@ -137,8 +152,12 @@ function GeneralSettings() {
     setOverIndex(null);
   };
 
-  const add = (kind: "positive" | "negative") => {
-    const code = prompt("Short code for the new behaviour (e.g. KIND):")?.trim().toUpperCase();
+  const add = async (kind: "positive" | "negative") => {
+    const code = (
+      await promptDialog({ title: `New ${kind} behaviour`, body: "Short code shown on the button.", placeholder: "e.g. KIND" })
+    )
+      ?.trim()
+      .toUpperCase();
     if (!code || behaviourCodes.some((c) => c.code === code)) return;
     void setBehaviourCodes([
       ...behaviourCodes,
@@ -146,13 +165,95 @@ function GeneralSettings() {
     ]);
   };
 
-  const remove = (code: string) => {
-    if (!confirm(`Remove behaviour "${code}"? Existing logged events keep their points.`)) return;
+  const remove = async (code: string) => {
+    const ok = await confirmDialog({
+      title: `Remove behaviour "${code}"?`,
+      body: "Existing logged events keep their points.",
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
     void setBehaviourCodes(behaviourCodes.filter((c) => c.code !== code));
   };
 
   return (
     <>
+      <div className="panel">
+        <h3>Privacy on the big screen</h3>
+        <p className="muted" style={{ marginTop: 0 }}>
+          ClassKernel assumes the screen is visible to your class. With privacy mode on, screens that show individual
+          marks, behaviour or notes stay covered until you tap <b>Show student details</b> — and cover themselves again
+          when you leave. Each detail below can also be shown independently if you need it.
+        </p>
+        <label className="pref-row">
+          <input
+            type="checkbox"
+            checked={userPrefs.privacyMode}
+            onChange={(e) => void setUserPrefs({ ...userPrefs, privacyMode: e.target.checked })}
+          />
+          <span>
+            <b>Privacy mode</b> — cover marks/analysis screens, keep flags, notes and names out of lesson pop-ups and
+            toasts. Turn off only if this computer's screen is yours alone.
+          </span>
+        </label>
+        <label className="pref-row">
+          <span>Seat names on the class-facing seating plan:</span>
+          <select
+            value={userPrefs.seatNameStyle}
+            onChange={(e) => void setUserPrefs({ ...userPrefs, seatNameStyle: e.target.value as SeatNameStyle })}
+          >
+            <option value="full">First and last name</option>
+            <option value="firstInitial">First name + initial (Amelia A.)</option>
+            <option value="first">First name only</option>
+          </select>
+        </label>
+        <label className="pref-row">
+          <input
+            type="checkbox"
+            checked={userPrefs.showSeatPoints}
+            onChange={(e) => void setUserPrefs({ ...userPrefs, showSeatPoints: e.target.checked })}
+          />
+          <span>Show each student's running behaviour points on their seat during a lesson (a public scoreboard).</span>
+        </label>
+        <label className="pref-row">
+          <input
+            type="checkbox"
+            checked={userPrefs.popoverShowFlags}
+            onChange={(e) => void setUserPrefs({ ...userPrefs, popoverShowFlags: e.target.checked })}
+          />
+          <span>
+            Show a student's flags (e.g. SEN, Medical) in the seat pop-up during a lesson — useful when safety info
+            must be one tap away.
+          </span>
+        </label>
+        <label className="pref-row">
+          <input
+            type="checkbox"
+            checked={userPrefs.popoverShowNotes}
+            onChange={(e) => void setUserPrefs({ ...userPrefs, popoverShowNotes: e.target.checked })}
+          />
+          <span>Show a student's notes in the seat pop-up during a lesson.</span>
+        </label>
+      </div>
+
+      <div className="panel">
+        <h3>Display size</h3>
+        <p className="muted" style={{ marginTop: 0 }}>
+          Make everything bigger for a large touch panel. Applies to the whole app immediately.
+        </p>
+        <div className="row">
+          {[1, 1.25, 1.5, 1.75].map((v) => (
+            <button
+              key={v}
+              className={userPrefs.uiScale === v ? "primary" : ""}
+              onClick={() => void setUserPrefs({ ...userPrefs, uiScale: v })}
+            >
+              {Math.round(v * 100)}%
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="panel">
         <h3>Behaviour buttons</h3>
         <p className="muted">
@@ -230,11 +331,11 @@ function GeneralSettings() {
                     type="color"
                     value={c.color}
                     onChange={(e) => update(c.code, { color: e.target.value })}
-                    style={{ padding: 1, width: 44, height: 28 }}
+                    style={{ padding: 1, width: 52, height: 36 }}
                   />
                 </td>
                 <td>
-                  <button className="small danger" onClick={() => remove(c.code)}>
+                  <button className="small danger" onClick={() => void remove(c.code)}>
                     ✕
                   </button>
                 </td>
@@ -243,8 +344,8 @@ function GeneralSettings() {
           </tbody>
         </table>
         <div className="row" style={{ marginTop: 10 }}>
-          <button onClick={() => add("positive")}>+ Positive behaviour</button>
-          <button onClick={() => add("negative")}>+ Negative behaviour</button>
+          <button onClick={() => void add("positive")}>+ Positive behaviour</button>
+          <button onClick={() => void add("negative")}>+ Negative behaviour</button>
         </div>
         <p className="muted" style={{ marginBottom: 0 }}>
           Renaming a Code updates this class's logged history; other classes keep the old code in their behaviour log.
@@ -262,11 +363,76 @@ function GeneralSettings() {
           made into <code>backups/</code> every time the app starts (the newest 14 are kept).
         </p>
         <p className="muted">
+          Student information (names, flags, notes, marks) is stored in these files as plain, readable text — treat
+          the folder like a paper mark book and follow your school's data-handling policy for where it lives.
+        </p>
+        <p className="muted">
           Classes: {classes.filter((c) => !c.archived).length} active, {classes.filter((c) => c.archived).length}{" "}
           archived. Archived classes stay on disk in <code>classes/</code>; restore them from Class notes.
         </p>
+        <BackupRestore dataDir={dataDir} onRestore={chooseDataDir} confirmDialog={confirmDialog} showToast={showToast} />
       </div>
     </>
+  );
+}
+
+/** List of snapshot backups with one-tap restore (a safety copy is taken first). */
+function BackupRestore({
+  dataDir,
+  onRestore,
+  confirmDialog,
+  showToast,
+}: {
+  dataDir: string | null;
+  onRestore: (path: string) => Promise<void>;
+  confirmDialog: ReturnType<typeof useApp.getState>["confirmDialog"];
+  showToast: (message: string) => void;
+}) {
+  const [backups, setBackups] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (dataDir) void repo.listBackups(dataDir).then(setBackups);
+  }, [dataDir]);
+
+  if (!dataDir || backups.length === 0) return null;
+
+  const restore = async (stamp: string) => {
+    const ok = await confirmDialog({
+      title: `Restore the backup from ${stamp.replace("_", " at ").replace(/(\d{2})(\d{2})(\d{2})$/, "$1:$2")}?`,
+      body: "All current files are replaced with the backup's copies (anything created since the backup is kept). A safety copy of today's data is made first.",
+      confirmLabel: "Restore backup",
+      danger: true,
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await repo.restoreBackup(dataDir, stamp, `pre-restore-${backupStamp()}`);
+      await onRestore(dataDir);
+      showToast("Backup restored");
+    } catch (e) {
+      console.error("Restore failed", e);
+      showToast("Restore failed — the backup files may be missing");
+    } finally {
+      setBusy(false);
+      void repo.listBackups(dataDir).then(setBackups);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <b>Restore a backup</b>
+      <ul className="backup-list">
+        {backups.slice(0, 8).map((b) => (
+          <li key={b}>
+            <span className="muted">{b.replace("_", " · ")}</span>
+            <button className="small" disabled={busy} onClick={() => void restore(b)}>
+              Restore…
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -357,25 +523,31 @@ function SeatingPrefsEditor({
       {(prefs.apartPairs.length > 0 || prefs.togetherPairs.length > 0) && (
         <div style={{ marginBottom: 12 }}>
           {prefs.apartPairs.map((p, i) => (
-            <span
-              key={`a${i}`}
-              className="tag warn"
-              style={{ cursor: "pointer" }}
-              onClick={() => onChange({ ...prefs, apartPairs: prefs.apartPairs.filter((_, j) => j !== i) })}
-              title="Click to remove"
-            >
-              ⇹ {nameOf(p[0])} ↔ {nameOf(p[1])} ✕
+            <span key={`a${i}`} className="pair-chip">
+              <span className="tag warn">
+                ⇹ {nameOf(p[0])} ↔ {nameOf(p[1])}
+              </span>
+              <button
+                className="small danger"
+                title="Remove this rule"
+                onClick={() => onChange({ ...prefs, apartPairs: prefs.apartPairs.filter((_, j) => j !== i) })}
+              >
+                ✕
+              </button>
             </span>
           ))}
           {prefs.togetherPairs.map((p, i) => (
-            <span
-              key={`t${i}`}
-              className="tag"
-              style={{ cursor: "pointer" }}
-              onClick={() => onChange({ ...prefs, togetherPairs: prefs.togetherPairs.filter((_, j) => j !== i) })}
-              title="Click to remove"
-            >
-              ⇆ {nameOf(p[0])} + {nameOf(p[1])} ✕
+            <span key={`t${i}`} className="pair-chip">
+              <span className="tag">
+                ⇆ {nameOf(p[0])} + {nameOf(p[1])}
+              </span>
+              <button
+                className="small danger"
+                title="Remove this rule"
+                onClick={() => onChange({ ...prefs, togetherPairs: prefs.togetherPairs.filter((_, j) => j !== i) })}
+              >
+                ✕
+              </button>
             </span>
           ))}
         </div>
@@ -404,7 +576,8 @@ function SeatingPrefsEditor({
  * behaviour. All shared across classes.
  */
 function AssessmentSettings() {
-  const { classes, topics, setTopics, cognitiveLevels, setCognitiveLevels, userPrefs, setUserPrefs, showToast } = useApp();
+  const { classes, topics, setTopics, cognitiveLevels, setCognitiveLevels, userPrefs, setUserPrefs, showToast, confirmDialog, promptDialog } =
+    useApp();
 
   const grades = useMemo(() => {
     const set = new Set<string>();
@@ -417,8 +590,8 @@ function AssessmentSettings() {
   const grade = pickedGrade || grades[0] || "";
   const areas = areasForGrade(topics, grade);
 
-  const addGrade = () => {
-    const g = prompt("Grade / year (e.g. 8 or 12):")?.trim();
+  const addGrade = async () => {
+    const g = (await promptDialog({ title: "Add a grade / year", placeholder: "e.g. 8 or 12" }))?.trim();
     if (!g) return;
     setPickedGrade(g);
     if (!areasForGrade(topics, g).length) {
@@ -426,14 +599,20 @@ function AssessmentSettings() {
     }
   };
 
-  const addArea = () => {
-    const area = prompt("New content area (e.g. Chemistry):")?.trim();
+  const addArea = async () => {
+    const area = (await promptDialog({ title: "New content area", placeholder: "e.g. Chemistry" }))?.trim();
     if (!area || !grade || topics.some((t) => t.grade === grade && t.area === area)) return;
     void setTopics([...topics, { grade, area, subtopic: "", short: "" }]);
   };
 
-  const removeArea = (area: string) => {
-    if (!confirm(`Remove "${area}" and its subtopics for grade ${grade}?`)) return;
+  const removeArea = async (area: string) => {
+    const ok = await confirmDialog({
+      title: `Remove "${area}"?`,
+      body: `The area and its subtopics are removed for grade ${grade}.`,
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
     void setTopics(topics.filter((t) => !(t.grade === grade && t.area === area)));
   };
 
@@ -500,7 +679,7 @@ function AssessmentSettings() {
               </option>
             ))}
           </select>
-          <button className="small" onClick={addGrade}>
+          <button className="small" onClick={() => void addGrade()}>
             + Grade
           </button>
         </div>
@@ -517,7 +696,7 @@ function AssessmentSettings() {
               <div key={area} className="topic-area">
                 <div className="row">
                   <b>{area}</b>
-                  <button className="small danger" onClick={() => removeArea(area)}>
+                  <button className="small danger" onClick={() => void removeArea(area)}>
                     ✕
                   </button>
                 </div>
@@ -530,7 +709,7 @@ function AssessmentSettings() {
                 />
               </div>
             ))}
-            <button onClick={addArea}>+ Content area</button>
+            <button onClick={() => void addArea()}>+ Content area</button>
           </>
         )}
       </div>

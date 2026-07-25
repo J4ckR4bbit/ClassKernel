@@ -43,6 +43,25 @@ export type View =
 
 const DATA_DIR_KEY = "classkernel.dataDir";
 
+/** A toast message, optionally with a single action (usually Undo). */
+export interface Toast {
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}
+
+/** An in-app modal replacing window.confirm / window.prompt. */
+export interface DialogRequest {
+  kind: "confirm" | "prompt";
+  title: string;
+  body?: string;
+  confirmLabel?: string;
+  /** Style the confirm button as destructive. */
+  danger?: boolean;
+  placeholder?: string;
+  initial?: string;
+}
+
 export interface AppState {
   booted: boolean;
   demoMode: boolean;
@@ -54,7 +73,17 @@ export interface AppState {
   focusMode: boolean;
   /** Set by Home to ask the Seating view to auto-run an animated reroll on arrival. */
   pendingRandomise: boolean;
-  toast: string | null;
+  toast: Toast | null;
+  dialog: DialogRequest | null;
+  /**
+   * Privacy mode covers marks/analysis screens until the teacher taps "Show
+   * student details". Deliberately not persisted, and cleared on every
+   * navigation / class switch / teaching-mode entry, so leaving a sensitive
+   * screen always re-arms the cover.
+   */
+  sensitiveRevealed: boolean;
+  /** Set when a file write failed; the teacher's edits are still in memory. */
+  saveError: { label: string } | null;
 
   behaviourCodes: BehaviourCode[];
   students: Student[];
@@ -82,7 +111,13 @@ export interface AppState {
   setView(view: View): void;
   setFocusMode(on: boolean): void;
   setPendingRandomise(on: boolean): void;
-  showToast(message: string): void;
+  showToast(message: string, action?: { label: string; run: () => void }): void;
+  revealSensitive(): void;
+  confirmDialog(opts: Omit<DialogRequest, "kind" | "placeholder" | "initial">): Promise<boolean>;
+  promptDialog(opts: Omit<DialogRequest, "kind" | "danger">): Promise<string | null>;
+  /** Called by the dialog component with the outcome (false/null = cancelled). */
+  resolveDialog(result: boolean | string | null): void;
+  retrySave(): Promise<void>;
 
   createClass(info: ClassInfo): Promise<void>;
   openClass(name: string): Promise<void>;
@@ -116,8 +151,27 @@ export interface AppState {
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
+let dialogResolve: ((result: boolean | string | null) => void) | null = null;
+let lastFailedSave: (() => Promise<void>) | null = null;
 
-export const useApp = create<AppState>((set, get) => ({
+export const useApp = create<AppState>((set, get) => {
+  // Wrap every file write so a failure surfaces as a banner instead of a
+  // silent unhandled rejection. The in-memory edit is kept either way.
+  const guarded = async (label: string, fn: () => Promise<void>) => {
+    try {
+      await fn();
+      if (get().saveError) {
+        set({ saveError: null });
+        lastFailedSave = null;
+      }
+    } catch (e) {
+      console.error(`Save failed: ${label}`, e);
+      lastFailedSave = fn;
+      set({ saveError: { label } });
+    }
+  };
+
+  return {
   booted: false,
   demoMode: false,
   dataDir: null,
@@ -127,6 +181,9 @@ export const useApp = create<AppState>((set, get) => ({
   focusMode: false,
   pendingRandomise: false,
   toast: null,
+  dialog: null,
+  sensitiveRevealed: false,
+  saveError: null,
 
   behaviourCodes: [],
   students: [],
@@ -192,21 +249,82 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   setView(view) {
-    set({ view });
+    set({ view, sensitiveRevealed: false });
   },
 
   setFocusMode(on) {
-    set({ focusMode: on });
+    set({ focusMode: on, ...(on ? { sensitiveRevealed: false } : {}) });
+    // Teaching mode should own the whole panel; failures (e.g. browser
+    // demo without a user gesture) are non-fatal.
+    void (async () => {
+      try {
+        if (isTauri()) {
+          const { getCurrentWindow } = await import("@tauri-apps/api/window");
+          await getCurrentWindow().setFullscreen(on);
+        } else if (on && !document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        } else if (!on && document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+      } catch {
+        // Fullscreen is best-effort; the layout change alone is still useful.
+      }
+    })();
   },
 
   setPendingRandomise(on) {
     set({ pendingRandomise: on });
   },
 
-  showToast(message) {
-    set({ toast: message });
+  showToast(message, action) {
+    set({ toast: action ? { message, actionLabel: action.label, onAction: action.run } : { message } });
     if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => set({ toast: null }), 2500);
+    // Leave undo-able toasts up longer.
+    toastTimer = setTimeout(() => set({ toast: null }), action ? 6000 : 2500);
+  },
+
+  revealSensitive() {
+    set({ sensitiveRevealed: true });
+  },
+
+  confirmDialog(opts) {
+    dialogResolve?.(false);
+    return new Promise<boolean>((resolve) => {
+      dialogResolve = resolve as (r: boolean | string | null) => void;
+      set({ dialog: { kind: "confirm", ...opts } });
+    });
+  },
+
+  promptDialog(opts) {
+    dialogResolve?.(null);
+    return new Promise<string | null>((resolve) => {
+      dialogResolve = resolve as (r: boolean | string | null) => void;
+      set({ dialog: { kind: "prompt", ...opts } });
+    });
+  },
+
+  resolveDialog(result) {
+    const resolve = dialogResolve;
+    dialogResolve = null;
+    set({ dialog: null });
+    resolve?.(result);
+  },
+
+  async retrySave() {
+    const fn = lastFailedSave;
+    if (!fn) {
+      set({ saveError: null });
+      return;
+    }
+    try {
+      await fn();
+      lastFailedSave = null;
+      set({ saveError: null });
+      get().showToast("Saved");
+    } catch (e) {
+      console.error("Retry save failed", e);
+      get().showToast("Still couldn't save — check the data folder is reachable");
+    }
   },
 
   async createClass(info) {
@@ -261,6 +379,7 @@ export const useApp = create<AppState>((set, get) => ({
       assessmentQuestions,
       questionMarks,
       roomConfig,
+      sensitiveRevealed: false,
     });
   },
 
@@ -285,20 +404,20 @@ export const useApp = create<AppState>((set, get) => ({
   async setStudents(students) {
     const { dataDir, currentClass } = get();
     set({ students });
-    if (dataDir && currentClass) await repo.saveStudents(dataDir, currentClass, students);
+    if (dataDir && currentClass) await guarded("students", () => repo.saveStudents(dataDir, currentClass, students));
   },
 
   async setAttendance(attendance) {
     const { dataDir, currentClass } = get();
     set({ attendance });
-    if (dataDir && currentClass) await repo.saveAttendance(dataDir, currentClass, attendance);
+    if (dataDir && currentClass) await guarded("attendance", () => repo.saveAttendance(dataDir, currentClass, attendance));
   },
 
   async addBehaviourEvent(event) {
     const { dataDir, currentClass, behaviourEvents } = get();
     const next = [...behaviourEvents, event];
     set({ behaviourEvents: next });
-    if (dataDir && currentClass) await repo.saveBehaviourEvents(dataDir, currentClass, next);
+    if (dataDir && currentClass) await guarded("behaviour events", () => repo.saveBehaviourEvents(dataDir, currentClass, next));
   },
 
   async removeBehaviourEvent(timestamp, studentId, code) {
@@ -309,50 +428,50 @@ export const useApp = create<AppState>((set, get) => ({
     if (idx < 0) return;
     const next = behaviourEvents.filter((_, i) => i !== idx);
     set({ behaviourEvents: next });
-    if (dataDir && currentClass) await repo.saveBehaviourEvents(dataDir, currentClass, next);
+    if (dataDir && currentClass) await guarded("behaviour events", () => repo.saveBehaviourEvents(dataDir, currentClass, next));
   },
 
   async setBehaviourEvents(events) {
     const { dataDir, currentClass } = get();
     set({ behaviourEvents: events });
-    if (dataDir && currentClass) await repo.saveBehaviourEvents(dataDir, currentClass, events);
+    if (dataDir && currentClass) await guarded("behaviour events", () => repo.saveBehaviourEvents(dataDir, currentClass, events));
   },
 
   async setBehaviourCodes(codes) {
     const { dataDir } = get();
     set({ behaviourCodes: codes });
-    if (dataDir) await repo.saveBehaviourCodes(dataDir, codes);
+    if (dataDir) await guarded("behaviour buttons", () => repo.saveBehaviourCodes(dataDir, codes));
   },
 
   async setDesks(desks) {
     const { dataDir, currentClass } = get();
     set({ desks });
-    if (dataDir && currentClass) await repo.saveDesks(dataDir, currentClass, desks);
+    if (dataDir && currentClass) await guarded("the room layout", () => repo.saveDesks(dataDir, currentClass, desks));
   },
 
   async setRoomConfig(roomConfig) {
     const { dataDir, currentClass } = get();
     set({ roomConfig });
-    if (dataDir && currentClass) await repo.saveRoomConfig(dataDir, currentClass, roomConfig);
+    if (dataDir && currentClass) await guarded("room settings", () => repo.saveRoomConfig(dataDir, currentClass, roomConfig));
   },
 
   async setSeating(seating) {
     const { dataDir, currentClass } = get();
     set({ seating });
-    if (dataDir && currentClass) await repo.saveSeating(dataDir, currentClass, seating);
+    if (dataDir && currentClass) await guarded("the seating plan", () => repo.saveSeating(dataDir, currentClass, seating));
   },
 
   async setSeatingPrefs(seatingPrefs) {
     const { dataDir, currentClass } = get();
     set({ seatingPrefs });
-    if (dataDir && currentClass) await repo.saveSeatingPrefs(dataDir, currentClass, seatingPrefs);
+    if (dataDir && currentClass) await guarded("seating rules", () => repo.saveSeatingPrefs(dataDir, currentClass, seatingPrefs));
   },
 
   async addLessonRecords(records) {
     const { dataDir, currentClass, lessons } = get();
     const next = [...lessons, ...records];
     set({ lessons: next });
-    if (dataDir && currentClass) await repo.saveLessons(dataDir, currentClass, next);
+    if (dataDir && currentClass) await guarded("lesson history", () => repo.saveLessons(dataDir, currentClass, next));
   },
 
   async refreshLayoutTemplates() {
@@ -388,48 +507,49 @@ export const useApp = create<AppState>((set, get) => ({
   async setAssessments(assessments) {
     const { dataDir, currentClass } = get();
     set({ assessments });
-    if (dataDir && currentClass) await repo.saveAssessments(dataDir, currentClass, assessments);
+    if (dataDir && currentClass) await guarded("assessments", () => repo.saveAssessments(dataDir, currentClass, assessments));
   },
 
   async setMarks(marks) {
     const { dataDir, currentClass } = get();
     set({ marks });
-    if (dataDir && currentClass) await repo.saveMarks(dataDir, currentClass, marks);
+    if (dataDir && currentClass) await guarded("marks", () => repo.saveMarks(dataDir, currentClass, marks));
   },
 
   async setAssessmentQuestions(assessmentQuestions) {
     const { dataDir, currentClass } = get();
     set({ assessmentQuestions });
-    if (dataDir && currentClass) await repo.saveAssessmentQuestions(dataDir, currentClass, assessmentQuestions);
+    if (dataDir && currentClass) await guarded("assessment questions", () => repo.saveAssessmentQuestions(dataDir, currentClass, assessmentQuestions));
   },
 
   async setQuestionMarks(questionMarks) {
     const { dataDir, currentClass } = get();
     set({ questionMarks });
-    if (dataDir && currentClass) await repo.saveQuestionMarks(dataDir, currentClass, questionMarks);
+    if (dataDir && currentClass) await guarded("question marks", () => repo.saveQuestionMarks(dataDir, currentClass, questionMarks));
   },
 
   async setTopics(topics) {
     const { dataDir } = get();
     set({ topics });
-    if (dataDir) await repo.saveTopics(dataDir, topics);
+    if (dataDir) await guarded("topics", () => repo.saveTopics(dataDir, topics));
   },
 
   async setCognitiveLevels(cognitiveLevels) {
     const { dataDir } = get();
     set({ cognitiveLevels });
-    if (dataDir) await repo.saveCognitiveLevels(dataDir, cognitiveLevels);
+    if (dataDir) await guarded("cognitive levels", () => repo.saveCognitiveLevels(dataDir, cognitiveLevels));
   },
 
   async setUserPrefs(userPrefs) {
     const { dataDir } = get();
     set({ userPrefs });
-    if (dataDir) await repo.saveUserPrefs(dataDir, userPrefs);
+    if (dataDir) await guarded("settings", () => repo.saveUserPrefs(dataDir, userPrefs));
   },
 
   async setTimerPresets(timerPresets) {
     const { dataDir } = get();
     set({ timerPresets });
-    if (dataDir) await repo.saveTimerPresets(dataDir, timerPresets);
+    if (dataDir) await guarded("timer presets", () => repo.saveTimerPresets(dataDir, timerPresets));
   },
-}));
+  };
+});

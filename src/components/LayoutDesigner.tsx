@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { newId } from "../lib/id";
 import { DEFAULT_DESK_SIZES, Desk, DeskShape, FrontEdge } from "../lib/types";
-import RoomCanvas, { GRID, ROOM_H, ROOM_W, toRoomCoords } from "./RoomCanvas";
+import RoomCanvas, { GRID, ROOM_H, ROOM_W, svgPointFromClient, toRoomCoords } from "./RoomCanvas";
 
 const PALETTE: Array<{ shape: DeskShape; label: string }> = [
   { shape: "single", label: "+ Single desk" },
@@ -43,6 +43,8 @@ export default function LayoutDesigner() {
     saveLayoutTemplate,
     applyLayoutTemplate,
     deleteLayoutTemplate,
+    confirmDialog,
+    promptDialog,
   } = useApp();
   const [selected, setSelected] = useState<string | null>(null);
   const drag = useRef<Drag | null>(null);
@@ -73,9 +75,11 @@ export default function LayoutDesigner() {
   const startDeskDrag = (deskId: string, e: React.PointerEvent) => {
     const svg = (e.target as Element).closest("svg");
     if (!svg) return;
-    const rect = svg.getBoundingClientRect();
+    // Capture on the canvas so a fast finger/mouse can't escape the drag.
+    svg.setPointerCapture(e.pointerId);
+    const { x, y } = svgPointFromClient(svg as unknown as SVGSVGElement, e.clientX, e.clientY);
     const desk = shown.find((d) => d.id === deskId)!;
-    drag.current = { kind: "desk", deskId, offsetX: e.clientX - rect.left - desk.x, offsetY: e.clientY - rect.top - desk.y, moved: false };
+    drag.current = { kind: "desk", deskId, offsetX: x - desk.x, offsetY: y - desk.y, moved: false };
     setSelected(deskId);
     setDraft(desks);
   };
@@ -85,11 +89,10 @@ export default function LayoutDesigner() {
     e.stopPropagation();
     const svg = (e.target as Element).closest("svg");
     if (!svg) return;
-    const rect = svg.getBoundingClientRect();
+    svg.setPointerCapture(e.pointerId);
+    const { x, y } = svgPointFromClient(svg as unknown as SVGSVGElement, e.clientX, e.clientY);
     drag.current =
-      mode === "crop-move"
-        ? { kind: "crop-move", offsetX: e.clientX - rect.left - crop.x, offsetY: e.clientY - rect.top - crop.y }
-        : { kind: "crop-resize" };
+      mode === "crop-move" ? { kind: "crop-move", offsetX: x - crop.x, offsetY: y - crop.y } : { kind: "crop-resize" };
     setCropDraft(crop);
   };
 
@@ -159,31 +162,45 @@ export default function LayoutDesigner() {
     void setRoomConfig({ ...roomConfig, [key]: v });
   };
 
-  const saveTemplate = () => {
-    const raw = prompt("Save this room layout as a reusable template.\nName:")?.trim();
+  const saveTemplate = async () => {
+    const raw = (
+      await promptDialog({ title: "Save as template", body: "Save this room layout to reuse in another class.", placeholder: "Template name" })
+    )?.trim();
     const name = raw?.replace(/[<>:"/\\|?*]/g, "").trim();
     if (!name) return;
-    if (layoutTemplates.includes(name) && !confirm(`A template called "${name}" exists — overwrite it?`)) return;
+    if (
+      layoutTemplates.includes(name) &&
+      !(await confirmDialog({ title: `Overwrite template "${name}"?`, confirmLabel: "Overwrite" }))
+    )
+      return;
     void saveLayoutTemplate(name).then(() => showToast(`Layout saved as template "${name}"`));
   };
 
-  const loadTemplate = (name: string) => {
-    if (!confirm(`Replace this room's layout with "${name}"? The current desks will be overwritten.`)) return;
+  const loadTemplate = async (name: string) => {
+    const ok = await confirmDialog({
+      title: `Apply layout "${name}"?`,
+      body: "The current desks in this room are replaced by the template's.",
+      confirmLabel: "Apply layout",
+    });
+    if (!ok) return;
     void applyLayoutTemplate(name).then(() => {
       setSelected(null);
       showToast(`Applied layout "${name}"`);
     });
   };
 
-  const removeTemplate = (name: string) => {
-    if (!confirm(`Delete the saved layout template "${name}"?`)) return;
+  const removeTemplate = async (name: string) => {
+    const ok = await confirmDialog({ title: `Delete template "${name}"?`, confirmLabel: "Delete", danger: true });
+    if (!ok) return;
     void deleteLayoutTemplate(name).then(() => showToast(`Template "${name}" deleted`));
   };
 
   const deleteSelected = () => {
     if (!selectedDesk) return;
+    const previous = desks;
     void setDesks(desks.filter((d) => d.id !== selectedDesk.id));
     setSelected(null);
+    showToast("Desk deleted", { label: "Undo", run: () => void setDesks(previous) });
   };
 
   const duplicateSelected = () => {
@@ -198,11 +215,18 @@ export default function LayoutDesigner() {
     setSelected(copy.id);
   };
 
-  const clearRoom = () => {
-    if (!confirm("Remove every desk from this room layout?")) return;
+  const clearRoom = async () => {
+    const ok = await confirmDialog({
+      title: "Clear the room?",
+      body: "Every desk is removed from this room layout.",
+      confirmLabel: "Clear room",
+      danger: true,
+    });
+    if (!ok) return;
+    const previous = desks;
     void setDesks([]);
     setSelected(null);
-    showToast("Room cleared");
+    showToast("Room cleared", { label: "Undo", run: () => void setDesks(previous) });
   };
 
   const addCrop = () => {
@@ -250,7 +274,7 @@ export default function LayoutDesigner() {
           </button>
         )}
         <div className="spacer" />
-        <button onClick={clearRoom} disabled={desks.length === 0}>
+        <button onClick={() => void clearRoom()} disabled={desks.length === 0}>
           Clear room
         </button>
       </div>
@@ -277,7 +301,7 @@ export default function LayoutDesigner() {
             title="Fill colour"
             value={selectedDesk.color || "#eef2f6"}
             onChange={(e) => patchSelected({ color: e.target.value })}
-            style={{ padding: 1, width: 44, height: 30 }}
+            style={{ padding: 1, width: 52, height: 36 }}
           />
           {selectedDesk.color && (
             <button className="small" onClick={() => patchSelected({ color: "" })}>
@@ -287,15 +311,17 @@ export default function LayoutDesigner() {
           <span className="muted" style={{ marginLeft: 4 }}>
             Size
           </span>
-          <div className="stepper" title="Width">
-            <button onClick={() => resizeSelected(-GRID, 0)}>W−</button>
+          <div className="stepper">
+            <span className="stepper-label">Width</span>
+            <button onClick={() => resizeSelected(-GRID, 0)}>−</button>
             <span>{selectedDesk.w}</span>
-            <button onClick={() => resizeSelected(GRID, 0)}>W+</button>
+            <button onClick={() => resizeSelected(GRID, 0)}>+</button>
           </div>
-          <div className="stepper" title="Height">
-            <button onClick={() => resizeSelected(0, -GRID)}>H−</button>
+          <div className="stepper">
+            <span className="stepper-label">Height</span>
+            <button onClick={() => resizeSelected(0, -GRID)}>−</button>
             <span>{selectedDesk.h}</span>
-            <button onClick={() => resizeSelected(0, GRID)}>H+</button>
+            <button onClick={() => resizeSelected(0, GRID)}>+</button>
           </div>
           <button className="danger" onClick={deleteSelected}>
             ✕ Delete
@@ -310,17 +336,17 @@ export default function LayoutDesigner() {
         <FontStepper label="Labels" value={roomConfig.labelFontScale} onBump={(d) => bumpFont("labelFontScale", d)} />
         <span className="spacer" style={{ flex: 1 }} />
         <span className="muted">Layouts:</span>
-        <button onClick={saveTemplate} disabled={desks.length === 0} title="Save this room to reuse in another class">
+        <button onClick={() => void saveTemplate()} disabled={desks.length === 0} title="Save this room to reuse in another class">
           💾 Save as template
         </button>
         {layoutTemplates.map((name) => (
-          <span key={name} className="tag template-chip">
-            <span className="load" title="Apply this layout" onClick={() => loadTemplate(name)}>
+          <span key={name} className="template-chip">
+            <button className="small" title="Apply this layout" onClick={() => void loadTemplate(name)}>
               {name}
-            </span>
-            <span className="del" title="Delete template" onClick={() => removeTemplate(name)}>
+            </button>
+            <button className="small danger" title="Delete template" onClick={() => void removeTemplate(name)}>
               ✕
-            </span>
+            </button>
           </span>
         ))}
       </div>
@@ -352,10 +378,10 @@ export default function LayoutDesigner() {
             />
             <rect
               className="crop-handle"
-              x={crop.x + crop.w - 7}
-              y={crop.y + crop.h - 7}
-              width={14}
-              height={14}
+              x={crop.x + crop.w - 10}
+              y={crop.y + crop.h - 10}
+              width={20}
+              height={20}
               rx={3}
               onPointerDown={(e) => startCropDrag("crop-resize", e)}
             />

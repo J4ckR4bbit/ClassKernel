@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
 import { SeatAssignment, studentName } from "../lib/types";
+import { displayStudentName, seatSurname } from "../lib/privacy";
 import { allSeatSlots } from "../lib/seating";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
-import RoomCanvas from "./RoomCanvas";
+import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
 
 export default function SeatingView() {
   const {
@@ -17,6 +18,9 @@ export default function SeatingView() {
     roomConfig,
     pendingRandomise,
     setPendingRandomise,
+    userPrefs,
+    confirmDialog,
+    promptDialog,
   } = useApp();
   // Plans exist in seating.csv once they have a row; freshly created empty
   // plans are tracked locally until their first seat is placed.
@@ -66,8 +70,12 @@ export default function SeatingView() {
     }
   };
 
-  const newPlan = () => {
-    const name = prompt("Name for the new seating plan:", `Plan ${planNames.length + 1}`)?.trim();
+  const newPlan = async () => {
+    const name = (await promptDialog({
+      title: "New seating plan",
+      body: "Plans let you keep e.g. a test layout and a group-work layout side by side.",
+      initial: `Plan ${planNames.length + 1}`,
+    }))?.trim();
     if (!name) return;
     if (planNames.includes(name)) {
       showToast("A plan with that name already exists");
@@ -78,14 +86,23 @@ export default function SeatingView() {
     showToast(`Plan "${name}" created — seat students or use Randomise`);
   };
 
-  const deletePlan = () => {
-    if (!confirm(`Delete seating plan "${activePlan}"?`)) return;
+  const deletePlan = async () => {
+    const ok = await confirmDialog({
+      title: `Delete seating plan "${activePlan}"?`,
+      confirmLabel: "Delete plan",
+      danger: true,
+    });
+    if (!ok) return;
     void setSeating(seating.filter((s) => s.planName !== activePlan));
     setExtraPlans(extraPlans.filter((n) => n !== activePlan));
     setPlan(planNames.filter((n) => n !== activePlan)[0] ?? "Default");
   };
 
-  const clearPlan = () => replacePlan([]);
+  const clearPlan = () => {
+    const previous = seating;
+    replacePlan([]);
+    showToast(`Cleared "${activePlan}"`, { label: "Undo", run: () => void setSeating(previous) });
+  };
 
   const runRandomise = () => {
     setPickedStudent(null);
@@ -111,10 +128,10 @@ export default function SeatingView() {
             <option key={n}>{n}</option>
           ))}
         </select>
-        <button onClick={newPlan} disabled={isShuffling}>
+        <button onClick={() => void newPlan()} disabled={isShuffling}>
           + New plan
         </button>
-        <button onClick={deletePlan} disabled={isShuffling}>
+        <button onClick={() => void deletePlan()} disabled={isShuffling}>
           Delete plan
         </button>
         <div className="spacer" />
@@ -170,7 +187,7 @@ export default function SeatingView() {
             <RoomCanvas
               desks={desks}
               frontEdge={roomConfig.frontEdge}
-              crop={roomConfig.crop}
+              crop={roomConfig.crop ?? { x: 0, y: 0, w: ROOM_W, h: ROOM_H }}
               seatFontScale={roomConfig.seatFontScale}
               deskFontScale={roomConfig.deskFontScale}
               labelFontScale={roomConfig.labelFontScale}
@@ -178,9 +195,9 @@ export default function SeatingView() {
                 const occ = shownOccupantOf(deskId, seatIndex);
                 const s = occ ? byId.get(occ.studentId) : undefined;
                 return {
-                  label: s ? studentName(s) : "",
+                  label: s ? displayStudentName(s, userPrefs.seatNameStyle) : "",
                   firstName: s?.firstName,
-                  lastName: s?.lastName,
+                  lastName: s ? seatSurname(s, userPrefs.seatNameStyle) : undefined,
                   occupied: !!s,
                   highlight: !!pickedStudent && !occ,
                 };
