@@ -36,6 +36,12 @@ jobs:
           workspaces: src-tauri
       - run: npm ci
       - name: Build Tauri app
+        # Optional: without these secrets the build still succeeds and the
+        # installer simply has Google Drive sync disabled.
+        # See docs/google-drive-setup.md.
+        env:
+          CLASSKERNEL_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          CLASSKERNEL_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: npx tauri build
       - name: Upload installer
         uses: actions/upload-artifact@v5

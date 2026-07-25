@@ -3,6 +3,9 @@ import { backupStamp } from "../lib/id";
 import { getFS, isTauri } from "../lib/fs";
 import * as repo from "../lib/repo";
 import { seedDemoData } from "../lib/demo";
+import { googleAccount, googleSignIn, googleSignOut, tauriDrive } from "../lib/google/client";
+import { DEFAULT_FOLDER_NAME, clearSyncState, readSyncSummary, runSync } from "../lib/sync/service";
+import { ConflictNote, resultChangedLocalFiles } from "../lib/sync/types";
 import {
   Assessment,
   AssessmentQuestion,
@@ -42,6 +45,18 @@ export type View =
   | "settings";
 
 const DATA_DIR_KEY = "classkernel.dataDir";
+
+/** Wait this long after the last edit before pushing to Drive. */
+const PUSH_DEBOUNCE_MS = 3000;
+/** How often to look for changes made on another device. */
+const POLL_INTERVAL_MS = 90_000;
+
+/**
+ * Google Drive sync is entirely optional. "off" means either this build has no
+ * OAuth client, or the teacher never connected one — in both cases the app
+ * behaves exactly as it did before.
+ */
+export type SyncStatus = "off" | "idle" | "syncing" | "error";
 
 /** A toast message, optionally with a single action (usually Undo). */
 export interface Toast {
@@ -85,6 +100,17 @@ export interface AppState {
   /** Set when a file write failed; the teacher's edits are still in memory. */
   saveError: { label: string } | null;
 
+  /** This build has a Google OAuth client, so Drive sync can be offered. */
+  driveConfigured: boolean;
+  driveConnected: boolean;
+  driveEmail: string | null;
+  driveFolderName: string;
+  syncStatus: SyncStatus;
+  syncLastAt: string | null;
+  syncError: string | null;
+  /** Files where both sides changed and the loser was kept as a copy. */
+  syncConflicts: ConflictNote[];
+
   behaviourCodes: BehaviourCode[];
   students: Student[];
   attendance: AttendanceEntry[];
@@ -118,6 +144,14 @@ export interface AppState {
   /** Called by the dialog component with the outcome (false/null = cancelled). */
   resolveDialog(result: boolean | string | null): void;
   retrySave(): Promise<void>;
+
+  /** Sign in to Google and start syncing into `folderName` in My Drive. */
+  connectDrive(folderName: string): Promise<boolean>;
+  disconnectDrive(): Promise<void>;
+  syncNow(): Promise<void>;
+  dismissSyncConflicts(): void;
+  /** Re-read the data folder after sync pulled changes down. */
+  reloadFromDisk(): Promise<void>;
 
   createClass(info: ClassInfo): Promise<void>;
   openClass(name: string): Promise<void>;
@@ -153,8 +187,62 @@ export interface AppState {
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 let dialogResolve: ((result: boolean | string | null) => void) | null = null;
 let lastFailedSave: (() => Promise<void>) | null = null;
+let pushTimer: ReturnType<typeof setTimeout> | undefined;
+let pollTimer: ReturnType<typeof setInterval> | undefined;
 
 export const useApp = create<AppState>((set, get) => {
+  /**
+   * Run one sync pass and fold the outcome into the UI. Never throws: sync
+   * failing must never get in the way of teaching, so problems show up in the
+   * status pill and the next pass simply tries again.
+   */
+  const sync = async () => {
+    const { dataDir, driveConnected, driveFolderName, demoMode } = get();
+    if (!dataDir || !driveConnected || demoMode || !isTauri()) return;
+    set({ syncStatus: "syncing" });
+    try {
+      const { result } = await runSync({
+        fs: getFS(),
+        drive: tauriDrive,
+        dataDir,
+        folderName: driveFolderName,
+        // Don't rewrite the active class's files out from under a live lesson;
+        // the next pass picks them up once the teacher leaves the view.
+        holdLocal: (relPath) => {
+          const { view, currentClass } = get();
+          return view === "lesson" && !!currentClass && relPath.startsWith(`classes/${currentClass}/`);
+        },
+      });
+      if (resultChangedLocalFiles(result)) await get().reloadFromDisk();
+      set({
+        syncStatus: result.errors.length > 0 ? "error" : "idle",
+        syncLastAt: result.errors.length > 0 ? get().syncLastAt : new Date().toISOString(),
+        syncError: result.errors.length > 0 ? result.errors[0].message : null,
+        syncConflicts: [...get().syncConflicts, ...result.conflicted],
+      });
+      if (result.conflicted.length > 0) {
+        get().showToast(
+          `${result.conflicted.length} file${result.conflicted.length === 1 ? "" : "s"} changed on two devices — see Settings`,
+        );
+      }
+    } catch (e) {
+      console.warn("Drive sync failed", e);
+      set({ syncStatus: "error", syncError: e instanceof Error ? e.message : String(e) });
+    }
+  };
+
+  /** Coalesce a burst of edits into one push. */
+  const schedulePush = () => {
+    if (!get().driveConnected) return;
+    if (pushTimer) clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => void sync(), PUSH_DEBOUNCE_MS);
+  };
+
+  const startPolling = () => {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(() => void sync(), POLL_INTERVAL_MS);
+  };
+
   // Wrap every file write so a failure surfaces as a banner instead of a
   // silent unhandled rejection. The in-memory edit is kept either way.
   const guarded = async (label: string, fn: () => Promise<void>) => {
@@ -164,6 +252,7 @@ export const useApp = create<AppState>((set, get) => {
         set({ saveError: null });
         lastFailedSave = null;
       }
+      schedulePush();
     } catch (e) {
       console.error(`Save failed: ${label}`, e);
       lastFailedSave = fn;
@@ -184,6 +273,15 @@ export const useApp = create<AppState>((set, get) => {
   dialog: null,
   sensitiveRevealed: false,
   saveError: null,
+
+  driveConfigured: false,
+  driveConnected: false,
+  driveEmail: null,
+  driveFolderName: DEFAULT_FOLDER_NAME,
+  syncStatus: "off",
+  syncLastAt: null,
+  syncError: null,
+  syncConflicts: [],
 
   behaviourCodes: [],
   students: [],
@@ -213,11 +311,33 @@ export const useApp = create<AppState>((set, get) => {
       set({ booted: true });
       return;
     }
+    // Learn about Google before the data folder loads, so onboarding already
+    // knows whether it can offer the Drive option.
+    try {
+      const account = await googleAccount();
+      const summary = await readSyncSummary(getFS());
+      set({
+        driveConfigured: account.configured,
+        driveConnected: account.connected,
+        driveEmail: account.email,
+        driveFolderName: summary.folderName,
+        syncLastAt: summary.lastSync,
+        syncStatus: account.connected ? "idle" : "off",
+      });
+    } catch (e) {
+      console.warn("Couldn't read Google account state", e);
+    }
+
     const saved = localStorage.getItem(DATA_DIR_KEY);
     if (saved && (await getFS().exists(saved))) {
       await get().chooseDataDir(saved);
     }
     set({ booted: true });
+
+    // chooseDataDir above already kicked off the first sync, after taking its
+    // launch snapshot — so there is always a rollback point in backups/ before
+    // the first remote write of the session.
+    if (get().driveConnected) startPolling();
   },
 
   async chooseDataDir(path: string) {
@@ -241,6 +361,12 @@ export const useApp = create<AppState>((set, get) => {
     set({ dataDir: path, classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, currentClass: null });
     const active = classes.filter((c) => !c.archived);
     if (active.length > 0) await get().openClass(active[0].name);
+
+    // The first sync of a session belongs here rather than in boot(): during
+    // onboarding the teacher signs in to Google *before* choosing a folder, so
+    // this is the first moment there is anything to sync. It also covers
+    // "Change data folder" — the new folder reconciles against Drive at once.
+    if (get().driveConnected) void sync();
   },
 
   async pickAndSetDataDir() {
@@ -327,12 +453,101 @@ export const useApp = create<AppState>((set, get) => {
     }
   },
 
+  async connectDrive(folderName) {
+    const name = folderName.trim() || DEFAULT_FOLDER_NAME;
+    try {
+      const email = await googleSignIn();
+      set({
+        driveConnected: true,
+        driveEmail: email,
+        driveFolderName: name,
+        syncStatus: "idle",
+        syncError: null,
+      });
+      startPolling();
+      // No-op when this runs during onboarding, where no folder is chosen yet;
+      // chooseDataDir triggers the first sync in that case.
+      await sync();
+      return true;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      console.warn("Google sign-in failed", e);
+      set({ syncStatus: get().driveConnected ? "error" : "off", syncError: message });
+      return false;
+    }
+  },
+
+  async disconnectDrive() {
+    if (pushTimer) clearTimeout(pushTimer);
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = undefined;
+    try {
+      await googleSignOut();
+    } catch (e) {
+      // Revoking needs the network; forgetting it locally does not, and that
+      // is the part the teacher actually asked for.
+      console.warn("Couldn't tell Google to revoke access", e);
+    }
+    try {
+      await clearSyncState(getFS(), get().driveFolderName);
+    } catch (e) {
+      console.warn("Couldn't clear sync state", e);
+    }
+    set({
+      driveConnected: false,
+      driveEmail: null,
+      syncStatus: "off",
+      syncError: null,
+      syncConflicts: [],
+      syncLastAt: null,
+    });
+  },
+
+  async syncNow() {
+    if (pushTimer) clearTimeout(pushTimer);
+    await sync();
+  },
+
+  dismissSyncConflicts() {
+    set({ syncConflicts: [] });
+  },
+
+  async reloadFromDisk() {
+    const { dataDir, currentClass, sensitiveRevealed } = get();
+    if (!dataDir) return;
+    const classes = await repo.listClasses(dataDir);
+    const [behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets] =
+      await Promise.all([
+        repo.loadBehaviourCodes(dataDir),
+        repo.listLayoutTemplates(dataDir),
+        repo.loadTopics(dataDir),
+        repo.loadCognitiveLevels(dataDir),
+        repo.loadUserPrefs(dataDir),
+        repo.loadTimerPresets(dataDir),
+      ]);
+    set({ classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets });
+
+    if (currentClass && classes.some((c) => c.name === currentClass)) {
+      await get().openClass(currentClass);
+      // openClass re-arms the privacy cover on purpose when the teacher
+      // switches class; a background sync is not a class switch, so don't
+      // slam it shut on someone mid-screen.
+      if (sensitiveRevealed) set({ sensitiveRevealed: true });
+    } else if (currentClass) {
+      // The class was deleted or renamed on another device.
+      const active = classes.filter((c) => !c.archived);
+      if (active.length > 0) await get().openClass(active[0].name);
+      else set({ currentClass: null });
+    }
+  },
+
   async createClass(info) {
     const { dataDir } = get();
     if (!dataDir) return;
     await repo.saveClassInfo(dataDir, info);
     set({ classes: await repo.listClasses(dataDir) });
     await get().openClass(info.name);
+    schedulePush();
   },
 
   async openClass(name) {
@@ -388,6 +603,7 @@ export const useApp = create<AppState>((set, get) => {
     if (!dataDir) return;
     await repo.saveClassInfo(dataDir, info);
     set({ classes: await repo.listClasses(dataDir) });
+    schedulePush();
   },
 
   async renameClass(oldName, newName) {
@@ -399,6 +615,7 @@ export const useApp = create<AppState>((set, get) => {
     await repo.saveClassInfo(dataDir, { ...info, name: newName });
     set({ classes: await repo.listClasses(dataDir) });
     if (get().currentClass === oldName) await get().openClass(newName);
+    schedulePush();
   },
 
   async setStudents(students) {
@@ -484,6 +701,7 @@ export const useApp = create<AppState>((set, get) => {
     if (!dataDir) return;
     await repo.saveLayoutTemplate(dataDir, name, desks, roomConfig);
     await get().refreshLayoutTemplates();
+    schedulePush();
   },
 
   async applyLayoutTemplate(name) {
@@ -495,6 +713,7 @@ export const useApp = create<AppState>((set, get) => {
     set({ desks, roomConfig: nextConfig });
     await repo.saveDesks(dataDir, currentClass, desks);
     await repo.saveRoomConfig(dataDir, currentClass, nextConfig);
+    schedulePush();
   },
 
   async deleteLayoutTemplate(name) {
@@ -502,6 +721,7 @@ export const useApp = create<AppState>((set, get) => {
     if (!dataDir) return;
     await repo.deleteLayoutTemplate(dataDir, name);
     await get().refreshLayoutTemplates();
+    schedulePush();
   },
 
   async setAssessments(assessments) {
