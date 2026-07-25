@@ -68,7 +68,7 @@ beforeEach(async () => {
     { assessmentId: "a1", studentId: "s2", number: 2, mark: null },
   ]);
   await repo.saveDesks(DIR, CLS, [
-    { id: "d1", label: "Front left", shape: "double", x: 0, y: 0, w: 160, h: 60, rotation: 0, color: "" },
+    { id: "d1", label: "Front left", shape: "double", x: 0, y: 0, w: 160, h: 60, rotation: 0, color: "", textColor: "" },
   ]);
   await repo.saveSeating(DIR, CLS, [
     { planName: "Default", deskId: "d1", seatIndex: 0, studentId: "s1" },

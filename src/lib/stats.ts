@@ -1,6 +1,17 @@
 // Aggregation math for the attendance, behaviour and assessment views.
 
-import { Assessment, AssessmentQuestion, AttendanceEntry, BathroomVisit, BehaviourEvent, Mark, QuestionMark, Student } from "./types";
+import {
+  ANSWERED_BEHAVIOUR,
+  Assessment,
+  AssessmentQuestion,
+  AttendanceEntry,
+  BathroomVisit,
+  BehaviourEvent,
+  Mark,
+  NO_ANSWER_BEHAVIOUR,
+  QuestionMark,
+  Student,
+} from "./types";
 
 // ---------- attendance ----------
 
@@ -59,6 +70,36 @@ export function behaviourByStudent(events: BehaviourEvent[]): Map<string, Behavi
 
 export function eventsOnDate(events: BehaviourEvent[], date: string): BehaviourEvent[] {
   return events.filter((e) => e.timestamp.slice(0, 10) === date);
+}
+
+export interface AnswerTally {
+  /** Times the student was asked and answered. */
+  answered: number;
+  /** Times the student was asked and could not answer. */
+  missed: number;
+  /** answered + missed. */
+  asked: number;
+}
+
+export const EMPTY_ANSWER_TALLY: AnswerTally = { answered: 0, missed: 0, asked: 0 };
+
+/**
+ * How each student has fared when picked to answer, counted from the two
+ * answer codes the random-student picker logs. Every other behaviour event is
+ * ignored, so a student's tally is only about questions they were asked.
+ */
+export function answerTallyByStudent(events: BehaviourEvent[]): Map<string, AnswerTally> {
+  const out = new Map<string, AnswerTally>();
+  for (const e of events) {
+    const answered = e.code === ANSWERED_BEHAVIOUR.code;
+    if (!answered && e.code !== NO_ANSWER_BEHAVIOUR.code) continue;
+    const t = out.get(e.studentId) ?? { ...EMPTY_ANSWER_TALLY };
+    if (answered) t.answered++;
+    else t.missed++;
+    t.asked++;
+    out.set(e.studentId, t);
+  }
+  return out;
 }
 
 // ---------- bathroom visits ----------

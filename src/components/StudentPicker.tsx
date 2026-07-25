@@ -1,23 +1,41 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
-import { displayStudentName } from "../lib/privacy";
+import { displayStudentName, textColorFor } from "../lib/privacy";
 import { today } from "../lib/id";
+import { EMPTY_ANSWER_TALLY, answerTallyByStudent } from "../lib/stats";
+import { ANSWERED_BEHAVIOUR, BehaviourCode, BehaviourEvent, NO_ANSWER_BEHAVIOUR, Student } from "../lib/types";
 
 /** Ids already picked this lesson, so "no repeats" survives a reload. Cleared by End lesson. */
 export const pickedKey = (className: string) => `classkernel.picked.${className}`;
 
+const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
+
+interface Props {
+  onClose: () => void;
+  /** This lesson's behaviour events — what the answer tally is counted from. */
+  lessonEvents: BehaviourEvent[];
+  /** Whether the picked student's record may be shown (off in privacy mode). */
+  showTally: boolean;
+  /** Records an event against a student, with the same undo toast as a seat tap. */
+  onLogBehaviour: (studentId: string, code: BehaviourCode) => void;
+}
+
 /**
  * Full-screen random-student picker for the live lesson: flashes through the
- * candidates like the seat shuffle, then lands on one name shown huge. Shows
- * exactly one name and nothing else, so it's safe on the class-facing screen.
+ * candidates like the seat shuffle, then lands on one name shown huge. Under
+ * the name are the two answer buttons, so a cold-called student's answer is
+ * one tap away, plus every other behaviour behind "Other behaviour". Nothing
+ * else is shown unless privacy mode is off, so it stays class-facing safe.
  */
-export default function StudentPicker({ onClose }: { onClose: () => void }) {
-  const { students, attendance, currentClass, userPrefs } = useApp();
+export default function StudentPicker({ onClose, lessonEvents, showTally, onLogBehaviour }: Props) {
+  const { students, attendance, currentClass, userPrefs, behaviourCodes } = useApp();
   const [skipAbsent, setSkipAbsent] = useState(true);
   const [noRepeats, setNoRepeats] = useState(true);
   const [display, setDisplay] = useState("");
+  const [chosen, setChosen] = useState<Student | null>(null);
   const [settled, setSettled] = useState(false);
   const [note, setNote] = useState("");
+  const [showOthers, setShowOthers] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const readPicked = useCallback((): string[] => {
@@ -33,6 +51,8 @@ export default function StudentPicker({ onClose }: { onClose: () => void }) {
   const pick = useCallback(() => {
     if (timer.current) clearInterval(timer.current);
     setNote("");
+    setChosen(null);
+    setShowOthers(false);
     const attToday = attendance.filter((e) => e.date === today());
     const statusOf = (id: string) => attToday.find((e) => e.studentId === id)?.status;
     let pool = students.filter((s) => !skipAbsent || (statusOf(s.id) !== "A" && statusOf(s.id) !== "E"));
@@ -52,17 +72,18 @@ export default function StudentPicker({ onClose }: { onClose: () => void }) {
       setSettled(true);
       return;
     }
-    const chosen = pool[Math.floor(Math.random() * pool.length)];
+    const winner = pool[Math.floor(Math.random() * pool.length)];
     setSettled(false);
     let frame = 0;
     timer.current = setInterval(() => {
       frame++;
       if (frame >= 14) {
         clearInterval(timer.current);
-        setDisplay(displayStudentName(chosen, userPrefs.seatNameStyle));
+        setDisplay(displayStudentName(winner, userPrefs.seatNameStyle));
+        setChosen(winner);
         setSettled(true);
         if (noRepeats && currentClass) {
-          localStorage.setItem(pickedKey(currentClass), JSON.stringify([...readPicked(), chosen.id]));
+          localStorage.setItem(pickedKey(currentClass), JSON.stringify([...readPicked(), winner.id]));
         }
         return;
       }
@@ -80,17 +101,88 @@ export default function StudentPicker({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // Escape backs out of the behaviour list first, then closes the picker.
+      if (showOthers) setShowOthers(false);
+      else onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, showOthers]);
+
+  // The answer buttons use the teacher's own catalogue entries where they
+  // exist, so renaming or recolouring them in Settings carries through here.
+  const answered = behaviourCodes.find((c) => c.code === ANSWERED_BEHAVIOUR.code) ?? ANSWERED_BEHAVIOUR;
+  const noAnswer = behaviourCodes.find((c) => c.code === NO_ANSWER_BEHAVIOUR.code) ?? NO_ANSWER_BEHAVIOUR;
+  const others = behaviourCodes.filter((c) => c.code !== answered.code && c.code !== noAnswer.code);
+  const otherCodes = [...others.filter((c) => c.kind === "positive"), ...others.filter((c) => c.kind === "negative")];
+
+  const tally = useMemo(
+    () => (chosen ? answerTallyByStudent(lessonEvents).get(chosen.id) ?? EMPTY_ANSWER_TALLY : EMPTY_ANSWER_TALLY),
+    [lessonEvents, chosen],
+  );
+
+  const log = (code: BehaviourCode) => {
+    if (!chosen) return;
+    onLogBehaviour(chosen.id, code);
+    setShowOthers(false);
+  };
 
   return (
     <div className="picker-overlay" onClick={onClose}>
       <div className="picker-card" onClick={(e) => e.stopPropagation()}>
         <div className={`picker-name ${settled ? "settled" : ""}`}>{display || "…"}</div>
+        {showTally && chosen && (
+          <div className="picker-tally">
+            <span className="yes">✓ {tally.answered}</span>
+            <span className="no">✗ {tally.missed}</span>
+            <span className="muted">
+              {tally.asked === 0
+                ? "not asked yet this lesson"
+                : `asked ${tally.asked} time${tally.asked === 1 ? "" : "s"} this lesson`}
+            </span>
+          </div>
+        )}
         {note && <p className="muted">{note}</p>}
+        {chosen && (
+          <>
+            <div className="picker-answer">
+              <button
+                style={{ background: answered.color, color: textColorFor(answered.color) }}
+                onClick={() => log(answered)}
+                title="Record that they answered"
+              >
+                ✓ {answered.label} {signed(answered.points)}
+              </button>
+              <button
+                style={{ background: noAnswer.color, color: textColorFor(noAnswer.color) }}
+                onClick={() => log(noAnswer)}
+                title="Record that they could not answer"
+              >
+                ✗ {noAnswer.label} {signed(noAnswer.points)}
+              </button>
+              {otherCodes.length > 0 && (
+                <button className="picker-other" onClick={() => setShowOthers((v) => !v)} aria-expanded={showOthers}>
+                  ⋯ Other behaviour
+                </button>
+              )}
+            </div>
+            {showOthers && (
+              <div className="picker-more">
+                {otherCodes.map((c) => (
+                  <button
+                    key={c.code}
+                    className="bh-btn"
+                    style={{ background: c.color, color: textColorFor(c.color) }}
+                    onClick={() => log(c)}
+                  >
+                    {signed(c.points)} {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
         <div className="picker-actions">
           <button className="primary" onClick={pick}>
             🎲 Pick again

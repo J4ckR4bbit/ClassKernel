@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
-import { BehaviourCode, CognitiveLevel, DEFAULT_TOPIC_AREAS, SeatNameStyle, SeatingPrefs, Student, TopicEntry, studentName } from "../lib/types";
+import {
+  BehaviourCode,
+  CognitiveLevel,
+  DEFAULT_TOPIC_AREAS,
+  LESSON_BAR_SIDES,
+  LessonBarSide,
+  SeatNameStyle,
+  SeatingPrefs,
+  Student,
+  TopicEntry,
+  studentName,
+} from "../lib/types";
 import * as repo from "../lib/repo";
 import { backupStamp } from "../lib/id";
 import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
@@ -9,6 +20,13 @@ import LayoutDesigner from "./LayoutDesigner";
 import ExportView from "./ExportView";
 
 type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments" | "export";
+
+const SIDE_LABELS: Record<LessonBarSide, string> = {
+  top: "Top",
+  right: "Right",
+  bottom: "Bottom",
+  left: "Left",
+};
 
 const TABS: Array<{ id: SettingsTab; label: string; perClass: boolean }> = [
   { id: "general", label: "General", perClass: false },
@@ -252,6 +270,25 @@ function GeneralSettings() {
               onClick={() => void setUserPrefs({ ...userPrefs, uiScale: v })}
             >
               {Math.round(v * 100)}%
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="panel">
+        <h3>Teaching mode</h3>
+        <p className="muted" style={{ marginTop: 0 }}>
+          Which edge of the teaching-mode screen the lesson buttons (Pick a student, Randomise, End lesson) sit on.
+          Put them within reach of where you stand — every lesson opens this way.
+        </p>
+        <div className="row">
+          {LESSON_BAR_SIDES.map((side) => (
+            <button
+              key={side}
+              className={userPrefs.lessonBarSide === side ? "primary" : ""}
+              onClick={() => void setUserPrefs({ ...userPrefs, lessonBarSide: side })}
+            >
+              {SIDE_LABELS[side]}
             </button>
           ))}
         </div>

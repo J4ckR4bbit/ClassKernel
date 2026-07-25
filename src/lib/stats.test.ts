@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  answerTallyByStudent,
   assessmentStats,
   atRiskStudents,
   attendanceSummary,
@@ -14,7 +15,16 @@ import {
   symbolForPct,
   visitSeconds,
 } from "./stats";
-import { Assessment, AssessmentQuestion, AttendanceEntry, Mark, QuestionMark, Student } from "./types";
+import {
+  ANSWERED_BEHAVIOUR,
+  Assessment,
+  AssessmentQuestion,
+  AttendanceEntry,
+  Mark,
+  NO_ANSWER_BEHAVIOUR,
+  QuestionMark,
+  Student,
+} from "./types";
 
 const mkAssessment = (id: string, total: number, date = "2026-01-01"): Assessment => ({
   id,
@@ -56,6 +66,25 @@ describe("behaviourByStudent", () => {
     ]);
     expect(map.get("s1")).toEqual({ positive: 1, negative: 1, points: 1 });
     expect(map.get("s2")).toEqual({ positive: 1, negative: 0, points: 1 });
+  });
+});
+
+describe("answerTallyByStudent", () => {
+  it("counts answered and missed questions, ignoring other behaviours", () => {
+    const map = answerTallyByStudent([
+      { timestamp: "t1", studentId: "s1", code: ANSWERED_BEHAVIOUR.code, points: 1, note: "" },
+      { timestamp: "t2", studentId: "s1", code: NO_ANSWER_BEHAVIOUR.code, points: -1, note: "" },
+      { timestamp: "t3", studentId: "s1", code: ANSWERED_BEHAVIOUR.code, points: 1, note: "" },
+      { timestamp: "t4", studentId: "s1", code: "TALK", points: -1, note: "" },
+      { timestamp: "t5", studentId: "s2", code: NO_ANSWER_BEHAVIOUR.code, points: -1, note: "" },
+    ]);
+    expect(map.get("s1")).toEqual({ answered: 2, missed: 1, asked: 3 });
+    expect(map.get("s2")).toEqual({ answered: 0, missed: 1, asked: 1 });
+  });
+
+  it("leaves out students who were never asked", () => {
+    const map = answerTallyByStudent([{ timestamp: "t1", studentId: "s1", code: "EFF", points: 1, note: "" }]);
+    expect(map.size).toBe(0);
   });
 });
 

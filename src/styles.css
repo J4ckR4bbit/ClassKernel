@@ -201,6 +201,29 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .focus-canvas-wrap { width: 100%; margin: 0 auto; flex: 1; min-height: 0; }
 /* Cap the scaled room by viewport height; the SVG letterboxes, never distorts. */
 .focus-shell .room-canvas { max-height: calc(100vh - 74px); margin: 0 auto; }
+
+/* The lesson buttons sit on the edge chosen in Settings, so they stay within
+   reach whichever side of the board the teacher stands on. */
+.focus-layout { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.focus-layout.bar-bottom { flex-direction: column-reverse; }
+.focus-layout.bar-bottom > .focus-bar { margin: 10px 0 0; }
+/* Keep the plan next to the bar rather than stranded above the spare space. */
+.focus-layout.bar-bottom > .focus-canvas-wrap { display: flex; flex-direction: column; justify-content: flex-end; }
+.focus-layout.bar-left { flex-direction: row; }
+.focus-layout.bar-right { flex-direction: row-reverse; }
+.focus-layout.bar-left > .focus-bar,
+.focus-layout.bar-right > .focus-bar {
+  flex-direction: column; align-items: stretch; flex-wrap: nowrap;
+  max-width: 240px; margin: 0 10px 0 0; overflow-y: auto;
+}
+.focus-layout.bar-right > .focus-bar { margin: 0 0 0 10px; }
+.focus-layout.bar-left > .focus-canvas-wrap,
+.focus-layout.bar-right > .focus-canvas-wrap { width: auto; min-width: 0; }
+.focus-layout.bar-left > .focus-bar > .spacer,
+.focus-layout.bar-right > .focus-bar > .spacer { flex: 1; min-height: 8px; }
+/* A side bar leaves the full height for the room. */
+.focus-layout.bar-left .room-canvas,
+.focus-layout.bar-right .room-canvas { max-height: calc(100vh - 20px); }
 .seating-canvas .room-canvas { max-height: calc(100vh - 230px); margin: 0 auto; }
 
 /* ---------- lesson view ---------- */
@@ -419,6 +442,17 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 }
 .picker-name { font-size: clamp(40px, 8vw, 110px); font-weight: 800; line-height: 1.1; min-height: 1.2em; color: var(--text-dim); }
 .picker-name.settled { color: var(--accent); }
+.picker-tally { display: flex; align-items: baseline; gap: 18px; font-size: 22px; font-weight: 700; }
+.picker-tally .yes { color: var(--accent); }
+.picker-tally .no { color: var(--danger); }
+.picker-tally .muted { font-size: 15px; font-weight: 400; }
+/* Answering / not answering is the common case, so those two get big buttons. */
+.picker-answer { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.picker-answer button { font-size: 16px; font-weight: 600; padding: 14px 22px; border: none; border-radius: 10px; }
+.picker-answer button:hover { filter: brightness(1.08); }
+.picker-answer .picker-other { border: 1px solid var(--border); background: var(--panel); font-weight: 500; }
+.picker-more { display: grid; grid-template-columns: repeat(2, minmax(190px, 1fr)); gap: 8px; width: 100%; }
+.picker-more .bh-btn { margin-bottom: 0; }
 .picker-actions { display: flex; gap: 12px; }
 .picker-actions .primary { font-size: 16px; padding: 12px 26px; }
 .picker-options { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; color: var(--text-dim); }

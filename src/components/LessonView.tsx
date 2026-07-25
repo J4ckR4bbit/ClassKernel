@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
-import { AttendanceStatus, LessonRecord, SEAT_COUNTS, studentName } from "../lib/types";
+import { AttendanceStatus, BehaviourCode, LessonRecord, SEAT_COUNTS, studentName } from "../lib/types";
 import { eventsOnDate, formatDuration, visitSeconds } from "../lib/stats";
 import { displayStudentName, seatSurname, textColorFor } from "../lib/privacy";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
@@ -73,6 +73,10 @@ export default function LessonView() {
 
   // Whether the class-facing seat tiles show the running points scoreboard.
   const pointsVisible = userPrefs.privacyMode ? userPrefs.showSeatPoints : true;
+
+  // In teaching mode the lesson buttons sit on whichever edge Settings says,
+  // so they land under the hand of whoever is standing at the board.
+  const shellClass = focusMode ? `focus-layout bar-${userPrefs.lessonBarSide}` : "";
 
   // Friendly fallback names for unlabelled desks, so lesson history is readable.
   const deskFallback = useMemo(() => {
@@ -159,9 +163,7 @@ export default function LessonView() {
     setPopover(null);
   };
 
-  const logBehaviour = (studentId: string, code: string) => {
-    const c = behaviourCodes.find((c) => c.code === code);
-    if (!c) return;
+  const logBehaviour = (studentId: string, c: BehaviourCode) => {
     const timestamp = nowIso();
     void addBehaviourEvent({ timestamp, studentId, code: c.code, points: c.points, note: "" });
     const s = byId.get(studentId);
@@ -212,7 +214,7 @@ export default function LessonView() {
 
   if (desks.length === 0 || planSeats.length === 0) {
     return (
-      <div>
+      <div className={shellClass}>
         {focusMode ? (
           <div className="focus-bar">
             <button onClick={() => setFocusMode(false)}>✕ Exit teaching mode</button>
@@ -234,7 +236,7 @@ export default function LessonView() {
   }
 
   return (
-    <div>
+    <div className={shellClass}>
       {focusMode ? (
         <div className="focus-bar">
           <button onClick={() => setFocusMode(false)} title="Back to the full app (or press Esc)">
@@ -392,7 +394,7 @@ export default function LessonView() {
                 key={c.code}
                 className="bh-btn"
                 style={{ background: c.color, color: textColorFor(c.color) }}
-                onClick={() => logBehaviour(popStudent.id, c.code)}
+                onClick={() => logBehaviour(popStudent.id, c)}
               >
                 +{c.points} {c.label}
               </button>
@@ -402,7 +404,7 @@ export default function LessonView() {
                 key={c.code}
                 className="bh-btn"
                 style={{ background: c.color, color: textColorFor(c.color) }}
-                onClick={() => logBehaviour(popStudent.id, c.code)}
+                onClick={() => logBehaviour(popStudent.id, c)}
               >
                 {c.points} {c.label}
               </button>
@@ -413,7 +415,14 @@ export default function LessonView() {
           </div>
         )}
       </div>
-      {pickerOpen && <StudentPicker onClose={() => setPickerOpen(false)} />}
+      {pickerOpen && (
+        <StudentPicker
+          onClose={() => setPickerOpen(false)}
+          lessonEvents={lessonEvents}
+          showTally={pointsVisible}
+          onLogBehaviour={logBehaviour}
+        />
+      )}
     </div>
   );
 }

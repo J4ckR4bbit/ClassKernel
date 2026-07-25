@@ -79,6 +79,8 @@ export interface Desk {
   rotation: number; // degrees, multiples of 90
   /** Optional custom fill colour (hex); empty string = default for the shape. */
   color: string;
+  /** Optional colour (hex) for the desk's own label text; "" = default. */
+  textColor: string;
 }
 
 export type FrontEdge = "top" | "right" | "bottom" | "left";
@@ -247,6 +249,11 @@ export const DEFAULT_TIMER_PRESETS: TimerPreset[] = [
 /** How student names are shown on seat tiles on class-facing screens. */
 export type SeatNameStyle = "full" | "firstInitial" | "first";
 
+/** Which edge of the teaching-mode screen the lesson buttons sit on. */
+export type LessonBarSide = "top" | "right" | "bottom" | "left";
+
+export const LESSON_BAR_SIDES: LessonBarSide[] = ["top", "right", "bottom", "left"];
+
 /** App-wide user preferences (settings.csv). */
 export interface UserPrefs {
   /** In the marking grid, which direction Enter moves. Tab does the opposite. */
@@ -267,6 +274,8 @@ export interface UserPrefs {
   popoverShowNotes: boolean;
   /** Whole-app display scale for large touch panels (1–2). */
   uiScale: number;
+  /** Where the lesson buttons sit around the seating plan in teaching mode. */
+  lessonBarSide: LessonBarSide;
 }
 
 export const DEFAULT_USER_PREFS: UserPrefs = {
@@ -277,6 +286,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   popoverShowFlags: false,
   popoverShowNotes: false,
   uiScale: 1,
+  lessonBarSide: "top",
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {
@@ -305,6 +315,28 @@ export function studentName(s: Student): string {
   return `${s.firstName} ${s.lastName}`.trim();
 }
 
+/**
+ * The two behaviours the random-student picker records: whether a student who
+ * was cold-called could answer or not. They are ordinary catalogue entries, so
+ * the label, points and colour stay editable in Settings — only the codes are
+ * fixed, because that is how the picker (and the answer tally) find them.
+ */
+export const ANSWERED_BEHAVIOUR: BehaviourCode = {
+  code: "Q+",
+  label: "Asked and answered",
+  kind: "positive",
+  points: 1,
+  color: "#4f9e2e",
+};
+export const NO_ANSWER_BEHAVIOUR: BehaviourCode = {
+  code: "Q-",
+  label: "Unable to answer",
+  kind: "negative",
+  points: -1,
+  color: "#c96a4e",
+};
+export const ANSWER_BEHAVIOURS: BehaviourCode[] = [ANSWERED_BEHAVIOUR, NO_ANSWER_BEHAVIOUR];
+
 export const DEFAULT_BEHAVIOURS: BehaviourCode[] = [
   { code: "EFF", label: "Great effort", kind: "positive", points: 1, color: "#2e9e5b" },
   { code: "HELP", label: "Helping others", kind: "positive", points: 1, color: "#2e9e8a" },
@@ -314,4 +346,5 @@ export const DEFAULT_BEHAVIOURS: BehaviourCode[] = [
   { code: "DISR", label: "Disruptive", kind: "negative", points: -2, color: "#e06c3a" },
   { code: "HW-", label: "Missing homework", kind: "negative", points: -1, color: "#d65c5c" },
   { code: "LATE", label: "Late to lesson", kind: "negative", points: -1, color: "#b85c8a" },
+  ...ANSWER_BEHAVIOURS,
 ];

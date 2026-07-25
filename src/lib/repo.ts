@@ -8,7 +8,7 @@
 //   classes/<class>/attendance.csv        date,student_id,status,note
 //   classes/<class>/behaviour.csv         timestamp,student_id,code,points,note
 //   classes/<class>/bathroom.csv          date,student_id,start,end,duration_seconds
-//   classes/<class>/desks.csv             desk_id,label,shape,x,y,w,h,rotation
+//   classes/<class>/desks.csv             desk_id,label,shape,x,y,w,h,rotation,color,text_color
 //   classes/<class>/seating.csv           plan_name,desk_id,seat_index,student_id
 //   classes/<class>/seating_prefs.csv     type,a,b   (random-seating constraints)
 //   classes/<class>/lessons.csv           session_id,date,timestamp,student_id,desk_id,desk_label,seatmates,points,positives,negatives
@@ -24,6 +24,7 @@ import { getFS } from "./fs";
 import { parseCsv, stringifyCsv, num, numOrNull } from "./csv";
 import { visitSeconds } from "./stats";
 import {
+  ANSWER_BEHAVIOURS,
   Assessment,
   AssessmentQuestion,
   AttendanceEntry,
@@ -40,6 +41,8 @@ import {
   Desk,
   DeskShape,
   FrontEdge,
+  LESSON_BAR_SIDES,
+  LessonBarSide,
   LessonRecord,
   Mark,
   QuestionMark,
@@ -66,6 +69,12 @@ export async function ensureDataDir(dataDir: string): Promise<void> {
   await fs.mkdirs(p(dataDir, "backups"));
   if (!(await fs.exists(p(dataDir, "behaviours.csv")))) {
     await saveBehaviourCodes(dataDir, DEFAULT_BEHAVIOURS);
+  } else {
+    // A folder created before the picker recorded answers has no Q+/Q- rows.
+    // Add them so its buttons are labelled and editable like every other one.
+    const codes = await loadBehaviourCodes(dataDir);
+    const missing = ANSWER_BEHAVIOURS.filter((a) => !codes.some((c) => c.code === a.code));
+    if (missing.length > 0) await saveBehaviourCodes(dataDir, [...codes, ...missing]);
   }
   if (!(await fs.exists(p(dataDir, "cognitive_levels.csv")))) {
     await saveCognitiveLevels(dataDir, DEFAULT_COGNITIVE_LEVELS);
@@ -283,7 +292,7 @@ export async function saveBathroomVisits(dataDir: string, className: string, vis
 
 // ---------- desks + seating ----------
 
-const DESK_COLS = ["desk_id", "label", "shape", "x", "y", "w", "h", "rotation", "color"];
+const DESK_COLS = ["desk_id", "label", "shape", "x", "y", "w", "h", "rotation", "color", "text_color"];
 const VALID_SHAPES: DeskShape[] = ["single", "double", "group4", "group6", "teacher", "door", "window", "label"];
 
 export async function loadDesks(dataDir: string, className: string): Promise<Desk[]> {
@@ -300,6 +309,7 @@ export async function loadDesks(dataDir: string, className: string): Promise<Des
       h: num(r.h, 60),
       rotation: num(r.rotation),
       color: r.color ?? "",
+      textColor: r.text_color ?? "",
     }));
 }
 
@@ -314,6 +324,7 @@ export async function saveDesks(dataDir: string, className: string, desks: Desk[
     h: d.h,
     rotation: d.rotation,
     color: d.color,
+    text_color: d.textColor,
   }));
   await getFS().writeAtomic(p(classDir(dataDir, className), "desks.csv"), stringifyCsv(rows, DESK_COLS));
 }
@@ -498,6 +509,7 @@ export async function saveLayoutTemplate(
     h: d.h,
     rotation: d.rotation,
     color: d.color,
+    text_color: d.textColor,
   }));
   await fs.writeAtomic(p(dir, "desks.csv"), stringifyCsv(deskRows, DESK_COLS));
   // Template keeps display settings but not a class-specific crop.
@@ -528,6 +540,7 @@ export async function loadLayoutTemplate(
       h: num(r.h, 60),
       rotation: num(r.rotation),
       color: r.color ?? "",
+      textColor: r.text_color ?? "",
     }));
   const roomRows = await loadCsvFile(p(dir, "room.csv"));
   const kv = new Map(roomRows.map((r) => [r.key, r.value ?? ""]));
@@ -792,6 +805,7 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
   const enter = kv.get("mark_entry_enter");
   const style = kv.get("seat_name_style") as SeatNameStyle;
   const uiScale = num(kv.get("ui_scale"), 1);
+  const barSide = kv.get("lesson_bar_side") as LessonBarSide;
   return {
     markGridEnter: enter === "down" ? "down" : "across",
     // A missing key means privacy on: existing installs get it without migration.
@@ -801,6 +815,7 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
     popoverShowFlags: kv.get("popover_flags") === "true",
     popoverShowNotes: kv.get("popover_notes") === "true",
     uiScale: Math.min(2, Math.max(1, uiScale > 0 ? uiScale : 1)),
+    lessonBarSide: LESSON_BAR_SIDES.includes(barSide) ? barSide : "top",
   };
 }
 
@@ -813,6 +828,7 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "popover_flags", value: prefs.popoverShowFlags ? "true" : "false" },
     { key: "popover_notes", value: prefs.popoverShowNotes ? "true" : "false" },
     { key: "ui_scale", value: String(prefs.uiScale) },
+    { key: "lesson_bar_side", value: prefs.lessonBarSide },
   ];
   await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
 }

@@ -190,7 +190,13 @@ function DeskShapeView({
         />
         {caption &&
           (desk.shape === "label" ? (
-            <text className="label-block-text" x={cx} y={cy} dominantBaseline="central" style={{ fontSize: 14 * labelFontScale }}>
+            <text
+              className="label-block-text"
+              x={cx}
+              y={cy}
+              dominantBaseline="central"
+              style={{ fontSize: 14 * labelFontScale, fill: desk.textColor || undefined }}
+            >
               {caption}
             </text>
           ) : (
@@ -198,7 +204,7 @@ function DeskShapeView({
               className="desk-label"
               x={cx}
               y={desk.shape === "door" || desk.shape === "window" ? cy + 3.5 : desk.y + 13}
-              style={{ fontSize: 11 * deskFontScale }}
+              style={{ fontSize: 11 * deskFontScale, fill: desk.textColor || undefined }}
             >
               {caption}
             </text>
