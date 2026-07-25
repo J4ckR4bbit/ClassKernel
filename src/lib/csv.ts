@@ -16,6 +16,20 @@ export function parseCsv(text: string): CsvRecord[] {
   return result.data;
 }
 
+/**
+ * Parse keeping the header order, which the sync merge needs so a merged file
+ * comes back out with its columns in the original order.
+ */
+export function parseCsvTable(text: string): { columns: string[]; rows: CsvRecord[] } {
+  if (!text.trim()) return { columns: [], rows: [] };
+  const result = Papa.parse<CsvRecord>(text, {
+    header: true,
+    skipEmptyLines: "greedy",
+    transformHeader: (h) => h.trim(),
+  });
+  return { columns: (result.meta.fields ?? []).slice(), rows: result.data };
+}
+
 export function stringifyCsv(rows: Array<Record<string, string | number | null>>, columns: string[]): string {
   if (rows.length === 0) {
     // PapaParse emits nothing for zero rows; always keep the header so the

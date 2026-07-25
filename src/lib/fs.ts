@@ -3,9 +3,19 @@
 // without Tauri) and in unit tests, an in-memory implementation is used so the
 // whole app remains drivable without a real disk.
 
+import { hashText } from "./hash";
+
 export interface DirEntry {
   name: string;
   isDir: boolean;
+}
+
+/** What Drive sync needs to know about a local file, in one round trip. */
+export interface FileStat {
+  /** MD5 of the contents, to compare against Drive's md5Checksum. */
+  hash: string;
+  /** Last-modified time, epoch milliseconds. */
+  modifiedMs: number;
 }
 
 export interface AppFS {
@@ -24,6 +34,16 @@ export interface AppFS {
   pickFolder(): Promise<string | null>;
   /** Open a native "save as" dialog for a generated file; null if cancelled or unsupported. */
   pickSaveFile(defaultName: string, extension: string, label: string): Promise<string | null>;
+  /** Hash + mtime of a file, for Drive sync change detection. */
+  stat(path: string): Promise<FileStat>;
+  /** Delete a file. Used by sync when a file was removed on another device. */
+  remove(path: string): Promise<void>;
+  /**
+   * Absolute path to a per-user app config file (outside the data folder).
+   * Sync state lives here: it is device-specific, and the data folder is meant
+   * to stay plain .csv/.md the teacher can open in Excel.
+   */
+  configPath(name: string): Promise<string>;
 }
 
 export function isTauri(): boolean {
@@ -70,6 +90,15 @@ class TauriFS implements AppFS {
     const picked = await save({ defaultPath: defaultName, filters: [{ name: label, extensions: [extension] }] });
     return typeof picked === "string" ? picked : null;
   }
+  stat(path: string) {
+    return this.invoke<FileStat>("file_stat", { path });
+  }
+  remove(path: string) {
+    return this.invoke<void>("remove_file", { path });
+  }
+  configPath(name: string) {
+    return this.invoke<string>("config_path", { name });
+  }
 }
 
 /** In-memory FS used by unit tests and the browser demo mode. */
@@ -78,9 +107,17 @@ export class MemFS implements AppFS {
   /** Generated binaries (spreadsheet exports) kept separately from text files. */
   blobs = new Map<string, Uint8Array>();
   dirs = new Set<string>();
+  mtimes = new Map<string, number>();
+  /** Monotonic stand-in for wall-clock mtime, so write order is deterministic. */
+  private clock = 1_700_000_000_000;
 
   private norm(p: string): string {
     return p.replace(/\\/g, "/").replace(/\/+$/, "");
+  }
+
+  /** Tests use this to stage "this side was edited later than that one". */
+  setMtime(path: string, ms: number): void {
+    this.mtimes.set(this.norm(path), ms);
   }
   async readText(path: string): Promise<string> {
     const p = this.norm(path);
@@ -92,6 +129,7 @@ export class MemFS implements AppFS {
     const p = this.norm(path);
     await this.mkdirs(p.slice(0, p.lastIndexOf("/")));
     this.files.set(p, contents);
+    this.mtimes.set(p, ++this.clock);
   }
   async writeBinary(path: string, bytes: Uint8Array): Promise<void> {
     const p = this.norm(path);
@@ -156,6 +194,21 @@ export class MemFS implements AppFS {
   async pickSaveFile(): Promise<string | null> {
     // No native dialog outside the desktop app; callers fall back to a download.
     return null;
+  }
+  async stat(path: string): Promise<FileStat> {
+    const p = this.norm(path);
+    const f = this.files.get(p);
+    if (f === undefined) throw new Error(`File not found: ${p}`);
+    return { hash: hashText(f), modifiedMs: this.mtimes.get(p) ?? 0 };
+  }
+  async remove(path: string): Promise<void> {
+    const p = this.norm(path);
+    this.files.delete(p);
+    this.blobs.delete(p);
+    this.mtimes.delete(p);
+  }
+  async configPath(name: string): Promise<string> {
+    return `/config/${name}`;
   }
 }
 

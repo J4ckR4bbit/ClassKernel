@@ -1,10 +1,10 @@
 # ClassKernel
 
-Fast, lightweight, offline-first classroom management for teachers. Windows desktop app built with Tauri 2 — ~10 MB, instant startup, **no accounts, no server, no internet required**.
+Fast, lightweight, offline-first classroom management for teachers. Windows desktop app built with Tauri 2 — instant startup, **no server, and no internet required**. Optionally, it can sync to your Google Drive.
 
 ## Getting it
 
-Currently distributed as a standalone **Windows installer (`.exe`)** — grab the latest from the [Releases](../../releases) page and run it. No sign-in, nothing to configure; on first launch you pick a folder to keep your data in.
+Currently distributed as a standalone **Windows installer (`.exe`)** — grab the latest from the [Releases](../../releases) page and run it. On first launch you pick a folder to keep your data in, and choose whether to keep everything on this PC only or also sync it to Google Drive. The local-only option needs no account and nothing configured.
 
 ## What it does
 
@@ -49,7 +49,30 @@ ClassroomData/
   backups/                       # automatic snapshots (newest 14 kept)
 ```
 
-Open any file in Excel or Notepad; move the folder between machines freely. **Pick a folder inside OneDrive or Google Drive** and the sync client gives you backup and access from other machines — the app itself never touches the network. Every write is atomic (temp file + rename) so a sync mid-save can't corrupt anything, and a snapshot of the whole folder is taken into `backups/` at every launch.
+Open any file in Excel or Notepad; move the folder between machines freely. Every write is atomic (temp file + rename) so a sync mid-save can't corrupt anything, and a snapshot of the whole folder is taken into `backups/` at every launch.
+
+For backup and a second machine without any sign-in, **pick a folder inside OneDrive or Google Drive** and let their desktop client mirror it. With no cloud option turned on, the app never touches the network.
+
+## Google Drive sync (optional)
+
+Choose **This PC + Google Drive** during setup — or turn it on later in **Settings → Google Drive sync** — and ClassKernel signs you in once, creates a `ClassKernel` folder in your My Drive, and keeps it in step with your data folder in both directions.
+
+This is a different thing from putting your folder inside Google Drive for Desktop. It talks to Drive directly, which means the same data can be reached from other devices over the Drive API — the groundwork for an Android companion app.
+
+- **Your PC stays the working copy.** Every read and write still goes straight to local disk, so the app is just as fast and works with no internet. Syncing happens in the background: on launch, a few seconds after each change, and every 90 seconds.
+- **Only its own files.** The app uses Google's `drive.file` scope, so it can see the files it created and nothing else in your Drive.
+- **Conflicts are merged, not overwritten.** If two devices change things before syncing, registers, mark sheets, behaviour logs and rosters are merged row by row so nothing is lost. Files that are a single document — a room layout, a seating plan, class notes — take the newer version, and the other is kept next to it as `desks.conflict-<date>.csv` and listed in Settings.
+- **Nothing is deleted behind your back.** Files removed on another device are removed here too, but a file you edited since is kept and re-uploaded, and remote deletions go to your Drive bin rather than being erased.
+- **While a lesson is live**, changes pulled from other devices are held back for the class you're teaching until you leave the lesson view. Your own work still uploads.
+- **Spreadsheet exports aren't synced.** `exports/` (and any `.xlsx` saved into the data folder) is generated output — regenerable on any device from the data that *is* synced — so it stays local, the same way `backups/` does.
+- **Sign out any time** from Settings. Your local files are untouched, and the Drive folder stays where it is.
+
+Two caveats worth knowing:
+
+- If your data folder is itself inside OneDrive or Google Drive for Desktop, don't also turn this on — two sync systems watching the same files will fight over them. Use a plain local folder.
+- Because rows are merged rather than tracked individually, deleting a student (or a mark, or a behaviour button) on a device that is offline can be undone when it syncs, if the other device still has that row. Deleting while connected is fine.
+
+Building an installer with Drive sync enabled needs a Google OAuth client — see [docs/google-drive-setup.md](docs/google-drive-setup.md). Builds without one work fine; the option just shows as unavailable.
 
 ## Development
 
@@ -62,7 +85,9 @@ npm run tauri build  # Windows installer (NSIS .exe) in src-tauri/target/release
 ```
 
 - Frontend: React + TypeScript + Vite, Zustand, PapaParse, Recharts, marked. Spreadsheet exports are written by a small built-in `.xlsx` writer (`src/lib/xlsx.ts`) rather than a dependency, so the installer stays small.
-- Backend: minimal Rust (Tauri 2) — atomic file writes, folder snapshots, folder and save-as pickers. No other native code.
+- Backend: minimal Rust (Tauri 2) — atomic file writes, folder snapshots, folder and save-as pickers, and the Google Drive client. No other native code.
 - App icons are generated: `node scripts/gen-icons.mjs`.
+
+All network access lives in Rust (`src-tauri/src/google_auth.rs`, `drive.rs`). The webview's CSP has no `connect-src`, so the frontend cannot make outbound requests at all and never sees an access token. The sync engine itself is TypeScript (`src/lib/sync/`) — that is where the CSV schema knowledge is, and it is unit-tested against an in-memory filesystem and a fake Drive.
 
 CI (`.github/workflows/build.yml`) runs the tests on every push and builds the Windows NSIS installer; tagging `v*` attaches the `.exe` to a GitHub release.
