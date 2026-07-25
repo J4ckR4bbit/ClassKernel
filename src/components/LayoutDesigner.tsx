@@ -15,6 +15,12 @@ const PALETTE: Array<{ shape: DeskShape; label: string }> = [
   { shape: "label", label: "+ Label box" },
 ];
 
+/** Text colours: the two that read on any fill, plus a picker for the rest. */
+const TEXT_PRESETS: Array<{ name: string; hex: string }> = [
+  { name: "Black", hex: "#000000" },
+  { name: "White", hex: "#ffffff" },
+];
+
 /** Preset desk fills: one soft pastel per hue so a colour-coded room stays calm. */
 const PASTEL_PRESETS: Array<{ name: string; hex: string }> = [
   { name: "Rose", hex: "#f7d9e0" },
@@ -77,6 +83,7 @@ export default function LayoutDesigner() {
       h: size.h,
       rotation: 0,
       color: "",
+      textColor: "",
     };
     void setDesks([...desks, desk]);
     setSelected(desk.id);
@@ -327,7 +334,34 @@ export default function LayoutDesigner() {
           />
           {selectedDesk.color && (
             <button className="small" onClick={() => patchSelected({ color: "" })}>
-              Reset colour
+              Reset fill
+            </button>
+          )}
+          <span className="muted" style={{ marginLeft: 4 }}>
+            Text
+          </span>
+          <div className="swatch-row" role="group" aria-label="Text colour">
+            {TEXT_PRESETS.map((c) => (
+              <button
+                key={c.hex}
+                className={`swatch ${selectedDesk.textColor === c.hex ? "on" : ""}`}
+                style={{ background: c.hex }}
+                title={`${c.name} text`}
+                aria-label={`${c.name} text`}
+                onClick={() => patchSelected({ textColor: c.hex })}
+              />
+            ))}
+          </div>
+          <input
+            type="color"
+            title="Custom text colour"
+            value={selectedDesk.textColor || "#5c6b7a"}
+            onChange={(e) => patchSelected({ textColor: e.target.value })}
+            style={{ padding: 1, width: 52, height: 36 }}
+          />
+          {selectedDesk.textColor && (
+            <button className="small" onClick={() => patchSelected({ textColor: "" })}>
+              Reset text
             </button>
           )}
           <span className="muted" style={{ marginLeft: 4 }}>

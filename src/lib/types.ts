@@ -79,6 +79,8 @@ export interface Desk {
   rotation: number; // degrees, multiples of 90
   /** Optional custom fill colour (hex); empty string = default for the shape. */
   color: string;
+  /** Optional colour (hex) for the desk's own label text; "" = default. */
+  textColor: string;
 }
 
 export type FrontEdge = "top" | "right" | "bottom" | "left";
