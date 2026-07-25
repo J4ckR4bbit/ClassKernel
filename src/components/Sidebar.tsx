@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useApp, View } from "../store/appStore";
 import NewClassModal from "./NewClassModal";
-import SyncStatus from "./SyncStatus";
 
 // Room layout and Students now live under Settings; the sidebar keeps the
 // day-to-day teaching views plus Home as the landing page.
@@ -78,7 +77,6 @@ export default function Sidebar() {
       ))}
 
       <div className="footer">
-        <SyncStatus />
         <button onClick={() => void pickAndSetDataDir()}>Change data folder</button>
         <div title={dataDir ?? ""}>{dataDir}</div>
       </div>
