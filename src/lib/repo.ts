@@ -816,6 +816,12 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
     popoverShowNotes: kv.get("popover_notes") === "true",
     uiScale: Math.min(2, Math.max(1, uiScale > 0 ? uiScale : 1)),
     lessonBarSide: LESSON_BAR_SIDES.includes(barSide) ? barSide : "top",
+    // Unknown ids are kept as they are — a plugin missing from this build is
+    // still switched on for a build that has it.
+    enabledPlugins: (kv.get("plugins_enabled") ?? "")
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean),
   };
 }
 
@@ -829,6 +835,7 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "popover_notes", value: prefs.popoverShowNotes ? "true" : "false" },
     { key: "ui_scale", value: String(prefs.uiScale) },
     { key: "lesson_bar_side", value: prefs.lessonBarSide },
+    { key: "plugins_enabled", value: prefs.enabledPlugins.join(";") },
   ];
   await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
 }

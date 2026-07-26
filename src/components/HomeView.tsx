@@ -1,17 +1,23 @@
 import { useState } from "react";
 import { useApp } from "../store/appStore";
 import { ClassInfo } from "../lib/types";
+import { PLUGINS, enabledPlugins } from "../plugins/registry";
 import NewClassModal from "./NewClassModal";
 
 /**
  * Landing page: every class as a card with the two things a teacher reaches
  * for at the start of a lesson — reroll the seating, or jump into the live
  * lesson. Setup (students, room layout, seating rules) lives under Settings.
+ *
+ * Below the classes sits Tools: the plugins this teacher has switched on
+ * (Settings → Plugins). Class-independent extras live here rather than in the
+ * sidebar, which stays about the class in front of you.
  */
 export default function HomeView() {
-  const { classes, openClass, setView, setPendingRandomise, createClass } = useApp();
+  const { classes, openClass, setView, setPendingRandomise, createClass, userPrefs, openPlugin } = useApp();
   const [showNew, setShowNew] = useState(false);
   const active = classes.filter((c) => !c.archived);
+  const tools = enabledPlugins(userPrefs.enabledPlugins);
 
   const meta = (c: ClassInfo) => [c.subject, c.year && `Year ${c.year}`, c.room].filter(Boolean).join(" · ");
 
@@ -61,6 +67,32 @@ export default function HomeView() {
             </div>
           ))}
         </div>
+      )}
+
+      {PLUGINS.length > 0 && (
+        <>
+          <h2 className="section-heading">Tools</h2>
+          {tools.length === 0 ? (
+            <div className="panel muted">
+              Extra tools ship with the app but stay switched off. Turn on the ones you want under{" "}
+              <b>Settings → Plugins</b> and they appear here.
+            </div>
+          ) : (
+            <div className="home-grid">
+              {tools.map((p) => (
+                <button key={p.id} className="tool-card" onClick={() => openPlugin(p.id)}>
+                  <span className="tool-icon" aria-hidden>
+                    {p.icon}
+                  </span>
+                  <span className="tool-text">
+                    <b>{p.name}</b>
+                    <span className="muted">{p.tagline}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {showNew && <NewClassModal onClose={() => setShowNew(false)} onCreate={createClass} />}

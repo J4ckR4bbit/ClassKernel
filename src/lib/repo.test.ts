@@ -333,6 +333,7 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
     expect(fresh.popoverShowFlags).toBe(false);
     expect(fresh.popoverShowNotes).toBe(false);
     expect(fresh.uiScale).toBe(1);
+    expect(fresh.enabledPlugins).toEqual([]);
     // A legacy file holding only the old key: privacy still defaults on.
     await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nmark_entry_enter,down\n");
     const legacy = await repo.loadUserPrefs(DIR);
@@ -350,9 +351,18 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       popoverShowNotes: true,
       uiScale: 1.5,
       lessonBarSide: "left" as const,
+      enabledPlugins: ["graph-paper", "some-future-tool"],
     };
     await repo.saveUserPrefs(DIR, prefs);
     expect(await repo.loadUserPrefs(DIR)).toEqual(prefs);
+  });
+
+  it("treats a settings file with no plugin key as no plugins enabled", async () => {
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nui_scale,1\n");
+    expect((await repo.loadUserPrefs(DIR)).enabledPlugins).toEqual([]);
+    // An empty value is the same thing — every plugin switched back off.
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nplugins_enabled,\n");
+    expect((await repo.loadUserPrefs(DIR)).enabledPlugins).toEqual([]);
   });
 
   it("falls back to a top lesson bar when the setting is missing or unknown", async () => {

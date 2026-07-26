@@ -40,6 +40,7 @@ export type View =
   | "dashboard"
   | "notes"
   | "timer"
+  | "plugin"
   | "settings";
 
 const DATA_DIR_KEY = "classkernel.dataDir";
@@ -74,6 +75,8 @@ export interface AppState {
   focusMode: boolean;
   /** Set by Home to ask the Seating view to auto-run an animated reroll on arrival. */
   pendingRandomise: boolean;
+  /** Id of the plugin the "plugin" view is showing (see src/plugins/registry.ts). */
+  activePlugin: string | null;
   toast: Toast | null;
   dialog: DialogRequest | null;
   /**
@@ -111,6 +114,8 @@ export interface AppState {
   chooseDataDir(path: string): Promise<void>;
   pickAndSetDataDir(): Promise<void>;
   setView(view: View): void;
+  /** Open one of the enabled plugins full-pane. */
+  openPlugin(id: string): void;
   setFocusMode(on: boolean): void;
   setPendingRandomise(on: boolean): void;
   showToast(message: string, action?: { label: string; run: () => void }): void;
@@ -187,6 +192,7 @@ export const useApp = create<AppState>((set, get) => {
   view: "home",
   focusMode: false,
   pendingRandomise: false,
+  activePlugin: null,
   toast: null,
   dialog: null,
   sensitiveRevealed: false,
@@ -257,7 +263,13 @@ export const useApp = create<AppState>((set, get) => {
   },
 
   setView(view) {
-    set({ view, sensitiveRevealed: false });
+    // Leaving the plugin view closes the plugin, so its frame is torn down
+    // rather than kept alive in the background.
+    set({ view, sensitiveRevealed: false, ...(view === "plugin" ? {} : { activePlugin: null }) });
+  },
+
+  openPlugin(id) {
+    set({ view: "plugin", activePlugin: id, sensitiveRevealed: false });
   },
 
   setFocusMode(on) {
