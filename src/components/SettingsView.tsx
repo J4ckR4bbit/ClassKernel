@@ -12,6 +12,7 @@ import {
   TopicEntry,
   studentName,
 } from "../lib/types";
+import { PLUGINS, togglePluginId } from "../plugins/registry";
 import * as repo from "../lib/repo";
 import { backupStamp } from "../lib/id";
 import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
@@ -19,7 +20,7 @@ import RosterView from "./RosterView";
 import LayoutDesigner from "./LayoutDesigner";
 import ExportView from "./ExportView";
 
-type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments" | "export";
+type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments" | "plugins" | "export";
 
 const SIDE_LABELS: Record<LessonBarSide, string> = {
   top: "Top",
@@ -34,6 +35,7 @@ const TABS: Array<{ id: SettingsTab; label: string; perClass: boolean }> = [
   { id: "layout", label: "Room layout", perClass: true },
   { id: "seating", label: "Seating rules", perClass: true },
   { id: "assessments", label: "Assessments", perClass: false },
+  { id: "plugins", label: "Plugins", perClass: false },
   { id: "export", label: "Export", perClass: false },
 ];
 
@@ -73,6 +75,7 @@ export default function SettingsView() {
 
       {tab === "general" && <GeneralSettings />}
       {tab === "assessments" && <AssessmentSettings />}
+      {tab === "plugins" && <PluginSettings />}
       {tab === "export" && <ExportView />}
       {perClass &&
         (active.length === 0 ? (
@@ -472,6 +475,61 @@ function BackupRestore({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/**
+ * Plugins: extra teaching tools that ship inside the app but stay off until
+ * they're switched on here. The choice is app-wide (settings.csv) and the
+ * enabled ones show up under Tools on the Home page.
+ */
+function PluginSettings() {
+  const { userPrefs, setUserPrefs, openPlugin } = useApp();
+  const enabled = userPrefs.enabledPlugins;
+
+  const toggle = (id: string) =>
+    void setUserPrefs({ ...userPrefs, enabledPlugins: togglePluginId(enabled, id) });
+
+  return (
+    <div className="panel">
+      <h3>Plugins</h3>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Extra tools that come with ClassKernel. Everything ships switched off, so the app stays exactly as it is until
+        you turn something on — then it appears under <b>Tools</b> on the Home page. Each one runs sealed off from your
+        class files: it can't read or change student data, and it works offline like the rest of the app.
+      </p>
+
+      {PLUGINS.length === 0 ? (
+        <p className="muted" style={{ marginBottom: 0 }}>
+          This version of the app doesn't ship any plugins yet.
+        </p>
+      ) : (
+        <ul className="plugin-list">
+          {PLUGINS.map((p) => {
+            const on = enabled.includes(p.id);
+            return (
+              <li key={p.id} className="plugin-row">
+                <label className="plugin-toggle">
+                  <input type="checkbox" checked={on} onChange={() => toggle(p.id)} />
+                  <span className="plugin-icon" aria-hidden>
+                    {p.icon}
+                  </span>
+                  <span>
+                    <b>{p.name}</b>
+                    <div className="muted">{p.description}</div>
+                  </span>
+                </label>
+                {on && (
+                  <button className="small" onClick={() => openPlugin(p.id)}>
+                    Open
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

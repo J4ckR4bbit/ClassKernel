@@ -276,6 +276,12 @@ export interface UserPrefs {
   uiScale: number;
   /** Where the lesson buttons sit around the seating plan in teaching mode. */
   lessonBarSide: LessonBarSide;
+  /**
+   * Ids of the bundled plugins the teacher has switched on (see
+   * src/plugins/registry.ts). Everything ships off, so the app stays as it was
+   * until a tool is deliberately turned on in Settings.
+   */
+  enabledPlugins: string[];
 }
 
 export const DEFAULT_USER_PREFS: UserPrefs = {
@@ -287,6 +293,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   popoverShowNotes: false,
   uiScale: 1,
   lessonBarSide: "top",
+  enabledPlugins: [],
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {
