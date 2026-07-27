@@ -49,6 +49,15 @@ export const PLUGINS: PluginManifest[] = [
     icon: "📈",
     load: () => import("./practical-graph/PracticalGraph").then((m) => m.default),
   },
+  {
+    id: "motion-graph",
+    name: "Motion graph builder",
+    tagline: "One journey, three graphs that always agree.",
+    description:
+      "Describe a journey a stage at a time — how long it lasts, how fast it ends — and get the position, velocity and acceleration graphs derived from it, so the three can never contradict each other. Leave any of them blank for the question version and draw them all for the memo. Saves a 300 dpi PNG.",
+    icon: "🛞",
+    load: () => import("./motion-graph/MotionGraph").then((m) => m.default),
+  },
 ];
 
 export function pluginById(id: string): PluginManifest | undefined {

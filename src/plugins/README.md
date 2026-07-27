@@ -34,8 +34,11 @@ export default function MyTool() {
 Two conventions worth keeping to:
 
 - **Split the logic out of the component.** The graph paper keeps its geometry
-  in `drawing.ts` and the plotter its fitting and scales in `plot.ts`, with only
-  the UI in the `.tsx` — so the maths is unit-tested in Node without a browser.
+  in `drawing.ts`, the plotter its fitting in `plot.ts`, the motion builder its
+  kinematics in `motion.ts` — with only the UI in the `.tsx`, so the maths is
+  unit-tested in Node without a browser. It also lets a test assert the physics
+  rather than the pixels: the motion graphs are checked by differentiating the
+  position numerically and integrating the velocity back.
 - **Reach for the shared modules** before writing your own: `png.ts` turns a
   canvas into a 300 dpi PNG tagged so Word inserts it at its true size, and
   `numbers.ts` writes values the way a South African classroom does (decimal
@@ -103,6 +106,7 @@ const outcome = await savePluginFile({
 | `host.ts` | The save helper (native dialog / download). |
 | `png.ts` | Canvas → 300 dpi PNG, and the millimetre conversion. |
 | `numbers.ts` | Classroom number formatting. |
+| `scale.ts` | Axis scales on round values, and their tick labels. |
 | `src/components/PluginView.tsx` | Lazy loading, the error boundary, the chrome. |
 | `src/components/SettingsView.tsx` | The Plugins tab where they are switched on. |
 | `src/components/HomeView.tsx` | The Tools section listing the enabled ones. |
