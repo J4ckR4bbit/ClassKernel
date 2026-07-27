@@ -496,8 +496,8 @@ function PluginSettings() {
       <h3>Plugins</h3>
       <p className="muted" style={{ marginTop: 0 }}>
         Extra tools that come with ClassKernel. Everything ships switched off, so the app stays exactly as it is until
-        you turn something on — then it appears under <b>Tools</b> on the Home page. Each one runs sealed off from your
-        class files: it can't read or change student data, and it works offline like the rest of the app.
+        you turn something on — then it appears under <b>Tools</b> on the Home page. They are part of the app, so they
+        work offline and save files through the same dialog as an export.
       </p>
 
       {PLUGINS.length === 0 ? (

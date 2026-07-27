@@ -1,12 +1,14 @@
 // The plugin catalogue.
 //
 // A plugin is an extra teaching tool that ships inside the app but stays out of
-// the way until a teacher switches it on in Settings → Plugins. Every plugin is
-// a single self-contained HTML page (no network, no imports) which the app runs
-// in a sandboxed frame; the only way out of that frame is the small save bridge
-// described in README.md.
+// the way until a teacher switches it on in Settings → Plugins. Each one is an
+// ordinary React view, compiled in and lazily loaded, so it looks like the rest
+// of the app and reaches the disk through the same audited Rust commands as
+// everything else.
 //
-// Adding one is three lines at the bottom of this file — see README.md.
+// Adding one is a few lines at the bottom of this file — see README.md.
+
+import type { ComponentType } from "react";
 
 export interface PluginManifest {
   /**
@@ -22,10 +24,10 @@ export interface PluginManifest {
   /** Emoji shown on the Home card and in Settings. */
   icon: string;
   /**
-   * Loads the plugin's HTML document. A dynamic import keeps each plugin in its
-   * own chunk, so switching them on costs nothing until one is opened.
+   * Loads the plugin's view. A dynamic import keeps each plugin in its own
+   * chunk, so switching them on costs nothing until one is opened.
    */
-  load: () => Promise<string>;
+  load: () => Promise<ComponentType>;
 }
 
 export const PLUGINS: PluginManifest[] = [
@@ -36,7 +38,7 @@ export const PLUGINS: PluginManifest[] = [
     description:
       "Generates graph paper and axes to your own dimensions — block size in mm, minor squares, line weights, arrows, tick marks and colours — with a live preview. Saves a 300 dpi PNG that drops into Word or a worksheet at exactly the size shown.",
     icon: "📐",
-    load: () => import("./graph-paper/graph-paper.html?raw").then((m) => m.default),
+    load: () => import("./graph-paper/GraphPaper").then((m) => m.default),
   },
 ];
 

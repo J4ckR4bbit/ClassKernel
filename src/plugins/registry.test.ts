@@ -30,17 +30,13 @@ describe("plugin catalogue", () => {
   });
 });
 
-describe("plugin documents", () => {
-  it("ships each plugin as a self-contained offline page", async () => {
+describe("plugin views", () => {
+  it("loads a component for every plugin in the catalogue", async () => {
     for (const p of PLUGINS) {
-      const html = await p.load();
-      expect(html.trim().slice(0, 15).toLowerCase()).toBe("<!doctype html>");
-      // The frame has no origin and the app is offline-first: a plugin that
-      // reaches for the network would simply fail at a teacher's desk.
-      expect(html).not.toMatch(/<script[^>]*\ssrc=/i);
-      expect(html).not.toMatch(/<link\b/i);
-      expect(html).not.toMatch(/(src|href)\s*=\s*["']https?:/i);
-      expect(html).not.toMatch(/\b(fetch\(|XMLHttpRequest|importScripts)\b/);
+      const View = await p.load();
+      // React components are functions here; a module namespace or a stray
+      // default export would break the lazy() in PluginView.
+      expect(typeof View).toBe("function");
     }
   });
 });
