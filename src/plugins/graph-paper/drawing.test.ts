@@ -1,16 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { MAX_CANVAS_PX, PX_PER_MM } from "../png";
 import {
   DEFAULT_GRAPH_PAPER,
   GraphPaperSettings,
-  MAX_CANVAS_PX,
-  PX_PER_MM,
   PaintContext,
-  addDpiChunk,
   computeLayout,
-  crc32,
   describeSize,
   fileNameFor,
-  formatNumber,
   paint,
 } from "./drawing";
 
@@ -134,38 +130,10 @@ describe("painting", () => {
   });
 });
 
-describe("the saved PNG", () => {
-  it("tags the file at 300 dpi so Word inserts it at its true size", () => {
-    // A stand-in PNG: 8-byte signature, a 25-byte IHDR, then some payload.
-    const png = new Uint8Array(33 + 10);
-    png.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
-    png.set([0xaa, 0xbb, 0xcc], 33);
-
-    const out = addDpiChunk(png, 300);
-    expect(out.length).toBe(png.length + 21);
-    // Everything before and after the new chunk survives untouched.
-    expect([...out.subarray(0, 33)]).toEqual([...png.subarray(0, 33)]);
-    expect([...out.subarray(54)]).toEqual([...png.subarray(33)]);
-
-    const chunk = out.subarray(33, 54);
-    const dv = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
-    expect(dv.getUint32(0)).toBe(9); // data length
-    expect(String.fromCharCode(...chunk.subarray(4, 8))).toBe("pHYs");
-    expect(dv.getUint32(8)).toBe(11811); // 300 dpi in pixels per metre
-    expect(dv.getUint32(12)).toBe(11811);
-    expect(chunk[16]).toBe(1); // unit: metre
-    expect(dv.getUint32(17)).toBe(crc32(chunk.subarray(4, 17)));
-  });
-
+describe("the saved sheet", () => {
   it("names the file after the grid, and says its printed size in mm and cm", () => {
     expect(fileNameFor(settings())).toBe("graph_paper_10x8.png");
-    expect(describeSize(settings())).toBe("100 mm × 80 mm (10 cm × 8 cm)");
-    expect(describeSize(settings({ xMm: 12.5 }))).toBe("125 mm × 80 mm (12,5 cm × 8 cm)");
-  });
-
-  it("writes numbers the South African way", () => {
-    expect(formatNumber(1234)).toBe("1\u00a0234"); // grouped with a non-breaking space
-    expect(formatNumber(12.5)).toBe("12,5");
-    expect(formatNumber(0.05)).toBe("0,05");
+    expect(describeSize(settings())).toBe("100 mm \u00d7 80 mm (10 cm \u00d7 8 cm)");
+    expect(describeSize(settings({ xMm: 12.5 }))).toBe("125 mm \u00d7 80 mm (12,5 cm \u00d7 8 cm)");
   });
 });

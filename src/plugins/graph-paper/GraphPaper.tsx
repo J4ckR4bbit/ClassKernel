@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../../store/appStore";
 import { savePluginFile } from "../host";
+import { MAX_CANVAS_PX, canvasToPng } from "../png";
+import { formatNumber } from "../numbers";
 import {
   DEFAULT_GRAPH_PAPER,
   GraphPaperSettings,
-  MAX_CANVAS_PX,
   XAxisPosition,
-  canvasToPng,
   computeLayout,
   describeSize,
   drawOnCanvas,
   fileNameFor,
-  formatNumber,
 } from "./drawing";
 
 /**

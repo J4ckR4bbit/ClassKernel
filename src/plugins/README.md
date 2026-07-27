@@ -34,8 +34,12 @@ export default function MyTool() {
 Two conventions worth keeping to:
 
 - **Split the logic out of the component.** The graph paper keeps its geometry
-  and PNG encoding in `drawing.ts` and only the UI in `GraphPaper.tsx`, so the
-  maths is unit-tested in Node without a browser.
+  in `drawing.ts` and the plotter its fitting and scales in `plot.ts`, with only
+  the UI in the `.tsx` — so the maths is unit-tested in Node without a browser.
+- **Reach for the shared modules** before writing your own: `png.ts` turns a
+  canvas into a 300 dpi PNG tagged so Word inserts it at its true size, and
+  `numbers.ts` writes values the way a South African classroom does (decimal
+  comma, significant figures, superscript exponents).
 - **Don't let two files differ only in case.** `GraphPaper.tsx` beside a
   `graphPaper.ts` builds here and fails on Windows, where they are the same
   name. A test in `registry.test.ts` guards the whole of `src/` against it.
@@ -97,6 +101,8 @@ const outcome = await savePluginFile({
 | --- | --- |
 | `registry.ts` | The catalogue: one manifest per plugin. |
 | `host.ts` | The save helper (native dialog / download). |
+| `png.ts` | Canvas → 300 dpi PNG, and the millimetre conversion. |
+| `numbers.ts` | Classroom number formatting. |
 | `src/components/PluginView.tsx` | Lazy loading, the error boundary, the chrome. |
 | `src/components/SettingsView.tsx` | The Plugins tab where they are switched on. |
 | `src/components/HomeView.tsx` | The Tools section listing the enabled ones. |

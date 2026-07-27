@@ -40,6 +40,15 @@ export const PLUGINS: PluginManifest[] = [
     icon: "📐",
     load: () => import("./graph-paper/GraphPaper").then((m) => m.default),
   },
+  {
+    id: "practical-graph",
+    name: "Practical graph plotter",
+    tagline: "Plot readings, fit the line, read off the gradient.",
+    description:
+      "Type or paste a table of readings and get the plotted graph: crosses for the points, a least-squares line of best fit, and its gradient, y-intercept and R² — with the option to force the line through the origin. Saves a 300 dpi PNG for a practical write-up or a memo.",
+    icon: "📈",
+    load: () => import("./practical-graph/PracticalGraph").then((m) => m.default),
+  },
 ];
 
 export function pluginById(id: string): PluginManifest | undefined {
