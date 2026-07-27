@@ -12,7 +12,7 @@ import {
   fileNameFor,
   formatNumber,
   paint,
-} from "./graphPaper";
+} from "./drawing";
 
 const settings = (patch: Partial<GraphPaperSettings> = {}): GraphPaperSettings => ({
   ...DEFAULT_GRAPH_PAPER,

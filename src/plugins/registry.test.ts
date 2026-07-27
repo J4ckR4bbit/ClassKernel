@@ -1,3 +1,5 @@
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { PLUGINS, enabledPlugins, pluginById, togglePluginId } from "./registry";
 
@@ -27,6 +29,32 @@ describe("plugin catalogue", () => {
     expect(togglePluginId([], "a")).toEqual(["a"]);
     expect(togglePluginId(["a", "b"], "c")).toEqual(["a", "b", "c"]);
     expect(togglePluginId(["a", "b"], "a")).toEqual(["b"]);
+  });
+});
+
+describe("source file names", () => {
+  it("never lets two files in a folder differ only in case", () => {
+    // Development happens on Linux, where GraphPaper.tsx and graphPaper.ts are
+    // two files; the release is built on Windows, where they are one, and the
+    // build fails with a casing collision. Catch it here instead of in CI.
+    const clashes: string[] = [];
+    const walk = (dir: string) => {
+      // Modules are keyed without their extension, because that is what an
+      // import resolves: "./GraphPaper" can land on graphPaper.ts.
+      const modules = new Map<string, string>();
+      const folders = new Map<string, string>();
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const [names, key] = entry.isDirectory()
+          ? [folders, entry.name.toLowerCase()]
+          : [modules, entry.name.toLowerCase().replace(/\.tsx?$/, "")];
+        const first = names.get(key);
+        if (first) clashes.push(`${dir}: ${first} vs ${entry.name}`);
+        else names.set(key, entry.name);
+        if (entry.isDirectory()) walk(join(dir, entry.name));
+      }
+    };
+    walk("src");
+    expect(clashes).toEqual([]);
   });
 });
 

@@ -34,8 +34,11 @@ export default function MyTool() {
 Two conventions worth keeping to:
 
 - **Split the logic out of the component.** The graph paper keeps its geometry
-  and PNG encoding in `graphPaper.ts` and only the UI in `GraphPaper.tsx`, so
-  the maths is unit-tested in Node without a browser.
+  and PNG encoding in `drawing.ts` and only the UI in `GraphPaper.tsx`, so the
+  maths is unit-tested in Node without a browser.
+- **Don't let two files differ only in case.** `GraphPaper.tsx` beside a
+  `graphPaper.ts` builds here and fails on Windows, where they are the same
+  name. A test in `registry.test.ts` guards the whole of `src/` against it.
 - **Use the app's classes** — `panel`, `row`, `muted`, `primary`, `small` — so
   the tool looks like the rest of ClassKernel rather than a foreign page.
 

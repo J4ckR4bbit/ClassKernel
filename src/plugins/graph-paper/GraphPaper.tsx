@@ -12,7 +12,7 @@ import {
   drawOnCanvas,
   fileNameFor,
   formatNumber,
-} from "./graphPaper";
+} from "./drawing";
 
 /**
  * Number entry with big +/− buttons either side. The app is built for a touch
