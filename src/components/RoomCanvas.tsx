@@ -13,6 +13,8 @@ export interface SeatContent {
   occupied: boolean;
   points?: number | null; // running behaviour points (lesson view)
   highlight?: boolean;
+  /** Picked in batch entry: drawn solid with a tick, unmistakable from the rest. */
+  selected?: boolean;
 }
 
 interface Props {
@@ -285,7 +287,7 @@ function SeatView({
       style={{ cursor: onSeatClick ? "pointer" : undefined }}
     >
       <rect
-        className={`seat-square ${content?.occupied ? "occupied" : ""} ${content?.highlight ? "drop-target" : ""}`}
+        className={`seat-square ${content?.occupied ? "occupied" : ""} ${content?.highlight ? "drop-target" : ""} ${content?.selected ? "batch-selected" : ""}`}
         x={slot.x - rw / 2}
         y={slot.y - rh / 2}
         width={rw}
@@ -310,6 +312,11 @@ function SeatView({
           </text>
         );
       })}
+      {content?.occupied && content.selected && (
+        <text className="seat-check" x={slot.x - rw / 2 + 9} y={slot.y - rh / 2 + 10} dominantBaseline="central">
+          ✓
+        </text>
+      )}
       {content?.occupied && content.badge && (
         <text className="seat-badge" x={slot.x + rw / 2 - 7} y={slot.y - rh / 2 + 8} dominantBaseline="central">
           {content.badge}

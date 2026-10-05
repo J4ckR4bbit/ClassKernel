@@ -33,7 +33,8 @@ export default function SeatingView() {
   const [pickedStudent, setPickedStudent] = useState<string | null>(null);
   // Animated reroll (flashes names across seats before settling) shared with the
   // live-lesson view.
-  const { shuffleFrame, isShuffling, randomise } = useSeatingShuffle();
+  // Seats are assigned once per lesson; after that the button asks for the PIN.
+  const { shuffleFrame, isShuffling, randomise, locked, requestUnlock } = useSeatingShuffle();
   const activePlan = planNames.includes(plan) ? plan : planNames[0];
 
   const planSeats = seating.filter((s) => s.planName === activePlan && s.studentId);
@@ -138,14 +139,24 @@ export default function SeatingView() {
         <button onClick={clearPlan} disabled={planSeats.length === 0 || isShuffling}>
           Clear seats
         </button>
-        <button
-          className="primary"
-          onClick={runRandomise}
-          disabled={desks.length === 0 || students.length === 0 || isShuffling}
-          title="Reroll seating using your saved rules"
-        >
-          🎲 {isShuffling ? "Randomising…" : "Randomise"}
-        </button>
+        {locked ? (
+          <button
+            onClick={requestUnlock}
+            disabled={isShuffling}
+            title="Seats were assigned this lesson — enter your PIN to assign them again"
+          >
+            🔒 Reseat…
+          </button>
+        ) : (
+          <button
+            className="primary"
+            onClick={runRandomise}
+            disabled={desks.length === 0 || students.length === 0 || isShuffling}
+            title="Reroll seating using your saved rules"
+          >
+            🎲 {isShuffling ? "Randomising…" : "Randomise"}
+          </button>
+        )}
         <button onClick={() => window.print()} disabled={isShuffling}>
           🖨 Print
         </button>
@@ -179,7 +190,7 @@ export default function SeatingView() {
             <p className="muted" style={{ margin: "8px 0 0" }}>
               {pickedStudent
                 ? `Click a seat to place ${studentName(byId.get(pickedStudent)!)} — or click their chip again to cancel.`
-                : `Click a student chip, then a seat. Click an occupied seat to pick that student up. “Randomise” rerolls using the rules in Settings. Capacity: ${capacity} seats for ${students.length} students.`}
+                : `Click a student chip, then a seat. Click an occupied seat to pick that student up. “Randomise” rerolls using the rules in Settings (once per lesson — after that it needs your PIN). Capacity: ${capacity} seats for ${students.length} students.`}
             </p>
           </div>
 

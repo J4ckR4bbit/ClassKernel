@@ -3,6 +3,9 @@ import { backupStamp, nowIso, today } from "../lib/id";
 import { getFS, isTauri } from "../lib/fs";
 import * as repo from "../lib/repo";
 import { seedDemoData } from "../lib/demo";
+import { isSeatingLocked, readLessonStart, readSeatedAt, seatedKey } from "../lib/lessonState";
+import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
+import { enterDock, enterFullscreen, restoreWindow } from "../lib/teachingWindow";
 import {
   Assessment,
   AssessmentQuestion,
@@ -23,6 +26,7 @@ import {
   SeatAssignment,
   SeatingPrefs,
   Student,
+  TeachingStyle,
   TimerPreset,
   TopicEntry,
   UserPrefs,
@@ -62,6 +66,8 @@ export interface DialogRequest {
   danger?: boolean;
   placeholder?: string;
   initial?: string;
+  /** Mask the prompt's input and offer a number pad (PIN entry). */
+  secret?: boolean;
 }
 
 export interface AppState {
@@ -73,6 +79,14 @@ export interface AppState {
   view: View;
   /** Distraction-free teaching layout: hides all chrome, shows only the seating view. */
   focusMode: boolean;
+  /** Which teaching mode is showing while focusMode is on. */
+  focusStyle: TeachingStyle;
+  /**
+   * When the open class's seats were last assigned (localStorage, see
+   * lessonState.ts). Mirrored here so every Randomise button re-renders the
+   * moment the lock is set or lifted.
+   */
+  seatingLockedAt: string | null;
   /** Set by Home to ask the Seating view to auto-run an animated reroll on arrival. */
   pendingRandomise: boolean;
   /** Id of the plugin the "plugin" view is showing (see src/plugins/registry.ts). */
@@ -116,7 +130,16 @@ export interface AppState {
   setView(view: View): void;
   /** Open one of the enabled plugins full-pane. */
   openPlugin(id: string): void;
-  setFocusMode(on: boolean): void;
+  /** Enter or leave teaching mode; style defaults to the one chosen in Settings. */
+  setFocusMode(on: boolean, style?: TeachingStyle): void;
+  /** Whether the open class's seats have already been assigned this lesson. */
+  seatingLocked(): boolean;
+  /** Record a seat assignment for the open class — locks it for the lesson. */
+  markSeated(): void;
+  /** Lift the lock for the open class (End lesson, or after the PIN). */
+  unlockSeating(): void;
+  /** Ask for the reseat PIN (creating one if none is set); true if unlocked. */
+  requestSeatingUnlock(): Promise<boolean>;
   setPendingRandomise(on: boolean): void;
   showToast(message: string, action?: { label: string; run: () => void }): void;
   revealSensitive(): void;
@@ -135,6 +158,10 @@ export interface AppState {
   setAttendance(entries: AttendanceEntry[]): Promise<void>;
   addBehaviourEvent(event: BehaviourEvent): Promise<void>;
   removeBehaviourEvent(timestamp: string, studentId: string, code: string): Promise<void>;
+  /** Record several events in one write (batch entry). */
+  addBehaviourEvents(events: BehaviourEvent[]): Promise<void>;
+  /** Undo a batch: remove the events with this timestamp and code for these students. */
+  removeBehaviourEvents(timestamp: string, code: string, studentIds: string[]): Promise<void>;
   setBehaviourEvents(events: BehaviourEvent[]): Promise<void>;
   setBehaviourCodes(codes: BehaviourCode[]): Promise<void>;
   setBathroomVisits(visits: BathroomVisit[]): Promise<void>;
@@ -191,6 +218,8 @@ export const useApp = create<AppState>((set, get) => {
   currentClass: null,
   view: "home",
   focusMode: false,
+  focusStyle: "room",
+  seatingLockedAt: null,
   pendingRandomise: false,
   activePlugin: null,
   toast: null,
@@ -272,24 +301,83 @@ export const useApp = create<AppState>((set, get) => {
     set({ view: "plugin", activePlugin: id, sensitiveRevealed: false });
   },
 
-  setFocusMode(on) {
-    set({ focusMode: on, ...(on ? { sensitiveRevealed: false } : {}) });
-    // Teaching mode should own the whole panel; failures (e.g. browser
-    // demo without a user gesture) are non-fatal.
-    void (async () => {
-      try {
-        if (isTauri()) {
-          const { getCurrentWindow } = await import("@tauri-apps/api/window");
-          await getCurrentWindow().setFullscreen(on);
-        } else if (on && !document.fullscreenElement) {
-          await document.documentElement.requestFullscreen();
-        } else if (!on && document.fullscreenElement) {
-          await document.exitFullscreen();
-        }
-      } catch {
-        // Fullscreen is best-effort; the layout change alone is still useful.
+  setFocusMode(on, style) {
+    const { userPrefs, focusStyle } = get();
+    const nextStyle = style ?? (on ? userPrefs.teachingStyle : focusStyle);
+    set({ focusMode: on, focusStyle: nextStyle, ...(on ? { sensitiveRevealed: false } : {}) });
+    // The room plan owns the whole panel; the strip docks to one edge so
+    // slides keep the rest. Both are best-effort (see teachingWindow.ts).
+    if (!on) void restoreWindow();
+    else if (nextStyle === "strip") void enterDock(userPrefs.dockSide);
+    else void enterFullscreen();
+  },
+
+  seatingLocked() {
+    const { currentClass, seatingLockedAt } = get();
+    return !!currentClass && isSeatingLocked(seatingLockedAt, readLessonStart(currentClass), today());
+  },
+
+  markSeated() {
+    const { currentClass } = get();
+    if (!currentClass) return;
+    const at = nowIso();
+    try {
+      localStorage.setItem(seatedKey(currentClass), at);
+    } catch {
+      // The in-memory lock still holds for this session.
+    }
+    set({ seatingLockedAt: at });
+  },
+
+  unlockSeating() {
+    const { currentClass } = get();
+    if (!currentClass) return;
+    try {
+      localStorage.removeItem(seatedKey(currentClass));
+    } catch {
+      // Nothing stored to clear.
+    }
+    set({ seatingLockedAt: null });
+  },
+
+  async requestSeatingUnlock() {
+    const { userPrefs, promptDialog, showToast } = get();
+    if (!userPrefs.reseatPinHash) {
+      // No PIN yet: the first unlock sets one, so every later one needs it.
+      const pin = await promptDialog({
+        title: "Create a reseat PIN",
+        body: `Seats can be assigned once per lesson. Choose a PIN (${PIN_HINT}) to unlock another assignment — you'll need it every time from now on. You can change it in Settings → Teaching mode.`,
+        confirmLabel: "Next",
+        secret: true,
+      });
+      if (pin === null) return false;
+      if (!isValidPin(pin)) {
+        showToast(`A PIN must be ${PIN_HINT} — seat assignment stays locked`);
+        return false;
       }
-    })();
+      const again = await promptDialog({ title: "Type the PIN again", confirmLabel: "Set PIN", secret: true });
+      if (again === null) return false;
+      if (again !== pin) {
+        showToast("The PINs didn't match — seat assignment stays locked");
+        return false;
+      }
+      await get().setUserPrefs({ ...get().userPrefs, reseatPinHash: await hashPin(pin) });
+    } else {
+      const pin = await promptDialog({
+        title: "Enter PIN to reassign seats",
+        body: "Seats have already been assigned this lesson.",
+        confirmLabel: "Unlock",
+        secret: true,
+      });
+      if (pin === null) return false;
+      if (!(await pinMatches(pin, userPrefs.reseatPinHash))) {
+        showToast("Incorrect PIN — seat assignment stays locked");
+        return false;
+      }
+    }
+    get().unlockSeating();
+    showToast("Seat assignment unlocked");
+    return true;
   },
 
   setPendingRandomise(on) {
@@ -402,6 +490,7 @@ export const useApp = create<AppState>((set, get) => {
       assessmentQuestions,
       questionMarks,
       roomConfig,
+      seatingLockedAt: readSeatedAt(name),
       sensitiveRevealed: false,
     });
   },
@@ -450,6 +539,23 @@ export const useApp = create<AppState>((set, get) => {
     );
     if (idx < 0) return;
     const next = behaviourEvents.filter((_, i) => i !== idx);
+    set({ behaviourEvents: next });
+    if (dataDir && currentClass) await guarded("behaviour events", () => repo.saveBehaviourEvents(dataDir, currentClass, next));
+  },
+
+  async addBehaviourEvents(events) {
+    if (events.length === 0) return;
+    const { dataDir, currentClass, behaviourEvents } = get();
+    const next = [...behaviourEvents, ...events];
+    set({ behaviourEvents: next });
+    if (dataDir && currentClass) await guarded("behaviour events", () => repo.saveBehaviourEvents(dataDir, currentClass, next));
+  },
+
+  async removeBehaviourEvents(timestamp, code, studentIds) {
+    const { dataDir, currentClass, behaviourEvents } = get();
+    const ids = new Set(studentIds);
+    const next = behaviourEvents.filter((e) => !(e.timestamp === timestamp && e.code === code && ids.has(e.studentId)));
+    if (next.length === behaviourEvents.length) return;
     set({ behaviourEvents: next });
     if (dataDir && currentClass) await guarded("behaviour events", () => repo.saveBehaviourEvents(dataDir, currentClass, next));
   },

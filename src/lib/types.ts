@@ -254,6 +254,15 @@ export type LessonBarSide = "top" | "right" | "bottom" | "left";
 
 export const LESSON_BAR_SIDES: LessonBarSide[] = ["top", "right", "bottom", "left"];
 
+/**
+ * Which teaching mode opens by default: the drawn room plan, full screen, or
+ * the narrow strip of tables docked to the edge of the screen beside slides.
+ */
+export type TeachingStyle = "room" | "strip";
+
+/** Which screen edge the teaching strip docks to. */
+export type DockSide = "left" | "right";
+
 /** App-wide user preferences (settings.csv). */
 export interface UserPrefs {
   /** In the marking grid, which direction Enter moves. Tab does the opposite. */
@@ -282,6 +291,15 @@ export interface UserPrefs {
    * until a tool is deliberately turned on in Settings.
    */
   enabledPlugins: string[];
+  /** Which teaching mode the Teaching mode button opens. */
+  teachingStyle: TeachingStyle;
+  /** Which screen edge the teaching strip docks to. */
+  dockSide: DockSide;
+  /**
+   * SHA-256 of the PIN that unlocks a second seat assignment in one lesson
+   * (see src/lib/pin.ts). "" = no PIN set yet.
+   */
+  reseatPinHash: string;
 }
 
 export const DEFAULT_USER_PREFS: UserPrefs = {
@@ -294,6 +312,9 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   uiScale: 1,
   lessonBarSide: "top",
   enabledPlugins: [],
+  teachingStyle: "room",
+  dockSide: "left",
+  reseatPinHash: "",
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {

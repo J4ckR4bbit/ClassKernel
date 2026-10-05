@@ -9,10 +9,12 @@ import {
   SeatNameStyle,
   SeatingPrefs,
   Student,
+  TeachingStyle,
   TopicEntry,
   studentName,
 } from "../lib/types";
 import { PLUGINS, togglePluginId } from "../plugins/registry";
+import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import * as repo from "../lib/repo";
 import { backupStamp } from "../lib/id";
 import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
@@ -278,24 +280,7 @@ function GeneralSettings() {
         </div>
       </div>
 
-      <div className="panel">
-        <h3>Teaching mode</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
-          Which edge of the teaching-mode screen the lesson buttons (Pick a student, Randomise, End lesson) sit on.
-          Put them within reach of where you stand — every lesson opens this way.
-        </p>
-        <div className="row">
-          {LESSON_BAR_SIDES.map((side) => (
-            <button
-              key={side}
-              className={userPrefs.lessonBarSide === side ? "primary" : ""}
-              onClick={() => void setUserPrefs({ ...userPrefs, lessonBarSide: side })}
-            >
-              {SIDE_LABELS[side]}
-            </button>
-          ))}
-        </div>
-      </div>
+      <TeachingModeSettings />
 
       <div className="panel">
         <h3>Behaviour buttons</h3>
@@ -420,6 +405,116 @@ function GeneralSettings() {
 }
 
 /** List of snapshot backups with one-tap restore (a safety copy is taken first). */
+/** Teaching-mode preferences: which mode opens, where its buttons sit, and the reseat PIN. */
+function TeachingModeSettings() {
+  const { userPrefs, setUserPrefs, promptDialog, showToast } = useApp();
+  const hasPin = !!userPrefs.reseatPinHash;
+
+  const styles: Array<{ id: TeachingStyle; label: string }> = [
+    { id: "room", label: "⛶ Room plan (full screen)" },
+    { id: "strip", label: "▥ Side panel of tables" },
+  ];
+
+  // Changing or removing a PIN needs the current one, so a student at the
+  // board can't simply clear it here.
+  const confirmCurrent = async (): Promise<boolean> => {
+    const pin = await promptDialog({ title: "Enter your current PIN", confirmLabel: "Continue", secret: true });
+    if (pin === null) return false;
+    if (!(await pinMatches(pin, userPrefs.reseatPinHash))) {
+      showToast("Incorrect PIN — nothing changed");
+      return false;
+    }
+    return true;
+  };
+
+  const setPin = async () => {
+    if (hasPin && !(await confirmCurrent())) return;
+    const pin = await promptDialog({ title: hasPin ? "New reseat PIN" : "Set a reseat PIN", body: PIN_HINT, confirmLabel: "Next", secret: true });
+    if (pin === null) return;
+    if (!isValidPin(pin)) {
+      showToast(`A PIN must be ${PIN_HINT}`);
+      return;
+    }
+    const again = await promptDialog({ title: "Type the PIN again", confirmLabel: "Save PIN", secret: true });
+    if (again === null) return;
+    if (again !== pin) {
+      showToast("The PINs didn't match — nothing changed");
+      return;
+    }
+    await setUserPrefs({ ...useApp.getState().userPrefs, reseatPinHash: await hashPin(pin) });
+    showToast("Reseat PIN saved");
+  };
+
+  const removePin = async () => {
+    if (!(await confirmCurrent())) return;
+    await setUserPrefs({ ...useApp.getState().userPrefs, reseatPinHash: "" });
+    showToast("Reseat PIN removed — the next unlock will ask you to set one");
+  };
+
+  return (
+    <div className="panel">
+      <h3>Teaching mode</h3>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Which view the <b>Teaching mode</b> button opens. The side panel docks a narrow list of tables to the edge of
+        the screen, always on top, so your slides and annotations keep the rest. You can switch between them during a
+        lesson.
+      </p>
+      <div className="row">
+        {styles.map((st) => (
+          <button
+            key={st.id}
+            className={userPrefs.teachingStyle === st.id ? "primary" : ""}
+            onClick={() => void setUserPrefs({ ...userPrefs, teachingStyle: st.id })}
+          >
+            {st.label}
+          </button>
+        ))}
+      </div>
+
+      <h4>Side panel edge</h4>
+      <div className="row">
+        {(["left", "right"] as const).map((side) => (
+          <button
+            key={side}
+            className={userPrefs.dockSide === side ? "primary" : ""}
+            onClick={() => void setUserPrefs({ ...userPrefs, dockSide: side })}
+          >
+            {SIDE_LABELS[side]}
+          </button>
+        ))}
+      </div>
+
+      <h4>Room plan buttons</h4>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Which edge of the room-plan screen the lesson buttons (Pick a student, Randomise, End lesson) sit on. Put them
+        within reach of where you stand.
+      </p>
+      <div className="row">
+        {LESSON_BAR_SIDES.map((side) => (
+          <button
+            key={side}
+            className={userPrefs.lessonBarSide === side ? "primary" : ""}
+            onClick={() => void setUserPrefs({ ...userPrefs, lessonBarSide: side })}
+          >
+            {SIDE_LABELS[side]}
+          </button>
+        ))}
+      </div>
+
+      <h4>Reseat PIN</h4>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Seats can be assigned (🎲 Randomise) once per lesson. After that the button shows 🔒 and needs this PIN to
+        assign them again, so nobody reshuffles the class by accident. Ending the lesson, or a new day, unlocks it.{" "}
+        {hasPin ? "A PIN is set." : "No PIN yet — set one now, or you'll be asked the first time you unlock."}
+      </p>
+      <div className="row">
+        <button onClick={() => void setPin()}>{hasPin ? "Change PIN" : "Set PIN"}</button>
+        {hasPin && <button onClick={() => void removePin()}>Remove PIN</button>}
+      </div>
+    </div>
+  );
+}
+
 function BackupRestore({
   dataDir,
   onRestore,

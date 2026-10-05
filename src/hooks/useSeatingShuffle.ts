@@ -11,10 +11,18 @@ const SHUFFLE_INTERVAL = 90;
  * names across the final seats for ~1s before settling, so the class can see the
  * seating really is being shuffled. Uses the class's saved (hidden) seating
  * rules and persists the result to the given plan.
+ *
+ * Seats are assigned once per lesson: after a successful reroll the class is
+ * locked (see lessonState.ts) until End lesson, a new day, or the reseat PIN.
+ * Every Randomise button goes through here, so the lock can't be sidestepped.
  */
 export function useSeatingShuffle() {
   const [shuffleFrame, setShuffleFrame] = useState<SeatAssignment[] | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Subscribing to the stamp re-renders the buttons when the lock changes.
+  useApp((s) => s.seatingLockedAt);
+  useApp((s) => s.currentClass);
+  const locked = useApp.getState().seatingLocked();
 
   useEffect(() => () => void (timer.current && clearInterval(timer.current)), []);
 
@@ -23,7 +31,11 @@ export function useSeatingShuffle() {
   const randomise = (activePlan: string) => {
     if (timer.current) return;
     // Read live state at call time so the result is never stale.
-    const { students, desks, seatingPrefs, roomConfig, showToast } = useApp.getState();
+    const { students, desks, seatingPrefs, roomConfig, showToast, seatingLocked } = useApp.getState();
+    if (seatingLocked()) {
+      showToast("Seats already assigned this lesson — use 🔒 Reseat to unlock with your PIN");
+      return;
+    }
     const result = assignRandomSeats(students, desks, activePlan, {
       ...seatingPrefs,
       frontEdge: roomConfig.frontEdge,
@@ -50,6 +62,7 @@ export function useSeatingShuffle() {
         timer.current = null;
         setShuffleFrame(null);
         const cur = useApp.getState();
+        cur.markSeated();
         void cur.setSeating([
           ...cur.seating.filter((s) => s.planName !== activePlan),
           ...result.assignments.map((a) => ({ ...a, planName: activePlan })),
@@ -63,5 +76,7 @@ export function useSeatingShuffle() {
     }, SHUFFLE_INTERVAL);
   };
 
-  return { shuffleFrame, isShuffling, randomise };
+  const requestUnlock = () => void useApp.getState().requestSeatingUnlock();
+
+  return { shuffleFrame, isShuffling, randomise, locked, requestUnlock };
 }

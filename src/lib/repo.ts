@@ -822,6 +822,9 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
       .split(";")
       .map((s) => s.trim())
       .filter(Boolean),
+    teachingStyle: kv.get("teaching_style") === "strip" ? "strip" : "room",
+    dockSide: kv.get("dock_side") === "right" ? "right" : "left",
+    reseatPinHash: /^[0-9a-f]{64}$/.test(kv.get("reseat_pin") ?? "") ? kv.get("reseat_pin")! : "",
   };
 }
 
@@ -836,6 +839,9 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "ui_scale", value: String(prefs.uiScale) },
     { key: "lesson_bar_side", value: prefs.lessonBarSide },
     { key: "plugins_enabled", value: prefs.enabledPlugins.join(";") },
+    { key: "teaching_style", value: prefs.teachingStyle },
+    { key: "dock_side", value: prefs.dockSide },
+    { key: "reseat_pin", value: prefs.reseatPinHash },
   ];
   await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
 }

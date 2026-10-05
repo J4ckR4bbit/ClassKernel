@@ -8,6 +8,7 @@ import AttendanceView from "./components/AttendanceView";
 import LayoutDesigner from "./components/LayoutDesigner";
 import SeatingView from "./components/SeatingView";
 import LessonView from "./components/LessonView";
+import TeachingStrip from "./components/TeachingStrip";
 import BehaviourLogView from "./components/BehaviourLogView";
 import AssessmentsView from "./components/AssessmentsView";
 import DashboardView from "./components/DashboardView";
@@ -50,7 +51,7 @@ function Overlays() {
 }
 
 export default function App() {
-  const { booted, dataDir, currentClass, view, demoMode, focusMode, setFocusMode, boot, userPrefs } = useApp();
+  const { booted, dataDir, currentClass, view, demoMode, focusMode, focusStyle, setFocusMode, boot, userPrefs } = useApp();
 
   useEffect(() => {
     void boot();
@@ -84,11 +85,12 @@ export default function App() {
   if (!dataDir) return <Onboarding />;
 
   // Teaching mode: just the live-lesson seating view, no sidebar or chrome, so
-  // it can sit beside notes/slides. LessonView renders its own compact bar.
+  // it can sit beside notes/slides. LessonView renders its own compact bar;
+  // the strip is the narrow table list docked to a screen edge.
   if (focusMode && currentClass) {
     return (
-      <div className="focus-shell">
-        <LessonView />
+      <div className={`focus-shell ${focusStyle === "strip" ? "strip-mode" : ""}`}>
+        {focusStyle === "strip" ? <TeachingStrip /> : <LessonView />}
         <Overlays />
       </div>
     );
