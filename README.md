@@ -8,11 +8,11 @@ Currently distributed as a standalone **Windows installer (`.exe`)** — grab th
 
 ## What it does
 
-- **Home** — every class as a card on the landing page, with one-tap **Randomise seating** or **Live lesson** to start a lesson fast.
+- **Home** — every class as a card on the landing page, with one-tap **Randomise seating** or **Live lesson** to start a lesson fast. Once a class's seats have been assigned, its card shows 🔒 **Seats assigned** until the lesson ends (or your reseat PIN unlocks it).
 - **Students** — roster per class with flags (SEN, medical, …) and notes; bulk import by pasting a list of names.
 - **Attendance register** — one-tap Present / Absent / Late / Excused per lesson, with running rates and history per student.
 - **Room layout designer** — drag-and-drop desks (singles, doubles, group tables, teacher desk, doors, windows, free-text label boxes) onto a snap-to-grid canvas; rotate, recolour, resize, label, duplicate. Put the front of the room on any edge, scale the seat/desk/label text, set a **view crop** so seating views zoom to just the used part of the room, and **save a layout as a template** to reuse in another class.
-- **Seating plans** — multiple named plans per class. Seat students by hand, or press **Randomise** for an animated reroll: students are spread evenly across desks (front desks filled first) honouring your rules — keep-apart pairs, keep-together pairs, front-of-room pins. Those rules live in Settings, out of sight of the class, so all students see is the shuffle. Print any plan for cover teachers.
+- **Seating plans** — multiple named plans per class. Seat students by hand, or press **Randomise** for an animated reroll: students are spread evenly across desks (front desks filled first) honouring your rules — keep-apart pairs, keep-together pairs, front-of-room pins. Those rules live in Settings, out of sight of the class, so all students see is the shuffle. Randomise runs **once per lesson** wherever you press it; a second go needs your reseat PIN, and ending the lesson (or a new day) unlocks it. Moving students by hand is never locked. Print any plan for cover teachers.
 - **Live lesson** — the seating plan *is* the interface. Every seat shows the student and their running points for the lesson; tap a seat to log positive/negative behaviours (fully customisable buttons) or mark attendance. **Batch entry** records one behaviour for many students at once: choose it (say *Missing homework*), tap each student — tap again to deselect — and press Save; nothing is recorded until then, and the next batch starts straight away. Seats are assigned (**Randomise**) **once per lesson**: after that the button shows 🔒 and needs your reseat PIN (set in Settings → Teaching mode), until you end the lesson or a new day starts. **Teaching mode** comes in two styles — the full-screen room plan, or a **side panel**: a narrow, always-on-top list of students grouped by table, docked to the left or right edge of the screen so your slides and annotations keep the rest (batch entry works there too). **End lesson** saves each student's seat and behaviour to the class history.
 - **Seating insights** — from that saved history: how often each student has sat at each desk, which desk they behave best/worst at, and which pairings turn disruptive (one click to add them to the keep-apart list).
 - **Assessments** — build tests as a single mark or broken into questions, each tagged with a **topic** (from a per-grade topic bank) and a cognitive level. Enter marks in a keyboard-first grid, then analyse everything on a dashboard: class means, mark distributions, per-student trends vs class average, attendance-vs-performance, at-risk flags, and per-topic breakdowns.
@@ -29,7 +29,7 @@ ClassroomData/
   behaviours.csv                 # your behaviour buttons (shared across classes)
   topics.csv                     # assessable topics by grade
   cognitive_levels.csv           # question cognitive-level list
-  settings.csv                   # app-wide preferences
+  settings.csv                   # app-wide preferences (display, time zone, teaching mode, reseat PIN — stored only as a hash)
   timer_presets.csv              # saved test-timer presets
   layouts/<name>/                # reusable room templates (desks.csv + room.csv)
   classes/7B-Science/
@@ -57,7 +57,7 @@ Open any file in Excel or Notepad; move the folder between machines freely. **Pi
 ```bash
 npm install
 npm run dev          # UI in a browser with an in-memory demo dataset
-npm test             # unit tests (CSV round-trips, seat assigner, stats, insights, spreadsheet export)
+npm test             # unit tests (CSV round-trips, seat assigner, stats, insights, spreadsheet export, seat lock, PIN, table grouping, time zones)
 npm run tauri dev    # full desktop app (needs Rust; on Linux also webkit2gtk)
 npm run tauri build  # Windows installer (NSIS .exe) in src-tauri/target/release/bundle
 ```
