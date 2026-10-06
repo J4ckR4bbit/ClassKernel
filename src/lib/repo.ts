@@ -20,6 +20,7 @@
 //   layouts/<name>/desks.csv + room.csv   reusable room templates
 //   backups/<stamp>/...                   rolling snapshots
 
+import { isValidTimeZone } from "./time";
 import { getFS } from "./fs";
 import { parseCsv, stringifyCsv, num, numOrNull } from "./csv";
 import { visitSeconds } from "./stats";
@@ -825,6 +826,8 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
     teachingStyle: kv.get("teaching_style") === "strip" ? "strip" : "room",
     dockSide: kv.get("dock_side") === "right" ? "right" : "left",
     reseatPinHash: /^[0-9a-f]{64}$/.test(kv.get("reseat_pin") ?? "") ? kv.get("reseat_pin")! : "",
+    // An unknown zone (typo, or one this machine doesn't know) falls back to the device's.
+    timeZone: isValidTimeZone(kv.get("time_zone") ?? "") ? kv.get("time_zone")! : "",
   };
 }
 
@@ -842,6 +845,7 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "teaching_style", value: prefs.teachingStyle },
     { key: "dock_side", value: prefs.dockSide },
     { key: "reseat_pin", value: prefs.reseatPinHash },
+    { key: "time_zone", value: prefs.timeZone },
   ];
   await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
 }

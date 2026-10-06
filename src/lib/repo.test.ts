@@ -355,6 +355,7 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       teachingStyle: "strip" as const,
       dockSide: "right" as const,
       reseatPinHash: "a".repeat(64),
+      timeZone: "Africa/Johannesburg",
     };
     await repo.saveUserPrefs(DIR, prefs);
     expect(await repo.loadUserPrefs(DIR)).toEqual(prefs);
@@ -368,6 +369,12 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
     // A hand-edited PIN cell that isn't a hash is ignored rather than trusted.
     await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nreseat_pin,1234\n");
     expect((await repo.loadUserPrefs(DIR)).reseatPinHash).toBe("");
+  });
+
+  it("defaults to the device time zone and ignores unknown zones", async () => {
+    expect((await repo.loadUserPrefs(DIR)).timeZone).toBe("");
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\ntime_zone,Mars/Olympus\n");
+    expect((await repo.loadUserPrefs(DIR)).timeZone).toBe("");
   });
 
   it("treats a settings file with no plugin key as no plugins enabled", async () => {

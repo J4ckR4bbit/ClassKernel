@@ -10,6 +10,7 @@ import * as repo from "./repo";
 import { deskSitCounts, pairInsights, studentDeskStats } from "./lessons";
 import { assessmentStats, attendanceByStudent, behaviourByStudent, formatDuration, percentage, symbolForPct, visitSeconds } from "./stats";
 import { SheetSpec } from "./xlsx";
+import { dateInZone, timeInZone } from "./time";
 import {
   Assessment,
   AssessmentQuestion,
@@ -153,10 +154,11 @@ const round1 = (v: number | null | undefined): number | null =>
 const round2 = (v: number | null | undefined): number | null =>
   v === null || v === undefined || !Number.isFinite(v) ? null : Math.round(v * 100) / 100;
 
-/** Inclusive YYYY-MM-DD range test; blank bounds mean "no limit". */
+/** Inclusive YYYY-MM-DD range test; blank bounds mean "no limit". A full
+ * timestamp is dated in the teacher's zone, like everywhere else. */
 function inRange(date: string, from?: string, to?: string): boolean {
   if (!date) return true;
-  const d = date.slice(0, 10);
+  const d = date.length > 10 ? dateInZone(date) || date.slice(0, 10) : date;
   if (from && d < from) return false;
   if (to && d > to) return false;
   return true;
@@ -303,8 +305,8 @@ const behaviourSheet: Builder = (bundles, data) => {
             const code = codeById.get(e.code);
             return [
               b.info.name,
-              e.timestamp.slice(0, 10),
-              e.timestamp.slice(11, 16),
+              dateInZone(e.timestamp),
+              timeInZone(e.timestamp),
               e.studentId,
               nameOf(e.studentId),
               e.code,
@@ -346,8 +348,8 @@ const bathroomSheet: Builder = (bundles) => [
           v.date,
           v.studentId,
           nameOf(v.studentId),
-          v.start.slice(11, 16),
-          v.end ? v.end.slice(11, 16) : "",
+          timeInZone(v.start),
+          v.end ? timeInZone(v.end) : "",
           v.end ? formatDuration(visitSeconds(v)) : "still out",
           v.end ? visitSeconds(v) : null,
         ]);

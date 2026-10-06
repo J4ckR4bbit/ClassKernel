@@ -15,6 +15,7 @@ import {
 } from "../lib/types";
 import { PLUGINS, togglePluginId } from "../plugins/registry";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
+import { dateTimeInZone, deviceTimeZone, listTimeZones } from "../lib/time";
 import * as repo from "../lib/repo";
 import { backupStamp } from "../lib/id";
 import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
@@ -280,6 +281,8 @@ function GeneralSettings() {
         </div>
       </div>
 
+      <TimeZoneSettings />
+
       <TeachingModeSettings />
 
       <div className="panel">
@@ -405,6 +408,45 @@ function GeneralSettings() {
 }
 
 /** List of snapshot backups with one-tap restore (a safety copy is taken first). */
+/** The zone every date and time is shown and exported in (storage stays UTC). */
+function TimeZoneSettings() {
+  const { userPrefs, setUserPrefs } = useApp();
+  const zones = useMemo(() => listTimeZones(), []);
+  const device = deviceTimeZone();
+  // Tick once a minute so the "now" preview stays current.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="panel">
+      <h3>Time zone</h3>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Dates and times in the behaviour and bathroom logs, the lesson count, attendance and spreadsheet exports are
+        shown in this zone. Times are always saved in UTC, so changing this never alters your records — only how
+        they're displayed.
+      </p>
+      <div className="row">
+        <select
+          value={userPrefs.timeZone}
+          onChange={(e) => void setUserPrefs({ ...userPrefs, timeZone: e.target.value })}
+          aria-label="Time zone"
+        >
+          <option value="">This computer's zone ({device})</option>
+          {zones.map((z) => (
+            <option key={z} value={z}>
+              {z.replace(/_/g, " ")}
+            </option>
+          ))}
+        </select>
+        <span className="muted">Now: {dateTimeInZone(now)}</span>
+      </div>
+    </div>
+  );
+}
+
 /** Teaching-mode preferences: which mode opens, where its buttons sit, and the reseat PIN. */
 function TeachingModeSettings() {
   const { userPrefs, setUserPrefs, promptDialog, showToast } = useApp();

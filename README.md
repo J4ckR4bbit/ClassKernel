@@ -50,7 +50,7 @@ ClassroomData/
   backups/                       # automatic snapshots (newest 14 kept)
 ```
 
-Open any file in Excel or Notepad; move the folder between machines freely. **Pick a folder inside OneDrive or Google Drive** and the sync client gives you backup and access from other machines — the app itself never touches the network. Every write is atomic (temp file + rename) so a sync mid-save can't corrupt anything, and a snapshot of the whole folder is taken into `backups/` at every launch.
+Open any file in Excel or Notepad; move the folder between machines freely. **Pick a folder inside OneDrive or Google Drive** and the sync client gives you backup and access from other machines — the app itself never touches the network. Timestamps are saved in UTC so files mean the same thing on any machine; the app shows and exports every date and time in the time zone chosen under **Settings → General → Time zone** (by default, the computer's own). Every write is atomic (temp file + rename) so a sync mid-save can't corrupt anything, and a snapshot of the whole folder is taken into `backups/` at every launch.
 
 ## Development
 

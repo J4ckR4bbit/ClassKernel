@@ -6,6 +6,7 @@ import { seedDemoData } from "../lib/demo";
 import { isSeatingLocked, readLessonStart, readSeatedAt, seatedKey } from "../lib/lessonState";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import { enterDock, enterFullscreen, restoreWindow } from "../lib/teachingWindow";
+import { setTimeZone } from "../lib/time";
 import {
   Assessment,
   AssessmentQuestion,
@@ -280,6 +281,7 @@ export const useApp = create<AppState>((set, get) => {
     const topics = await repo.loadTopics(path);
     const cognitiveLevels = await repo.loadCognitiveLevels(path);
     const userPrefs = await repo.loadUserPrefs(path);
+    setTimeZone(userPrefs.timeZone);
     const timerPresets = await repo.loadTimerPresets(path);
     set({ dataDir: path, classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, currentClass: null });
     const active = classes.filter((c) => !c.archived);
@@ -691,6 +693,8 @@ export const useApp = create<AppState>((set, get) => {
 
   async setUserPrefs(userPrefs) {
     const { dataDir } = get();
+    // Before the state update, so every view re-renders in the new zone.
+    setTimeZone(userPrefs.timeZone);
     set({ userPrefs });
     if (dataDir) await guarded("settings", () => repo.saveUserPrefs(dataDir, userPrefs));
   },

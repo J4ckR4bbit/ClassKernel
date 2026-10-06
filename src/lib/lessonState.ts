@@ -2,17 +2,17 @@
 // when the current lesson started, and whether its seats have been assigned.
 // Both are per class and per machine — a lesson happens on one screen.
 
+import { dateInZone } from "./time";
+
 /** ISO timestamp of the last "End lesson" for the class — the start of this lesson. */
 export const lessonStartKey = (className: string) => `classkernel.lessonStart.${className}`;
 
 /** ISO timestamp of the last seat assignment (Randomise) for the class. */
 export const seatedKey = (className: string) => `classkernel.seatedAt.${className}`;
 
-/** The local calendar date (YYYY-MM-DD) of an ISO timestamp — matches today(). */
+/** The calendar date (YYYY-MM-DD) of an ISO timestamp in the teacher's zone — matches today(). */
 export function localDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return dateInZone(iso);
 }
 
 /**

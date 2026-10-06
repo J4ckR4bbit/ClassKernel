@@ -300,6 +300,11 @@ export interface UserPrefs {
    * (see src/lib/pin.ts). "" = no PIN set yet.
    */
   reseatPinHash: string;
+  /**
+   * IANA time zone (e.g. "Africa/Johannesburg") that dates and times are shown
+   * and exported in. "" = the device's own zone. Storage is always UTC.
+   */
+  timeZone: string;
 }
 
 export const DEFAULT_USER_PREFS: UserPrefs = {
@@ -315,6 +320,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   teachingStyle: "room",
   dockSide: "left",
   reseatPinHash: "",
+  timeZone: "",
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {
