@@ -24,7 +24,15 @@ export function useSeatingShuffle() {
   useApp((s) => s.currentClass);
   const locked = useApp.getState().seatingLocked();
 
-  useEffect(() => () => void (timer.current && clearInterval(timer.current)), []);
+  // Clear the handle too, not just the interval: StrictMode's dev remount
+  // reuses this ref, and a stale handle would make randomise() bail forever.
+  useEffect(
+    () => () => {
+      if (timer.current) clearInterval(timer.current);
+      timer.current = null;
+    },
+    [],
+  );
 
   const isShuffling = shuffleFrame !== null;
 
