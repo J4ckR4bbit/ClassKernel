@@ -1,3 +1,5 @@
+import { dateInZone, nowInZone } from "./time";
+
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 /** Short random id, safe for filenames and CSV cells. */
@@ -9,9 +11,9 @@ export function newId(prefix = ""): string {
   return prefix ? `${prefix}-${s}` : s;
 }
 
+/** Today's date (YYYY-MM-DD) in the teacher's time zone (see time.ts). */
 export function today(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return dateInZone(new Date());
 }
 
 export function nowIso(): string {
@@ -20,7 +22,6 @@ export function nowIso(): string {
 
 /** Timestamp usable in folder names: 2026-07-10_143005 */
 export function backupStamp(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  const n = nowInZone();
+  return `${n.date}_${n.hh}${n.mm}${n.ss}`;
 }

@@ -1,14 +1,15 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
-import { newId, nowIso, today } from "../lib/id";
-import { AttendanceStatus, BehaviourCode, LessonRecord, SEAT_COUNTS, studentName } from "../lib/types";
-import { eventsOnDate, formatDuration, visitSeconds } from "../lib/stats";
-import { displayStudentName, seatSurname, textColorFor } from "../lib/privacy";
+import { AttendanceStatus, BehaviourCode } from "../lib/types";
+import { formatDuration, visitSeconds } from "../lib/stats";
+import { displayStudentName, seatSurname } from "../lib/privacy";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
+import { useLessonSession } from "../hooks/useLessonSession";
+import { useBatchEntry } from "../hooks/useBatchEntry";
 import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
-import StudentPicker, { pickedKey } from "./StudentPicker";
-
-const lessonKey = (className: string) => `classkernel.lessonStart.${className}`;
+import StudentPicker from "./StudentPicker";
+import StudentActions from "./StudentActions";
+import BatchPanel from "./BatchPanel";
 
 interface Popover {
   studentId: string;
@@ -19,175 +20,55 @@ interface Popover {
 /**
  * The "live lesson" screen: the seating plan is the interface. Tap a seat to
  * log behaviour or take attendance for that student; running points for
- * today's lesson show under each name.
+ * today's lesson show under each name. Batch entry turns seat taps into a
+ * selection instead, so one behaviour can be saved for many students at once.
  */
 export default function LessonView() {
-  const {
-    currentClass,
-    students,
-    desks,
-    seating,
-    behaviourCodes,
-    behaviourEvents,
-    addBehaviourEvent,
-    removeBehaviourEvent,
-    bathroomVisits,
-    startBathroomVisit,
-    endBathroomVisit,
-    addLessonRecords,
-    attendance,
-    setAttendance,
-    showToast,
-    setView,
-    roomConfig,
-    focusMode,
-    setFocusMode,
-    userPrefs,
-    confirmDialog,
-  } = useApp();
+  const { currentClass, desks, seating, behaviourCodes, setView, roomConfig, focusMode, setFocusMode, userPrefs } = useApp();
   const planNames = useMemo(() => [...new Set(seating.map((s) => s.planName))].sort(), [seating]);
   const [plan, setPlan] = useState(planNames[0] ?? "Default");
   const activePlan = planNames.includes(plan) ? plan : planNames[0];
   const [popover, setPopover] = useState<Popover | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   // Reroll the seating in place, with the same animation as the seating plan.
-  const { shuffleFrame, isShuffling, randomise } = useSeatingShuffle();
+  // Once per lesson: afterwards the button asks for the reseat PIN.
+  const { shuffleFrame, isShuffling, randomise, locked, requestUnlock } = useSeatingShuffle();
+  const lesson = useLessonSession();
+  const { byId, lessonEvents, pointsToday, pointsVisible, statusOf, outNow, outVisitOf } = lesson;
+  const batch = useBatchEntry(lesson.logBatch);
 
-  // "This lesson" is everything logged since the last End-lesson reset (or the
-  // start of today if a lesson has never been ended for this class).
-  const [lessonStart, setLessonStart] = useState<string | null>(null);
-  useEffect(() => {
-    setLessonStart(currentClass ? localStorage.getItem(lessonKey(currentClass)) : null);
-  }, [currentClass]);
-
-  const byId = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
   const planSeats = seating.filter((s) => s.planName === activePlan && s.studentId);
   // While rerolling, draw the live shuffle frame instead of the saved seats.
   const shownSeats = shuffleFrame ?? planSeats;
-  const lessonEvents = useMemo(
-    () => (lessonStart ? behaviourEvents.filter((e) => e.timestamp >= lessonStart) : eventsOnDate(behaviourEvents, today())),
-    [behaviourEvents, lessonStart],
-  );
-  const pointsToday = new Map<string, number>();
-  for (const e of lessonEvents) pointsToday.set(e.studentId, (pointsToday.get(e.studentId) ?? 0) + e.points);
-
-  // Whether the class-facing seat tiles show the running points scoreboard.
-  const pointsVisible = userPrefs.privacyMode ? userPrefs.showSeatPoints : true;
 
   // In teaching mode the lesson buttons sit on whichever edge Settings says,
   // so they land under the hand of whoever is standing at the board.
   const shellClass = focusMode ? `focus-layout bar-${userPrefs.lessonBarSide}` : "";
-
-  // Friendly fallback names for unlabelled desks, so lesson history is readable.
-  const deskFallback = useMemo(() => {
-    const m = new Map<string, string>();
-    let n = 0;
-    for (const d of desks) {
-      if (SEAT_COUNTS[d.shape] > 0) {
-        n++;
-        m.set(d.id, d.label.trim() || `Desk ${n}`);
-      }
-    }
-    return m;
-  }, [desks]);
+  const sideBar = focusMode && (userPrefs.lessonBarSide === "left" || userPrefs.lessonBarSide === "right");
+  // Everything else waits while a batch is being picked.
+  const busy = isShuffling || batch.active;
 
   const endLesson = async () => {
-    if (!currentClass || planSeats.length === 0) return;
-    const ok = await confirmDialog({
-      title: `End the lesson for ${currentClass}?`,
-      body: "This saves each student's seat and this lesson's behaviour to the class history (used for seating insights), then starts a fresh count.",
-      confirmLabel: "End lesson",
-    });
-    if (!ok) return;
-    const sessionId = newId("les");
-    const timestamp = nowIso();
-    const date = today();
-    const deskOccupants = new Map<string, string[]>();
-    for (const seat of planSeats) {
-      const list = deskOccupants.get(seat.deskId) ?? [];
-      list.push(seat.studentId);
-      deskOccupants.set(seat.deskId, list);
-    }
-    const records: LessonRecord[] = planSeats.map((seat) => {
-      const desk = desks.find((d) => d.id === seat.deskId);
-      const deskLabel = desk?.label.trim() || deskFallback.get(seat.deskId) || seat.deskId;
-      const seatmates = (deskOccupants.get(seat.deskId) ?? []).filter((id) => id !== seat.studentId).join(";");
-      const evs = lessonEvents.filter((e) => e.studentId === seat.studentId);
-      return {
-        sessionId,
-        date,
-        timestamp,
-        studentId: seat.studentId,
-        deskId: seat.deskId,
-        deskLabel,
-        seatmates,
-        points: evs.reduce((a, e) => a + e.points, 0),
-        positives: evs.filter((e) => e.points > 0).length,
-        negatives: evs.filter((e) => e.points < 0).length,
-      };
-    });
-    await addLessonRecords(records);
-    localStorage.setItem(lessonKey(currentClass), timestamp);
-    localStorage.removeItem(pickedKey(currentClass));
-    setLessonStart(timestamp);
-    setPopover(null);
-    showToast(`Lesson ended — saved ${records.length} seat records to history`);
+    if (await lesson.endLesson(planSeats)) setPopover(null);
   };
-
-  const attendanceToday = attendance.filter((e) => e.date === today());
-  const statusOf = (id: string) => attendanceToday.find((e) => e.studentId === id)?.status;
-
-  // Bathroom timers: a visit without an end time is a student who is out now.
-  const outNow = bathroomVisits.filter((v) => !v.end);
-  const outVisitOf = (id: string) => outNow.find((v) => v.studentId === id);
-  // Re-render every second while somebody is out so the timers count up live.
-  const [, setClock] = useState(0);
-  useEffect(() => {
-    if (outNow.length === 0) return;
-    const t = setInterval(() => setClock((n) => n + 1), 1000);
-    return () => clearInterval(t);
-  }, [outNow.length]);
-
   const toggleBathroom = (studentId: string) => {
-    const s = byId.get(studentId);
-    // Same rule as behaviour toasts: no names on screen in privacy mode.
-    const suffix = !userPrefs.privacyMode && s ? studentName(s) : "recorded";
-    const open = outVisitOf(studentId);
-    if (open) {
-      void endBathroomVisit(studentId);
-      showToast(`🚻 Back after ${formatDuration(visitSeconds(open))} — ${suffix}`);
-    } else {
-      void startBathroomVisit(studentId);
-      showToast(`🚻 Bathroom timer started — ${suffix}`);
-    }
+    lesson.toggleBathroom(studentId);
     setPopover(null);
   };
-
   const logBehaviour = (studentId: string, c: BehaviourCode) => {
-    const timestamp = nowIso();
-    void addBehaviourEvent({ timestamp, studentId, code: c.code, points: c.points, note: "" });
-    const s = byId.get(studentId);
-    // In privacy mode the toast stays nameless — the teacher just tapped that
-    // student's seat, so the name adds nothing the class should see.
-    const suffix = !userPrefs.privacyMode && s ? studentName(s) : "recorded";
-    showToast(`${c.points > 0 ? "+" : ""}${c.points} ${c.label} — ${suffix}`, {
-      label: "Undo",
-      run: () => void removeBehaviourEvent(timestamp, studentId, c.code),
-    });
+    lesson.logBehaviour(studentId, c);
     setPopover(null);
   };
-
   const markAttendance = (studentId: string, status: AttendanceStatus) => {
-    const rest = attendance.filter((e) => !(e.date === today() && e.studentId === studentId));
-    void setAttendance([...rest, { date: today(), studentId, status, note: "" }]);
+    lesson.markAttendance(studentId, status);
     setPopover(null);
+  };
+  const startBatch = () => {
+    setPopover(null);
+    batch.start();
   };
 
   const popStudent = popover ? byId.get(popover.studentId) : undefined;
-  const positives = behaviourCodes.filter((c) => c.kind === "positive");
-  const negatives = behaviourCodes.filter((c) => c.kind === "negative");
-  const showFlags = popStudent?.flags && (!userPrefs.privacyMode || userPrefs.popoverShowFlags);
-  const showNotes = popStudent?.notes && (!userPrefs.privacyMode || userPrefs.popoverShowNotes);
 
   // Always render in scaled (viewBox) mode so the room fills the pane on any
   // screen size — with no crop set, the whole room is the view.
@@ -235,63 +116,91 @@ export default function LessonView() {
     );
   }
 
+  const planSelect = planNames.length > 1 && (
+    <select value={activePlan} onChange={(e) => setPlan(e.target.value)} disabled={batch.active}>
+      {planNames.map((n) => (
+        <option key={n}>{n}</option>
+      ))}
+    </select>
+  );
+  const pickButton = (
+    <button onClick={() => setPickerOpen(true)} disabled={busy} title="Choose a random student">
+      🙋 Pick a student
+    </button>
+  );
+  const batchButton = (
+    <button onClick={startBatch} disabled={busy} title="Record one behaviour for several students at once">
+      ☑ Batch entry
+    </button>
+  );
+  const seatButton = locked ? (
+    <button onClick={requestUnlock} disabled={busy} title="Seats were assigned this lesson — enter your PIN to assign them again">
+      🔒 Reseat…
+    </button>
+  ) : (
+    <button onClick={() => randomise(activePlan)} disabled={busy} title="Reshuffle the seating using your saved rules">
+      🎲 {isShuffling ? "Randomising…" : "Randomise"}
+    </button>
+  );
+  const endButton = (
+    <button className="danger" onClick={() => void endLesson()} disabled={busy}>
+      ⏹ End lesson
+    </button>
+  );
+  const batchPanel = <BatchPanel entry={batch} behaviourCodes={behaviourCodes} layout={sideBar ? "strip" : "bar"} />;
+
   return (
     <div className={shellClass}>
       {focusMode ? (
         <div className="focus-bar">
-          <button onClick={() => setFocusMode(false)} title="Back to the full app (or press Esc)">
+          <button onClick={() => setFocusMode(false)} title="Back to the full app (or press Esc)" disabled={batch.active}>
             ✕ Exit teaching mode
           </button>
-          {planNames.length > 1 && (
-            <select value={activePlan} onChange={(e) => setPlan(e.target.value)}>
-              {planNames.map((n) => (
-                <option key={n}>{n}</option>
-              ))}
-            </select>
-          )}
+          <button onClick={() => setFocusMode(true, "strip")} disabled={busy} title="Dock a narrow list of tables to the screen edge">
+            ▥ Side panel
+          </button>
+          {planSelect}
           <div className="spacer" />
           <span className="muted">
             {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson
           </span>
-          <button onClick={() => setPickerOpen(true)} disabled={isShuffling} title="Choose a random student">
-            🙋 Pick a student
-          </button>
-          <button onClick={() => randomise(activePlan)} disabled={isShuffling} title="Reshuffle the seating">
-            🎲 {isShuffling ? "Randomising…" : "Randomise"}
-          </button>
-          <button className="danger" onClick={() => void endLesson()} disabled={isShuffling}>
-            ⏹ End lesson
-          </button>
+          {sideBar && batchPanel}
+          {batchButton}
+          {pickButton}
+          {seatButton}
+          {endButton}
         </div>
       ) : (
         <div className="view-header">
           <h1>{currentClass} — Live lesson</h1>
-          {planNames.length > 1 && (
-            <select value={activePlan} onChange={(e) => setPlan(e.target.value)}>
-              {planNames.map((n) => (
-                <option key={n}>{n}</option>
-              ))}
-            </select>
-          )}
+          {planSelect}
           <div className="spacer" />
           <span className="muted">
             {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson · tap a seat to record
             behaviour or attendance
           </span>
-          <button onClick={() => setPickerOpen(true)} disabled={isShuffling} title="Choose a random student">
-            🙋 Pick a student
-          </button>
-          <button onClick={() => randomise(activePlan)} disabled={isShuffling} title="Reshuffle the seating using your saved rules">
-            🎲 {isShuffling ? "Randomising…" : "Randomise"}
-          </button>
-          <button onClick={() => setFocusMode(true)} title="Distraction-free view for teaching, beside your notes">
+          {batchButton}
+          {pickButton}
+          {seatButton}
+          <button onClick={() => setFocusMode(true)} disabled={busy} title="Distraction-free view for teaching, beside your notes">
             ⛶ Teaching mode
           </button>
-          <button className="danger" onClick={() => void endLesson()} disabled={planSeats.length === 0 || isShuffling}>
-            ⏹ End lesson
+          <button
+            onClick={() => setFocusMode(true, userPrefs.teachingStyle === "strip" ? "room" : "strip")}
+            disabled={busy}
+            title={
+              userPrefs.teachingStyle === "strip"
+                ? "Teach from the full-screen room plan instead"
+                : "Dock a narrow list of tables to the screen edge, beside your slides"
+            }
+          >
+            {userPrefs.teachingStyle === "strip" ? "⛶ Room plan" : "▥ Side panel"}
           </button>
+          {endButton}
         </div>
       )}
+
+      {!sideBar && batchPanel}
 
       {outNow.length > 0 && (
         <div className="bathroom-bar no-print">
@@ -314,7 +223,7 @@ export default function LessonView() {
 
       <div
         ref={canvasBoxRef}
-        className={`seating-canvas ${focusMode ? "focus-canvas-wrap" : ""} ${isShuffling ? "shuffling" : ""}`}
+        className={`seating-canvas ${focusMode ? "focus-canvas-wrap" : ""} ${isShuffling ? "shuffling" : ""} ${batch.active ? "batching" : ""}`}
         style={{ position: "relative" }}
       >
         {isShuffling && <div className="shuffle-overlay no-print">🎲 Randomising seats…</div>}
@@ -336,12 +245,17 @@ export default function LessonView() {
               badge: !isShuffling && s && outVisitOf(s.id) ? "🚻" : status === "A" && !isShuffling ? "✗" : undefined,
               occupied: !!s,
               points: s && !isShuffling && pointsVisible ? pointsToday.get(s.id) ?? 0 : null,
+              selected: !!s && batch.isSelected(s.id),
             };
           }}
           onSeatClick={(deskId, seatIndex, x, y) => {
             if (isShuffling) return;
             const occ = planSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
-            if (occ) setPopover({ studentId: occ.studentId, x, y });
+            if (!occ) return;
+            // In batch entry a tap selects/deselects; nothing is saved until Save.
+            if (batch.active) {
+              if (batch.batch?.code) batch.toggle(occ.studentId);
+            } else setPopover({ studentId: occ.studentId, x, y });
           }}
         />
 
@@ -355,63 +269,15 @@ export default function LessonView() {
               visibility: popPos ? "visible" : "hidden",
             }}
           >
-            <h4>
-              {studentName(popStudent)}
-              {showFlags &&
-                popStudent.flags
-                  .split(";")
-                  .filter(Boolean)
-                  .map((f) => (
-                    <span key={f} className="tag warn" style={{ marginLeft: 6 }}>
-                      {f}
-                    </span>
-                  ))}
-            </h4>
-            {showNotes && <p className="muted" style={{ marginTop: 0 }}>{popStudent.notes}</p>}
-            <div className="row" style={{ marginBottom: 2 }}>
-              {(["P", "A", "L", "E"] as AttendanceStatus[]).map((code) => (
-                <button
-                  key={code}
-                  className={`att-btn ${code} ${statusOf(popStudent.id) === code ? "on" : ""}`}
-                  onClick={() => markAttendance(popStudent.id, code)}
-                >
-                  {code}
-                </button>
-              ))}
-            </div>
-            <div className="att-legend">P present · A absent · L late · E excused</div>
-            <button
-              className={`bathroom-btn ${outVisitOf(popStudent.id) ? "out" : ""}`}
-              title="Time a bathroom trip; it's saved to the bathroom log when the student is back"
-              onClick={() => toggleBathroom(popStudent.id)}
-            >
-              {outVisitOf(popStudent.id)
-                ? `🚻 Back from bathroom · ${formatDuration(visitSeconds(outVisitOf(popStudent.id)!))}`
-                : "🚻 Bathroom — start timer"}
-            </button>
-            {positives.map((c) => (
-              <button
-                key={c.code}
-                className="bh-btn"
-                style={{ background: c.color, color: textColorFor(c.color) }}
-                onClick={() => logBehaviour(popStudent.id, c)}
-              >
-                +{c.points} {c.label}
-              </button>
-            ))}
-            {negatives.map((c) => (
-              <button
-                key={c.code}
-                className="bh-btn"
-                style={{ background: c.color, color: textColorFor(c.color) }}
-                onClick={() => logBehaviour(popStudent.id, c)}
-              >
-                {c.points} {c.label}
-              </button>
-            ))}
-            <button style={{ width: "100%", marginTop: 6 }} onClick={() => setPopover(null)}>
-              Close
-            </button>
+            <StudentActions
+              student={popStudent}
+              status={statusOf(popStudent.id)}
+              outVisit={outVisitOf(popStudent.id)}
+              onAttendance={(status) => markAttendance(popStudent.id, status)}
+              onBathroom={() => toggleBathroom(popStudent.id)}
+              onBehaviour={(c) => logBehaviour(popStudent.id, c)}
+              onClose={() => setPopover(null)}
+            />
           </div>
         )}
       </div>

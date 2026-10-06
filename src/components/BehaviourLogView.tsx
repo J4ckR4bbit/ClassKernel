@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
 import { studentName } from "../lib/types";
 import { behaviourByStudent, formatDuration, visitSeconds } from "../lib/stats";
+import { dateInZone, dateTimeInZone, timeInZone } from "../lib/time";
 import PrivacyGate from "./PrivacyGate";
 
 export default function BehaviourLogView() {
@@ -27,8 +28,8 @@ export default function BehaviourLogView() {
   const filtered = behaviourEvents
     .filter((e) => !studentFilter || e.studentId === studentFilter)
     .filter((e) => !codeFilter || e.code === codeFilter)
-    .filter((e) => !from || e.timestamp.slice(0, 10) >= from)
-    .filter((e) => !to || e.timestamp.slice(0, 10) <= to)
+    .filter((e) => !from || dateInZone(e.timestamp) >= from)
+    .filter((e) => !to || dateInZone(e.timestamp) <= to)
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
   const codeOf = (code: string) => behaviourCodes.find((c) => c.code === code);
@@ -112,7 +113,7 @@ export default function BehaviourLogView() {
             const c = codeOf(e.code);
             return (
               <tr key={`${e.timestamp}-${e.studentId}-${i}`}>
-                <td className="muted">{e.timestamp.slice(0, 16).replace("T", " ")}</td>
+                <td className="muted">{dateTimeInZone(e.timestamp)}</td>
                 <td>{s ? studentName(s) : e.studentId}</td>
                 <td>
                   <span className="tag" style={{ background: (c?.color ?? "#888") + "22", color: c?.color ?? "#555" }}>
@@ -169,8 +170,8 @@ export default function BehaviourLogView() {
               <tr key={`${v.studentId}-${v.start}`}>
                 <td className="muted">{v.date}</td>
                 <td>{s ? studentName(s) : v.studentId}</td>
-                <td className="muted">{v.start.slice(11, 16)}</td>
-                <td className="muted">{v.end ? v.end.slice(11, 16) : "—"}</td>
+                <td className="muted">{timeInZone(v.start)}</td>
+                <td className="muted">{v.end ? timeInZone(v.end) : "—"}</td>
                 <td>
                   {v.end ? (
                     formatDuration(visitSeconds(v))

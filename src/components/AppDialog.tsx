@@ -38,6 +38,9 @@ export default function AppDialog() {
             autoFocus
             value={text}
             placeholder={dialog.placeholder}
+            {...(dialog.secret
+              ? { type: "password", inputMode: "numeric" as const, autoComplete: "off", className: "pin-input" }
+              : {})}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && text.trim()) ok();

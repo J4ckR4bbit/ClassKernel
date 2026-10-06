@@ -156,6 +156,10 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .seat-surname { font-size: 10px; text-anchor: middle; fill: #3a4652; pointer-events: none; font-weight: 500; }
 .seat-points { font-size: 11px; text-anchor: middle; font-weight: 700; pointer-events: none; }
 .seat-badge { font-size: 12px; text-anchor: middle; fill: var(--danger); font-weight: 700; pointer-events: none; }
+/* Batch entry: a picked seat is filled highlighter-yellow with a heavy border
+   and a tick, so it can't be mistaken for an ordinary seat at a glance. */
+.seat-square.batch-selected { fill: #ffd84d; stroke: var(--accent); stroke-width: 4; }
+.seat-check { font-size: 16px; text-anchor: middle; fill: var(--accent); font-weight: 800; pointer-events: none; }
 .desk-body.label-block { fill: #fdf3cf; stroke: #d9c470; }
 .label-block-text { font-size: 14px; font-weight: 600; fill: #4c4018; text-anchor: middle; pointer-events: none; }
 .crop-rect { fill: rgba(44, 110, 73, 0.05); stroke: var(--accent); stroke-width: 2; stroke-dasharray: 8 6; cursor: move; }
@@ -628,3 +632,83 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .pair-chip .tag { margin-right: 0; font-size: 13px; padding: 6px 10px; border-radius: 14px; }
 .backup-list { list-style: none; margin: 8px 0 0; padding: 0; max-width: 420px; }
 .backup-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 0; border-top: 1px solid var(--border); }
+
+/* ---------- batch entry ---------- */
+.batch-panel {
+  background: var(--panel); border: 2px solid var(--accent); border-radius: var(--radius);
+  padding: 10px 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;
+}
+.batch-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.batch-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+.batch-items .bh-btn { margin-bottom: 0; min-height: 44px; }
+.batch-banner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.batch-tag { background: var(--accent); color: #fff; font-weight: 800; letter-spacing: 1px; font-size: 12px; padding: 4px 8px; border-radius: 6px; }
+.batch-item { font-weight: 700; padding: 6px 12px; border-radius: 6px; }
+.batch-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.batch-actions .spacer { flex: 1; }
+.batch-count { color: var(--text-dim); }
+.batch-count.on { color: var(--accent); font-weight: 700; font-size: 15px; }
+/* In a side bar or the strip everything stacks in one column. */
+.batch-strip .batch-items { grid-template-columns: 1fr; }
+.batch-strip .batch-actions .spacer { display: none; }
+.batch-strip .batch-count { flex-basis: 100%; }
+.batch-strip .batch-actions button { flex: 1; }
+.focus-bar .batch-panel { margin: 0; }
+.seating-canvas.batching .room-canvas { outline: 3px dashed var(--accent); outline-offset: 4px; border-radius: 6px; }
+
+/* ---------- teaching strip (docked side panel) ---------- */
+.focus-shell.strip-mode { padding: 0; overflow: hidden; }
+.strip-shell { display: flex; height: 100%; min-height: 0; }
+.strip-shell.dock-right { flex-direction: row-reverse; }
+.strip {
+  position: relative; display: flex; flex-direction: column; gap: 8px; min-height: 0; height: 100%;
+  width: clamp(240px, 18vw, 340px); flex-shrink: 0; padding: 10px;
+  background: var(--panel); box-shadow: 0 0 12px rgba(20, 30, 40, 0.12);
+}
+.strip-rest { flex: 1; }
+/* In the desktop app the window *is* the strip. */
+@media (max-width: 420px) {
+  .strip { width: 100%; box-shadow: none; }
+  .strip-rest { display: none; }
+}
+.strip-head { display: flex; align-items: center; gap: 6px; }
+.strip-title { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.strip-title b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
+.strip-title .muted { font-size: 12px; }
+.strip-head-actions { display: flex; gap: 4px; }
+.strip-plan { width: 100%; }
+.strip-tables { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 2px; }
+.strip-table h5 {
+  margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim);
+  border-bottom: 1px solid var(--border); padding-bottom: 3px;
+}
+.strip-student {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  min-height: 44px; margin-bottom: 4px; padding: 6px 10px; border-left: 4px solid transparent;
+  font-size: 15px;
+}
+.strip-check { width: 1.1em; text-align: center; color: var(--text-dim); font-weight: 800; }
+.strip-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.strip-student.absent .strip-name { color: var(--text-dim); text-decoration: line-through; }
+.strip-absent { color: var(--danger); font-weight: 700; }
+.strip-points { font-weight: 700; font-size: 13px; }
+.strip-points.pos { color: #2e9e5b; }
+.strip-points.neg { color: #d65c5c; }
+.strip-tables.batching .strip-student { border-style: dashed; border-left-style: solid; }
+.strip-student.selected {
+  background: #ffd84d; border-color: var(--accent); border-left-color: var(--accent); border-style: solid;
+}
+.strip-student.selected .strip-check { color: var(--accent); font-size: 18px; }
+.strip-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
+.strip-sheet {
+  position: absolute; left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 80%; overflow-y: auto; z-index: 30;
+}
+.strip-mode .batch-panel { margin-bottom: 0; }
+
+/* Narrow windows (the docked strip): dialogs and the picker fit the column. */
+@media (max-width: 420px) {
+  .modal { min-width: 0; width: calc(100vw - 16px); padding: 14px; }
+  .picker-card { padding: 20px 12px; gap: 12px; }
+  .picker-more { grid-template-columns: 1fr; }
+}
+.pin-input { font-size: 22px; letter-spacing: 6px; text-align: center; }

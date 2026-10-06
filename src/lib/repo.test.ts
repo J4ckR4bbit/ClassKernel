@@ -352,9 +352,29 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       uiScale: 1.5,
       lessonBarSide: "left" as const,
       enabledPlugins: ["graph-paper", "some-future-tool"],
+      teachingStyle: "strip" as const,
+      dockSide: "right" as const,
+      reseatPinHash: "a".repeat(64),
+      timeZone: "Africa/Johannesburg",
     };
     await repo.saveUserPrefs(DIR, prefs);
     expect(await repo.loadUserPrefs(DIR)).toEqual(prefs);
+  });
+
+  it("defaults teaching mode to the room plan with no reseat PIN", async () => {
+    const fresh = await repo.loadUserPrefs(DIR);
+    expect(fresh.teachingStyle).toBe("room");
+    expect(fresh.dockSide).toBe("left");
+    expect(fresh.reseatPinHash).toBe("");
+    // A hand-edited PIN cell that isn't a hash is ignored rather than trusted.
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nreseat_pin,1234\n");
+    expect((await repo.loadUserPrefs(DIR)).reseatPinHash).toBe("");
+  });
+
+  it("defaults to the device time zone and ignores unknown zones", async () => {
+    expect((await repo.loadUserPrefs(DIR)).timeZone).toBe("");
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\ntime_zone,Mars/Olympus\n");
+    expect((await repo.loadUserPrefs(DIR)).timeZone).toBe("");
   });
 
   it("treats a settings file with no plugin key as no plugins enabled", async () => {

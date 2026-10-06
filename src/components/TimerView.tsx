@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { TimerDisplay, TimerPreset } from "../lib/types";
+import { currentTimeZone } from "../lib/time";
 
 // ---------- colour progression ----------
 // As a phase runs down the graphic moves green → blue → orange → red.
@@ -193,7 +194,7 @@ interface Phase {
 }
 
 function fmtClock(d: Date): string {
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: currentTimeZone() });
 }
 
 export default function TimerView() {

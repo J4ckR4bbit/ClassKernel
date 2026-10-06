@@ -1,5 +1,6 @@
 // Aggregation math for the attendance, behaviour and assessment views.
 
+import { dateInZone } from "./time";
 import {
   ANSWERED_BEHAVIOUR,
   Assessment,
@@ -69,7 +70,7 @@ export function behaviourByStudent(events: BehaviourEvent[]): Map<string, Behavi
 }
 
 export function eventsOnDate(events: BehaviourEvent[], date: string): BehaviourEvent[] {
-  return events.filter((e) => e.timestamp.slice(0, 10) === date);
+  return events.filter((e) => dateInZone(e.timestamp) === date);
 }
 
 export interface AnswerTally {

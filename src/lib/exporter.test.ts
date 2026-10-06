@@ -10,6 +10,7 @@ import {
   loadExportData,
 } from "./exporter";
 import { SheetSpec } from "./xlsx";
+import { setTimeZone } from "./time";
 
 const DIR = "/data";
 const CLS = "7B-Science";
@@ -27,6 +28,8 @@ const sheet = (sheets: SheetSpec[], name: string): SheetSpec => {
 const cell = (s: SheetSpec, row: number, column: string) => s.rows[row][s.columns.indexOf(column)];
 
 beforeEach(async () => {
+  // Fixture timestamps are UTC; show them in UTC so results don't depend on the machine.
+  setTimeZone("UTC");
   setFS(new MemFS());
   await repo.ensureDataDir(DIR);
   await repo.saveClassInfo(DIR, { name: CLS, year: "7", subject: "Science", room: "Lab 2", notes: "", archived: false });

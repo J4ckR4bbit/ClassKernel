@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useApp } from "../store/appStore";
 import { ClassInfo } from "../lib/types";
+import { today } from "../lib/id";
+import { isSeatingLocked, readLessonStart, readSeatedAt } from "../lib/lessonState";
 import { PLUGINS, enabledPlugins } from "../plugins/registry";
 import NewClassModal from "./NewClassModal";
 
@@ -14,7 +16,10 @@ import NewClassModal from "./NewClassModal";
  * sidebar, which stays about the class in front of you.
  */
 export default function HomeView() {
-  const { classes, openClass, setView, setPendingRandomise, createClass, userPrefs, openPlugin } = useApp();
+  const { classes, openClass, setView, setPendingRandomise, createClass, userPrefs, openPlugin, requestSeatingUnlock } = useApp();
+  // Re-read the per-class locks whenever the open class's lock changes.
+  useApp((s) => s.seatingLockedAt);
+  const lockedNow = (name: string) => isSeatingLocked(readSeatedAt(name), readLessonStart(name), today());
   const [showNew, setShowNew] = useState(false);
   const active = classes.filter((c) => !c.archived);
   const tools = enabledPlugins(userPrefs.enabledPlugins);
@@ -30,6 +35,12 @@ export default function HomeView() {
     await openClass(name);
     setPendingRandomise(true);
     setView("seating");
+  };
+
+  // Seats were already assigned this lesson: the PIN unlocks another go.
+  const reseat = async (name: string) => {
+    await openClass(name);
+    await requestSeatingUnlock();
   };
 
   return (
@@ -56,9 +67,18 @@ export default function HomeView() {
                 {meta(c) && <div className="muted">{meta(c)}</div>}
               </div>
               <div className="class-card-actions">
-                <button className="primary" onClick={() => void randomise(c.name)}>
-                  🎲 Randomise seating
-                </button>
+                {lockedNow(c.name) ? (
+                  <button
+                    onClick={() => void reseat(c.name)}
+                    title="Seats were assigned this lesson — enter your PIN to assign them again"
+                  >
+                    🔒 Seats assigned
+                  </button>
+                ) : (
+                  <button className="primary" onClick={() => void randomise(c.name)}>
+                    🎲 Randomise seating
+                  </button>
+                )}
                 <button onClick={() => void liveLesson(c.name)}>🎓 Live lesson</button>
               </div>
               <button className="class-card-open" onClick={() => void openClass(c.name).then(() => setView("seating"))}>
