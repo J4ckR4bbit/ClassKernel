@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useApp } from "./store/appStore";
 import Onboarding from "./components/Onboarding";
 import Sidebar from "./components/Sidebar";
@@ -52,12 +52,34 @@ function Overlays() {
   );
 }
 
+const SIDEBAR_KEY = "classkernel.sidebarHidden";
+
+function readSidebarHidden(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 export default function App() {
   const { booted, dataDir, currentClass, view, demoMode, focusMode, focusStyle, setFocusMode, boot, userPrefs } = useApp();
 
   useEffect(() => {
     void boot();
   }, [boot]);
+
+  // The menu can be hidden to give the page the whole width; remembered on
+  // this computer, since it's about this screen rather than the data.
+  const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden);
+  const toggleSidebar = (hidden: boolean) => {
+    setSidebarHidden(hidden);
+    try {
+      localStorage.setItem(SIDEBAR_KEY, hidden ? "1" : "0");
+    } catch {
+      // Not remembered; still hides for this session.
+    }
+  };
 
   // Escape always leaves the distraction-free teaching layout (unless a
   // dialog is open — then it just closes the dialog).
@@ -99,8 +121,14 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
-      <Sidebar />
+    <div className={`app-shell ${sidebarHidden ? "sidebar-hidden" : ""}`}>
+      {sidebarHidden ? (
+        <button className="sidebar-show" onClick={() => toggleSidebar(false)} title="Show the menu" aria-label="Show the menu">
+          ☰
+        </button>
+      ) : (
+        <Sidebar onHide={() => toggleSidebar(true)} />
+      )}
       <main className="main-pane">
         {demoMode && (
           <div className="demo-banner">

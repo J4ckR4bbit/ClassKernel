@@ -105,6 +105,7 @@ function GeneralSettings() {
     setBehaviourEvents,
     currentClass,
     dataDir,
+    pickAndSetDataDir,
     classes,
     showToast,
     userPrefs,
@@ -400,9 +401,12 @@ function GeneralSettings() {
 
       <div className="panel">
         <h3>Data</h3>
-        <p>
-          Data folder: <code>{dataDir}</code>
-        </p>
+        <div className="row">
+          <span>
+            Data folder: <code>{dataDir}</code>
+          </span>
+          <button onClick={() => void pickAndSetDataDir()}>Change data folder…</button>
+        </div>
         <p className="muted">
           Everything lives in plain .csv / .md files in that folder — open them in Excel or Notepad any time. Put the
           folder inside OneDrive or Google Drive and the sync client backs it up automatically. A snapshot copy is

@@ -17,8 +17,8 @@ const NAV: Array<{ view: View; icon: string; label: string }> = [
   { view: "settings", icon: "⚙", label: "Settings" },
 ];
 
-export default function Sidebar() {
-  const { classes, currentClass, openClass, view, setView, dataDir, createClass, pickAndSetDataDir } = useApp();
+export default function Sidebar({ onHide }: { onHide: () => void }) {
+  const { classes, currentClass, openClass, view, setView, createClass } = useApp();
   const [showNew, setShowNew] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const active = classes.filter((c) => !c.archived);
@@ -27,8 +27,13 @@ export default function Sidebar() {
   return (
     <nav className="sidebar">
       <div className="brand">
-        ClassKernel
-        <small>fast · offline · portable</small>
+        <div>
+          ClassKernel
+          <small>fast · offline · portable</small>
+        </div>
+        <button className="sidebar-hide" onClick={onHide} title="Hide the menu" aria-label="Hide the menu">
+          «
+        </button>
       </div>
 
       <div className="section-label">Classes</div>
@@ -75,11 +80,6 @@ export default function Sidebar() {
           {n.label}
         </button>
       ))}
-
-      <div className="footer">
-        <button onClick={() => void pickAndSetDataDir()}>Change data folder</button>
-        <div title={dataDir ?? ""}>{dataDir}</div>
-      </div>
 
       {showNew && <NewClassModal onClose={() => setShowNew(false)} onCreate={createClass} />}
     </nav>
