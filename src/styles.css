@@ -439,6 +439,65 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
   .pg-preview { min-height: 320px; }
 }
 
+/* ---------- class noise meter plugin ---------- */
+.noise-meter { display: grid; grid-template-columns: minmax(280px, 320px) 1fr; gap: 16px; height: 100%; }
+.nm-controls { overflow-y: auto; padding-right: 4px; }
+.nm-controls .panel { padding: 14px; }
+.nm-controls h3 { font-size: 14px; margin: 0 0 10px; }
+.nm-error { color: var(--danger); font-size: 13px; margin: 10px 0 0; }
+.nm-stats { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 14px; }
+.nm-stats b { text-align: right; font-variant-numeric: tabular-nums; }
+.nm-calib-input { width: 90px; text-align: center; }
+
+/* The face the class sees. Each zone tints the whole panel so the state reads
+   from the back of the room, not just from the number. */
+.nm-display {
+  --zone: #2e9e5b; --zone-soft: #e6f4ec;
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 24px; min-height: 0;
+  background: var(--zone-soft); border: 6px solid var(--zone); border-radius: var(--radius);
+  transition: background 0.4s, border-color 0.4s;
+}
+.nm-display.zone-warn { --zone: #d9901a; --zone-soft: #fdf3e1; }
+.nm-display.zone-loud { --zone: #c0392b; --zone-soft: #fbe5e2; }
+.nm-reading { font-size: clamp(64px, 12vw, 180px); font-weight: 800; line-height: 1; color: var(--zone); font-variant-numeric: tabular-nums; }
+.nm-unit { font-size: 0.28em; font-weight: 700; margin-left: 0.25em; }
+.nm-status { font-size: clamp(20px, 3vw, 40px); font-weight: 700; color: var(--zone); text-align: center; }
+.nm-gauge { position: relative; width: min(100%, 900px); height: 34px; background: #fff; border: 2px solid var(--border); border-radius: 17px; overflow: hidden; }
+.nm-gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--zone); transition: width 0.15s linear; }
+.nm-gauge-warn { position: absolute; top: 0; bottom: 0; background: rgba(217, 144, 26, 0.18); }
+.nm-gauge-limit { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #1d2733; }
+.nm-scale { display: flex; justify-content: space-between; width: min(100%, 900px); margin-top: -10px; font-size: 12px; color: var(--text-dim); }
+.nm-limit { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; }
+.nm-limit button { font-size: 24px; min-width: 52px; min-height: 52px; font-weight: 700; }
+.nm-limit-value { font-size: 34px; min-width: 2.4ch; text-align: center; font-variant-numeric: tabular-nums; }
+.nm-uncal { font-size: 13px; color: var(--text-dim); background: rgba(255, 255, 255, 0.7); padding: 3px 10px; border-radius: 10px; }
+
+/* The alarm: slow (1 Hz) full-panel flash and a banner nobody can miss. */
+.nm-banner {
+  font-size: clamp(28px, 5vw, 72px); font-weight: 900; letter-spacing: 1px; text-align: center;
+  color: #fff; background: #c0392b; padding: 10px 28px; border-radius: 12px; box-shadow: 0 6px 24px rgba(192, 57, 43, 0.4);
+}
+.nm-display.alarm { animation: nm-flash 1s steps(1, end) infinite; }
+@keyframes nm-flash {
+  0% { background: #c0392b; border-color: #7d1f15; }
+  50% { background: var(--zone-soft); border-color: var(--zone); }
+}
+.nm-display.alarm .nm-reading, .nm-display.alarm .nm-status { color: #1d2733; }
+@media (prefers-reduced-motion: reduce) {
+  .nm-display.alarm { animation: none; background: #f6c7c1; }
+}
+
+/* Shown to the class: the meter takes the whole screen. */
+.nm-display.class-view { position: fixed; inset: 0; z-index: 45; border-radius: 0; border-width: 14px; }
+.nm-close { position: absolute; top: 14px; right: 14px; }
+
+@media (max-width: 900px) {
+  .noise-meter { grid-template-columns: 1fr; overflow-y: auto; }
+  .nm-controls { overflow: visible; }
+  .nm-display { min-height: 420px; }
+}
+
 /* ---------- motion graph plugin ---------- */
 .motion-graph { display: grid; grid-template-columns: minmax(300px, 360px) 1fr; gap: 16px; height: 100%; }
 .mg-controls { overflow-y: auto; padding-right: 4px; }

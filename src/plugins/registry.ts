@@ -58,6 +58,15 @@ export const PLUGINS: PluginManifest[] = [
     icon: "🛞",
     load: () => import("./motion-graph/MotionGraph").then((m) => m.default),
   },
+  {
+    id: "noise-meter",
+    name: "Class noise meter",
+    tagline: "Set a limit; the screen warns the class when it's too loud.",
+    description:
+      "Listens through the computer's microphone and shows the room's noise in dB(A) on a big green / amber / red gauge, against a limit you set. When the class stays over the limit the screen flashes red with a “TOO LOUD” banner until it settles. Can be calibrated against a phone sound-meter app. Nothing is recorded or saved.",
+    icon: "🔊",
+    load: () => import("./noise-meter/NoiseMeter").then((m) => m.default),
+  },
 ];
 
 export function pluginById(id: string): PluginManifest | undefined {
