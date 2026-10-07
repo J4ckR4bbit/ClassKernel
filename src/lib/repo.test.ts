@@ -98,12 +98,13 @@ describe("bathroom.csv", () => {
 describe("desks + seating", () => {
   it("round-trips desk geometry, colour and label boxes", async () => {
     await repo.saveDesks(DIR, CLS, [
-      { id: "d1", label: "Front", shape: "double", x: 120, y: 140, w: 160, h: 60, rotation: 90, color: "#dcebf7", textColor: "#000000" },
-      { id: "d2", label: "Book corner", shape: "label", x: 0, y: 0, w: 140, h: 40, rotation: 0, color: "", textColor: "" },
+      { id: "d1", label: "Front", shape: "double", x: 120, y: 140, w: 160, h: 60, rotation: 90, color: "#dcebf7", textColor: "#000000", stripColor: "#d7ecda" },
+      { id: "d2", label: "Book corner", shape: "label", x: 0, y: 0, w: 140, h: 40, rotation: 0, color: "", textColor: "", stripColor: "" },
     ]);
     const desks = await repo.loadDesks(DIR, CLS);
     expect(desks[0]).toMatchObject({ x: 120, y: 140, w: 160, h: 60, rotation: 90, shape: "double", color: "#dcebf7" });
     expect(desks[0].textColor).toBe("#000000");
+    expect(desks[0].stripColor).toBe("#d7ecda");
     expect(desks[1]).toMatchObject({ shape: "label", label: "Book corner", color: "" });
   });
 
@@ -115,6 +116,7 @@ describe("desks + seating", () => {
     const desks = await repo.loadDesks(DIR, CLS);
     expect(desks[0].color).toBe("");
     expect(desks[0].textColor).toBe("");
+    expect(desks[0].stripColor).toBe("");
   });
 
   it("round-trips seat assignments per plan", async () => {
@@ -212,7 +214,7 @@ describe("lessons.csv", () => {
 describe("layout templates", () => {
   it("saves a room as a template and applies it to another class", async () => {
     const desks = [
-      { id: "d1", label: "Front", shape: "double" as const, x: 120, y: 140, w: 160, h: 60, rotation: 0, color: "", textColor: "" },
+      { id: "d1", label: "Front", shape: "double" as const, x: 120, y: 140, w: 160, h: 60, rotation: 0, color: "", textColor: "", stripColor: "" },
     ];
     await repo.saveLayoutTemplate(DIR, "Exam rows", desks, {
       frontEdge: "top",
@@ -385,11 +387,11 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
     expect((await repo.loadUserPrefs(DIR)).enabledPlugins).toEqual([]);
   });
 
-  it("falls back to a top lesson bar when the setting is missing or unknown", async () => {
+  it("falls back to a left lesson bar when the setting is missing or unknown", async () => {
     await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nui_scale,1\n");
-    expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("top");
+    expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("left");
     await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nlesson_bar_side,sideways\n");
-    expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("top");
+    expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("left");
   });
 
   it("clamps a bad ui_scale back into range", async () => {

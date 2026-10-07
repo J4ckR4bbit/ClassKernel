@@ -81,6 +81,11 @@ export interface Desk {
   color: string;
   /** Optional colour (hex) for the desk's own label text; "" = default. */
   textColor: string;
+  /**
+   * The table's colour in the teaching strip (hex), set there and kept apart
+   * from the room-plan fill; "" = the next pastel in turn.
+   */
+  stripColor: string;
 }
 
 export type FrontEdge = "top" | "right" | "bottom" | "left";
@@ -315,7 +320,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   popoverShowFlags: false,
   popoverShowNotes: false,
   uiScale: 1,
-  lessonBarSide: "top",
+  lessonBarSide: "left",
   enabledPlugins: [],
   teachingStyle: "room",
   dockSide: "left",
