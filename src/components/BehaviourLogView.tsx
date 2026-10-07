@@ -114,7 +114,7 @@ export default function BehaviourLogView() {
             return (
               <tr key={`${e.timestamp}-${e.studentId}-${i}`}>
                 <td className="muted">{dateTimeInZone(e.timestamp)}</td>
-                <td>{s ? studentName(s) : e.studentId}</td>
+                <td>{s ? <StudentLink id={s.id} name={studentName(s)} /> : e.studentId}</td>
                 <td>
                   <span className="tag" style={{ background: (c?.color ?? "#888") + "22", color: c?.color ?? "#555" }}>
                     {c?.label ?? e.code}
@@ -169,7 +169,7 @@ export default function BehaviourLogView() {
             return (
               <tr key={`${v.studentId}-${v.start}`}>
                 <td className="muted">{v.date}</td>
-                <td>{s ? studentName(s) : v.studentId}</td>
+                <td>{s ? <StudentLink id={s.id} name={studentName(s)} /> : v.studentId}</td>
                 <td className="muted">{timeInZone(v.start)}</td>
                 <td className="muted">{v.end ? timeInZone(v.end) : "—"}</td>
                 <td>
@@ -202,5 +202,15 @@ export default function BehaviourLogView() {
       </table>
       </PrivacyGate>
     </div>
+  );
+}
+
+/** A student's name that opens their dashboard. */
+function StudentLink({ id, name }: { id: string; name: string }) {
+  const openStudentDashboard = useApp((s) => s.openStudentDashboard);
+  return (
+    <button className="link-btn" onClick={() => openStudentDashboard(id)} title="Open this student's dashboard">
+      {name}
+    </button>
   );
 }

@@ -91,6 +91,8 @@ export interface AppState {
   pendingRandomise: boolean;
   /** Id of the plugin the "plugin" view is showing (see src/plugins/registry.ts). */
   activePlugin: string | null;
+  /** The student the Dashboard's Student tab shows; null = the Class tab. */
+  dashboardStudent: string | null;
   toast: Toast | null;
   dialog: DialogRequest | null;
   /**
@@ -130,6 +132,8 @@ export interface AppState {
   setView(view: View): void;
   /** Open one of the enabled plugins full-pane. */
   openPlugin(id: string): void;
+  /** Open the Dashboard on one student's tab (null = back to the Class tab). */
+  openStudentDashboard(studentId: string | null): void;
   /** Enter or leave teaching mode; style defaults to the one chosen in Settings. */
   setFocusMode(on: boolean, style?: TeachingStyle): void;
   /** Whether the open class's seats have already been assigned this lesson. */
@@ -222,6 +226,7 @@ export const useApp = create<AppState>((set, get) => {
   seatingLockedAt: null,
   pendingRandomise: false,
   activePlugin: null,
+  dashboardStudent: null,
   toast: null,
   dialog: null,
   sensitiveRevealed: false,
@@ -300,6 +305,17 @@ export const useApp = create<AppState>((set, get) => {
 
   openPlugin(id) {
     set({ view: "plugin", activePlugin: id, sensitiveRevealed: false });
+  },
+  openStudentDashboard(studentId) {
+    // Moving within the Dashboard keeps the privacy reveal; arriving from
+    // another screen re-arms it like any other navigation.
+    const within = get().view === "dashboard";
+    set({
+      view: "dashboard",
+      dashboardStudent: studentId,
+      activePlugin: null,
+      ...(within ? {} : { sensitiveRevealed: false }),
+    });
   },
 
   setFocusMode(on, style) {
@@ -478,6 +494,7 @@ export const useApp = create<AppState>((set, get) => {
     ]);
     set({
       currentClass: name,
+      dashboardStudent: null,
       students,
       attendance,
       behaviourEvents,

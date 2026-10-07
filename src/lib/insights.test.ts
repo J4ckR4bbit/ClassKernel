@@ -153,6 +153,14 @@ describe("class profile", () => {
     expect(p.lowAttendance.map((l) => l.studentId)).toEqual(["a"]);
   });
 
+  it("doesn't list a mostly-positive student as one to watch", () => {
+    const d = data();
+    d.behaviourEvents.push(...["01", "02", "05"].map((day) => ev("a", "TALK", `2026-10-${day}`, -1)));
+    d.behaviourEvents.push(...["01", "02", "05", "06"].map((day) => ev("a", "HW+", `2026-10-${day}`, 2)));
+    const p = classProfile(filterToPeriod(d, "4w", TODAY), "4w", TODAY);
+    expect(p.watch.map((w) => w.studentId)).toEqual(["b"]);
+  });
+
   it("ranks marks and scores topics across the class", () => {
     expect(p.overalls.get("a")).toBeCloseTo(85, 6);
     expect(p.ranks.get("a")).toBe(1);
@@ -239,5 +247,12 @@ describe("helpers", () => {
     const d = data();
     d.assessmentQuestions[1].topic = "";
     expect(scoresBy("topic", "a", d.assessmentQuestions, d.questionMarks).map((t) => t.name)).toEqual(["Forces"]);
+  });
+
+  it("only names a strongest and weakest topic when they're clearly apart", () => {
+    const d = data();
+    d.questionMarks = d.questionMarks.map((m) => ({ ...m, mark: m.number === 1 ? 7 : 6.5 })); // 70% vs 65%
+    const p = classProfile(d, "all", TODAY);
+    expect(classSummary(p, null, "all", String).some((l) => l.startsWith("Strongest topic"))).toBe(false);
   });
 });

@@ -299,6 +299,19 @@ function overallRanks(overalls: Map<string, number>): Map<string, number> {
   return ranks;
 }
 
+/** Topics this close together aren't worth calling a strength or weakness. */
+export const TOPIC_GAP = 10;
+
+/** "Strongest topic: …; weakest: …" when the topics differ by a meaningful margin. */
+function topicLine(topics: TopicScore[]): string | null {
+  const sorted = topics.filter((t) => t.possible > 0).sort((a, b) => b.pct - a.pct);
+  if (sorted.length < 2) return null;
+  const best = sorted[0];
+  const worst = sorted[sorted.length - 1];
+  if (best.pct - worst.pct < TOPIC_GAP) return null;
+  return `Strongest topic: ${best.name} (${fmtPct(best.pct)}); weakest: ${worst.name} (${fmtPct(worst.pct)}).`;
+}
+
 // ---------- the class ----------
 
 export interface StudentCount {
@@ -349,8 +362,9 @@ export function classProfile(data: ClassData, period: Period, today: string): Cl
   const perStudent = new Map([...byStudent.entries()].map(([id, evs]) => [id, totals(evs)]));
   const codes = data.behaviourCodes;
 
-  // Students to watch: three or more negative entries, or a net score far
-  // below the rest of the class.
+  // Students to watch: three or more negative entries with a net score below
+  // the class median (so a star with a couple of slips isn't listed), or a
+  // net score far below the rest of the class.
   const nets = [...perStudent.values()].map((t) => t.net);
   const medianNet = median(nets) ?? 0;
   const spread = stdev(nets);
@@ -358,9 +372,9 @@ export function classProfile(data: ClassData, period: Period, today: string): Cl
     .map((s) => {
       const t = perStudent.get(s.id)!;
       const outlier = t.net < 0 && spread > 0 && t.net <= medianNet - 2 * spread;
-      if (t.negative < 3 && !outlier) return null;
+      if (!(t.negative >= 3 && t.net < medianNet) && !outlier) return null;
       const top = countByCode(byStudent.get(s.id)!.filter((e) => e.points < 0), codes)[0];
-      const detail = `${t.negative} negative${t.negative === 1 ? "" : "s"}${top ? `, mostly ${top.label} (${top.count})` : ""}`;
+      const detail = `${t.negative} negative${t.negative === 1 ? "" : "s"}${top && top.count >= 2 ? `, mostly ${top.label} (${top.count})` : ""}`;
       return { studentId: s.id, value: t.negative, net: t.net, detail };
     })
     .filter((x): x is StudentCount & { net: number } => x !== null)
@@ -495,7 +509,7 @@ export function classSummary(
       }
     }
     const issue = b.byCode.find((c) => c.kind === "negative");
-    if (issue) lines.push(`Most common issue: ${issue.label} (${issue.count}).`);
+    if (issue && issue.count >= 2) lines.push(`Most common issue: ${issue.label} (${issue.count}).`);
     if (b.negative >= 6 && p.watch.length > 0) {
       const top = p.watch.slice(0, 3);
       const share = top.reduce((n, w) => n + w.value, 0) / b.negative;
@@ -535,11 +549,8 @@ export function classSummary(
         (p.atRisk.length ? ` ${p.atRisk.length} of ${p.overalls.size} flagged on marks.` : ""),
     );
   }
-  const scored = p.topics.filter((t) => t.possible > 0);
-  if (scored.length >= 2) {
-    const sorted = [...scored].sort((a, b) => b.pct - a.pct);
-    lines.push(`Strongest topic: ${sorted[0].name} (${fmtPct(sorted[0].pct)}); weakest: ${sorted[sorted.length - 1].name} (${fmtPct(sorted[sorted.length - 1].pct)}).`);
-  }
+  const topics = topicLine(p.topics);
+  if (topics) lines.push(topics);
   return lines;
 }
 
@@ -624,7 +635,7 @@ export function studentSummary(p: StudentProfile, cls: ClassProfile, period: Per
     const top = b.byCode[0];
     lines.push(
       `Behaviour ${when}: ${b.positive} positive, ${b.negative} negative (net ${fmtSigned(b.net)}; class median ${fmtSigned(cls.medianNet)}).` +
-        (top ? ` Most common: ${top.label} (${top.count}).` : ""),
+        (top && top.count >= 2 ? ` Most common: ${top.label} (${top.count}).` : ""),
     );
     const watched = cls.watch.find((w) => w.studentId === p.student.id);
     if (watched) lines.push(`One to watch: ${watched.detail}.`);
@@ -692,13 +703,8 @@ export function studentSummary(p: StudentProfile, cls: ClassProfile, period: Per
           : "."),
     );
   }
-  const scored = p.topics.filter((t) => t.possible > 0);
-  if (scored.length >= 2) {
-    const sorted = [...scored].sort((x, y) => y.pct - x.pct);
-    const best = sorted[0];
-    const worst = sorted[sorted.length - 1];
-    lines.push(`Strongest topic: ${best.name} (${fmtPct(best.pct)}); weakest: ${worst.name} (${fmtPct(worst.pct)}).`);
-  }
+  const topics = topicLine(p.topics);
+  if (topics) lines.push(topics);
   for (const f of p.flags) lines.push(`⚠ ${f}.`);
   return lines;
 }

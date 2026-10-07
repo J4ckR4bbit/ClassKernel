@@ -16,6 +16,9 @@ import {
   SeatAssignment,
   Student,
   TopicEntry,
+  ANSWERED_BEHAVIOUR,
+  ANSWER_BEHAVIOURS,
+  NO_ANSWER_BEHAVIOUR,
 } from "./types";
 
 export const DEMO_DIR = "/demo/ClassroomData";
@@ -62,9 +65,9 @@ export async function seedDemoData(): Promise<string> {
   }
   await repo.saveStudents(dataDir, className, students);
 
-  // Two weeks of attendance.
+  // Four weeks of attendance.
   const attendance: AttendanceEntry[] = [];
-  for (let d = 13; d >= 0; d--) {
+  for (let d = 27; d >= 0; d--) {
     const day = new Date();
     day.setDate(day.getDate() - d);
     if (day.getDay() === 0 || day.getDay() === 6) continue;
@@ -173,11 +176,20 @@ export async function seedDemoData(): Promise<string> {
   await repo.saveLessons(dataDir, className, lessons);
 
   const behaviourCodes = await repo.loadBehaviourCodes(dataDir);
+  // Four weeks of behaviour. Most of it is spread across the class; a few
+  // students lean one way so the dashboards have someone to point out.
+  const conduct = behaviourCodes.filter((c) => !ANSWER_BEHAVIOURS.some((a) => a.code === c.code));
+  const positives = conduct.filter((c) => c.points > 0);
+  const negatives = conduct.filter((c) => c.points < 0);
+  const pick = <T,>(list: T[]) => list[Math.floor(rand() * list.length)];
   const events: BehaviourEvent[] = [];
-  for (let i = 0; i < 40; i++) {
-    const code = behaviourCodes[Math.floor(rand() * behaviourCodes.length)];
-    const s = students[Math.floor(rand() * students.length)];
-    const daysAgo = Math.floor(rand() * 10);
+  for (let i = 0; i < 140; i++) {
+    const s = i % 7 === 0 ? students[i % 2] : i % 11 === 0 ? students[6] : pick(students);
+    const leansBad = s === students[0] || s === students[1];
+    const leansGood = s === students[6] || s === students[9];
+    const good = leansBad ? rand() < 0.2 : leansGood ? rand() < 0.9 : rand() < 0.6;
+    const code = pick(good ? positives : negatives);
+    const daysAgo = Math.floor(rand() * 28);
     const t = new Date();
     t.setDate(t.getDate() - daysAgo);
     events.push({ timestamp: t.toISOString(), studentId: s.id, code: code.code, points: code.points, note: "" });
@@ -185,15 +197,15 @@ export async function seedDemoData(): Promise<string> {
   events.push({ timestamp: nowIso(), studentId: students[0].id, code: "EFF", points: 1, note: "Excellent start" });
   await repo.saveBehaviourEvents(dataDir, className, events);
 
-  // A few timed bathroom trips so the lesson view's log has history.
-  const bathroom: BathroomVisit[] = [0, 1, 2].map((i) => {
+  // Timed bathroom trips over four weeks; one student goes far more often.
+  const bathroom: BathroomVisit[] = Array.from({ length: 14 }, (_, i) => {
     const out = new Date();
-    out.setDate(out.getDate() - i);
-    out.setHours(10, 12 + i * 9, 0, 0);
-    const back = new Date(out.getTime() + (2 + i) * 60000 + 24000);
+    out.setDate(out.getDate() - Math.floor(i * 1.9));
+    out.setHours(10, 5 + (i % 5) * 9, 0, 0);
+    const back = new Date(out.getTime() + (2 + (i % 4) * 2) * 60000 + 24000);
     return {
       date: out.toISOString().slice(0, 10),
-      studentId: students[(i * 5) % students.length].id,
+      studentId: students[i % 3 === 0 ? 4 : (i * 5) % students.length].id,
       start: out.toISOString(),
       end: back.toISOString(),
     };
@@ -274,6 +286,18 @@ export async function seedDemoData(): Promise<string> {
   });
 
   await repo.saveQuestionMarks(dataDir, className, questionMarks);
+
+  // Cold-call answers from Pick a student, more often right for the stronger
+  // students. A few students are never picked, so "Rarely asked" has names.
+  for (let i = 0; i < 90; i++) {
+    const si = Math.floor(rand() * (students.length - 3));
+    const t = new Date();
+    t.setDate(t.getDate() - Math.floor(rand() * 28));
+    const right = rand() < abilities[si] + 0.1;
+    const code = right ? ANSWERED_BEHAVIOUR : NO_ANSWER_BEHAVIOUR;
+    events.push({ timestamp: t.toISOString(), studentId: students[si].id, code: code.code, points: code.points, note: "" });
+  }
+  await repo.saveBehaviourEvents(dataDir, className, events);
   await repo.saveMarks(dataDir, className, marks);
 
   return dataDir;

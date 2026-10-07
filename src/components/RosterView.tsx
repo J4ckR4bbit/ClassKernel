@@ -6,7 +6,7 @@ import { attendanceByStudent, behaviourByStudent } from "../lib/stats";
 import PrivacyGate from "./PrivacyGate";
 
 export default function RosterView() {
-  const { currentClass, students, setStudents, attendance, behaviourEvents, showToast, confirmDialog } = useApp();
+  const { currentClass, students, setStudents, attendance, behaviourEvents, showToast, confirmDialog, openStudentDashboard } = useApp();
   const [showImport, setShowImport] = useState(false);
   const attSummaries = attendanceByStudent(attendance);
   const bhSummaries = behaviourByStudent(behaviourEvents);
@@ -60,7 +60,7 @@ export default function RosterView() {
             <th>Notes</th>
             <th style={{ width: 110 }}>Attendance</th>
             <th style={{ width: 90 }}>Behaviour</th>
-            <th style={{ width: 40 }}></th>
+            <th style={{ width: 96 }}></th>
           </tr>
         </thead>
         <tbody>
@@ -100,6 +100,14 @@ export default function RosterView() {
                   )}
                 </td>
                 <td>
+                  <button
+                    className="small"
+                    onClick={() => openStudentDashboard(s.id)}
+                    title="Open this student's dashboard"
+                    aria-label={`Dashboard for ${s.firstName} ${s.lastName}`}
+                  >
+                    📊
+                  </button>{" "}
                   <button className="small danger" onClick={() => void remove(s.id)} title="Remove student">
                     ✕
                   </button>
