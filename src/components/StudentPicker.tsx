@@ -128,6 +128,12 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
     setShowOthers(false);
   };
 
+  // Recording the answer is the end of a cold call: the picker gets out of the way.
+  const logAnswer = (code: BehaviourCode) => {
+    log(code);
+    onClose();
+  };
+
   return (
     <div className="picker-overlay" onClick={onClose}>
       <div className="picker-card" onClick={(e) => e.stopPropagation()}>
@@ -149,14 +155,14 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
             <div className="picker-answer">
               <button
                 style={{ background: answered.color }}
-                onClick={() => log(answered)}
+                onClick={() => logAnswer(answered)}
                 title="Record that they answered"
               >
                 ✓ {answered.label} {signed(answered.points)}
               </button>
               <button
                 style={{ background: noAnswer.color }}
-                onClick={() => log(noAnswer)}
+                onClick={() => logAnswer(noAnswer)}
                 title="Record that they could not answer"
               >
                 ✗ {noAnswer.label} {signed(noAnswer.points)}
