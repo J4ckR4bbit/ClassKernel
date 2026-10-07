@@ -31,7 +31,7 @@ export default function MyTool() {
 }
 ```
 
-Two conventions worth keeping to:
+Conventions worth keeping to:
 
 - **Split the logic out of the component.** The graph paper keeps its geometry
   in `drawing.ts`, the plotter its fitting in `plot.ts`, the motion builder its
@@ -40,14 +40,25 @@ Two conventions worth keeping to:
   rather than the pixels: the motion graphs are checked by differentiating the
   position numerically and integrating the velocity back.
 - **Reach for the shared modules** before writing your own: `png.ts` turns a
-  canvas into a 300 dpi PNG tagged so Word inserts it at its true size, and
+  canvas into a 300 dpi PNG tagged so Word inserts it at its true size,
   `numbers.ts` writes values the way a South African classroom does (decimal
-  comma, significant figures, superscript exponents).
+  comma, significant figures, superscript exponents), and
+  `shared/FlipDigits.tsx` is the split-flap display the timer and the clock
+  share.
 - **Don't let two files differ only in case.** `GraphPaper.tsx` beside a
   `graphPaper.ts` builds here and fails on Windows, where they are the same
   name. A test in `registry.test.ts` guards the whole of `src/` against it.
 - **Use the app's classes** — `panel`, `row`, `muted`, `primary`, `small` — so
   the tool looks like the rest of ClassKernel rather than a foreign page.
+- **Styles of your own go in a `.css` beside the view**, imported from it
+  (`import "./clock.css"`). Vite puts it in the plugin's chunk, so it costs
+  nothing until the plugin is opened. Prefix the class names with the plugin's.
+- **State that must outlive the screen goes in a store.** A plugin's view
+  unmounts when the teacher goes elsewhere, taking its `useState` with it. The
+  test timer and the stopwatch keep theirs in a small zustand store in their own
+  folder (`timerStore.ts`, `stopwatchStore.ts`), so a countdown or a timing
+  carries on in the background. Store timestamps rather than counting ticks —
+  the elapsed time is then worked out from `Date.now()` and can't drift.
 
 ## Registering it
 
@@ -107,6 +118,8 @@ const outcome = await savePluginFile({
 | `png.ts` | Canvas → 300 dpi PNG, and the millimetre conversion. |
 | `numbers.ts` | Classroom number formatting. |
 | `scale.ts` | Axis scales on round values, and their tick labels. |
+| `shared/FlipDigits.tsx` | The split-flap digits (styles in `src/styles.css`, since the timer's pop-up uses them too). |
+| `src/components/TimerMini.tsx` | The test timer's corner pop-up — the one plugin with a piece outside the plugin pane. |
 | `src/components/PluginView.tsx` | Lazy loading, the error boundary, the chrome. |
 | `src/components/SettingsView.tsx` | The Plugins tab where they are switched on. |
 | `src/components/HomeView.tsx` | The Tools section listing the enabled ones. |

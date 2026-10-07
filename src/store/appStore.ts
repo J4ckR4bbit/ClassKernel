@@ -44,7 +44,6 @@ export type View =
   | "assessments"
   | "dashboard"
   | "notes"
-  | "timer"
   | "plugin"
   | "settings";
 

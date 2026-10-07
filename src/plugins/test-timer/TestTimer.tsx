@@ -1,63 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { useApp } from "../store/appStore";
-import { TimerDisplay, TimerPreset } from "../lib/types";
-import { currentTimeZone } from "../lib/time";
-import { COLOR_STOPS, TimerPhase, phaseColor } from "../lib/timer";
-import { useTimer } from "../store/timerStore";
+import { useApp } from "../../store/appStore";
+import { TimerDisplay, TimerPreset } from "../../lib/types";
+import { currentTimeZone } from "../../lib/time";
+import { FlipDisplay } from "../shared/FlipDigits";
+import { COLOR_STOPS, TimerPhase, phaseColor } from "./timer";
+import { useTimer } from "./timerStore";
 
-// ---------- flip-clock digit ----------
-// Classic split-flap card: the top half folds down to reveal the next value.
-function FlipDigit({ d, color }: { d: string; color: string }) {
-  const [prev, setPrev] = useState(d);
-  const [flip, setFlip] = useState(0);
+// The test timer, as a plugin: a big countdown for exams and timed tasks with
+// optional reading + writing phases. The countdown itself lives in
+// ./timerStore so it keeps running (as the TimerMini pop-up) on other screens.
 
-  useEffect(() => {
-    if (d === prev) return;
-    setFlip((f) => f + 1);
-    const t = setTimeout(() => setPrev(d), 300);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [d]);
-
-  return (
-    <div className="flip-digit" style={{ ["--flip-color" as string]: color }}>
-      <div className="fc top">
-        <span>{d}</span>
-      </div>
-      <div className="fc bottom">
-        <span>{prev}</span>
-      </div>
-      {flip > 0 && (
-        <div key={flip} className="fc-anim">
-          <div className="fc top flip-top">
-            <span>{prev}</span>
-          </div>
-          <div className="fc bottom flip-bottom">
-            <span>{d}</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
+// The countdown as split-flap cards (shared with the clock plugin).
 function FlipClock({ seconds, color, big }: { seconds: number; color: string; big?: boolean }) {
   const total = Math.max(0, Math.ceil(seconds));
-  const mm = Math.floor(total / 60);
-  const ss = total % 60;
-  const mmStr = String(mm).padStart(2, "0");
-  const ssStr = String(ss).padStart(2, "0");
-  return (
-    <div className={`flip-clock ${big ? "big" : ""}`}>
-      {mmStr.split("").map((d, i) => (
-        <FlipDigit key={`m${i}`} d={d} color={color} />
-      ))}
-      <div className="flip-colon">:</div>
-      {ssStr.split("").map((d, i) => (
-        <FlipDigit key={`s${i}`} d={d} color={color} />
-      ))}
-    </div>
-  );
+  const mm = String(Math.floor(total / 60)).padStart(2, "0");
+  const ss = String(total % 60).padStart(2, "0");
+  return <FlipDisplay text={`${mm}:${ss}`} color={color} big={big} />;
 }
 
 // ---------- countdown ring (Windows-style) ----------
@@ -145,7 +103,7 @@ function fmtClock(d: Date): string {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: currentTimeZone() });
 }
 
-export default function TimerView() {
+export default function TestTimer() {
   const { timerPresets, setTimerPresets, showToast, promptDialog } = useApp();
 
   // setup fields
@@ -227,11 +185,6 @@ export default function TimerView() {
   if (!started) {
     return (
       <div>
-        <div className="view-header">
-          <h1>⏱ Test timer</h1>
-          <div className="spacer" />
-        </div>
-
         <div className="panel timer-setup">
           <h3>Phases</h3>
           <div className="timer-fields">

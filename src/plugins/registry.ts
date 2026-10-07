@@ -30,7 +30,37 @@ export interface PluginManifest {
   load: () => Promise<ComponentType>;
 }
 
+/** The test timer's id; the TimerMini pop-up opens and checks it by this. */
+export const TEST_TIMER_ID = "test-timer";
+
 export const PLUGINS: PluginManifest[] = [
+  {
+    id: TEST_TIMER_ID,
+    name: "Test timer",
+    tagline: "A big countdown for tests, with reading and writing time.",
+    description:
+      "A full-screen countdown for exams and timed tasks, with optional reading and writing phases, a chime at each change, and three display styles: countdown circle, hourglass or flip clock. Save reusable presets. Leave the timer and it keeps running as a small pop-up in the corner, which turns red when time is up.",
+    icon: "⏳",
+    load: () => import("./test-timer/TestTimer").then((m) => m.default),
+  },
+  {
+    id: "clock",
+    name: "Clock",
+    tagline: "A big classroom clock — a round face or flip digits, in any time zone.",
+    description:
+      "A full-screen clock for the classroom wall: a round analog face or the test timer's flip digits, 24- or 12-hour, with or without seconds and the date. Follows the app's time zone or any other you pick. Nothing is saved to your data; this computer just remembers the face and options you last chose.",
+    icon: "🕒",
+    load: () => import("./clock/ClockView").then((m) => m.default),
+  },
+  {
+    id: "stopwatch",
+    name: "Stopwatch",
+    tagline: "A seven-segment lab stopwatch with laps.",
+    description:
+      "A big LED-style stopwatch to hundredths of a second for practicals and races: start, pause, lap and restart, by button or with the Space, L and R keys. Laps are listed with their split and running total, the fastest and slowest marked. Keeps running if you leave the screen; nothing is saved.",
+    icon: "⏱",
+    load: () => import("./stopwatch/StopwatchView").then((m) => m.default),
+  },
   {
     id: "graph-paper",
     name: "Graph paper generator",
