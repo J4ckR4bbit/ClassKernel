@@ -8,7 +8,7 @@
 //   classes/<class>/attendance.csv        date,student_id,status,note
 //   classes/<class>/behaviour.csv         timestamp,student_id,code,points,note
 //   classes/<class>/bathroom.csv          date,student_id,start,end,duration_seconds
-//   classes/<class>/desks.csv             desk_id,label,shape,x,y,w,h,rotation,color,text_color
+//   classes/<class>/desks.csv             desk_id,label,shape,x,y,w,h,rotation,color,text_color,strip_color
 //   classes/<class>/seating.csv           plan_name,desk_id,seat_index,student_id
 //   classes/<class>/seating_prefs.csv     type,a,b   (random-seating constraints)
 //   classes/<class>/lessons.csv           session_id,date,timestamp,student_id,desk_id,desk_label,seatmates,points,positives,negatives
@@ -293,7 +293,7 @@ export async function saveBathroomVisits(dataDir: string, className: string, vis
 
 // ---------- desks + seating ----------
 
-const DESK_COLS = ["desk_id", "label", "shape", "x", "y", "w", "h", "rotation", "color", "text_color"];
+const DESK_COLS = ["desk_id", "label", "shape", "x", "y", "w", "h", "rotation", "color", "text_color", "strip_color"];
 const VALID_SHAPES: DeskShape[] = ["single", "double", "group4", "group6", "teacher", "door", "window", "label"];
 
 export async function loadDesks(dataDir: string, className: string): Promise<Desk[]> {
@@ -311,6 +311,7 @@ export async function loadDesks(dataDir: string, className: string): Promise<Des
       rotation: num(r.rotation),
       color: r.color ?? "",
       textColor: r.text_color ?? "",
+      stripColor: r.strip_color ?? "",
     }));
 }
 
@@ -326,6 +327,7 @@ export async function saveDesks(dataDir: string, className: string, desks: Desk[
     rotation: d.rotation,
     color: d.color,
     text_color: d.textColor,
+    strip_color: d.stripColor,
   }));
   await getFS().writeAtomic(p(classDir(dataDir, className), "desks.csv"), stringifyCsv(rows, DESK_COLS));
 }
@@ -511,6 +513,7 @@ export async function saveLayoutTemplate(
     rotation: d.rotation,
     color: d.color,
     text_color: d.textColor,
+    strip_color: d.stripColor,
   }));
   await fs.writeAtomic(p(dir, "desks.csv"), stringifyCsv(deskRows, DESK_COLS));
   // Template keeps display settings but not a class-specific crop.
@@ -542,6 +545,7 @@ export async function loadLayoutTemplate(
       rotation: num(r.rotation),
       color: r.color ?? "",
       textColor: r.text_color ?? "",
+      stripColor: r.strip_color ?? "",
     }));
   const roomRows = await loadCsvFile(p(dir, "room.csv"));
   const kv = new Map(roomRows.map((r) => [r.key, r.value ?? ""]));

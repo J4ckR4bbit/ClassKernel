@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { newId } from "../lib/id";
 import { DEFAULT_DESK_SIZES, Desk, DeskShape, FrontEdge } from "../lib/types";
+import { PASTEL_PRESETS } from "../lib/tableColours";
 import RoomCanvas, { GRID, ROOM_H, ROOM_W, svgPointFromClient, toRoomCoords } from "./RoomCanvas";
 
 const PALETTE: Array<{ shape: DeskShape; label: string }> = [
@@ -19,16 +20,6 @@ const PALETTE: Array<{ shape: DeskShape; label: string }> = [
 const TEXT_PRESETS: Array<{ name: string; hex: string }> = [
   { name: "Black", hex: "#000000" },
   { name: "White", hex: "#ffffff" },
-];
-
-/** Preset desk fills: one soft pastel per hue so a colour-coded room stays calm. */
-const PASTEL_PRESETS: Array<{ name: string; hex: string }> = [
-  { name: "Rose", hex: "#f7d9e0" },
-  { name: "Peach", hex: "#fde3cf" },
-  { name: "Butter", hex: "#fbf0c4" },
-  { name: "Mint", hex: "#d7ecda" },
-  { name: "Sky", hex: "#d6e8f7" },
-  { name: "Lilac", hex: "#e5def4" },
 ];
 
 const EDGES: Array<{ value: FrontEdge; label: string }> = [
@@ -84,6 +75,7 @@ export default function LayoutDesigner() {
       rotation: 0,
       color: "",
       textColor: "",
+      stripColor: "",
     };
     void setDesks([...desks, desk]);
     setSelected(desk.id);

@@ -77,8 +77,8 @@ export async function seedDemoData(): Promise<string> {
 
   // A simple room: teacher desk + 4 rows of 3 double desks + a label box.
   const desks: Desk[] = [
-    { id: newId("d"), label: "Teacher", shape: "teacher", x: 340, y: 20, w: 140, h: 60, rotation: 0, color: "", textColor: "" },
-    { id: newId("d"), label: "Book corner", shape: "label", x: 720, y: 40, w: 140, h: 40, rotation: 0, color: "", textColor: "" },
+    { id: newId("d"), label: "Teacher", shape: "teacher", x: 340, y: 20, w: 140, h: 60, rotation: 0, color: "", textColor: "", stripColor: "" },
+    { id: newId("d"), label: "Book corner", shape: "label", x: 720, y: 40, w: 140, h: 40, rotation: 0, color: "", textColor: "", stripColor: "" },
   ];
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 3; col++) {
@@ -93,6 +93,7 @@ export async function seedDemoData(): Promise<string> {
         rotation: 0,
         color: row === 0 && col === 0 ? "#dcebf7" : "",
         textColor: "",
+        stripColor: "",
       });
     }
   }

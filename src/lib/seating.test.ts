@@ -23,6 +23,7 @@ const mkDesk = (id: string, x: number, y: number, shape: Desk["shape"] = "double
   rotation: 0,
   color: "",
   textColor: "",
+  stripColor: "",
 });
 
 describe("seatSlots", () => {

@@ -737,9 +737,31 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .strip-head-actions { display: flex; gap: 4px; }
 .strip-plan { width: 100%; }
 .strip-tables { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 2px; }
+/* Each table is a card tinted in its own colour, with a stronger stripe and
+   title in the same hue; the student rows stay white so names read clearly. */
+.strip-table {
+  --tbl-bg: #eef2f6; --tbl-accent: var(--text-dim);
+  background: var(--tbl-bg); border-left: 6px solid var(--tbl-accent);
+  border-radius: 10px; padding: 7px 8px 3px; box-shadow: var(--shadow);
+}
 .strip-table h5 {
-  margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim);
-  border-bottom: 1px solid var(--border); padding-bottom: 3px;
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  margin: 0 0 6px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 800;
+  color: var(--tbl-accent);
+}
+.strip-table-count {
+  min-width: 22px; padding: 1px 7px; border-radius: 10px; text-align: center; letter-spacing: 0;
+  background: var(--tbl-accent); color: var(--tbl-bg); font-size: 11.5px;
+}
+.strip-table .strip-student { background: #fff; border-color: rgba(29, 39, 51, 0.1); }
+.strip-table .strip-check { color: var(--tbl-accent); }
+.strip-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 0 0 7px; }
+.strip-swatches .swatch { width: 26px; height: 26px; min-height: 26px; }
+.strip-swatches input[type="color"] { width: 34px; height: 28px; padding: 1px; }
+.strip-swatches button.small { min-height: 28px; padding: 2px 8px; }
+.strip-colour-hint {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 13px; color: var(--text-dim); padding: 2px 2px 0;
 }
 .strip-student {
   display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
@@ -754,10 +776,10 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .strip-points.pos { color: #2e9e5b; }
 .strip-points.neg { color: #d65c5c; }
 .strip-tables.batching .strip-student { border-style: dashed; border-left-style: solid; }
-.strip-student.selected {
+.strip-student.selected, .strip-table .strip-student.selected {
   background: #ffd84d; border-color: var(--accent); border-left-color: var(--accent); border-style: solid;
 }
-.strip-student.selected .strip-check { color: var(--accent); font-size: 18px; }
+.strip-student.selected .strip-check, .strip-table .strip-student.selected .strip-check { color: var(--accent); font-size: 18px; }
 .strip-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
 .strip-sheet {
   position: absolute; left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 80%; overflow-y: auto; z-index: 30;

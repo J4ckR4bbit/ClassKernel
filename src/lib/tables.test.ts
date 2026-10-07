@@ -13,6 +13,7 @@ const mkDesk = (id: string, x: number, y: number, label = "", shape: Desk["shape
   rotation: 0,
   color: "",
   textColor: "",
+  stripColor: "",
 });
 
 const seat = (deskId: string, seatIndex: number, studentId: string): SeatAssignment => ({
