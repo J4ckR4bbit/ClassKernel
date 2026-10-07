@@ -6,11 +6,15 @@ import {
   classProfile,
   classSummary,
   filterToPeriod,
+  filterToRange,
   fmtNum,
   fmtPct,
   fmtSigned,
   inPeriod,
+  parentSummary,
   previousPeriod,
+  REPORT_SECTIONS,
+  ReportSection,
   scoresBy,
   studentProfile,
   studentSummary,
@@ -254,5 +258,52 @@ describe("helpers", () => {
     d.questionMarks = d.questionMarks.map((m) => ({ ...m, mark: m.number === 1 ? 7 : 6.5 })); // 70% vs 65%
     const p = classProfile(d, "all", TODAY);
     expect(classSummary(p, null, "all", String).some((l) => l.startsWith("Strongest topic"))).toBe(false);
+  });
+});
+
+describe("parent report", () => {
+  const ALL = new Set<ReportSection>(REPORT_SECTIONS.map((s) => s.id));
+  const d = filterToPeriod(data(), "4w", TODAY);
+  const cls = classProfile(d, "4w", TODAY);
+  const profileOf = (i: number) => studentProfile(d.students[i], d, cls, "4w", TODAY);
+
+  it("words things for parents: no rank, no medians, no 'to watch'", () => {
+    const lines = parentSummary(profileOf(1), cls, ALL);
+    expect(lines).toEqual([
+      "Average 45% across 2 assessments (class average 65%).",
+      "Latest: Test 2 40%, down from 50%.",
+      "Strongest topic: Forces (70%); a topic to focus on: Energy (30%).",
+      "Areas to work on: Talking / off task (2), Disruptive (1).",
+      "Attendance 100% (1 late arrival).",
+    ]);
+    const all = lines.join(" ");
+    for (const word of ["rank", "median", "watch", "⚠"]) expect(all).not.toContain(word);
+  });
+
+  it("says what's going well, and when there's nothing to worry about", () => {
+    const lines = parentSummary(profileOf(0), cls, ALL);
+    expect(lines).toContain("Going well: Great effort (1), Helping others (1).");
+    expect(lines).toContain("No concerns about behaviour in this period.");
+    expect(lines).toContain("Answered 3 of 3 questions when asked in class.");
+    expect(lines).toContain("Attendance 50% (1 absence).");
+    const cal = parentSummary(profileOf(2), cls, ALL);
+    expect(cal).toContain("3 bathroom trips during lessons (20 min in total).");
+    expect(cal).toContain("No marks have been entered for Cal in this period yet.");
+  });
+
+  it("leaves out the sections that are switched off", () => {
+    const lines = parentSummary(profileOf(2), cls, new Set<ReportSection>(["behaviour"]));
+    expect(lines).toEqual(["Area to work on: Talking / off task (1).", "Answered 1 of 4 questions when asked in class."]);
+    expect(parentSummary(profileOf(2), cls, new Set())).toEqual([]);
+  });
+
+  it("covers a chosen date range", () => {
+    const term = filterToRange(data(), "2026-09-01", "2026-09-30");
+    expect(term.assessments.map((a) => a.id)).toEqual(["t1"]);
+    expect(term.behaviourEvents).toHaveLength(1);
+    const p = classProfile(term, "all", TODAY);
+    expect(parentSummary(studentProfile(term.students[0], term, p, "all", TODAY), p, ALL)[0]).toBe(
+      "Average 90% across 1 assessment (class average 70%).",
+    );
   });
 });

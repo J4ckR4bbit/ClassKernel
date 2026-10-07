@@ -118,6 +118,8 @@ export interface AppState {
   marks: Mark[];
   assessmentQuestions: AssessmentQuestion[];
   questionMarks: QuestionMark[];
+  /** Parent-report comment per student id (report_comments.csv). */
+  reportComments: Record<string, string>;
   roomConfig: RoomConfig;
   layoutTemplates: string[];
   // App-wide, loaded once with the data folder.
@@ -177,6 +179,8 @@ export interface AppState {
   setRoomConfig(config: RoomConfig): Promise<void>;
   setSeating(seats: SeatAssignment[]): Promise<void>;
   setSeatingPrefs(prefs: SeatingPrefs): Promise<void>;
+  /** Save (or clear, with "") one student's parent-report comment. */
+  setReportComment(studentId: string, comment: string): Promise<void>;
   addLessonRecords(records: LessonRecord[]): Promise<void>;
   setAssessments(assessments: Assessment[]): Promise<void>;
   setMarks(marks: Mark[]): Promise<void>;
@@ -245,6 +249,7 @@ export const useApp = create<AppState>((set, get) => {
   marks: [],
   assessmentQuestions: [],
   questionMarks: [],
+  reportComments: {},
   roomConfig: DEFAULT_ROOM_CONFIG,
   layoutTemplates: [],
   topics: [],
@@ -477,6 +482,7 @@ export const useApp = create<AppState>((set, get) => {
       assessmentQuestions,
       questionMarks,
       roomConfig,
+      reportComments,
     ] = await Promise.all([
       repo.loadStudents(dataDir, name),
       repo.loadAttendance(dataDir, name),
@@ -491,6 +497,7 @@ export const useApp = create<AppState>((set, get) => {
       repo.loadAssessmentQuestions(dataDir, name),
       repo.loadQuestionMarks(dataDir, name),
       repo.loadRoomConfig(dataDir, name),
+      repo.loadReportComments(dataDir, name),
     ]);
     set({
       currentClass: name,
@@ -508,6 +515,7 @@ export const useApp = create<AppState>((set, get) => {
       assessmentQuestions,
       questionMarks,
       roomConfig,
+      reportComments,
       seatingLockedAt: readSeatedAt(name),
       sensitiveRevealed: false,
     });
@@ -632,6 +640,15 @@ export const useApp = create<AppState>((set, get) => {
     const { dataDir, currentClass } = get();
     set({ seatingPrefs });
     if (dataDir && currentClass) await guarded("seating rules", () => repo.saveSeatingPrefs(dataDir, currentClass, seatingPrefs));
+  },
+
+  async setReportComment(studentId, comment) {
+    const { dataDir, currentClass, reportComments } = get();
+    const next = { ...reportComments };
+    if (comment.trim()) next[studentId] = comment;
+    else delete next[studentId];
+    set({ reportComments: next });
+    if (dataDir && currentClass) await guarded("report comments", () => repo.saveReportComments(dataDir, currentClass, next));
   },
 
   async addLessonRecords(records) {

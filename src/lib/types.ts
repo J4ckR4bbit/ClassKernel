@@ -314,6 +314,10 @@ export interface UserPrefs {
    * and exported in. "" = the device's own zone. Storage is always UTC.
    */
   timeZone: string;
+  /** School name printed at the top of parent reports; "" = left off. */
+  reportSchool: string;
+  /** The teacher's name as printed on parent reports; "" = left off. */
+  reportTeacher: string;
 }
 
 export const DEFAULT_USER_PREFS: UserPrefs = {
@@ -330,6 +334,8 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   dockSide: "left",
   reseatPinHash: "",
   timeZone: "",
+  reportSchool: "",
+  reportTeacher: "",
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {

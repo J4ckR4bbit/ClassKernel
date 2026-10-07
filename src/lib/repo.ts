@@ -16,6 +16,7 @@
 //   classes/<class>/assessment_questions.csv  assessment_id,q_number,topic,marks,cognitive_level
 //   classes/<class>/question_marks.csv    assessment_id,student_id,q_number,mark
 //   classes/<class>/marks.csv             assessment_id,student_id,mark,comment
+//   classes/<class>/report_comments.csv   student_id,comment,updated  (parent-report comments)
 //   behaviours.csv, topics.csv, cognitive_levels.csv, settings.csv   app-wide (root)
 //   layouts/<name>/desks.csv + room.csv   reusable room templates
 //   backups/<stamp>/...                   rolling snapshots
@@ -430,6 +431,27 @@ export async function saveSeatingPrefs(dataDir: string, className: string, prefs
   await getFS().writeAtomic(p(classDir(dataDir, className), "seating_prefs.csv"), stringifyCsv(rows, SEATING_PREFS_COLS));
 }
 
+// ---------- parent-report comments (per class) ----------
+// The teacher's comment for each student's parent report. Kept apart from the
+// roster's private notes, which never print.
+
+const REPORT_COMMENT_COLS = ["student_id", "comment", "updated"];
+
+export async function loadReportComments(dataDir: string, className: string): Promise<Record<string, string>> {
+  const rows = await loadCsvFile(p(classDir(dataDir, className), "report_comments.csv"));
+  const out: Record<string, string> = {};
+  for (const r of rows) if (r.student_id && r.comment) out[r.student_id] = r.comment;
+  return out;
+}
+
+export async function saveReportComments(dataDir: string, className: string, comments: Record<string, string>): Promise<void> {
+  const updated = new Date().toISOString();
+  const rows = Object.entries(comments)
+    .filter(([, comment]) => comment.trim())
+    .map(([student_id, comment]) => ({ student_id, comment, updated }));
+  await getFS().writeAtomic(p(classDir(dataDir, className), "report_comments.csv"), stringifyCsv(rows, REPORT_COMMENT_COLS));
+}
+
 // ---------- lesson history (per class) ----------
 
 const LESSON_COLS = [
@@ -836,6 +858,8 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
     reseatPinHash: /^[0-9a-f]{64}$/.test(kv.get("reseat_pin") ?? "") ? kv.get("reseat_pin")! : "",
     // An unknown zone (typo, or one this machine doesn't know) falls back to the device's.
     timeZone: isValidTimeZone(kv.get("time_zone") ?? "") ? kv.get("time_zone")! : "",
+    reportSchool: kv.get("report_school") ?? "",
+    reportTeacher: kv.get("report_teacher") ?? "",
   };
 }
 
@@ -854,6 +878,8 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "dock_side", value: prefs.dockSide },
     { key: "reseat_pin", value: prefs.reseatPinHash },
     { key: "time_zone", value: prefs.timeZone },
+    { key: "report_school", value: prefs.reportSchool },
+    { key: "report_teacher", value: prefs.reportTeacher },
   ];
   await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
 }

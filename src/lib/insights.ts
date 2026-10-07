@@ -101,6 +101,11 @@ export function filterToPeriod(data: ClassData, period: Period, today: string): 
   return keepBetween(data, periodStart(period, today), today);
 }
 
+/** The class's data between two dates (inclusive), e.g. a term for a parent report. */
+export function filterToRange(data: ClassData, from: string, to: string): ClassData {
+  return keepBetween(data, from || null, to);
+}
+
 /** The same length of time just before the period, for "up / down on before". Null for "all". */
 export function previousPeriod(data: ClassData, period: Period, today: string): ClassData | null {
   if (period === "all") return null;
@@ -303,13 +308,13 @@ function overallRanks(overalls: Map<string, number>): Map<string, number> {
 export const TOPIC_GAP = 10;
 
 /** "Strongest topic: …; weakest: …" when the topics differ by a meaningful margin. */
-function topicLine(topics: TopicScore[]): string | null {
+function topicLine(topics: TopicScore[], weakest = "weakest"): string | null {
   const sorted = topics.filter((t) => t.possible > 0).sort((a, b) => b.pct - a.pct);
   if (sorted.length < 2) return null;
   const best = sorted[0];
   const worst = sorted[sorted.length - 1];
   if (best.pct - worst.pct < TOPIC_GAP) return null;
-  return `Strongest topic: ${best.name} (${fmtPct(best.pct)}); weakest: ${worst.name} (${fmtPct(worst.pct)}).`;
+  return `Strongest topic: ${best.name} (${fmtPct(best.pct)}); ${weakest}: ${worst.name} (${fmtPct(worst.pct)}).`;
 }
 
 // ---------- the class ----------
@@ -706,5 +711,79 @@ export function studentSummary(p: StudentProfile, cls: ClassProfile, period: Per
   const topics = topicLine(p.topics);
   if (topics) lines.push(topics);
   for (const f of p.flags) lines.push(`⚠ ${f}.`);
+  return lines;
+}
+
+// ---------- the parent report ----------
+
+/** The parts of a parent report that can be switched on and off. */
+export type ReportSection = "marks" | "topics" | "behaviour" | "attendance";
+
+export const REPORT_SECTIONS: Array<{ id: ReportSection; label: string }> = [
+  { id: "marks", label: "Marks" },
+  { id: "topics", label: "Topic strengths" },
+  { id: "behaviour", label: "Behaviour & class questions" },
+  { id: "attendance", label: "Attendance & bathroom" },
+];
+
+const tally = (counts: CodeCount[]) => counts.map((c) => `${c.label} (${c.count})`).join(", ");
+
+/**
+ * The summary for parents: the same facts as the dashboard, worded for home.
+ * No class rank, no medians and no "one to watch"; behaviour is put as what's
+ * going well and what to work on. Class averages stay, for context.
+ */
+export function parentSummary(p: StudentProfile, cls: ClassProfile, sections: Set<ReportSection>): string[] {
+  const lines: string[] = [];
+  const name = p.student.firstName || "Your child";
+
+  if (sections.has("marks")) {
+    const marked = p.assessments.filter((r) => r.pct !== null);
+    if (marked.length === 0) {
+      lines.push(p.assessments.length ? `No marks have been entered for ${name} in this period yet.` : "No assessments were written in this period.");
+    } else {
+      lines.push(
+        `Average ${fmtPct(p.overall)} across ${marked.length} assessment${marked.length === 1 ? "" : "s"}` +
+          (cls.classAverage !== null ? ` (class average ${fmtPct(cls.classAverage)}).` : "."),
+      );
+      const last = marked[marked.length - 1];
+      const before = marked[marked.length - 2];
+      const moved = before && before.pct !== null && Math.abs((last.pct as number) - before.pct) >= 5;
+      lines.push(
+        `Latest: ${last.assessment.title} ${fmtPct(last.pct)}` +
+          (moved ? `, ${(last.pct as number) > (before.pct as number) ? "up" : "down"} from ${fmtPct(before.pct)}.` : "."),
+      );
+    }
+  }
+
+  if (sections.has("topics")) {
+    const topics = topicLine(p.topics, "a topic to focus on");
+    if (topics) lines.push(topics);
+  }
+
+  if (sections.has("behaviour")) {
+    const good = p.behaviour.byCode.filter((c) => c.kind === "positive");
+    const work = p.behaviour.byCode.filter((c) => c.kind === "negative");
+    if (good.length) lines.push(`Going well: ${tally(good)}.`);
+    lines.push(work.length ? `${work.length === 1 ? "Area" : "Areas"} to work on: ${tally(work)}.` : "No concerns about behaviour in this period.");
+    const a = p.answers;
+    if (a.asked > 0) lines.push(`Answered ${a.answered} of ${a.asked} question${a.asked === 1 ? "" : "s"} when asked in class.`);
+  }
+
+  if (sections.has("attendance")) {
+    const att = p.attendance;
+    if (att.total > 0 && att.rate !== null) {
+      const parts = [
+        att.absent ? `${att.absent} absence${att.absent === 1 ? "" : "s"}` : "",
+        att.late ? `${att.late} late arrival${att.late === 1 ? "" : "s"}` : "",
+      ].filter(Boolean);
+      lines.push(`Attendance ${fmtPct(att.rate * 100)}${parts.length ? ` (${parts.join(", ")})` : ""}.`);
+    }
+    if (p.bathroom.trips > 0) {
+      lines.push(
+        `${p.bathroom.trips} bathroom trip${p.bathroom.trips === 1 ? "" : "s"} during lessons (${minutes(p.bathroom.totalSeconds)} in total).`,
+      );
+    }
+  }
   return lines;
 }

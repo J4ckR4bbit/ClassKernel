@@ -61,6 +61,22 @@ describe("class.md", () => {
   });
 });
 
+describe("report_comments.csv", () => {
+  it("is empty for a class without comments", async () => {
+    expect(await repo.loadReportComments(DIR, CLS)).toEqual({});
+  });
+
+  it("round-trips comments with commas, quotes and line breaks, and drops blank ones", async () => {
+    const comments = {
+      s1: 'A pleasure to teach, works hard.\nNeeds to show working on "explain" questions.',
+      s2: "Keep it up!",
+      s3: "   ",
+    };
+    await repo.saveReportComments(DIR, CLS, comments);
+    expect(await repo.loadReportComments(DIR, CLS)).toEqual({ s1: comments.s1, s2: comments.s2 });
+  });
+});
+
 describe("students.csv", () => {
   it("round-trips students including commas, quotes and unicode", async () => {
     const students: Student[] = [
@@ -376,9 +392,17 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       dockSide: "right" as const,
       reseatPinHash: "a".repeat(64),
       timeZone: "Africa/Johannesburg",
+      reportSchool: "St Benedict's College",
+      reportTeacher: "Mr K. Hilder",
     };
     await repo.saveUserPrefs(DIR, prefs);
     expect(await repo.loadUserPrefs(DIR)).toEqual(prefs);
+  });
+
+  it("leaves the report header names blank until they're set", async () => {
+    const fresh = await repo.loadUserPrefs(DIR);
+    expect(fresh.reportSchool).toBe("");
+    expect(fresh.reportTeacher).toBe("");
   });
 
   it("defaults teaching mode to the room plan with no reseat PIN", async () => {
