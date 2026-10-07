@@ -34,7 +34,7 @@ const C_GRID = "#eef1f4";
 const C_INK = "#5c6b7a";
 
 export default function DashboardView() {
-  const { currentClass, students, assessments, marks, attendance, lessons } = useApp();
+  const { students, assessments, marks, attendance, lessons } = useApp();
   const ordered = useMemo(() => [...assessments].sort((a, b) => a.date.localeCompare(b.date)), [assessments]);
   const [histAssessment, setHistAssessment] = useState<string>("");
   const [focusStudent, setFocusStudent] = useState<string>("");
@@ -110,9 +110,6 @@ export default function DashboardView() {
   if (assessments.length === 0) {
     return (
       <div>
-        <div className="view-header">
-          <h1>{currentClass} — Dashboard</h1>
-        </div>
         <div className="panel muted">Create assessments and enter marks to see the marks analysis dashboard.</div>
         {lessons.length > 0 && (
           <PrivacyGate label="behaviour and seating history">
@@ -126,9 +123,6 @@ export default function DashboardView() {
 
   return (
     <div>
-      <div className="view-header">
-        <h1>{currentClass} — Dashboard</h1>
-      </div>
 
       <PrivacyGate label="marks, attendance and behaviour analysis">
       <div className="stat-tiles">

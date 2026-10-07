@@ -1,6 +1,7 @@
 import { Component, ReactNode, Suspense, lazy, useMemo } from "react";
 import { useApp } from "../store/appStore";
 import { PluginManifest, enabledPlugins, pluginById } from "../plugins/registry";
+import Icon from "./Icon";
 
 /**
  * Keeps a broken plugin to itself. Without this, one bad render would blank the
@@ -46,15 +47,14 @@ export default function PluginView() {
   if (!plugin || !on) {
     return (
       <div>
-        <div className="view-header">
-          <h1>Plugin</h1>
-        </div>
         <div className="panel muted">
           {plugin
             ? `"${plugin.name}" is switched off. Turn it back on under Settings → Plugins.`
             : "That plugin isn't part of this version of the app."}
           <div className="row" style={{ marginTop: 10 }}>
-            <button onClick={() => setView("home")}>← Home</button>
+            <button onClick={() => setView("home")}>
+              <Icon name="arrow_back" size={20} /> Home
+            </button>
             <button onClick={() => setView("settings")}>Open Settings</button>
           </div>
         </div>
@@ -62,26 +62,16 @@ export default function PluginView() {
     );
   }
 
-  return <PluginPane key={plugin.id} plugin={plugin} onHome={() => setView("home")} />;
+  return <PluginPane key={plugin.id} plugin={plugin} />;
 }
 
-function PluginPane({ plugin, onHome }: { plugin: PluginManifest; onHome: () => void }) {
+// The app bar above carries the plugin's name and the way back to Home.
+function PluginPane({ plugin }: { plugin: PluginManifest }) {
   // lazy() wants a module; the manifest hands back the component itself.
   const View = useMemo(() => lazy(() => plugin.load().then((c) => ({ default: c }))), [plugin]);
 
   return (
     <div className="plugin-view">
-      <div className="view-header">
-        <button onClick={onHome}>← Home</button>
-        <h1>
-          <span aria-hidden style={{ marginRight: 8 }}>
-            {plugin.icon}
-          </span>
-          {plugin.name}
-        </h1>
-        <span className="muted plugin-tagline">{plugin.tagline}</span>
-      </div>
-
       <div className="plugin-body">
         <PluginBoundary name={plugin.name}>
           <Suspense fallback={<div className="plugin-loading muted">Loading {plugin.name}…</div>}>

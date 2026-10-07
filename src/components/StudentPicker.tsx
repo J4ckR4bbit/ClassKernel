@@ -4,6 +4,7 @@ import { displayStudentName } from "../lib/privacy";
 import { today } from "../lib/id";
 import { EMPTY_ANSWER_TALLY, answerTallyByStudent } from "../lib/stats";
 import { ANSWERED_BEHAVIOUR, BehaviourCode, BehaviourEvent, NO_ANSWER_BEHAVIOUR, Student } from "../lib/types";
+import Icon from "./Icon";
 
 /** Ids already picked this lesson, so "no repeats" survives a reload. Cleared by End lesson. */
 export const pickedKey = (className: string) => `classkernel.picked.${className}`;
@@ -191,7 +192,7 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
         )}
         <div className="picker-actions">
           <button className="primary" onClick={pick}>
-            🎲 Pick again
+            <Icon name="casino" size={20} /> Pick again
           </button>
           <button onClick={onClose}>Close</button>
         </div>

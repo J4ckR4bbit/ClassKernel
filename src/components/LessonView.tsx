@@ -10,6 +10,7 @@ import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
 import BatchPanel from "./BatchPanel";
+import Icon from "./Icon";
 
 interface Popover {
   studentId: string;
@@ -24,7 +25,7 @@ interface Popover {
  * selection instead, so one behaviour can be saved for many students at once.
  */
 export default function LessonView() {
-  const { currentClass, desks, seating, behaviourCodes, setView, roomConfig, focusMode, setFocusMode, userPrefs } = useApp();
+  const { desks, seating, behaviourCodes, setView, roomConfig, focusMode, setFocusMode, userPrefs } = useApp();
   const planNames = useMemo(() => [...new Set(seating.map((s) => s.planName))].sort(), [seating]);
   const [plan, setPlan] = useState(planNames[0] ?? "Default");
   const activePlan = planNames.includes(plan) ? plan : planNames[0];
@@ -98,14 +99,12 @@ export default function LessonView() {
       <div className={shellClass}>
         {focusMode ? (
           <div className="focus-bar">
-            <button onClick={() => setFocusMode(false)}>✕ Exit teaching mode</button>
+            <button onClick={() => setFocusMode(false)}>
+              <Icon name="close" size={20} /> Exit teaching mode
+            </button>
             <span className="muted">Set up a room layout and seating plan to teach from.</span>
           </div>
-        ) : (
-          <div className="view-header">
-            <h1>{currentClass} — Live lesson</h1>
-          </div>
-        )}
+        ) : null}
         <div className="panel">
           You need a room layout and a seating plan first.{" "}
           <button className="small" onClick={() => setView(desks.length === 0 ? "layout" : "seating")}>
@@ -127,12 +126,12 @@ export default function LessonView() {
   // reliably on a classroom panel.
   const pickButton = (
     <button className="lesson-btn" onClick={() => setPickerOpen(true)} disabled={busy} title="Choose a random student">
-      <span aria-hidden>🙋</span> Pick a student
+      <Icon name="person_raised_hand" /> Pick a student
     </button>
   );
   const batchButton = (
     <button className="lesson-btn" onClick={startBatch} disabled={busy} title="Record one behaviour for several students at once">
-      <span aria-hidden>☑</span> Batch entry
+      <Icon name="checklist" /> Batch entry
     </button>
   );
   const seatButton = locked ? (
@@ -142,16 +141,16 @@ export default function LessonView() {
       disabled={busy}
       title="Seats were assigned this lesson — enter your PIN to assign them again"
     >
-      <span aria-hidden>🔒</span> Reseat…
+      <Icon name="lock" /> Reseat…
     </button>
   ) : (
     <button className="lesson-btn" onClick={() => randomise(activePlan)} disabled={busy} title="Reshuffle the seating using your saved rules">
-      <span aria-hidden>🎲</span> {isShuffling ? "Randomising…" : "Randomise"}
+      <Icon name="casino" /> {isShuffling ? "Randomising…" : "Randomise"}
     </button>
   );
   const endButton = (
     <button className="lesson-btn danger lesson-end" onClick={() => void endLesson()} disabled={busy}>
-      <span aria-hidden>⏹</span> End lesson
+      <Icon name="stop_circle" /> End lesson
     </button>
   );
   const batchPanel = <BatchPanel entry={batch} behaviourCodes={behaviourCodes} layout={sideBar ? "strip" : "bar"} />;
@@ -171,7 +170,7 @@ export default function LessonView() {
               title="Back to the full app (or press Esc)"
               disabled={batch.active}
             >
-              <span aria-hidden>✕</span> Exit teaching mode
+              <Icon name="close" /> Exit teaching mode
             </button>
             <span className="muted bar-count">{eventCount}</span>
           </div>
@@ -198,7 +197,7 @@ export default function LessonView() {
                   disabled={busy}
                   title="Dock a narrow list of tables to the screen edge"
                 >
-                  <span aria-hidden>▥</span> Side panel
+                  <Icon name="dock_to_left" /> Side panel
                 </button>
               </div>
             </>
@@ -209,7 +208,6 @@ export default function LessonView() {
       ) : (
         <>
           <div className="view-header lesson-head">
-            <h1>{currentClass} — Live lesson</h1>
             <span className="muted">{eventCount} · tap a seat to record behaviour or attendance</span>
             {planSelect}
             <div className="spacer" />
@@ -230,7 +228,7 @@ export default function LessonView() {
               disabled={busy}
               title="Distraction-free view for teaching, beside your notes"
             >
-              <span aria-hidden>⛶</span> Teaching mode
+              <Icon name="fullscreen" /> Teaching mode
             </button>
             <button
               className="lesson-btn"
@@ -242,7 +240,7 @@ export default function LessonView() {
                   : "Dock a narrow list of tables to the screen edge, beside your slides"
               }
             >
-              <span aria-hidden>{otherStyle === "room" ? "⛶" : "▥"}</span> {otherStyle === "room" ? "Room plan" : "Side panel"}
+              <Icon name={otherStyle === "room" ? "fullscreen" : "dock_to_left"} /> {otherStyle === "room" ? "Room plan" : "Side panel"}
             </button>
           </div>
         </>

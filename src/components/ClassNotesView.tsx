@@ -37,13 +37,12 @@ export default function ClassNotesView() {
 
   const toggleArchive = async () => {
     await updateClassInfo({ ...info, archived: !info.archived });
-    showToast(info.archived ? "Class restored" : "Class archived (hidden from the sidebar)");
+    showToast(info.archived ? "Class restored" : "Class archived (now under Archived in the class menu)");
   };
 
   return (
     <div>
       <div className="view-header">
-        <h1>{info.name} — Class notes</h1>
         <div className="spacer" />
         <button onClick={() => void rename()}>Rename class</button>
         <button onClick={() => void toggleArchive()}>{info.archived ? "Restore" : "Archive class"}</button>

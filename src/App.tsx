@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useApp } from "./store/appStore";
 import Onboarding from "./components/Onboarding";
-import Sidebar from "./components/Sidebar";
+import NavRail from "./components/NavRail";
+import TopAppBar from "./components/TopAppBar";
+import Icon from "./components/Icon";
 import HomeView from "./components/HomeView";
 import RosterView from "./components/RosterView";
 import AttendanceView from "./components/AttendanceView";
@@ -51,14 +53,39 @@ function Overlays() {
   );
 }
 
-const SIDEBAR_KEY = "classkernel.sidebarHidden";
+const NAV_KEY = "classkernel.navExpanded";
 
-function readSidebarHidden(): boolean {
+function readNavExpanded(): boolean {
   try {
-    return localStorage.getItem(SIDEBAR_KEY) === "1";
+    return localStorage.getItem(NAV_KEY) === "1";
   } catch {
     return false;
   }
+}
+
+/** Assessments and their analysis are one destination, Marks, as two tabs. */
+function MarksTabs() {
+  const { view, setView } = useApp();
+  const tabs = [
+    { view: "assessments", icon: "assignment", label: "Assessments" },
+    { view: "dashboard", icon: "bar_chart", label: "Dashboard" },
+  ] as const;
+  return (
+    <div className="md-tabs" role="tablist" aria-label="Marks">
+      {tabs.map((t) => (
+        <button
+          key={t.view}
+          role="tab"
+          aria-selected={view === t.view}
+          className={`md-tab ${view === t.view ? "active" : ""}`}
+          onClick={() => setView(t.view)}
+        >
+          <Icon name={t.icon} size={20} />
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export default function App() {
@@ -68,15 +95,16 @@ export default function App() {
     void boot();
   }, [boot]);
 
-  // The menu can be hidden to give the page the whole width; remembered on
-  // this computer, since it's about this screen rather than the data.
-  const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden);
-  const toggleSidebar = (hidden: boolean) => {
-    setSidebarHidden(hidden);
+  // The rail expands into a drawer with full labels and the teacher's tools;
+  // remembered on this computer, since it's about this screen, not the data.
+  const [navExpanded, setNavExpanded] = useState(readNavExpanded);
+  const toggleNav = () => {
+    const next = !navExpanded;
+    setNavExpanded(next);
     try {
-      localStorage.setItem(SIDEBAR_KEY, hidden ? "1" : "0");
+      localStorage.setItem(NAV_KEY, next ? "1" : "0");
     } catch {
-      // Not remembered; still hides for this session.
+      // Not remembered; still applies for this session.
     }
   };
 
@@ -120,42 +148,41 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell ${sidebarHidden ? "sidebar-hidden" : ""}`}>
-      {sidebarHidden ? (
-        <button className="sidebar-show" onClick={() => toggleSidebar(false)} title="Show the menu" aria-label="Show the menu">
-          ☰
-        </button>
-      ) : (
-        <Sidebar onHide={() => toggleSidebar(true)} />
-      )}
-      <main className="main-pane">
-        {demoMode && (
-          <div className="demo-banner">
-            Demo mode — running in a browser without the desktop backend; data lives in memory only.
-          </div>
-        )}
-        {!currentClass && view !== "settings" && view !== "home" && view !== "plugin" ? (
-          <div className="empty-state">
-            <h2>No class selected</h2>
-            <p>Create a class from the sidebar to get started.</p>
-          </div>
-        ) : (
-          <>
-            {view === "home" && <HomeView />}
-            {view === "roster" && <RosterView />}
-            {view === "attendance" && <AttendanceView />}
-            {view === "layout" && <LayoutDesigner />}
-            {view === "seating" && <SeatingView />}
-            {view === "lesson" && <LessonView />}
-            {view === "behaviourLog" && <BehaviourLogView />}
-            {view === "assessments" && <AssessmentsView />}
-            {view === "dashboard" && <DashboardView />}
-            {view === "notes" && <ClassNotesView />}
-            {view === "plugin" && <PluginView />}
-            {view === "settings" && <SettingsView />}
-          </>
-        )}
-      </main>
+    <div className="app-shell">
+      <NavRail expanded={navExpanded} onToggle={toggleNav} />
+      <div className="app-body">
+        <TopAppBar />
+        <main className="main-pane">
+          {demoMode && (
+            <div className="demo-banner">
+              Demo mode — running in a browser without the desktop backend; data lives in memory only.
+            </div>
+          )}
+          {!currentClass && view !== "settings" && view !== "home" && view !== "plugin" ? (
+            <div className="empty-state">
+              <Icon name="group" size={48} />
+              <h2>No class selected</h2>
+              <p>Pick a class from the menu at the top right, or create one there.</p>
+            </div>
+          ) : (
+            <>
+              {(view === "assessments" || view === "dashboard") && <MarksTabs />}
+              {view === "home" && <HomeView />}
+              {view === "roster" && <RosterView />}
+              {view === "attendance" && <AttendanceView />}
+              {view === "layout" && <LayoutDesigner />}
+              {view === "seating" && <SeatingView />}
+              {view === "lesson" && <LessonView />}
+              {view === "behaviourLog" && <BehaviourLogView />}
+              {view === "assessments" && <AssessmentsView />}
+              {view === "dashboard" && <DashboardView />}
+              {view === "notes" && <ClassNotesView />}
+              {view === "plugin" && <PluginView />}
+              {view === "settings" && <SettingsView />}
+            </>
+          )}
+        </main>
+      </div>
       <Overlays />
     </div>
   );
