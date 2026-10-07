@@ -5,12 +5,12 @@ import { displayStudentName } from "../lib/privacy";
 import { groupSeatsByTable } from "../lib/tables";
 import { PASTEL_PRESETS, autoTableColour, tableTint } from "../lib/tableColours";
 import { enterDock } from "../lib/teachingWindow";
-import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
 import { useLessonSession } from "../hooks/useLessonSession";
 import { useBatchEntry } from "../hooks/useBatchEntry";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
 import BatchPanel from "./BatchPanel";
+import TimerMini from "./TimerMini";
 
 const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
 
@@ -27,7 +27,6 @@ export default function TeachingStrip() {
   const activePlan = planNames.includes(plan) ? plan : planNames[0];
   const [actionsFor, setActionsFor] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const { isShuffling, randomise, locked, requestUnlock } = useSeatingShuffle();
   const lesson = useLessonSession();
   const { byId, lessonEvents, pointsToday, pointsVisible, statusOf, outVisitOf } = lesson;
   const batch = useBatchEntry(lesson.logBatch);
@@ -39,7 +38,8 @@ export default function TeachingStrip() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [desks, seating, activePlan, roomConfig.frontEdge],
   );
-  const busy = isShuffling || batch.active;
+  // Seating is assigned from the other screens; the strip is for recording.
+  const busy = batch.active;
 
   // Table colours: each table's own strip colour, or the next pastel in turn.
   // The turn is counted in layout order, so a table keeps its colour from
@@ -217,6 +217,7 @@ export default function TeachingStrip() {
           </div>
         )}
 
+        <TimerMini inline />
         {!batch.active && (
           <footer className="strip-foot">
             <button className="primary" onClick={() => { closeActions(); batch.start(); }} disabled={busy}>
@@ -225,15 +226,6 @@ export default function TeachingStrip() {
             <button onClick={() => setPickerOpen(true)} disabled={busy}>
               🙋 Pick a student
             </button>
-            {locked ? (
-              <button onClick={requestUnlock} disabled={busy} title="Seats were assigned this lesson — enter your PIN to assign them again">
-                🔒 Reseat…
-              </button>
-            ) : (
-              <button onClick={() => randomise(activePlan)} disabled={busy || planSeats.length === 0}>
-                🎲 {isShuffling ? "Randomising…" : "Randomise"}
-              </button>
-            )}
             <button className="danger" onClick={() => void lesson.endLesson(planSeats).then((ok) => ok && closeActions())} disabled={busy}>
               ⏹ End lesson
             </button>

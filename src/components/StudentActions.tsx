@@ -1,7 +1,6 @@
 import { useApp } from "../store/appStore";
 import { AttendanceStatus, BathroomVisit, BehaviourCode, Student, studentName } from "../lib/types";
 import { formatDuration, visitSeconds } from "../lib/stats";
-import { textColorFor } from "../lib/privacy";
 
 interface Props {
   student: Student;
@@ -60,7 +59,7 @@ export default function StudentActions({ student, status, outVisit, onAttendance
         <button
           key={c.code}
           className="bh-btn"
-          style={{ background: c.color, color: textColorFor(c.color) }}
+          style={{ background: c.color }}
           onClick={() => onBehaviour(c)}
         >
           +{c.points} {c.label}
@@ -70,7 +69,7 @@ export default function StudentActions({ student, status, outVisit, onAttendance
         <button
           key={c.code}
           className="bh-btn"
-          style={{ background: c.color, color: textColorFor(c.color) }}
+          style={{ background: c.color }}
           onClick={() => onBehaviour(c)}
         >
           {c.points} {c.label}

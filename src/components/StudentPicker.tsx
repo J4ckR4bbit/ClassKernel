@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
-import { displayStudentName, textColorFor } from "../lib/privacy";
+import { displayStudentName } from "../lib/privacy";
 import { today } from "../lib/id";
 import { EMPTY_ANSWER_TALLY, answerTallyByStudent } from "../lib/stats";
 import { ANSWERED_BEHAVIOUR, BehaviourCode, BehaviourEvent, NO_ANSWER_BEHAVIOUR, Student } from "../lib/types";
@@ -128,6 +128,12 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
     setShowOthers(false);
   };
 
+  // Recording the answer is the end of a cold call: the picker gets out of the way.
+  const logAnswer = (code: BehaviourCode) => {
+    log(code);
+    onClose();
+  };
+
   return (
     <div className="picker-overlay" onClick={onClose}>
       <div className="picker-card" onClick={(e) => e.stopPropagation()}>
@@ -148,15 +154,15 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
           <>
             <div className="picker-answer">
               <button
-                style={{ background: answered.color, color: textColorFor(answered.color) }}
-                onClick={() => log(answered)}
+                style={{ background: answered.color }}
+                onClick={() => logAnswer(answered)}
                 title="Record that they answered"
               >
                 ✓ {answered.label} {signed(answered.points)}
               </button>
               <button
-                style={{ background: noAnswer.color, color: textColorFor(noAnswer.color) }}
-                onClick={() => log(noAnswer)}
+                style={{ background: noAnswer.color }}
+                onClick={() => logAnswer(noAnswer)}
                 title="Record that they could not answer"
               >
                 ✗ {noAnswer.label} {signed(noAnswer.points)}
@@ -173,7 +179,7 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
                   <button
                     key={c.code}
                     className="bh-btn"
-                    style={{ background: c.color, color: textColorFor(c.color) }}
+                    style={{ background: c.color }}
                     onClick={() => log(c)}
                   >
                     {signed(c.points)} {c.label}

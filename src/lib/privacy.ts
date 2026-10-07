@@ -24,21 +24,3 @@ export function seatSurname(s: Student, style: SeatNameStyle): string {
   if (style === "firstInitial") return `${last[0]}.`;
   return last;
 }
-
-/**
- * Black or white, whichever reads better on the given background colour.
- * Used for behaviour buttons whose colour the teacher picks freely, so a pale
- * yellow can never end up with invisible white text.
- */
-export function textColorFor(bgHex: string): string {
-  const m = /^#?([0-9a-f]{6})$/i.exec(bgHex.trim());
-  if (!m) return "#fff";
-  const v = parseInt(m[1], 16);
-  const lum = (c: number) => {
-    const s = c / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  const L = 0.2126 * lum(v >> 16) + 0.7152 * lum((v >> 8) & 0xff) + 0.0722 * lum(v & 0xff);
-  // Contrast vs white = (1.05)/(L+0.05); vs black = (L+0.05)/0.05.
-  return 1.05 / (L + 0.05) >= (L + 0.05) / 0.05 ? "#fff" : "#1d2733";
-}

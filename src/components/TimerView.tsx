@@ -2,31 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { TimerDisplay, TimerPreset } from "../lib/types";
 import { currentTimeZone } from "../lib/time";
-
-// ---------- colour progression ----------
-// As a phase runs down the graphic moves green → blue → orange → red.
-const COLOR_STOPS = ["#006600", "#1F497D", "#D6701C", "#CF1717"];
-
-function hexToRgb(hex: string): [number, number, number] {
-  const n = parseInt(hex.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
-function mix(a: string, b: string, t: number): string {
-  const ca = hexToRgb(a);
-  const cb = hexToRgb(b);
-  const c = ca.map((v, i) => Math.round(v + (cb[i] - v) * t));
-  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
-}
-
-/** elapsed 0 (full) → 1 (empty), interpolated across the four stops. */
-function phaseColor(elapsed: number): string {
-  const e = Math.max(0, Math.min(1, elapsed));
-  const segCount = COLOR_STOPS.length - 1;
-  const seg = Math.min(segCount - 1, Math.floor(e * segCount));
-  const localT = e * segCount - seg;
-  return mix(COLOR_STOPS[seg], COLOR_STOPS[seg + 1], localT);
-}
+import { COLOR_STOPS, TimerPhase, phaseColor } from "../lib/timer";
+import { useTimer } from "../store/timerStore";
 
 // ---------- flip-clock digit ----------
 // Classic split-flap card: the top half folds down to reveal the next value.
@@ -164,35 +141,6 @@ function Hourglass({ frac, color, running }: { frac: number; color: string; runn
   );
 }
 
-// ---------- chime ----------
-let audioCtx: AudioContext | null = null;
-function chime(pattern: number) {
-  try {
-    audioCtx = audioCtx || new (window.AudioContext || (window as any).webkitAudioContext)();
-    const ctx = audioCtx;
-    for (let i = 0; i < pattern; i++) {
-      const t = ctx.currentTime + i * 0.22;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.frequency.value = 880;
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
-      osc.start(t);
-      osc.stop(t + 0.21);
-    }
-  } catch {
-    /* audio unavailable — silently ignore */
-  }
-}
-
-interface Phase {
-  label: string;
-  seconds: number;
-}
-
 function fmtClock(d: Date): string {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: currentTimeZone() });
 }
@@ -206,15 +154,16 @@ export default function TimerView() {
   const [display, setDisplay] = useState<TimerDisplay>("circle");
   const [chimeOn, setChimeOn] = useState(true);
 
-  // running state
-  const [started, setStarted] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [finished, setFinished] = useState(false);
-  const [phases, setPhases] = useState<Phase[]>([]);
-  const [phase, setPhase] = useState(0);
-  const [remaining, setRemaining] = useState(0);
+  // The running timer lives in its own store, so it carries on (as a small
+  // pop-up) when the teacher leaves this screen.
+  const { timer, display: runDisplay, start: startTimer, pause, resume, addMinute, skip, stop } = useTimer();
+  const started = timer !== null;
+  const running = !!timer?.running;
+  const finished = !!timer?.finished;
+  const phases = timer?.phases ?? [];
+  const phase = timer?.phase ?? 0;
+  const remaining = timer?.remaining ?? 0;
   const [now, setNow] = useState(() => new Date());
-  const deadlineRef = useRef(0);
   const rootRef = useRef<HTMLDivElement>(null);
 
   // wall clock (time of day + live end-time)
@@ -223,33 +172,8 @@ export default function TimerView() {
     return () => clearInterval(id);
   }, []);
 
-  // countdown engine — re-armed whenever the phase changes so its closure is fresh
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => {
-      const rem = (deadlineRef.current - Date.now()) / 1000;
-      if (rem > 0) {
-        setRemaining(rem);
-        return;
-      }
-      if (phase < phases.length - 1) {
-        if (chimeOn) chime(2);
-        const nextTotal = phases[phase + 1].seconds;
-        deadlineRef.current = Date.now() + nextTotal * 1000;
-        setPhase(phase + 1);
-        setRemaining(nextTotal);
-      } else {
-        if (chimeOn) chime(3);
-        setRemaining(0);
-        setRunning(false);
-        setFinished(true);
-      }
-    }, 200);
-    return () => clearInterval(id);
-  }, [running, phase, phases, chimeOn]);
-
-  const buildPhases = (): Phase[] => {
-    const list: Phase[] = [];
+  const buildPhases = (): TimerPhase[] => {
+    const list: TimerPhase[] = [];
     if (readingMin > 0) list.push({ label: "Reading time", seconds: Math.round(readingMin * 60) });
     if (writingMin > 0) list.push({ label: "Writing time", seconds: Math.round(writingMin * 60) });
     return list;
@@ -261,46 +185,7 @@ export default function TimerView() {
       showToast("Set a reading or writing time first");
       return;
     }
-    setPhases(list);
-    setPhase(0);
-    setRemaining(list[0].seconds);
-    deadlineRef.current = Date.now() + list[0].seconds * 1000;
-    setStarted(true);
-    setFinished(false);
-    setRunning(true);
-  };
-
-  const pause = () => setRunning(false);
-  const resume = () => {
-    if (remaining <= 0) return;
-    deadlineRef.current = Date.now() + remaining * 1000;
-    setRunning(true);
-  };
-
-  const addMinute = () => {
-    setRemaining((r) => r + 60);
-    if (running) deadlineRef.current += 60000;
-  };
-
-  const skip = () => {
-    if (phase < phases.length - 1) {
-      const nextTotal = phases[phase + 1].seconds;
-      deadlineRef.current = Date.now() + nextTotal * 1000;
-      setPhase(phase + 1);
-      setRemaining(nextTotal);
-      setFinished(false);
-    } else {
-      setRemaining(0);
-      setRunning(false);
-      setFinished(true);
-    }
-  };
-
-  const stop = () => {
-    setRunning(false);
-    setStarted(false);
-    setFinished(false);
-    setPhase(0);
+    startTimer(list, display, chimeOn);
   };
 
   const toggleFullscreen = () => {
@@ -457,18 +342,18 @@ export default function TimerView() {
       </div>
 
       <div className="timer-stage">
-        {display === "circle" && (
+        {runDisplay === "circle" && (
           <RingCountdown frac={finished ? 0 : frac} color={color}>
             <FlipClock seconds={remaining} color={color} />
           </RingCountdown>
         )}
-        {display === "hourglass" && (
+        {runDisplay === "hourglass" && (
           <>
             <Hourglass frac={finished ? 0 : frac} color={color} running={running} />
             <FlipClock seconds={remaining} color={color} big />
           </>
         )}
-        {display === "flip" && <FlipClock seconds={remaining} color={color} big />}
+        {runDisplay === "flip" && <FlipClock seconds={remaining} color={color} big />}
       </div>
 
       <div className="timer-meta">

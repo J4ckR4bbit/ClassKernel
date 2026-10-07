@@ -81,7 +81,20 @@ input[type="color"] { min-height: 36px; }
   width: 230px; min-width: 230px; background: #21343f; color: #dfe8ee;
   display: flex; flex-direction: column; overflow-y: auto;
 }
-.sidebar .brand { padding: 16px; font-size: 17px; font-weight: 600; color: #fff; letter-spacing: 0.3px; }
+.sidebar .brand { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 16px; font-size: 17px; font-weight: 600; color: #fff; letter-spacing: 0.3px; }
+.sidebar .sidebar-hide {
+  min-height: 36px; min-width: 36px; padding: 0 8px; font-size: 18px; line-height: 1;
+  background: #2b4250; border-color: #3a5462; color: #dfe8ee;
+}
+/* With the menu hidden, a small button in the corner brings it back; the
+   page shifts right just enough to keep it clear. */
+.sidebar-show {
+  position: fixed; top: 10px; left: 10px; z-index: 40;
+  min-width: 44px; min-height: 44px; font-size: 20px; padding: 0;
+  background: #21343f; border-color: #21343f; color: #fff; box-shadow: var(--shadow);
+}
+.sidebar-show:hover { background: #2b4250; }
+.app-shell.sidebar-hidden .main-pane { padding-left: 68px; }
 .sidebar .brand small { display: block; font-size: 11px; font-weight: 400; color: #8fa5b3; margin-top: 2px; }
 .sidebar .section-label { padding: 12px 16px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #9db3c1; }
 .sidebar .class-item, .sidebar .nav-item {
@@ -91,8 +104,6 @@ input[type="color"] { min-height: 36px; }
 .sidebar .class-item:hover, .sidebar .nav-item:hover { background: #2b4250; color: #fff; }
 .sidebar .class-item.active, .sidebar .nav-item.active { background: var(--accent); color: #fff; }
 .sidebar .nav-item .icon { display: inline-block; width: 22px; }
-.sidebar .footer { margin-top: auto; padding: 12px 16px; font-size: 11.5px; color: #9db3c1; word-break: break-all; }
-.sidebar .footer button { width: 100%; margin-bottom: 8px; background: #2b4250; border-color: #3a5462; color: #dfe8ee; }
 
 /* ---------- common ---------- */
 .view-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -172,6 +183,10 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .swatch { width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 50%; border: 1px solid rgba(29, 39, 51, 0.18); }
 .swatch:hover { border-color: var(--accent); transform: scale(1.08); }
 .swatch.on { outline: 2px solid var(--accent); outline-offset: 1px; border-color: #fff; }
+.bh-swatches { flex-wrap: wrap; gap: 4px; max-width: 290px; }
+.bh-swatches .swatch { width: 24px; height: 24px; min-height: 24px; }
+.bh-label-input { color: #fff; font-weight: 600; border-color: transparent; }
+.bh-label-input:focus { outline-color: var(--text); }
 
 .stepper { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--border); border-radius: var(--radius); padding: 2px; background: var(--panel); }
 .stepper .stepper-label { font-size: 12px; color: var(--text-dim); padding: 0 4px; }
@@ -688,6 +703,32 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 }
 .save-error-banner button { min-height: 34px; }
 
+/* ---------- test timer pop-up (bottom right, on any screen) ---------- */
+.timer-mini {
+  --tm-colour: #1F497D;
+  position: fixed; right: 16px; bottom: 16px; z-index: 90;
+  display: flex; align-items: stretch; gap: 6px; padding: 6px;
+  width: min(270px, calc(100vw - 32px));
+  background: var(--panel); border: 3px solid var(--tm-colour); border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(20, 30, 40, 0.25);
+}
+.timer-mini-body {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 0;
+  border: none; background: transparent; padding: 4px 8px; text-align: left; min-height: 0;
+}
+.timer-mini-label { font-size: 13px; font-weight: 700; color: var(--tm-colour); }
+.timer-mini-time { font-size: 34px; font-weight: 800; line-height: 1.05; color: var(--tm-colour); font-variant-numeric: tabular-nums; }
+.timer-mini-sub { font-size: 12px; color: var(--text-dim); }
+.timer-mini-actions { display: flex; flex-direction: column; gap: 6px; }
+.timer-mini-actions button { min-width: 48px; min-height: 0; flex: 1; font-size: 18px; padding: 4px 8px; }
+/* Time's up: red, gently pulsing, and it stays until tapped. */
+.timer-mini.done { background: #c0392b; border-color: #7d1f15; animation: tm-pulse 1.4s ease-in-out infinite; }
+.timer-mini.done .timer-mini-label { font-size: 22px; color: #fff; }
+.timer-mini.done .timer-mini-sub { color: #fbe5e2; }
+@keyframes tm-pulse { 50% { box-shadow: 0 0 0 10px rgba(192, 57, 43, 0.25), 0 8px 28px rgba(20, 30, 40, 0.25); } }
+@media (prefers-reduced-motion: reduce) { .timer-mini.done { animation: none; } }
+.timer-mini.inline { position: static; width: auto; flex-shrink: 0; box-shadow: none; }
+
 /* ---------- random-student picker ---------- */
 .picker-overlay {
   position: fixed; inset: 0; background: rgba(10, 20, 30, 0.78); z-index: 60;
@@ -705,9 +746,9 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .picker-tally .muted { font-size: 15px; font-weight: 400; }
 /* Answering / not answering is the common case, so those two get big buttons. */
 .picker-answer { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-.picker-answer button { font-size: 16px; font-weight: 600; padding: 14px 22px; border: none; border-radius: 10px; }
+.picker-answer button { font-size: 16px; font-weight: 600; padding: 14px 22px; border: none; border-radius: 10px; color: #fff; }
 .picker-answer button:hover { filter: brightness(1.08); }
-.picker-answer .picker-other { border: 1px solid var(--border); background: var(--panel); font-weight: 500; }
+.picker-answer .picker-other { border: 1px solid var(--border); background: var(--panel); color: var(--text); font-weight: 500; }
 .picker-more { display: grid; grid-template-columns: repeat(2, minmax(190px, 1fr)); gap: 8px; width: 100%; }
 .picker-more .bh-btn { margin-bottom: 0; }
 .picker-actions { display: flex; gap: 12px; }
@@ -733,7 +774,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .batch-items .bh-btn { margin-bottom: 0; min-height: 44px; }
 .batch-banner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .batch-tag { background: var(--accent); color: #fff; font-weight: 800; letter-spacing: 1px; font-size: 12px; padding: 4px 8px; border-radius: 6px; }
-.batch-item { font-weight: 700; padding: 6px 12px; border-radius: 6px; }
+.batch-item { font-weight: 700; padding: 6px 12px; border-radius: 6px; color: #fff; }
 .batch-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .batch-actions .spacer { flex: 1; }
 .batch-count { color: var(--text-dim); }
