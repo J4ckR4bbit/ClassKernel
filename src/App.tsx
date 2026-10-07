@@ -17,6 +17,7 @@ import TimerView from "./components/TimerView";
 import PluginView from "./components/PluginView";
 import SettingsView from "./components/SettingsView";
 import AppDialog from "./components/AppDialog";
+import TimerMini from "./components/TimerMini";
 
 /** Toast + dialog + save-error UI shared by both shells. */
 function Overlays() {
@@ -45,6 +46,7 @@ function Overlays() {
           )}
         </div>
       )}
+      <TimerMini />
       <AppDialog />
     </>
   );

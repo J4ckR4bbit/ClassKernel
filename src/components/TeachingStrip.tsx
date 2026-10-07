@@ -10,6 +10,7 @@ import { useBatchEntry } from "../hooks/useBatchEntry";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
 import BatchPanel from "./BatchPanel";
+import TimerMini from "./TimerMini";
 
 const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
 
@@ -216,6 +217,7 @@ export default function TeachingStrip() {
           </div>
         )}
 
+        <TimerMini inline />
         {!batch.active && (
           <footer className="strip-foot">
             <button className="primary" onClick={() => { closeActions(); batch.start(); }} disabled={busy}>
