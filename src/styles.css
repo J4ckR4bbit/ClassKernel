@@ -761,10 +761,11 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
   .strip { width: 100%; box-shadow: none; }
   .strip-rest { display: none; }
 }
-.strip-head { display: flex; align-items: center; gap: 6px; }
-.strip-title { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
-.strip-title b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
-.strip-title .muted { font-size: 12px; }
+.strip-head { display: flex; flex-direction: column; gap: 4px; }
+/* A long class name wraps rather than being cut off. */
+.strip-class { font-size: 16px; line-height: 1.25; overflow-wrap: anywhere; }
+.strip-head-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.strip-count { font-size: 12px; }
 .strip-head-actions { display: flex; gap: 4px; }
 .strip-plan { width: 100%; }
 .strip-tables { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 2px; }

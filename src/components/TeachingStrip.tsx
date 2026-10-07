@@ -87,35 +87,36 @@ export default function TeachingStrip() {
     <div className={`strip-shell dock-${side}`}>
       <aside className="strip">
         <header className="strip-head">
-          <div className="strip-title">
-            <b>{currentClass}</b>
-            <span className="muted">
+          {/* The class name gets a line to itself so it's never cut short by the buttons. */}
+          <b className="strip-class">{currentClass}</b>
+          <div className="strip-head-row">
+            <span className="muted strip-count">
               {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"}
             </span>
-          </div>
-          <div className="strip-head-actions">
-            <button
-              className={`small ${colouring ? "primary" : ""}`}
-              onClick={() => setColouring((c) => !c)}
-              disabled={batch.active}
-              aria-pressed={colouring}
-              title={colouring ? "Done colouring tables" : "Colour the tables"}
-            >
-              🎨
-            </button>
-            <button
-              className="small"
-              onClick={flipSide}
-              title={`Dock to the ${side === "left" ? "right" : "left"} edge of the screen`}
-            >
-              {side === "left" ? "⇥" : "⇤"}
-            </button>
-            <button className="small" onClick={() => setFocusMode(true, "room")} disabled={busy} title="Teach from the full room plan">
-              ⛶
-            </button>
-            <button className="small" onClick={() => setFocusMode(false)} disabled={batch.active} title="Exit teaching mode (Esc)">
-              ✕
-            </button>
+            <div className="strip-head-actions">
+              <button
+                className={`small ${colouring ? "primary" : ""}`}
+                onClick={() => setColouring((c) => !c)}
+                disabled={batch.active}
+                aria-pressed={colouring}
+                title={colouring ? "Done colouring tables" : "Colour the tables"}
+              >
+                🎨
+              </button>
+              <button
+                className="small"
+                onClick={flipSide}
+                title={`Dock to the ${side === "left" ? "right" : "left"} edge of the screen`}
+              >
+                {side === "left" ? "⇥" : "⇤"}
+              </button>
+              <button className="small" onClick={() => setFocusMode(true, "room")} disabled={busy} title="Teach from the full room plan">
+                ⛶
+              </button>
+              <button className="small" onClick={() => setFocusMode(false)} disabled={batch.active} title="Exit teaching mode (Esc)">
+                ✕
+              </button>
+            </div>
           </div>
         </header>
         {planNames.length > 1 && (
