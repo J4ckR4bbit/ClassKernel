@@ -21,6 +21,7 @@
 //   backups/<stamp>/...                   rolling snapshots
 
 import { isValidTimeZone } from "./time";
+import { snapBehaviourColour } from "./behaviourColours";
 import { getFS } from "./fs";
 import { parseCsv, stringifyCsv, num, numOrNull } from "./csv";
 import { visitSeconds } from "./stats";
@@ -227,7 +228,8 @@ export async function loadBehaviourCodes(dataDir: string): Promise<BehaviourCode
       label: r.label ?? r.code,
       kind: (r.kind === "negative" ? "negative" : "positive") as "positive" | "negative",
       points: num(r.points),
-      color: r.color || "#888888",
+      // Colours from before the fixed palette snap to its nearest shade.
+      color: snapBehaviourColour(r.color ?? ""),
     }));
   return codes.length ? codes : DEFAULT_BEHAVIOURS;
 }

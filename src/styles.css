@@ -172,6 +172,10 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .swatch { width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 50%; border: 1px solid rgba(29, 39, 51, 0.18); }
 .swatch:hover { border-color: var(--accent); transform: scale(1.08); }
 .swatch.on { outline: 2px solid var(--accent); outline-offset: 1px; border-color: #fff; }
+.bh-swatches { flex-wrap: wrap; gap: 4px; max-width: 290px; }
+.bh-swatches .swatch { width: 24px; height: 24px; min-height: 24px; }
+.bh-label-input { color: #fff; font-weight: 600; border-color: transparent; }
+.bh-label-input:focus { outline-color: var(--text); }
 
 .stepper { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--border); border-radius: var(--radius); padding: 2px; background: var(--panel); }
 .stepper .stepper-label { font-size: 12px; color: var(--text-dim); padding: 0 4px; }
@@ -705,9 +709,9 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .picker-tally .muted { font-size: 15px; font-weight: 400; }
 /* Answering / not answering is the common case, so those two get big buttons. */
 .picker-answer { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-.picker-answer button { font-size: 16px; font-weight: 600; padding: 14px 22px; border: none; border-radius: 10px; }
+.picker-answer button { font-size: 16px; font-weight: 600; padding: 14px 22px; border: none; border-radius: 10px; color: #fff; }
 .picker-answer button:hover { filter: brightness(1.08); }
-.picker-answer .picker-other { border: 1px solid var(--border); background: var(--panel); font-weight: 500; }
+.picker-answer .picker-other { border: 1px solid var(--border); background: var(--panel); color: var(--text); font-weight: 500; }
 .picker-more { display: grid; grid-template-columns: repeat(2, minmax(190px, 1fr)); gap: 8px; width: 100%; }
 .picker-more .bh-btn { margin-bottom: 0; }
 .picker-actions { display: flex; gap: 12px; }
@@ -733,7 +737,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .batch-items .bh-btn { margin-bottom: 0; min-height: 44px; }
 .batch-banner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .batch-tag { background: var(--accent); color: #fff; font-weight: 800; letter-spacing: 1px; font-size: 12px; padding: 4px 8px; border-radius: 6px; }
-.batch-item { font-weight: 700; padding: 6px 12px; border-radius: 6px; }
+.batch-item { font-weight: 700; padding: 6px 12px; border-radius: 6px; color: #fff; }
 .batch-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .batch-actions .spacer { flex: 1; }
 .batch-count { color: var(--text-dim); }

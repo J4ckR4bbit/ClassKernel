@@ -1,5 +1,4 @@
 import { BehaviourCode } from "../lib/types";
-import { textColorFor } from "../lib/privacy";
 import { BatchEntry } from "../hooks/useBatchEntry";
 
 const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
@@ -39,7 +38,7 @@ export default function BatchPanel({ entry, behaviourCodes, layout }: Props) {
             <button
               key={c.code}
               className="bh-btn"
-              style={{ background: c.color, color: textColorFor(c.color) }}
+              style={{ background: c.color }}
               onClick={() => entry.chooseItem(c)}
             >
               {signed(c.points)} {c.label}
@@ -60,7 +59,7 @@ export default function BatchPanel({ entry, behaviourCodes, layout }: Props) {
     <div className={`batch-panel batch-${layout} active no-print`}>
       <div className="batch-banner">
         <span className="batch-tag">BATCH</span>
-        <span className="batch-item" style={{ background: c.color, color: textColorFor(c.color) }}>
+        <span className="batch-item" style={{ background: c.color }}>
           {signed(c.points)} {c.label}
         </span>
         <button className="small" onClick={entry.changeItem} title="Record something else for the same students">

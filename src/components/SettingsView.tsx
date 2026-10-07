@@ -15,6 +15,7 @@ import {
 } from "../lib/types";
 import { PLUGINS, togglePluginId } from "../plugins/registry";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
+import { BC, BEHAVIOUR_COLOURS } from "../lib/behaviourColours";
 import { dateTimeInZone, deviceTimeZone, listTimeZones } from "../lib/time";
 import * as repo from "../lib/repo";
 import { backupStamp } from "../lib/id";
@@ -188,7 +189,7 @@ function GeneralSettings() {
     if (!code || behaviourCodes.some((c) => c.code === code)) return;
     void setBehaviourCodes([
       ...behaviourCodes,
-      { code, label: code, kind, points: kind === "positive" ? 1 : -1, color: kind === "positive" ? "#2e9e5b" : "#d65c5c" },
+      { code, label: code, kind, points: kind === "positive" ? 1 : -1, color: kind === "positive" ? BC.green : BC.red },
     ]);
   };
 
@@ -299,7 +300,7 @@ function GeneralSettings() {
               <th>Label</th>
               <th style={{ width: 110 }}>Type</th>
               <th style={{ width: 90 }}>Points</th>
-              <th style={{ width: 90 }}>Color</th>
+              <th>Colour</th>
               <th style={{ width: 40 }}></th>
             </tr>
           </thead>
@@ -338,7 +339,13 @@ function GeneralSettings() {
                   />
                 </td>
                 <td>
-                  <input value={c.label} onChange={(e) => update(c.code, { label: e.target.value })} />
+                  {/* Shown as the button itself, so the colour choice is previewed in place. */}
+                  <input
+                    className="bh-label-input"
+                    style={{ background: c.color }}
+                    value={c.label}
+                    onChange={(e) => update(c.code, { label: e.target.value })}
+                  />
                 </td>
                 <td>
                   <select
@@ -358,12 +365,20 @@ function GeneralSettings() {
                   />
                 </td>
                 <td>
-                  <input
-                    type="color"
-                    value={c.color}
-                    onChange={(e) => update(c.code, { color: e.target.value })}
-                    style={{ padding: 1, width: 52, height: 36 }}
-                  />
+                  {/* A fixed set of deep shades that all carry white text, so the
+                      buttons always match one another. */}
+                  <div className="swatch-row bh-swatches" role="group" aria-label={`Colour for ${c.label}`}>
+                    {BEHAVIOUR_COLOURS.map((p) => (
+                      <button
+                        key={p.hex}
+                        className={`swatch ${c.color === p.hex ? "on" : ""}`}
+                        style={{ background: p.hex }}
+                        title={p.name}
+                        aria-label={`${p.name} for ${c.label}`}
+                        onClick={() => update(c.code, { color: p.hex })}
+                      />
+                    ))}
+                  </div>
                 </td>
                 <td>
                   <button className="small danger" onClick={() => void remove(c.code)}>

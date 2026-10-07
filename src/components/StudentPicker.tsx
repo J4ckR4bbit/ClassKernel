@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
-import { displayStudentName, textColorFor } from "../lib/privacy";
+import { displayStudentName } from "../lib/privacy";
 import { today } from "../lib/id";
 import { EMPTY_ANSWER_TALLY, answerTallyByStudent } from "../lib/stats";
 import { ANSWERED_BEHAVIOUR, BehaviourCode, BehaviourEvent, NO_ANSWER_BEHAVIOUR, Student } from "../lib/types";
@@ -148,14 +148,14 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
           <>
             <div className="picker-answer">
               <button
-                style={{ background: answered.color, color: textColorFor(answered.color) }}
+                style={{ background: answered.color }}
                 onClick={() => log(answered)}
                 title="Record that they answered"
               >
                 ✓ {answered.label} {signed(answered.points)}
               </button>
               <button
-                style={{ background: noAnswer.color, color: textColorFor(noAnswer.color) }}
+                style={{ background: noAnswer.color }}
                 onClick={() => log(noAnswer)}
                 title="Record that they could not answer"
               >
@@ -173,7 +173,7 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
                   <button
                     key={c.code}
                     className="bh-btn"
-                    style={{ background: c.color, color: textColorFor(c.color) }}
+                    style={{ background: c.color }}
                     onClick={() => log(c)}
                   >
                     {signed(c.points)} {c.label}

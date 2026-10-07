@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { MemFS, getFS, setFS } from "./fs";
 import * as repo from "./repo";
 import { AttendanceEntry, BathroomVisit, DEFAULT_USER_PREFS, Mark, Student } from "./types";
+import { BC, BEHAVIOUR_COLOURS } from "./behaviourColours";
 
 const DIR = "/data";
 const CLS = "7B-Science";
@@ -21,6 +22,17 @@ describe("data folder", () => {
     expect(codes.length).toBeGreaterThan(4);
     expect(codes.some((c) => c.kind === "positive")).toBe(true);
     expect(codes.some((c) => c.points < 0)).toBe(true);
+  });
+
+  it("snaps behaviour colours from before the fixed palette onto it", async () => {
+    await getFS().writeAtomic(
+      `${DIR}/behaviours.csv`,
+      "code,label,kind,points,color\nTALK,Talking,negative,-1,#e0a63a\nEFF,Effort,positive,1,#2e9e5b\nX,No colour,negative,-1,\n",
+    );
+    const codes = await repo.loadBehaviourCodes(DIR);
+    const hexes = BEHAVIOUR_COLOURS.map((c) => c.hex);
+    expect(codes.map((c) => c.color)).toEqual([BC.amber, BC.green, BC.slate]);
+    for (const c of codes) expect(hexes).toContain(c.color);
   });
 });
 
