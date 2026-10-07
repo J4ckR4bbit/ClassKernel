@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { useApp } from "../store/appStore";
-import { useTimer } from "../store/timerStore";
-import { COLOR_STOPS, formatCountdown, phaseColor } from "../lib/timer";
+import { useTimer } from "../plugins/test-timer/timerStore";
+import { COLOR_STOPS, formatCountdown, phaseColor } from "../plugins/test-timer/timer";
+import { TEST_TIMER_ID } from "../plugins/registry";
 import { currentTimeZone } from "../lib/time";
 
 /**
@@ -10,9 +12,17 @@ import { currentTimeZone } from "../lib/time";
  * be missed mid-lesson.
  */
 export default function TimerMini({ inline = false }: { inline?: boolean }) {
-  const { view, focusMode, focusStyle, setFocusMode, setView } = useApp();
-  const { timer, dismissed, pause, resume, dismiss } = useTimer();
-  const onTimerScreen = view === "timer" && !focusMode;
+  const { view, activePlugin, focusMode, focusStyle, setFocusMode, openPlugin, userPrefs } = useApp();
+  const { timer, dismissed, pause, resume, dismiss, stop } = useTimer();
+  const onTimerScreen = view === "plugin" && activePlugin === TEST_TIMER_ID && !focusMode;
+  const enabled = userPrefs.enabledPlugins.includes(TEST_TIMER_ID);
+  // The timer is a plugin: switched off, it has no pop-up either — so a timer
+  // still counting would chime with nothing on screen to explain or stop it.
+  const hasTimer = !!timer;
+  useEffect(() => {
+    if (!enabled && hasTimer) stop();
+  }, [enabled, hasTimer, stop]);
+  if (!enabled) return null;
   // In the docked side panel the window is only as wide as the panel, so a
   // corner pop-up would cover its buttons; the panel shows it inline instead.
   const inStrip = focusMode && focusStyle === "strip";
@@ -32,7 +42,7 @@ export default function TimerMini({ inline = false }: { inline?: boolean }) {
 
   const open = () => {
     if (focusMode) setFocusMode(false);
-    setView("timer");
+    openPlugin(TEST_TIMER_ID);
   };
 
   return (

@@ -1,5 +1,5 @@
 // The test timer's countdown, as plain functions over a state object so it can
-// run outside any one screen (see src/store/timerStore.ts) and be tested in
+// run outside any one screen (see ./timerStore.ts) and be tested in
 // Node. Time always comes in as an argument; nothing here reads the clock.
 
 export interface TimerPhase {

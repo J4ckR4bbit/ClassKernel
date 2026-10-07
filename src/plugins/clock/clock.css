@@ -1,0 +1,36 @@
+/* Clock plugin. Loaded with the plugin's chunk, so it costs nothing until the
+   clock is opened. */
+
+.clock-plugin { display: flex; flex-direction: column; height: 100%; gap: 12px; }
+.clock-plugin:fullscreen { background: var(--bg); padding: 24px; }
+.clock-plugin:fullscreen .clock-toolbar { display: none; }
+
+.clock-toolbar { gap: 12px; }
+.clock-zone { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-dim); }
+.clock-zone select { max-width: 280px; }
+.clock-check { gap: 6px; font-size: 13px; }
+
+.clock-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding-bottom: 8px; }
+/* The face takes whatever the caption leaves, and scales to fit it. */
+.clock-fit { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+/* analog face: an SVG keeps its shape, so filling the box is enough */
+.analog-clock { width: 100%; height: 100%; }
+.analog-clock .face { fill: var(--panel); stroke: var(--text); stroke-width: 3; }
+.analog-clock .tick { stroke: var(--text-dim); stroke-width: 1; }
+.analog-clock .tick.major { stroke: var(--text); stroke-width: 2.6; }
+.analog-clock .numeral { font-size: 15px; font-weight: 600; fill: var(--text); font-variant-numeric: tabular-nums; }
+.analog-clock .hand { stroke-linecap: round; }
+.analog-clock .hand.hour { stroke: var(--text); stroke-width: 6; }
+.analog-clock .hand.minute { stroke: var(--text); stroke-width: 4; }
+.analog-clock .hand.second { stroke: #cf1717; stroke-width: 1.6; }
+.analog-clock .cap { fill: #cf1717; }
+
+/* digital face: the timer's flip cards at their own size, scaled by ClockView */
+.clock-digital { display: flex; align-items: center; gap: 10px; width: max-content; transform-origin: 0 0; }
+.clock-suffix { font-size: 22px; font-weight: 700; color: var(--text-dim); letter-spacing: 1px; }
+
+.clock-caption { text-align: center; }
+.clock-date { font-size: 26px; font-weight: 600; }
+.clock-zone-line { font-size: 15px; margin-top: 4px; }
+.clock-plugin:fullscreen .clock-date { font-size: 34px; }

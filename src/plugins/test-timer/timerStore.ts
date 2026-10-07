@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { TimerDisplay } from "../lib/types";
-import { chime } from "../lib/chime";
+import { TimerDisplay } from "../../lib/types";
+import { chime } from "../../lib/chime";
 import {
   TimerPhase,
   TimerState,
@@ -10,7 +10,7 @@ import {
   skipPhase,
   startTimer,
   tick,
-} from "../lib/timer";
+} from "./timer";
 
 /**
  * The test timer, kept outside any one screen so leaving the timer view
