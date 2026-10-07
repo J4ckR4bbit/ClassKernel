@@ -285,6 +285,8 @@ function GeneralSettings() {
 
       <TimeZoneSettings />
 
+      <ReportSettings />
+
       <TeachingModeSettings />
 
       <div className="panel">
@@ -461,6 +463,32 @@ function TimeZoneSettings() {
           ))}
         </select>
         <span className="muted">Now: {dateTimeInZone(now)}</span>
+      </div>
+    </div>
+  );
+}
+
+/** The names printed at the top of parent reports. Saved when you click away. */
+function ReportSettings() {
+  const { userPrefs, setUserPrefs } = useApp();
+  const [school, setSchool] = useState(userPrefs.reportSchool);
+  const [teacher, setTeacher] = useState(userPrefs.reportTeacher);
+  const save = () => {
+    if (school.trim() === userPrefs.reportSchool && teacher.trim() === userPrefs.reportTeacher) return;
+    void setUserPrefs({ ...userPrefs, reportSchool: school.trim(), reportTeacher: teacher.trim() });
+  };
+
+  return (
+    <div className="panel">
+      <h3>Parent reports</h3>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Printed at the top of each parent report (Dashboard → 🖨 Print report). Leave either blank to leave it off.
+      </p>
+      <div className="form-grid report-settings">
+        <label htmlFor="report-school">School name</label>
+        <input id="report-school" value={school} onChange={(e) => setSchool(e.target.value)} onBlur={save} placeholder="e.g. St Benedict's College" />
+        <label htmlFor="report-teacher">Your name on reports</label>
+        <input id="report-teacher" value={teacher} onChange={(e) => setTeacher(e.target.value)} onBlur={save} placeholder="e.g. Mr K. Hilder" />
       </div>
     </div>
   );

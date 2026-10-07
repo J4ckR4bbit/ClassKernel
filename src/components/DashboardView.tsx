@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
 import { today } from "../lib/id";
 import { studentName } from "../lib/types";
@@ -9,6 +9,7 @@ import {
   classProfile,
   classSummary,
   filterToPeriod,
+  periodStart,
   previousPeriod,
   studentProfile,
   studentSummary,
@@ -16,6 +17,7 @@ import {
 import ClassDashboard from "./dashboard/ClassDashboard";
 import StudentDashboard from "./dashboard/StudentDashboard";
 import PrivacyGate from "./PrivacyGate";
+import ReportPreview from "./report/ReportPreview";
 
 const PERIOD_KEY = "classkernel.dashboardPeriod";
 
@@ -48,7 +50,14 @@ export default function DashboardView() {
     behaviourCodes,
     dashboardStudent,
     openStudentDashboard,
+    userPrefs,
+    sensitiveRevealed,
   } = useApp();
+  // The students whose parent reports are in the print preview; null = closed.
+  const [reportFor, setReportFor] = useState<string[] | null>(null);
+  const closeReport = useCallback(() => setReportFor(null), []);
+  // Printing is only offered once the privacy cover is lifted.
+  const revealed = !userPrefs.privacyMode || sensitiveRevealed;
   const [period, setPeriodState] = useState<Period>(readPeriod);
   const setPeriod = (p: Period) => {
     setPeriodState(p);
@@ -115,6 +124,16 @@ export default function DashboardView() {
             👤 Student
           </button>
         </div>
+        {revealed && students.length > 0 && (
+          <button
+            onClick={() =>
+              setReportFor(tab === "student" && student ? [student.id] : [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)).map((s) => s.id))
+            }
+            title="Printable report for parent evenings"
+          >
+            🖨 {tab === "student" ? "Print report" : "Print all reports"}
+          </button>
+        )}
         <div className="seg period-btns" role="group" aria-label="Period">
           {PERIODS.map((p) => (
             <button key={p.id} className={period === p.id ? "on" : ""} aria-pressed={period === p.id} onClick={() => setPeriod(p.id)}>
@@ -145,6 +164,9 @@ export default function DashboardView() {
           />
         )}
       </PrivacyGate>
+      {reportFor && (
+        <ReportPreview studentIds={reportFor} data={all} initialFrom={periodStart(period, day) ?? ""} today={day} onClose={closeReport} />
+      )}
     </div>
   );
 }
