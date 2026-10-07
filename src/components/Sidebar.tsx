@@ -42,6 +42,7 @@ export default function Sidebar({ onHide }: { onHide: () => void }) {
           className={`class-item ${c.name === currentClass ? "active" : ""}`}
           onClick={() => void openClass(c.name)}
         >
+          <ClassDot color={c.color} />
           {c.name}
           {c.room ? <span style={{ opacity: 0.6 }}> · {c.room}</span> : null}
         </button>
@@ -62,6 +63,7 @@ export default function Sidebar({ onHide }: { onHide: () => void }) {
                 style={{ opacity: 0.6, paddingLeft: 28 }}
                 onClick={() => void openClass(c.name)}
               >
+                <ClassDot color={c.color} />
                 {c.name}
               </button>
             ))}
@@ -83,4 +85,9 @@ export default function Sidebar({ onHide }: { onHide: () => void }) {
       {showNew && <NewClassModal onClose={() => setShowNew(false)} onCreate={createClass} />}
     </nav>
   );
+}
+
+/** The class's colour as a small dot; a hollow ring keeps names lined up when it has none. */
+function ClassDot({ color }: { color: string }) {
+  return <span className={`class-dot ${color ? "" : "none"}`} style={color ? { background: color } : undefined} aria-hidden />;
 }

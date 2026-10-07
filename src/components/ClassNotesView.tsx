@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { marked } from "marked";
 import { useApp } from "../store/appStore";
+import { BEHAVIOUR_COLOURS } from "../lib/behaviourColours";
 
 /** Class details + free-form markdown notes (stored as class.md). */
 export default function ClassNotesView() {
@@ -35,6 +36,12 @@ export default function ClassNotesView() {
     showToast("Class renamed");
   };
 
+  // The colour saves straight away, like a toggle; the text fields wait for Save.
+  const setColour = async (color: string) => {
+    await updateClassInfo({ ...info, color });
+    showToast(color ? "Class colour saved" : "Class colour removed");
+  };
+
   const toggleArchive = async () => {
     await updateClassInfo({ ...info, archived: !info.archived });
     showToast(info.archived ? "Class restored" : "Class archived (hidden from the sidebar)");
@@ -60,6 +67,26 @@ export default function ClassNotesView() {
           <input style={{ width: 160 }} value={subject} onChange={(e) => setSubject(e.target.value)} />
           <label>Room</label>
           <input style={{ width: 120 }} value={room} onChange={(e) => setRoom(e.target.value)} />
+        </div>
+        <div className="row class-colour-row">
+          <label>Colour</label>
+          <div className="swatch-row bh-swatches" role="group" aria-label="Class colour">
+            {BEHAVIOUR_COLOURS.map((c) => (
+              <button
+                key={c.hex}
+                className={`swatch ${info.color === c.hex ? "on" : ""}`}
+                style={{ background: c.hex }}
+                title={c.name}
+                aria-label={c.name}
+                aria-pressed={info.color === c.hex}
+                onClick={() => void setColour(c.hex)}
+              />
+            ))}
+          </div>
+          <button className={`small ${info.color ? "" : "primary"}`} onClick={() => void setColour("")} aria-pressed={!info.color}>
+            None
+          </button>
+          <span className="muted">Shows on the Home card and beside the class in the menu.</span>
         </div>
       </div>
 

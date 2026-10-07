@@ -12,6 +12,8 @@ export interface ClassInfo {
   /** Free-form markdown body of class.md (below the front matter). */
   notes: string;
   archived: boolean;
+  /** Colour-coding for the class (a BEHAVIOUR_COLOURS shade); "" = none. */
+  color: string;
 }
 
 export interface Student {

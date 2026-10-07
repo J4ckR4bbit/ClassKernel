@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { CSSProperties, useState } from "react";
 import { useApp } from "../store/appStore";
 import { ClassInfo } from "../lib/types";
 import { today } from "../lib/id";
@@ -61,7 +61,11 @@ export default function HomeView() {
       ) : (
         <div className="home-grid">
           {active.map((c) => (
-            <div key={c.name} className="class-card">
+            <div
+              key={c.name}
+              className={`class-card ${c.color ? "coloured" : ""}`}
+              style={c.color ? ({ "--class-colour": c.color } as CSSProperties) : undefined}
+            >
               <div className="class-card-head">
                 <h3>{c.name}</h3>
                 {meta(c) && <div className="muted">{meta(c)}</div>}

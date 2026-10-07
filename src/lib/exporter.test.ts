@@ -32,7 +32,7 @@ beforeEach(async () => {
   setTimeZone("UTC");
   setFS(new MemFS());
   await repo.ensureDataDir(DIR);
-  await repo.saveClassInfo(DIR, { name: CLS, year: "7", subject: "Science", room: "Lab 2", notes: "", archived: false });
+  await repo.saveClassInfo(DIR, { name: CLS, year: "7", subject: "Science", room: "Lab 2", notes: "", archived: false, color: "" });
   await repo.saveStudents(DIR, CLS, [
     { id: "s1", firstName: "Anna", lastName: "Brown", gender: "F", flags: "SEN", notes: "sits at front" },
     { id: "s2", firstName: "Ben", lastName: "Clark", gender: "M", flags: "", notes: "" },
@@ -97,7 +97,7 @@ describe("loadExportData", () => {
   });
 
   it("does not fall over on a class with no files yet", async () => {
-    await repo.saveClassInfo(DIR, { name: "Empty", year: "8", subject: "", room: "", notes: "", archived: false });
+    await repo.saveClassInfo(DIR, { name: "Empty", year: "8", subject: "", room: "", notes: "", archived: false, color: "" });
     const loaded = await loadExportData(DIR, ["Empty"]);
     expect(loaded.bundles[0].students).toEqual([]);
     const sheets = buildSheets(loaded, { sections: ALL });
@@ -271,7 +271,7 @@ describe("date range", () => {
 
 describe("multi-class exports", () => {
   it("stacks classes into the same sheets with a Class column", async () => {
-    await repo.saveClassInfo(DIR, { name: "8A-Science", year: "8", subject: "Science", room: "Lab 1", notes: "", archived: false });
+    await repo.saveClassInfo(DIR, { name: "8A-Science", year: "8", subject: "Science", room: "Lab 1", notes: "", archived: false, color: "" });
     await repo.saveStudents(DIR, "8A-Science", [
       { id: "t1", firstName: "Cara", lastName: "Diaz", gender: "F", flags: "", notes: "" },
     ]);

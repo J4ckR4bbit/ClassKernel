@@ -102,6 +102,7 @@ export function serializeClassMd(info: ClassInfo): string {
     `subject: ${info.subject}`,
     `room: ${info.room}`,
     `archived: ${info.archived}`,
+    `color: ${info.color ?? ""}`,
     "---",
     "",
   ].join("\n");
@@ -109,7 +110,7 @@ export function serializeClassMd(info: ClassInfo): string {
 }
 
 export function parseClassMd(name: string, text: string): ClassInfo {
-  const info: ClassInfo = { name, year: "", subject: "", room: "", notes: "", archived: false };
+  const info: ClassInfo = { name, year: "", subject: "", room: "", notes: "", archived: false, color: "" };
   const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
   if (m) {
     for (const line of m[1].split(/\r?\n/)) {
@@ -121,6 +122,7 @@ export function parseClassMd(name: string, text: string): ClassInfo {
       else if (key === "subject") info.subject = value;
       else if (key === "room") info.room = value;
       else if (key === "archived") info.archived = value === "true";
+      else if (key === "color") info.color = /^#[0-9a-f]{6}$/i.test(value) ? value : "";
     }
     info.notes = text.slice(m[0].length).replace(/^\r?\n/, "");
   } else {
@@ -140,7 +142,7 @@ export async function listClasses(dataDir: string): Promise<ClassInfo[]> {
     if (await fs.exists(mdPath)) {
       classes.push(parseClassMd(e.name, await fs.readText(mdPath)));
     } else {
-      classes.push({ name: e.name, year: "", subject: "", room: "", notes: "", archived: false });
+      classes.push({ name: e.name, year: "", subject: "", room: "", notes: "", archived: false, color: "" });
     }
   }
   return classes.sort((a, b) => a.name.localeCompare(b.name));

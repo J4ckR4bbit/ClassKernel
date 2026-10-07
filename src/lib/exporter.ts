@@ -119,6 +119,7 @@ export async function loadExportData(dataDir: string, classNames: string[]): Pro
       room: "",
       notes: "",
       archived: false,
+      color: "",
     };
     const [students, attendance, behaviour, bathroom, assessments, marks, questions, questionMarks, seating, desks, lessons] =
       await Promise.all([

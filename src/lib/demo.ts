@@ -46,6 +46,7 @@ export async function seedDemoData(): Promise<string> {
     room: "Lab 2",
     notes: "# Class notes\n\nDemo class generated automatically. Pick a real data folder to start fresh.",
     archived: false,
+    color: "#1d63b0",
   });
 
   const students: Student[] = [];

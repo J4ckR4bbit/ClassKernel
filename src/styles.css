@@ -866,3 +866,10 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
   .picker-more { grid-template-columns: 1fr; }
 }
 .pin-input { font-size: 22px; letter-spacing: 6px; text-align: center; }
+
+/* ---------- class colours ---------- */
+.class-card.coloured { border-top: 6px solid var(--class-colour); }
+.class-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 0; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55); }
+.class-dot.none { background: transparent; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+.main-pane .view-header { padding-bottom: 8px; border-bottom: 3px solid var(--class-colour, transparent); }
+.class-colour-row { margin-top: 10px; }
