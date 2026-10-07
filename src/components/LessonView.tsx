@@ -123,81 +123,129 @@ export default function LessonView() {
       ))}
     </select>
   );
+  // Every lesson action is a large touch target (.lesson-btn) so it can be hit
+  // reliably on a classroom panel.
   const pickButton = (
-    <button onClick={() => setPickerOpen(true)} disabled={busy} title="Choose a random student">
-      🙋 Pick a student
+    <button className="lesson-btn" onClick={() => setPickerOpen(true)} disabled={busy} title="Choose a random student">
+      <span aria-hidden>🙋</span> Pick a student
     </button>
   );
   const batchButton = (
-    <button onClick={startBatch} disabled={busy} title="Record one behaviour for several students at once">
-      ☑ Batch entry
+    <button className="lesson-btn" onClick={startBatch} disabled={busy} title="Record one behaviour for several students at once">
+      <span aria-hidden>☑</span> Batch entry
     </button>
   );
   const seatButton = locked ? (
-    <button onClick={requestUnlock} disabled={busy} title="Seats were assigned this lesson — enter your PIN to assign them again">
-      🔒 Reseat…
+    <button
+      className="lesson-btn"
+      onClick={requestUnlock}
+      disabled={busy}
+      title="Seats were assigned this lesson — enter your PIN to assign them again"
+    >
+      <span aria-hidden>🔒</span> Reseat…
     </button>
   ) : (
-    <button onClick={() => randomise(activePlan)} disabled={busy} title="Reshuffle the seating using your saved rules">
-      🎲 {isShuffling ? "Randomising…" : "Randomise"}
+    <button className="lesson-btn" onClick={() => randomise(activePlan)} disabled={busy} title="Reshuffle the seating using your saved rules">
+      <span aria-hidden>🎲</span> {isShuffling ? "Randomising…" : "Randomise"}
     </button>
   );
   const endButton = (
-    <button className="danger" onClick={() => void endLesson()} disabled={busy}>
-      ⏹ End lesson
+    <button className="lesson-btn danger lesson-end" onClick={() => void endLesson()} disabled={busy}>
+      <span aria-hidden>⏹</span> End lesson
     </button>
   );
   const batchPanel = <BatchPanel entry={batch} behaviourCodes={behaviourCodes} layout={sideBar ? "strip" : "bar"} />;
+  const eventCount = `${lessonEvents.length} event${lessonEvents.length === 1 ? "" : "s"} this lesson`;
+  const otherStyle = userPrefs.teachingStyle === "strip" ? "room" : "strip";
 
   return (
     <div className={shellClass}>
       {focusMode ? (
+        // Grouped so a side column reads as sections (labels show only there);
+        // End lesson sits last, apart from the rest, so it isn't hit by accident.
         <div className="focus-bar">
-          <button onClick={() => setFocusMode(false)} title="Back to the full app (or press Esc)" disabled={batch.active}>
-            ✕ Exit teaching mode
-          </button>
-          <button onClick={() => setFocusMode(true, "strip")} disabled={busy} title="Dock a narrow list of tables to the screen edge">
-            ▥ Side panel
-          </button>
-          {planSelect}
-          <div className="spacer" />
-          <span className="muted">
-            {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson
-          </span>
+          <div className="bar-group bar-top">
+            <button
+              className="lesson-btn"
+              onClick={() => setFocusMode(false)}
+              title="Back to the full app (or press Esc)"
+              disabled={batch.active}
+            >
+              <span aria-hidden>✕</span> Exit teaching mode
+            </button>
+            <span className="muted bar-count">{eventCount}</span>
+          </div>
           {sideBar && batchPanel}
-          {batchButton}
-          {pickButton}
-          {seatButton}
+          {/* While a batch is open these can't be used, so in a side column
+              they make way for it rather than pushing it into a scroll. */}
+          {!(sideBar && batch.active) && (
+            <>
+              <div className="bar-group">
+                <span className="bar-group-label">Record</span>
+                {batchButton}
+                {pickButton}
+              </div>
+              <div className="bar-group">
+                <span className="bar-group-label">Seating</span>
+                {seatButton}
+                {planSelect}
+              </div>
+              <div className="bar-group">
+                <span className="bar-group-label">View</span>
+                <button
+                  className="lesson-btn"
+                  onClick={() => setFocusMode(true, "strip")}
+                  disabled={busy}
+                  title="Dock a narrow list of tables to the screen edge"
+                >
+                  <span aria-hidden>▥</span> Side panel
+                </button>
+              </div>
+            </>
+          )}
+          <div className="spacer" />
           {endButton}
         </div>
       ) : (
-        <div className="view-header">
-          <h1>{currentClass} — Live lesson</h1>
-          {planSelect}
-          <div className="spacer" />
-          <span className="muted">
-            {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"} this lesson · tap a seat to record
-            behaviour or attendance
-          </span>
-          {batchButton}
-          {pickButton}
-          {seatButton}
-          <button onClick={() => setFocusMode(true)} disabled={busy} title="Distraction-free view for teaching, beside your notes">
-            ⛶ Teaching mode
-          </button>
-          <button
-            onClick={() => setFocusMode(true, userPrefs.teachingStyle === "strip" ? "room" : "strip")}
-            disabled={busy}
-            title={
-              userPrefs.teachingStyle === "strip"
-                ? "Teach from the full-screen room plan instead"
-                : "Dock a narrow list of tables to the screen edge, beside your slides"
-            }
-          >
-            {userPrefs.teachingStyle === "strip" ? "⛶ Room plan" : "▥ Side panel"}
-          </button>
-          {endButton}
-        </div>
+        <>
+          <div className="view-header lesson-head">
+            <h1>{currentClass} — Live lesson</h1>
+            <span className="muted">{eventCount} · tap a seat to record behaviour or attendance</span>
+            {planSelect}
+            <div className="spacer" />
+            {/* Far right of the title row: away from the actions, and it can
+                never wrap in beside them on a narrower screen. */}
+            {endButton}
+          </div>
+          {/* Starts at the left, nearest the hand at a touch panel. */}
+          <div className="lesson-toolbar no-print">
+            {batchButton}
+            {pickButton}
+            <span className="lesson-divider" aria-hidden />
+            {seatButton}
+            <span className="lesson-divider" aria-hidden />
+            <button
+              className="lesson-btn"
+              onClick={() => setFocusMode(true)}
+              disabled={busy}
+              title="Distraction-free view for teaching, beside your notes"
+            >
+              <span aria-hidden>⛶</span> Teaching mode
+            </button>
+            <button
+              className="lesson-btn"
+              onClick={() => setFocusMode(true, otherStyle)}
+              disabled={busy}
+              title={
+                otherStyle === "room"
+                  ? "Teach from the full-screen room plan instead"
+                  : "Dock a narrow list of tables to the screen edge, beside your slides"
+              }
+            >
+              <span aria-hidden>{otherStyle === "room" ? "⛶" : "▥"}</span> {otherStyle === "room" ? "Room plan" : "Side panel"}
+            </button>
+          </div>
+        </>
       )}
 
       {!sideBar && batchPanel}

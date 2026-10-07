@@ -231,6 +231,37 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .seating-canvas .room-canvas { max-height: calc(100vh - 230px); margin: 0 auto; }
 
 /* ---------- lesson view ---------- */
+/* Big, touch-sized lesson actions. On the Live lesson page they run in a row
+   from the left (nearest the hand); End lesson is pushed to the far right. */
+.lesson-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 56px; padding: 10px 18px; border-radius: 10px;
+  font-size: 16px; font-weight: 600; white-space: nowrap;
+}
+.lesson-btn > span[aria-hidden] { font-size: 20px; line-height: 1; }
+.lesson-btn.danger { border-color: rgba(192, 57, 43, 0.4); }
+.lesson-head { margin-bottom: 8px; }
+.lesson-head select { min-height: 44px; font-size: 15px; }
+.lesson-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.lesson-divider { align-self: stretch; width: 1px; margin: 6px 4px; background: var(--border); }
+
+/* Teaching-mode button bar, in groups. Across the top/bottom the groups sit in
+   a row; down a side they stack as labelled sections with full-width buttons. */
+.focus-bar .bar-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.focus-bar .bar-group-label { display: none; }
+.focus-bar .bar-count { font-size: 13px; }
+.focus-layout.bar-left > .focus-bar,
+.focus-layout.bar-right > .focus-bar { width: 250px; max-width: 250px; gap: 14px; }
+.focus-layout.bar-left > .focus-bar .bar-group,
+.focus-layout.bar-right > .focus-bar .bar-group { flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 6px; }
+.focus-layout.bar-left > .focus-bar .bar-group-label,
+.focus-layout.bar-right > .focus-bar .bar-group-label {
+  display: block; font-size: 11.5px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-dim);
+}
+.focus-layout.bar-left > .focus-bar .lesson-btn,
+.focus-layout.bar-right > .focus-bar .lesson-btn { width: 100%; justify-content: flex-start; }
+.focus-layout.bar-left > .focus-bar select,
+.focus-layout.bar-right > .focus-bar select { min-height: 44px; }
 .behaviour-popover {
   position: absolute; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: 0 6px 24px rgba(0,0,0,0.18); padding: 12px; z-index: 30; width: 300px;

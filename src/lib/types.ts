@@ -320,7 +320,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   popoverShowFlags: false,
   popoverShowNotes: false,
   uiScale: 1,
-  lessonBarSide: "top",
+  lessonBarSide: "left",
   enabledPlugins: [],
   teachingStyle: "room",
   dockSide: "left",

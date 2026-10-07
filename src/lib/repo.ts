@@ -820,7 +820,7 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
     popoverShowFlags: kv.get("popover_flags") === "true",
     popoverShowNotes: kv.get("popover_notes") === "true",
     uiScale: Math.min(2, Math.max(1, uiScale > 0 ? uiScale : 1)),
-    lessonBarSide: LESSON_BAR_SIDES.includes(barSide) ? barSide : "top",
+    lessonBarSide: LESSON_BAR_SIDES.includes(barSide) ? barSide : "left",
     // Unknown ids are kept as they are — a plugin missing from this build is
     // still switched on for a build that has it.
     enabledPlugins: (kv.get("plugins_enabled") ?? "")

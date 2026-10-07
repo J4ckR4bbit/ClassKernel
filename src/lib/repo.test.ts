@@ -387,11 +387,11 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
     expect((await repo.loadUserPrefs(DIR)).enabledPlugins).toEqual([]);
   });
 
-  it("falls back to a top lesson bar when the setting is missing or unknown", async () => {
+  it("falls back to a left lesson bar when the setting is missing or unknown", async () => {
     await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nui_scale,1\n");
-    expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("top");
+    expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("left");
     await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nlesson_bar_side,sideways\n");
-    expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("top");
+    expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("left");
   });
 
   it("clamps a bad ui_scale back into range", async () => {
