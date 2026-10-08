@@ -1,7 +1,7 @@
 import { CartesianGrid, Legend, Line, LineChart, XAxis, YAxis } from "recharts";
-import { ClassInfo } from "../../lib/types";
+import { ClassInfo, GradeScale } from "../../lib/types";
 import { ReportSection, StudentProfile, TopicScore, fmtNum, fmtPct } from "../../lib/insights";
-import { formatDuration } from "../../lib/stats";
+import { GRADE_SCALES, formatDuration, gradeForPct } from "../../lib/stats";
 import { C_GRID, C_INK, C_PRIMARY, C_SECONDARY } from "../dashboard/shared";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -35,6 +35,7 @@ export default function ParentReport({
   comment,
   onComment,
   onCommentDone,
+  gradeScale,
 }: {
   profile: StudentProfile;
   summary: string[];
@@ -48,6 +49,8 @@ export default function ParentReport({
   onComment: (text: string) => void;
   /** The comment box lost focus: the place to save it. */
   onCommentDone: () => void;
+  /** Show results as SA levels (7–1) or symbols (A–F). */
+  gradeScale: GradeScale;
 }) {
   const first = p.student.firstName || "Student";
   const classLine = [classInfo?.subject, classInfo?.year && `Grade ${classInfo.year}`, classInfo?.name].filter(Boolean).join(" · ");
@@ -95,8 +98,8 @@ export default function ParentReport({
                 <th>Type</th>
                 <th className="num">Mark</th>
                 <th className="num">%</th>
-                <th className="num" title="Achievement level, 7 = 80%+ … 1 = below 30%">
-                  Level
+                <th className="num" title={GRADE_SCALES[gradeScale].key}>
+                  {GRADE_SCALES[gradeScale].label}
                 </th>
                 <th className="num">Class average</th>
               </tr>
@@ -111,7 +114,7 @@ export default function ParentReport({
                     {r.mark !== null ? `${fmtNum(r.mark, Number.isInteger(r.mark) ? 0 : 1)} / ${r.assessment.totalMarks}` : "not written"}
                   </td>
                   <td className="num">{r.pct !== null ? fmtPct(r.pct) : ""}</td>
-                  <td className="num">{r.symbol}</td>
+                  <td className="num">{gradeForPct(r.pct, gradeScale)}</td>
                   <td className="num">{fmtPct(r.classMean)}</td>
                 </tr>
               ))}

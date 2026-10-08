@@ -17,7 +17,6 @@ import {
   formatDuration,
   overallPercent,
   percentage,
-  symbolForPct,
   visitSeconds,
 } from "./stats";
 import {
@@ -244,7 +243,6 @@ export interface AssessmentRow {
   assessment: Assessment;
   mark: number | null;
   pct: number | null;
-  symbol: string;
   classMean: number | null;
   /** pct − classMean, in percentage points. */
   diff: number | null;
@@ -596,7 +594,6 @@ export function studentProfile(student: Student, data: ClassData, cls: ClassProf
         assessment: a,
         mark: m?.mark ?? null,
         pct,
-        symbol: symbolForPct(pct),
         classMean,
         diff: pct !== null && classMean !== null ? pct - classMean : null,
         comment: m?.comment ?? "",

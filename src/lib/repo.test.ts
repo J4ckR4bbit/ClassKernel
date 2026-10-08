@@ -392,6 +392,7 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       dockSide: "right" as const,
       reseatPinHash: "a".repeat(64),
       timeZone: "Africa/Johannesburg",
+      gradeScale: "symbol" as const,
       reportSchool: "St Benedict's College",
       reportTeacher: "Mr K. Hilder",
     };
@@ -403,6 +404,12 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
     const fresh = await repo.loadUserPrefs(DIR);
     expect(fresh.reportSchool).toBe("");
     expect(fresh.reportTeacher).toBe("");
+  });
+
+  it("shows results as SA levels unless symbols were chosen", async () => {
+    expect((await repo.loadUserPrefs(DIR)).gradeScale).toBe("level");
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\ngrade_scale,letters\n");
+    expect((await repo.loadUserPrefs(DIR)).gradeScale).toBe("level");
   });
 
   it("defaults teaching mode to the room plan with no reseat PIN", async () => {

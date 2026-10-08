@@ -8,7 +8,7 @@
 
 import * as repo from "./repo";
 import { deskSitCounts, pairInsights, studentDeskStats } from "./lessons";
-import { assessmentStats, attendanceByStudent, behaviourByStudent, formatDuration, percentage, symbolForPct, visitSeconds } from "./stats";
+import { GRADE_SCALES, assessmentStats, attendanceByStudent, behaviourByStudent, formatDuration, gradeForPct, percentage, visitSeconds } from "./stats";
 import { SheetSpec } from "./xlsx";
 import { dateInZone, timeInZone } from "./time";
 import {
@@ -21,6 +21,7 @@ import {
   BehaviourEvent,
   ClassInfo,
   Desk,
+  GradeScale,
   LessonRecord,
   Mark,
   QuestionMark,
@@ -65,7 +66,7 @@ export const EXPORT_SECTIONS: SectionInfo[] = [
   { id: "behaviourSummary", label: "Behaviour summary", description: "Per student: positives, negatives and net points", sheetNames: ["Behaviour summary"], defaultOn: true },
   { id: "bathroom", label: "Bathroom log", description: "Every timed bathroom trip: when they left, came back and for how long", sheetNames: ["Bathroom log"], defaultOn: true },
   { id: "assessments", label: "Assessments", description: "Each test with mean, median, range and spread", sheetNames: ["Assessments"], defaultOn: true },
-  { id: "marks", label: "Marks", description: "Per student per assessment: mark, percentage and symbol", sheetNames: ["Marks"], defaultOn: true },
+  { id: "marks", label: "Marks", description: "Per student per assessment: mark, percentage and level or symbol", sheetNames: ["Marks"], defaultOn: true },
   { id: "questionMarks", label: "Question marks", description: "Per question marks with topic and cognitive level (large)", sheetNames: ["Question marks"], defaultOn: false },
   { id: "topicPerformance", label: "Topic performance", description: "Per student per topic: marks gained out of marks available", sheetNames: ["Topic performance"], defaultOn: true },
   { id: "seating", label: "Seating plans", description: "Saved plans: which student sits at which desk seat", sheetNames: ["Seating plans"], defaultOn: false },
@@ -80,6 +81,8 @@ export interface ExportOptions {
   /** Inclusive YYYY-MM-DD bounds on dated data. Empty = unbounded. */
   from?: string;
   to?: string;
+  /** Marks as SA levels (7–1, the default) or symbols (A–F). */
+  gradeScale?: GradeScale;
   /** Shown on the "Export info" sheet. */
   dataDir?: string;
   generatedAt?: Date;
@@ -403,10 +406,10 @@ const assessmentsSheet: Builder = (bundles) => [
   },
 ];
 
-const marksSheet: Builder = (bundles) => [
+const marksSheet: Builder = (bundles, _data, options) => [
   {
     name: "Marks",
-    columns: ["Class", "Assessment", "Date", "Category", "Student ID", "Student", "Mark", "Out of", "Percent", "Symbol", "Comment"],
+    columns: ["Class", "Assessment", "Date", "Category", "Student ID", "Student", "Mark", "Out of", "Percent", GRADE_SCALES[options.gradeScale ?? "level"].label, "Comment"],
     rows: bundles.flatMap((b) => {
       const rows: (string | number | null)[][] = [];
       for (const a of [...b.assessments].sort((x, y) => x.date.localeCompare(y.date))) {
@@ -423,7 +426,7 @@ const marksSheet: Builder = (bundles) => [
             mark?.mark ?? null,
             a.totalMarks,
             round1(pct),
-            symbolForPct(pct),
+            gradeForPct(pct, options.gradeScale ?? "level"),
             mark?.comment ?? "",
           ]);
         }

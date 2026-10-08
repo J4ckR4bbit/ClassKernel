@@ -172,7 +172,7 @@ describe("buildSheets", () => {
     expect(cell(s, 1, "Seconds")).toBeNull();
   });
 
-  it("writes marks as numbers with percentage and symbol", () => {
+  it("writes marks as numbers with percentage and level", () => {
     const s = sheet(buildSheets(data, { sections: ["marks"] }), "Marks");
     // 2 assessments x 2 students, oldest assessment first
     expect(s.rows).toHaveLength(4);
@@ -180,11 +180,18 @@ describe("buildSheets", () => {
     expect(cell(s, 0, "Mark")).toBe(18);
     expect(cell(s, 0, "Out of")).toBe(20);
     expect(cell(s, 0, "Percent")).toBe(90);
-    expect(cell(s, 0, "Symbol")).toBe("7");
+    expect(cell(s, 0, "Level")).toBe("7");
     // Ben has no mark for the second test: the row stays, the mark is blank.
     const missing = s.rows.find((r) => r[1] === "Topic test 2" && r[5] === "Ben Clark")!;
     expect(missing[s.columns.indexOf("Mark")]).toBeNull();
     expect(missing[s.columns.indexOf("Percent")]).toBeNull();
+  });
+
+  it("writes symbols instead of levels when chosen", () => {
+    const s = sheet(buildSheets(data, { sections: ["marks"], gradeScale: "symbol" }), "Marks");
+    expect(s.columns).toContain("Symbol");
+    expect(s.columns).not.toContain("Level");
+    expect(cell(s, 0, "Symbol")).toBe("A");
   });
 
   it("reports assessment statistics", () => {

@@ -858,6 +858,7 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
     reseatPinHash: /^[0-9a-f]{64}$/.test(kv.get("reseat_pin") ?? "") ? kv.get("reseat_pin")! : "",
     // An unknown zone (typo, or one this machine doesn't know) falls back to the device's.
     timeZone: isValidTimeZone(kv.get("time_zone") ?? "") ? kv.get("time_zone")! : "",
+    gradeScale: kv.get("grade_scale") === "symbol" ? "symbol" : "level",
     reportSchool: kv.get("report_school") ?? "",
     reportTeacher: kv.get("report_teacher") ?? "",
   };
@@ -878,6 +879,7 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "dock_side", value: prefs.dockSide },
     { key: "reseat_pin", value: prefs.reseatPinHash },
     { key: "time_zone", value: prefs.timeZone },
+    { key: "grade_scale", value: prefs.gradeScale },
     { key: "report_school", value: prefs.reportSchool },
     { key: "report_teacher", value: prefs.reportTeacher },
   ];

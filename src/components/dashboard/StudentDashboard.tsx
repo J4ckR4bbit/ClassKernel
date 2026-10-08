@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Student, studentName } from "../../lib/types";
-import { formatDuration, symbolForPct } from "../../lib/stats";
+import { GRADE_SCALES, formatDuration, gradeForPct } from "../../lib/stats";
+import { useApp } from "../../store/appStore";
 import { dateInZone, timeInZone } from "../../lib/time";
 import { StudentProfile, TopicScore, fmtNum, fmtSigned } from "../../lib/insights";
 import {
@@ -34,6 +35,7 @@ export default function StudentDashboard({
   codeLabel: (code: string) => { label: string; color: string };
   onPick: (id: string) => void;
 }) {
+  const scale = useApp((s) => s.userPrefs.gradeScale);
   const sorted = useMemo(
     () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
     [students],
@@ -80,7 +82,7 @@ export default function StudentDashboard({
 
       <div className="stat-tiles">
         <StatTile value={fmtPct(p.overall)} label={p.rank !== null ? `average · ranked ${p.rank} of ${p.rankedOf}` : "average"} />
-        <StatTile value={p.overall !== null ? symbolForPct(p.overall) : "—"} label="symbol" />
+        <StatTile value={p.overall !== null ? gradeForPct(p.overall, scale) : "—"} label={GRADE_SCALES[scale].label.toLowerCase()} />
         <StatTile value={att.rate !== null ? fmtPct(att.rate * 100) : "—"} label="attendance" />
         <StatTile
           value={fmtSigned(p.behaviour.net)}
@@ -105,8 +107,8 @@ export default function StudentDashboard({
                   <th>Type</th>
                   <th className="num">Mark</th>
                   <th className="num">%</th>
-                  <th className="num" title="SA achievement code (7 = 80%+ … 1 = below 30%)">
-                    Sym
+                  <th className="num" title={GRADE_SCALES[scale].key}>
+                    {GRADE_SCALES[scale].short}
                   </th>
                   <th className="num">Class</th>
                   <th className="num">±</th>
@@ -123,7 +125,7 @@ export default function StudentDashboard({
                     <td>{[r.assessment.category, r.assessment.contentArea].filter(Boolean).join(" · ") || "—"}</td>
                     <td className="num">{r.mark !== null ? `${fmtNum(r.mark, Number.isInteger(r.mark) ? 0 : 1)} / ${r.assessment.totalMarks}` : <span className="muted">not entered</span>}</td>
                     <td className="num">{r.pct !== null ? fmtPct(r.pct) : ""}</td>
-                    <td className="num">{r.symbol}</td>
+                    <td className="num">{gradeForPct(r.pct, scale)}</td>
                     <td className="num">{fmtPct(r.classMean)}</td>
                     <td className={`num ${r.diff === null ? "" : r.diff >= 0 ? "pos" : "neg"}`}>
                       {r.diff !== null ? fmtSigned(Math.round(r.diff)) : ""}

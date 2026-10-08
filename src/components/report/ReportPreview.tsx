@@ -162,6 +162,7 @@ export default function ReportPreview({
               comment={commentOf(s.id)}
               onComment={(text) => setDrafts((d) => ({ ...d, [s.id]: text }))}
               onCommentDone={() => saveComment(s.id)}
+              gradeScale={userPrefs.gradeScale}
             />
           );
         })}

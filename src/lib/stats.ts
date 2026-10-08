@@ -8,6 +8,7 @@ import {
   AttendanceEntry,
   BathroomVisit,
   BehaviourEvent,
+  GradeScale,
   Mark,
   NO_ANSWER_BEHAVIOUR,
   QuestionMark,
@@ -154,6 +155,36 @@ export function symbolForPct(pct: number | null): string {
   if (pct >= 30) return "2";
   return "1";
 }
+
+/** The letter symbol for a percentage: A 80%+, B 70–79, C 60–69, D 50–59, E 40–49, F below 40. */
+export function letterForPct(pct: number | null): string {
+  if (pct === null || !Number.isFinite(pct)) return "";
+  if (pct >= 80) return "A";
+  if (pct >= 70) return "B";
+  if (pct >= 60) return "C";
+  if (pct >= 50) return "D";
+  if (pct >= 40) return "E";
+  return "F";
+}
+
+/** A percentage as a grade on the teacher's chosen scale (Settings → Assessments). */
+export function gradeForPct(pct: number | null, scale: GradeScale): string {
+  return scale === "symbol" ? letterForPct(pct) : symbolForPct(pct);
+}
+
+/** Labels and the key for each scale, for column headers and help text. */
+export const GRADE_SCALES: Record<GradeScale, { label: string; short: string; key: string }> = {
+  level: {
+    label: "Level",
+    short: "Lvl",
+    key: "7 = 80%+, 6 = 70–79, 5 = 60–69, 4 = 50–59, 3 = 40–49, 2 = 30–39, 1 = below 30%",
+  },
+  symbol: {
+    label: "Symbol",
+    short: "Sym",
+    key: "A = 80%+, B = 70–79, C = 60–69, D = 50–59, E = 40–49, F = below 40%",
+  },
+};
 
 export function assessmentStats(assessment: Assessment, marks: Mark[]): AssessmentStats {
   const pcts = marks

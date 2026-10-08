@@ -4,6 +4,7 @@ import {
   BehaviourCode,
   CognitiveLevel,
   DEFAULT_TOPIC_AREAS,
+  GradeScale,
   LESSON_BAR_SIDES,
   LessonBarSide,
   SeatNameStyle,
@@ -13,6 +14,7 @@ import {
   TopicEntry,
   studentName,
 } from "../lib/types";
+import { GRADE_SCALES } from "../lib/stats";
 import { PLUGINS, togglePluginId } from "../plugins/registry";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import { BC, BEHAVIOUR_COLOURS } from "../lib/behaviourColours";
@@ -1043,6 +1045,28 @@ function AssessmentSettings() {
         </label>
         <p className="muted" style={{ marginBottom: 0 }}>
           Tab always moves the other way. Arrow keys move one cell.
+        </p>
+      </div>
+
+      <div className="panel">
+        <h3>Show results as</h3>
+        <div className="row grade-scale-choice" role="radiogroup" aria-label="Show results as">
+          {(["level", "symbol"] as GradeScale[]).map((g) => (
+            <label key={g} className="row">
+              <input
+                type="radio"
+                name="grade-scale"
+                checked={userPrefs.gradeScale === g}
+                onChange={() => void setUserPrefs({ ...userPrefs, gradeScale: g })}
+              />
+              <span>
+                <b>{GRADE_SCALES[g].label}</b> <span className="muted">— {GRADE_SCALES[g].key}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        <p className="muted" style={{ marginBottom: 0 }}>
+          Used in the marking grid, the dashboards, parent reports and spreadsheet exports.
         </p>
       </div>
     </>

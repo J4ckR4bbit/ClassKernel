@@ -201,9 +201,9 @@ describe("student profile", () => {
     expect(amy.answers).toMatchObject({ asked: 3, answered: 3 });
     expect(amy.attendance).toMatchObject({ present: 1, absent: 1 });
     expect(amy.absentDates).toEqual(["2026-10-05"]);
-    expect(amy.assessments.map((r) => [r.assessment.title, r.mark, r.pct, r.symbol, r.classMean, r.diff])).toEqual([
-      ["Test 1", 18, 90, "7", 70, 20],
-      ["Test 2", 40, 80, "7", 60, 20],
+    expect(amy.assessments.map((r) => [r.assessment.title, r.mark, r.pct, r.classMean, r.diff])).toEqual([
+      ["Test 1", 18, 90, 70, 20],
+      ["Test 2", 40, 80, 60, 20],
     ]);
     expect(amy.assessments[1].comment).toBe("Well done");
     expect(amy.topics.map((t) => [t.name, t.pct, t.classPct])).toEqual([
