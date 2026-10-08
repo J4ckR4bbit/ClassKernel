@@ -557,8 +557,10 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
             {sorted.map((s, r) => {
               const p = provisionals.get(s.id)!;
               const rank = ranks.get(s.id);
+              // Every question has a mark: the row greys out (the one being typed in is yellow, see styles.css).
+              const done = questions.length > 0 && questions.every((q) => markOf(s.id, q.number) != null);
               return (
-                <tr key={s.id}>
+                <tr key={s.id} className={done ? "done" : undefined}>
                   <td className="col-no sticky-left">{r + 1}</td>
                   <td className="col-name sticky-left second">{s.lastName}</td>
                   <td className="col-name sticky-left third">{s.firstName}</td>
@@ -703,7 +705,7 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
           const pct = m?.mark != null && assessment.totalMarks > 0 ? Math.round((m.mark / assessment.totalMarks) * 100) : null;
           const over = m?.mark != null && m.mark > assessment.totalMarks;
           return (
-            <div key={s.id} className="quick-mark-row">
+            <div key={s.id} className={`quick-mark-row ${m?.mark != null ? "done" : ""}`}>
               <span className="name">
                 {i + 1}. {studentName(s)}
               </span>

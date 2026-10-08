@@ -55,6 +55,9 @@
   --accent-soft: var(--md-secondary-container);
   --danger: var(--md-error);
   --warn: #8a5a00;
+  /* Marking: the student being marked, and students whose marks are all in. */
+  --mark-current: #fff1a8;
+  --mark-done: #e2e4e2;
   --radius: var(--md-shape-m);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 
@@ -530,6 +533,8 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .quick-mark-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
 .quick-mark-row.active { background: var(--md-secondary-container); }
 .quick-mark-row .name { width: 220px; }
+.quick-mark-row.done { background: var(--mark-done); }
+.quick-mark-row:focus-within { background: var(--mark-current); }
 
 /* ---------- home ---------- */
 .home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
@@ -586,6 +591,9 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .mark-grid thead .sticky-left, .mark-grid thead .sticky-right { background: var(--md-surface-container-low); z-index: 3; }
 .mark-grid .topic-row .sticky-left { background: var(--md-surface-container-low); }
 .mark-grid tbody tr:hover .sticky-left, .mark-grid tbody tr:hover .sticky-right { background: #f3f7f2; }
+/* Grey once every question has a mark; yellow for the student being marked (wins). */
+.mark-grid tbody tr.done td, .mark-grid tbody tr.done:hover td { background: var(--mark-done); }
+.mark-grid tbody tr:focus-within td, .mark-grid tbody tr:focus-within:hover td { background: var(--mark-current); }
 .mark-grid .sticky-left { left: 0; }
 .mark-grid .sticky-left.second { left: 40px; }
 .mark-grid .sticky-left.third { left: 156px; }
