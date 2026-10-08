@@ -1,5 +1,6 @@
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CodeCount, StudentCount, WeekPoint, fmtNum, fmtPct } from "../../lib/insights";
+import Icon, { IconName } from "../Icon";
 
 // Chart colours, checked with the dataviz palette validator on the light
 // surface. Green/blue is the existing pair (student vs class). Positive vs
@@ -8,8 +9,10 @@ import { CodeCount, StudentCount, WeekPoint, fmtNum, fmtPct } from "../../lib/in
 export const C_PRIMARY = "#2e9455";
 export const C_SECONDARY = "#3b6fd6";
 export const C_NEGATIVE = "#c0322b";
-export const C_GRID = "#eef1f4";
-export const C_INK = "#5c6b7a";
+// Grid and axis ink are the Material neutrals (surface-container-high and
+// on-surface-variant), so the charts sit in the same greys as the rest.
+export const C_GRID = "#e5eae2";
+export const C_INK = "#414942";
 
 const shortDate = (date: string) => {
   const [, m, d] = date.split("-").map(Number);
@@ -75,6 +78,7 @@ export function CodeCountChart({ counts, max = 8 }: { counts: CodeCount[]; max?:
 
 /** One short ranked list of students; each name opens that student's tab. */
 export function PeopleList({
+  icon,
   title,
   hint,
   people,
@@ -84,6 +88,7 @@ export function PeopleList({
   tone,
   max = 6,
 }: {
+  icon: IconName;
   title: string;
   hint?: string;
   people: StudentCount[];
@@ -95,7 +100,9 @@ export function PeopleList({
 }) {
   return (
     <div className={`panel people-list ${tone ?? ""}`}>
-      <h3>{title}</h3>
+      <h3>
+        <Icon name={icon} size={20} /> {title}
+      </h3>
       {hint && <p className="muted people-hint">{hint}</p>}
       {people.length === 0 ? (
         <p className="muted">{empty}</p>

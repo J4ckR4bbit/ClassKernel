@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { useApp } from "../store/appStore";
+import Icon from "./Icon";
 
 /**
  * Covers a screen containing individual student information until the teacher
@@ -13,8 +14,8 @@ export default function PrivacyGate({ label, children }: { label: string; childr
   if (!userPrefs.privacyMode || sensitiveRevealed) return <>{children}</>;
   return (
     <div className="privacy-gate">
-      <div className="privacy-gate-icon" aria-hidden>
-        👁
+      <div className="privacy-gate-icon">
+        <Icon name="visibility" size={32} />
       </div>
       <p>This screen shows {label} for individual students.</p>
       <button className="primary privacy-gate-btn" onClick={revealSensitive}>

@@ -2,6 +2,7 @@ import { ReactElement, useEffect, useRef, useState } from "react";
 import { elapsed, formatStopwatch, lapRows } from "./stopwatch";
 import { useStopwatch } from "./stopwatchStore";
 import "./stopwatch.css";
+import Icon from "../../components/Icon";
 
 // A lab stopwatch with a seven-segment display: start, pause, lap and restart.
 // The time lives in a store, so it keeps running if the teacher leaves this
@@ -203,17 +204,17 @@ export default function StopwatchView() {
 
       <div className="row sw-controls">
         <button className="sw-btn" onClick={restart} disabled={total === 0 && sw.laps.length === 0}>
-          ↺ Restart
+          <Icon name="restart_alt" size={20} /> Restart
         </button>
         <button className="sw-btn" onClick={lap} disabled={!sw.running}>
-          ⚑ Lap
+          <Icon name="flag" size={20} /> Lap
         </button>
         <button className={`sw-btn sw-main ${sw.running ? "running" : "primary"}`} onClick={toggle}>
-          {sw.running ? "❚❚" : "▶"} {startLabel}
+          <Icon name={sw.running ? "pause" : "play_arrow"} size={20} /> {startLabel}
         </button>
         <div className="spacer" />
         <button className="no-print" onClick={toggleFullscreen}>
-          ⤢ Fullscreen
+          <Icon name="fullscreen" size={20} /> Fullscreen
         </button>
       </div>
       <div className="muted small sw-keys">

@@ -4,6 +4,7 @@ import { displayStudentName } from "../lib/privacy";
 import { today } from "../lib/id";
 import { EMPTY_ANSWER_TALLY, answerTallyByStudent } from "../lib/stats";
 import { ANSWERED_BEHAVIOUR, BehaviourCode, BehaviourEvent, NO_ANSWER_BEHAVIOUR, Student } from "../lib/types";
+import Icon from "./Icon";
 
 /** Ids already picked this lesson, so "no repeats" survives a reload. Cleared by End lesson. */
 export const pickedKey = (className: string) => `classkernel.picked.${className}`;
@@ -158,18 +159,18 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
                 onClick={() => logAnswer(answered)}
                 title="Record that they answered"
               >
-                ✓ {answered.label} {signed(answered.points)}
+                <Icon name="check" size={20} /> {answered.label} {signed(answered.points)}
               </button>
               <button
                 style={{ background: noAnswer.color }}
                 onClick={() => logAnswer(noAnswer)}
                 title="Record that they could not answer"
               >
-                ✗ {noAnswer.label} {signed(noAnswer.points)}
+                <Icon name="close" size={20} /> {noAnswer.label} {signed(noAnswer.points)}
               </button>
               {otherCodes.length > 0 && (
                 <button className="picker-other" onClick={() => setShowOthers((v) => !v)} aria-expanded={showOthers}>
-                  ⋯ Other behaviour
+                  <Icon name="more_horiz" size={20} /> Other behaviour
                 </button>
               )}
             </div>
@@ -191,7 +192,7 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
         )}
         <div className="picker-actions">
           <button className="primary" onClick={pick}>
-            🎲 Pick again
+            <Icon name="casino" size={20} /> Pick again
           </button>
           <button onClick={onClose}>Close</button>
         </div>

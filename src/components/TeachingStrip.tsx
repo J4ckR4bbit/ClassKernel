@@ -11,6 +11,8 @@ import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
 import BatchPanel from "./BatchPanel";
 import TimerMini from "./TimerMini";
+import NoiseMini from "./NoiseMini";
+import Icon from "./Icon";
 
 const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
 
@@ -95,26 +97,26 @@ export default function TeachingStrip() {
             </span>
             <div className="strip-head-actions">
               <button
-                className={`small ${colouring ? "primary" : ""}`}
+                className={`icon-only small ${colouring ? "primary" : ""}`}
                 onClick={() => setColouring((c) => !c)}
                 disabled={batch.active}
                 aria-pressed={colouring}
                 title={colouring ? "Done colouring tables" : "Colour the tables"}
               >
-                🎨
+                <Icon name="palette" size={18} />
               </button>
               <button
-                className="small"
+                className="icon-only small"
                 onClick={flipSide}
                 title={`Dock to the ${side === "left" ? "right" : "left"} edge of the screen`}
               >
-                {side === "left" ? "⇥" : "⇤"}
+                <Icon name={side === "left" ? "dock_to_right" : "dock_to_left"} size={18} />
               </button>
-              <button className="small" onClick={() => setFocusMode(true, "room")} disabled={busy} title="Teach from the full room plan">
-                ⛶
+              <button className="icon-only small" onClick={() => setFocusMode(true, "room")} disabled={busy} title="Teach from the full room plan">
+                <Icon name="fullscreen" size={18} />
               </button>
-              <button className="small" onClick={() => setFocusMode(false)} disabled={batch.active} title="Exit teaching mode (Esc)">
-                ✕
+              <button className="icon-only small" onClick={() => setFocusMode(false)} disabled={batch.active} title="Exit teaching mode (Esc)">
+                <Icon name="close" size={18} />
               </button>
             </div>
           </div>
@@ -217,17 +219,18 @@ export default function TeachingStrip() {
           </div>
         )}
 
+        <NoiseMini inline />
         <TimerMini inline />
         {!batch.active && (
           <footer className="strip-foot">
             <button className="primary" onClick={() => { closeActions(); batch.start(); }} disabled={busy}>
-              ☑ Batch entry
+              <Icon name="checklist" size={20} /> Batch entry
             </button>
             <button onClick={() => setPickerOpen(true)} disabled={busy}>
-              🙋 Pick a student
+              <Icon name="person_raised_hand" size={20} /> Pick a student
             </button>
             <button className="danger" onClick={() => void lesson.endLesson(planSeats).then((ok) => ok && closeActions())} disabled={busy}>
-              ⏹ End lesson
+              <Icon name="stop_circle" size={20} /> End lesson
             </button>
           </footer>
         )}

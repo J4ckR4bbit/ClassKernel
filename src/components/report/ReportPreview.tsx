@@ -13,6 +13,7 @@ import {
 } from "../../lib/insights";
 import ParentReport, { longDate } from "./ParentReport";
 import ClassPicker from "../ClassPicker";
+import Icon from "../Icon";
 
 const SECTIONS_KEY = "classkernel.reportSections";
 
@@ -58,8 +59,9 @@ export default function ReportPreview({
   today: string;
   onClose: () => void;
   /**
-   * Opened as the Parent reports plugin rather than from a dashboard: adds a
-   * class picker and a whole-class / one-student choice to the options.
+   * Opened as the Parent reports tool rather than from a dashboard: adds the
+   * class menu (the preview covers the top bar's) and a whole-class /
+   * one-student choice to the options.
    */
   standalone?: boolean;
 }) {
@@ -98,7 +100,7 @@ export default function ReportPreview({
   const ranged = useMemo(() => filterToRange(data, from, to || today), [data, from, to, today]);
   const cls = useMemo(() => classProfile(ranged, "all", to || today), [ranged, to, today]);
   const byId = useMemo(() => new Map(data.students.map((s) => [s.id, s])), [data.students]);
-  // In the plugin, "" = the whole class, or one student's id.
+  // In the tool, "" = the whole class, or one student's id.
   const [only, setOnly] = useState("");
   const chosen = standalone && only && byId.has(only) ? [only] : studentIds;
   const students = chosen.map((id) => byId.get(id)).filter((s): s is NonNullable<typeof s> => !!s);
@@ -124,7 +126,7 @@ export default function ReportPreview({
         {standalone && (
           <>
             <h3>Class</h3>
-            <ClassPicker />
+            <ClassPicker inPanel />
             <h3>Students</h3>
             <select value={only} onChange={(e) => setOnly(e.target.value)} aria-label="Students">
               <option value="">Whole class ({studentIds.length})</option>
@@ -168,9 +170,11 @@ export default function ReportPreview({
 
         <div className="report-actions">
           <button className="primary" onClick={() => window.print()} disabled={students.length === 0}>
-            🖨 Print
+            <Icon name="print" size={20} /> Print
           </button>
-          <button onClick={onClose}>{standalone ? "← Home" : "Close"}</button>
+          <button onClick={onClose}>
+            <Icon name={standalone ? "arrow_back" : "close"} size={20} /> {standalone ? "Home" : "Close"}
+          </button>
         </div>
       </aside>
 

@@ -1,7 +1,9 @@
 import { CSSProperties, useEffect, useState } from "react";
 import { useApp } from "./store/appStore";
 import Onboarding from "./components/Onboarding";
-import Sidebar from "./components/Sidebar";
+import NavRail from "./components/NavRail";
+import TopAppBar from "./components/TopAppBar";
+import Icon from "./components/Icon";
 import HomeView from "./components/HomeView";
 import RosterView from "./components/RosterView";
 import AttendanceView from "./components/AttendanceView";
@@ -16,6 +18,7 @@ import PluginView from "./components/PluginView";
 import SettingsView from "./components/SettingsView";
 import AppDialog from "./components/AppDialog";
 import TimerMini from "./components/TimerMini";
+import NoiseMini from "./components/NoiseMini";
 
 /** Toast + dialog + save-error UI shared by both shells. */
 function Overlays() {
@@ -44,17 +47,21 @@ function Overlays() {
           )}
         </div>
       )}
-      <TimerMini />
+      {/* The running tools' pop-ups, stacked in the bottom-right corner. */}
+      <div className="mini-stack no-print">
+        <NoiseMini />
+        <TimerMini />
+      </div>
       <AppDialog />
     </>
   );
 }
 
-const SIDEBAR_KEY = "classkernel.sidebarHidden";
+const NAV_KEY = "classkernel.navExpanded";
 
-function readSidebarHidden(): boolean {
+function readNavExpanded(): boolean {
   try {
-    return localStorage.getItem(SIDEBAR_KEY) === "1";
+    return localStorage.getItem(NAV_KEY) === "1";
   } catch {
     return false;
   }
@@ -62,8 +69,8 @@ function readSidebarHidden(): boolean {
 
 export default function App() {
   const { booted, dataDir, currentClass, classes, view, demoMode, focusMode, focusStyle, setFocusMode, boot, userPrefs } = useApp();
-  // The open class's colour underlines the headers of its own pages (not Home,
-  // Settings or the plugins, which aren't about one class).
+  // The open class's colour underlines the top app bar on its own pages (not
+  // Home, Settings or the plugins, which aren't about one class).
   const classPage = view !== "home" && view !== "settings" && view !== "plugin";
   const classColour = classPage ? classes.find((c) => c.name === currentClass)?.color ?? "" : "";
 
@@ -71,15 +78,16 @@ export default function App() {
     void boot();
   }, [boot]);
 
-  // The menu can be hidden to give the page the whole width; remembered on
-  // this computer, since it's about this screen rather than the data.
-  const [sidebarHidden, setSidebarHidden] = useState(readSidebarHidden);
-  const toggleSidebar = (hidden: boolean) => {
-    setSidebarHidden(hidden);
+  // The rail expands into a drawer with full labels and the teacher's tools;
+  // remembered on this computer, since it's about this screen, not the data.
+  const [navExpanded, setNavExpanded] = useState(readNavExpanded);
+  const toggleNav = () => {
+    const next = !navExpanded;
+    setNavExpanded(next);
     try {
-      localStorage.setItem(SIDEBAR_KEY, hidden ? "1" : "0");
+      localStorage.setItem(NAV_KEY, next ? "1" : "0");
     } catch {
-      // Not remembered; still hides for this session.
+      // Not remembered; still applies for this session.
     }
   };
 
@@ -123,44 +131,39 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell ${sidebarHidden ? "sidebar-hidden" : ""}`}>
-      {sidebarHidden ? (
-        <button className="sidebar-show" onClick={() => toggleSidebar(false)} title="Show the menu" aria-label="Show the menu">
-          ☰
-        </button>
-      ) : (
-        <Sidebar onHide={() => toggleSidebar(true)} />
-      )}
-      <main
-        className="main-pane"
-        style={classColour ? ({ "--class-colour": classColour } as CSSProperties) : undefined}
-      >
-        {demoMode && (
-          <div className="demo-banner">
-            Demo mode — running in a browser without the desktop backend; data lives in memory only.
-          </div>
-        )}
-        {!currentClass && view !== "settings" && view !== "home" && view !== "plugin" ? (
-          <div className="empty-state">
-            <h2>No class selected</h2>
-            <p>Create a class from the sidebar to get started.</p>
-          </div>
-        ) : (
-          <>
-            {view === "home" && <HomeView />}
-            {view === "roster" && <RosterView />}
-            {view === "attendance" && <AttendanceView />}
-            {view === "layout" && <LayoutDesigner />}
-            {view === "seating" && <SeatingView />}
-            {view === "lesson" && <LessonView />}
-            {view === "behaviourLog" && <BehaviourLogView />}
-            {view === "assessments" && <AssessmentsView />}
-            {view === "notes" && <ClassNotesView />}
-            {view === "plugin" && <PluginView />}
-            {view === "settings" && <SettingsView />}
-          </>
-        )}
-      </main>
+    <div className="app-shell">
+      <NavRail expanded={navExpanded} onToggle={toggleNav} />
+      <div className="app-body" style={classColour ? ({ "--class-colour": classColour } as CSSProperties) : undefined}>
+        <TopAppBar />
+        <main className="main-pane">
+          {demoMode && (
+            <div className="demo-banner">
+              Demo mode — running in a browser without the desktop backend; data lives in memory only.
+            </div>
+          )}
+          {!currentClass && view !== "settings" && view !== "home" && view !== "plugin" ? (
+            <div className="empty-state">
+              <Icon name="group" size={48} />
+              <h2>No class selected</h2>
+              <p>Pick a class from the menu at the top right, or create one there.</p>
+            </div>
+          ) : (
+            <>
+              {view === "home" && <HomeView />}
+              {view === "roster" && <RosterView />}
+              {view === "attendance" && <AttendanceView />}
+              {view === "layout" && <LayoutDesigner />}
+              {view === "seating" && <SeatingView />}
+              {view === "lesson" && <LessonView />}
+              {view === "behaviourLog" && <BehaviourLogView />}
+              {view === "assessments" && <AssessmentsView />}
+              {view === "notes" && <ClassNotesView />}
+              {view === "plugin" && <PluginView />}
+              {view === "settings" && <SettingsView />}
+            </>
+          )}
+        </main>
+      </div>
       <Overlays />
     </div>
   );

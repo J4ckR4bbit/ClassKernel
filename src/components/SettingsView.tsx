@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import {
   BehaviourCode,
@@ -25,8 +25,10 @@ import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics"
 import RosterView from "./RosterView";
 import LayoutDesigner from "./LayoutDesigner";
 import ExportView from "./ExportView";
+import Icon, { IconName } from "./Icon";
+import Segmented from "./Segmented";
 
-type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments" | "plugins" | "export";
+type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments" | "tools" | "export";
 
 const SIDE_LABELS: Record<LessonBarSide, string> = {
   top: "Top",
@@ -35,59 +37,60 @@ const SIDE_LABELS: Record<LessonBarSide, string> = {
   left: "Left",
 };
 
-const TABS: Array<{ id: SettingsTab; label: string; perClass: boolean }> = [
-  { id: "general", label: "General", perClass: false },
-  { id: "students", label: "Students", perClass: true },
-  { id: "layout", label: "Room layout", perClass: true },
-  { id: "seating", label: "Seating rules", perClass: true },
-  { id: "assessments", label: "Assessments", perClass: false },
-  { id: "plugins", label: "Plugins", perClass: false },
-  { id: "export", label: "Export", perClass: false },
+// App-wide tabs first, then the ones that belong to the class chosen in the
+// app bar, so it is clear which settings follow the class and which don't.
+const TABS: Array<{ id: SettingsTab; label: string; icon: IconName; perClass: boolean }> = [
+  { id: "general", label: "General", icon: "tune", perClass: false },
+  { id: "assessments", label: "Assessments", icon: "quiz", perClass: false },
+  { id: "tools", label: "Tools", icon: "build", perClass: false },
+  { id: "export", label: "Export", icon: "download", perClass: false },
+  { id: "students", label: "Students", icon: "group", perClass: true },
+  { id: "layout", label: "Room layout", icon: "grid_view", perClass: true },
+  { id: "seating", label: "Seating rules", icon: "rule", perClass: true },
 ];
 
 export default function SettingsView() {
-  const { classes, currentClass, openClass } = useApp();
+  const { classes, currentClass } = useApp();
   const active = useMemo(() => classes.filter((c) => !c.archived), [classes]);
   const [tab, setTab] = useState<SettingsTab>("general");
   const perClass = TABS.find((t) => t.id === tab)?.perClass;
 
   return (
     <div>
-      <div className="view-header">
-        <h1>Settings</h1>
-      </div>
-
-      <div className="settings-tabs">
-        {TABS.map((t) => (
-          <button key={t.id} className={`settings-tab ${tab === t.id ? "active" : ""}`} onClick={() => setTab(t.id)}>
-            {t.label}
-          </button>
+      <div className="md-tabs" role="tablist" aria-label="Settings">
+        {TABS.map((t, i) => (
+          <Fragment key={t.id}>
+            {t.perClass && !TABS[i - 1]?.perClass && <span className="md-tab-divider" aria-hidden />}
+            <button
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`md-tab ${tab === t.id ? "active" : ""}`}
+              onClick={() => setTab(t.id)}
+            >
+              <Icon name={t.icon} size={20} />
+              {t.label}
+            </button>
+          </Fragment>
         ))}
       </div>
 
-      {perClass && active.length > 0 && (
-        <div className="row" style={{ marginBottom: 12 }}>
-          <span className="muted">Editing class:</span>
-          <select value={currentClass ?? ""} onChange={(e) => void openClass(e.target.value)}>
-            {!currentClass && <option value="">— pick a class —</option>}
-            {active.map((c) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      {perClass && currentClass && (
+        <p className="settings-for muted">
+          For <b>{currentClass}</b> — change the class from the menu at the top right.
+        </p>
       )}
 
       {tab === "general" && <GeneralSettings />}
       {tab === "assessments" && <AssessmentSettings />}
-      {tab === "plugins" && <PluginSettings />}
+      {tab === "tools" && <PluginSettings />}
       {tab === "export" && <ExportView />}
       {perClass &&
         (active.length === 0 ? (
           <div className="panel muted">Create a class first, then set it up here.</div>
         ) : !currentClass ? (
-          <div className="panel muted">Pick a class above to edit its {TABS.find((t) => t.id === tab)?.label.toLowerCase()}.</div>
+          <div className="panel muted">
+            Pick a class from the menu at the top right to edit its {TABS.find((t) => t.id === tab)?.label.toLowerCase()}.
+          </div>
         ) : tab === "students" ? (
           <RosterView />
         ) : tab === "layout" ? (
@@ -219,6 +222,7 @@ function GeneralSettings() {
         <label className="pref-row">
           <input
             type="checkbox"
+            className="switch"
             checked={userPrefs.privacyMode}
             onChange={(e) => void setUserPrefs({ ...userPrefs, privacyMode: e.target.checked })}
           />
@@ -241,6 +245,7 @@ function GeneralSettings() {
         <label className="pref-row">
           <input
             type="checkbox"
+            className="switch"
             checked={userPrefs.showSeatPoints}
             onChange={(e) => void setUserPrefs({ ...userPrefs, showSeatPoints: e.target.checked })}
           />
@@ -249,6 +254,7 @@ function GeneralSettings() {
         <label className="pref-row">
           <input
             type="checkbox"
+            className="switch"
             checked={userPrefs.popoverShowFlags}
             onChange={(e) => void setUserPrefs({ ...userPrefs, popoverShowFlags: e.target.checked })}
           />
@@ -260,6 +266,7 @@ function GeneralSettings() {
         <label className="pref-row">
           <input
             type="checkbox"
+            className="switch"
             checked={userPrefs.popoverShowNotes}
             onChange={(e) => void setUserPrefs({ ...userPrefs, popoverShowNotes: e.target.checked })}
           />
@@ -272,17 +279,12 @@ function GeneralSettings() {
         <p className="muted" style={{ marginTop: 0 }}>
           Make everything bigger for a large touch panel. Applies to the whole app immediately.
         </p>
-        <div className="row">
-          {[1, 1.25, 1.5, 1.75].map((v) => (
-            <button
-              key={v}
-              className={userPrefs.uiScale === v ? "primary" : ""}
-              onClick={() => void setUserPrefs({ ...userPrefs, uiScale: v })}
-            >
-              {Math.round(v * 100)}%
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label="Text and button size"
+          options={[1, 1.25, 1.5, 1.75].map((v) => ({ value: v, label: `${Math.round(v * 100)}%` }))}
+          value={userPrefs.uiScale}
+          onChange={(v) => void setUserPrefs({ ...userPrefs, uiScale: v })}
+        />
       </div>
 
       <TimeZoneSettings />
@@ -386,8 +388,8 @@ function GeneralSettings() {
                   </div>
                 </td>
                 <td>
-                  <button className="small danger" onClick={() => void remove(c.code)}>
-                    ✕
+                  <button className="icon-only small danger" onClick={() => void remove(c.code)} title="Delete behaviour">
+                    <Icon name="close" size={18} />
                   </button>
                 </td>
               </tr>
@@ -395,8 +397,12 @@ function GeneralSettings() {
           </tbody>
         </table>
         <div className="row" style={{ marginTop: 10 }}>
-          <button onClick={() => void add("positive")}>+ Positive behaviour</button>
-          <button onClick={() => void add("negative")}>+ Negative behaviour</button>
+          <button onClick={() => void add("positive")}>
+            <Icon name="add" size={20} /> Positive behaviour
+          </button>
+          <button onClick={() => void add("negative")}>
+            <Icon name="add" size={20} /> Negative behaviour
+          </button>
         </div>
         <p className="muted" style={{ marginBottom: 0 }}>
           Renaming a Code updates this class's logged history; other classes keep the old code in their behaviour log.
@@ -484,7 +490,7 @@ function ReportSettings() {
     <div className="panel">
       <h3>Parent reports</h3>
       <p className="muted" style={{ marginTop: 0 }}>
-        Printed at the top of each parent report (Dashboard → 🖨 Print report). Leave either blank to leave it off.
+        Printed at the top of each parent report (Dashboard → Print report). Leave either blank to leave it off.
       </p>
       <div className="form-grid report-settings">
         <label htmlFor="report-school">School name</label>
@@ -501,9 +507,9 @@ function TeachingModeSettings() {
   const { userPrefs, setUserPrefs, promptDialog, showToast } = useApp();
   const hasPin = !!userPrefs.reseatPinHash;
 
-  const styles: Array<{ id: TeachingStyle; label: string }> = [
-    { id: "room", label: "⛶ Room plan (full screen)" },
-    { id: "strip", label: "▥ Side panel of tables" },
+  const styles: Array<{ value: TeachingStyle; label: string; icon: IconName }> = [
+    { value: "room", label: "Room plan (full screen)", icon: "fullscreen" },
+    { value: "strip", label: "Side panel of tables", icon: "dock_to_left" },
   ];
 
   // Changing or removing a PIN needs the current one, so a student at the
@@ -550,52 +556,37 @@ function TeachingModeSettings() {
         the screen, always on top, so your slides and annotations keep the rest. You can switch between them during a
         lesson.
       </p>
-      <div className="row">
-        {styles.map((st) => (
-          <button
-            key={st.id}
-            className={userPrefs.teachingStyle === st.id ? "primary" : ""}
-            onClick={() => void setUserPrefs({ ...userPrefs, teachingStyle: st.id })}
-          >
-            {st.label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Teaching mode"
+        options={styles}
+        value={userPrefs.teachingStyle}
+        onChange={(v) => void setUserPrefs({ ...userPrefs, teachingStyle: v })}
+      />
 
       <h4>Side panel edge</h4>
-      <div className="row">
-        {(["left", "right"] as const).map((side) => (
-          <button
-            key={side}
-            className={userPrefs.dockSide === side ? "primary" : ""}
-            onClick={() => void setUserPrefs({ ...userPrefs, dockSide: side })}
-          >
-            {SIDE_LABELS[side]}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Side panel edge"
+        options={(["left", "right"] as const).map((side) => ({ value: side, label: SIDE_LABELS[side] }))}
+        value={userPrefs.dockSide}
+        onChange={(v) => void setUserPrefs({ ...userPrefs, dockSide: v })}
+      />
 
       <h4>Room plan buttons</h4>
       <p className="muted" style={{ marginTop: 0 }}>
         Which edge of the room-plan screen the lesson buttons (Pick a student, Randomise, End lesson) sit on. Put them
         within reach of where you stand.
       </p>
-      <div className="row">
-        {LESSON_BAR_SIDES.map((side) => (
-          <button
-            key={side}
-            className={userPrefs.lessonBarSide === side ? "primary" : ""}
-            onClick={() => void setUserPrefs({ ...userPrefs, lessonBarSide: side })}
-          >
-            {SIDE_LABELS[side]}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Room plan buttons"
+        options={LESSON_BAR_SIDES.map((side) => ({ value: side, label: SIDE_LABELS[side] }))}
+        value={userPrefs.lessonBarSide}
+        onChange={(v) => void setUserPrefs({ ...userPrefs, lessonBarSide: v })}
+      />
 
       <h4>Reseat PIN</h4>
       <p className="muted" style={{ marginTop: 0 }}>
-        Seats can be assigned (🎲 Randomise) once per lesson. After that the button shows 🔒 and needs this PIN to
-        assign them again, so nobody reshuffles the class by accident. Ending the lesson, or a new day, unlocks it.{" "}
+        Seats can be assigned (<b>Randomise</b>) once per lesson. After that the button shows a lock (<b>Reseat…</b>) and
+        needs this PIN to assign them again, so nobody reshuffles the class by accident. Ending the lesson, or a new day, unlocks it.{" "}
         {hasPin ? "A PIN is set." : "No PIN yet — set one now, or you'll be asked the first time you unlock."}
       </p>
       <div className="row">
@@ -679,7 +670,7 @@ function PluginSettings() {
 
   return (
     <div className="panel">
-      <h3>Plugins</h3>
+      <h3>Tools</h3>
       <p className="muted" style={{ marginTop: 0 }}>
         Extra tools that come with ClassKernel. Everything ships switched off, so the app stays exactly as it is until
         you turn something on — then it appears under <b>Tools</b> on the Home page. They are part of the app, so they
@@ -688,7 +679,7 @@ function PluginSettings() {
 
       {PLUGINS.length === 0 ? (
         <p className="muted" style={{ marginBottom: 0 }}>
-          This version of the app doesn't ship any plugins yet.
+          This version of the app doesn't ship any tools yet.
         </p>
       ) : (
         <ul className="plugin-list">
@@ -696,10 +687,9 @@ function PluginSettings() {
             const on = enabled.includes(p.id);
             return (
               <li key={p.id} className="plugin-row">
-                <label className="plugin-toggle">
-                  <input type="checkbox" checked={on} onChange={() => toggle(p.id)} />
+                <label className="plugin-toggle" htmlFor={`plugin-${p.id}`}>
                   <span className="plugin-icon" aria-hidden>
-                    {p.icon}
+                    <Icon name={p.icon} />
                   </span>
                   <span>
                     <b>{p.name}</b>
@@ -711,6 +701,13 @@ function PluginSettings() {
                     Open
                   </button>
                 )}
+                <input
+                  id={`plugin-${p.id}`}
+                  type="checkbox"
+                  className="switch"
+                  checked={on}
+                  onChange={() => toggle(p.id)}
+                />
               </li>
             );
           })}
@@ -812,11 +809,11 @@ function SeatingPrefsEditor({
                 ⇹ {nameOf(p[0])} ↔ {nameOf(p[1])}
               </span>
               <button
-                className="small danger"
+                className="icon-only small danger"
                 title="Remove this rule"
                 onClick={() => onChange({ ...prefs, apartPairs: prefs.apartPairs.filter((_, j) => j !== i) })}
               >
-                ✕
+                <Icon name="close" size={18} />
               </button>
             </span>
           ))}
@@ -826,11 +823,11 @@ function SeatingPrefsEditor({
                 ⇆ {nameOf(p[0])} + {nameOf(p[1])}
               </span>
               <button
-                className="small danger"
+                className="icon-only small danger"
                 title="Remove this rule"
                 onClick={() => onChange({ ...prefs, togetherPairs: prefs.togetherPairs.filter((_, j) => j !== i) })}
               >
-                ✕
+                <Icon name="close" size={18} />
               </button>
             </span>
           ))}
@@ -964,7 +961,7 @@ function AssessmentSettings() {
             ))}
           </select>
           <button className="small" onClick={() => void addGrade()}>
-            + Grade
+            <Icon name="add" size={20} /> Grade
           </button>
         </div>
 
@@ -980,8 +977,8 @@ function AssessmentSettings() {
               <div key={area} className="topic-area">
                 <div className="row">
                   <b>{area}</b>
-                  <button className="small danger" onClick={() => void removeArea(area)}>
-                    ✕
+                  <button className="icon-only small danger" onClick={() => void removeArea(area)} title="Delete content area">
+                    <Icon name="close" size={18} />
                   </button>
                 </div>
                 <TopicAreaTable
@@ -993,7 +990,9 @@ function AssessmentSettings() {
                 />
               </div>
             ))}
-            <button onClick={() => void addArea()}>+ Content area</button>
+            <button onClick={() => void addArea()}>
+              <Icon name="add" size={20} /> Content area
+            </button>
           </>
         )}
       </div>
@@ -1021,8 +1020,8 @@ function AssessmentSettings() {
                   <input value={l.label} onChange={(e) => updateLevel(i, { label: e.target.value })} />
                 </td>
                 <td>
-                  <button className="small danger" onClick={() => removeLevel(i)}>
-                    ✕
+                  <button className="icon-only small danger" onClick={() => removeLevel(i)} title="Delete cognitive level">
+                    <Icon name="close" size={18} />
                   </button>
                 </td>
               </tr>
@@ -1030,7 +1029,9 @@ function AssessmentSettings() {
           </tbody>
         </table>
         <div className="row" style={{ marginTop: 10 }}>
-          <button onClick={addLevel}>+ Level</button>
+          <button onClick={addLevel}>
+            <Icon name="add" size={20} /> Level
+          </button>
         </div>
       </div>
 
@@ -1153,8 +1154,8 @@ function TopicAreaTable({
               />
             </td>
             <td>
-              <button className="small danger" onClick={() => onRemove(r.subtopic)} title="Remove subtopic">
-                ✕
+              <button className="icon-only small danger" onClick={() => onRemove(r.subtopic)} title="Remove subtopic">
+                <Icon name="close" size={18} />
               </button>
             </td>
           </tr>

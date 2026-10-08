@@ -4,6 +4,7 @@ import { useTimer } from "../plugins/test-timer/timerStore";
 import { COLOR_STOPS, formatCountdown, phaseColor } from "../plugins/test-timer/timer";
 import { TEST_TIMER_ID } from "../plugins/registry";
 import { currentTimeZone } from "../lib/time";
+import Icon from "./Icon";
 
 /**
  * The test timer in miniature: a small card in the bottom-right corner while
@@ -52,7 +53,15 @@ export default function TimerMini({ inline = false }: { inline?: boolean }) {
       role={timer.finished ? "alert" : "status"}
     >
       <button className="timer-mini-body" onClick={open} title="Open the test timer">
-        <span className="timer-mini-label">{timer.finished ? "⏰ Time's up" : current?.label}</span>
+        <span className="timer-mini-label">
+          {timer.finished ? (
+            <>
+              <Icon name="alarm" size={18} /> Time's up
+            </>
+          ) : (
+            current?.label
+          )}
+        </span>
         {!timer.finished && <span className="timer-mini-time">{formatCountdown(timer.remaining)}</span>}
         <span className="timer-mini-sub">
           {timer.finished ? "Tap to open the timer" : endsAt ? `ends at ${endsAt}` : "paused"}
@@ -61,19 +70,19 @@ export default function TimerMini({ inline = false }: { inline?: boolean }) {
       <div className="timer-mini-actions">
         {timer.finished ? (
           <button onClick={dismiss} title="Close" aria-label="Close">
-            ✕
+            <Icon name="close" size={20} />
           </button>
         ) : timer.running ? (
           <button onClick={pause} title="Pause" aria-label="Pause">
-            ⏸
+            <Icon name="pause" size={20} />
           </button>
         ) : (
           <button onClick={resume} title="Resume" aria-label="Resume">
-            ▶
+            <Icon name="play_arrow" size={20} />
           </button>
         )}
         <button onClick={open} title="Open the test timer" aria-label="Open the test timer">
-          ⤢
+          <Icon name="open_in_full" size={18} />
         </button>
       </div>
     </div>

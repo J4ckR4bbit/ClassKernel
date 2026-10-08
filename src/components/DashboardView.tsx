@@ -18,7 +18,8 @@ import ClassDashboard from "./dashboard/ClassDashboard";
 import StudentDashboard from "./dashboard/StudentDashboard";
 import PrivacyGate from "./PrivacyGate";
 import ReportPreview from "./report/ReportPreview";
-import ClassPicker from "./ClassPicker";
+import Icon from "./Icon";
+import Segmented from "./Segmented";
 import { PARENT_REPORTS_ID } from "../plugins/registry";
 
 const PERIOD_KEY = "classkernel.dashboardPeriod";
@@ -60,7 +61,7 @@ export default function DashboardView() {
   const closeReport = useCallback(() => setReportFor(null), []);
   // Printing is only offered once the privacy cover is lifted.
   const revealed = !userPrefs.privacyMode || sensitiveRevealed;
-  // Printing parent reports is a separate plugin; offer it only when it's on.
+  // Printing parent reports is a separate tool; offer it only when it's on.
   const reportsOn = userPrefs.enabledPlugins.includes(PARENT_REPORTS_ID);
   const [period, setPeriodState] = useState<Period>(readPeriod);
   const setPeriod = (p: Period) => {
@@ -110,52 +111,44 @@ export default function DashboardView() {
   const profile = useMemo(() => (student ? studentProfile(student, data, cls, period, day) : null), [student, data, cls, period, day]);
 
   if (!currentClass) {
-    return (
-      <div>
-        <div className="view-header">
-          <ClassPicker />
-        </div>
-        <div className="panel muted">Open a class first — choose one above or from the menu.</div>
-      </div>
-    );
+    return <div className="panel muted">Pick a class from the menu at the top right to see its dashboards.</div>;
   }
 
   return (
     <div>
+      <div className="md-tabs" role="tablist" aria-label="Dashboard">
+        <button
+          role="tab"
+          aria-selected={tab === "class"}
+          className={`md-tab ${tab === "class" ? "active" : ""}`}
+          onClick={() => openStudentDashboard(null)}
+        >
+          <Icon name="groups" size={20} /> Class
+        </button>
+        <button
+          role="tab"
+          aria-selected={tab === "student"}
+          className={`md-tab ${tab === "student" ? "active" : ""}`}
+          onClick={() => firstStudent && openStudentDashboard(dashboardStudent ?? firstStudent.id)}
+          disabled={!firstStudent}
+        >
+          <Icon name="person" size={20} /> Student
+        </button>
+      </div>
       <div className="view-header">
-        <ClassPicker />
+        <Segmented label="Period" options={PERIODS.map((p) => ({ value: p.id, label: p.label }))} value={period} onChange={setPeriod} />
         <div className="spacer" />
-        <div className="seg dash-tabs" role="tablist" aria-label="Dashboard">
-          <button role="tab" aria-selected={tab === "class"} className={tab === "class" ? "on" : ""} onClick={() => openStudentDashboard(null)}>
-            👥 Class
-          </button>
-          <button
-            role="tab"
-            aria-selected={tab === "student"}
-            className={tab === "student" ? "on" : ""}
-            onClick={() => firstStudent && openStudentDashboard(dashboardStudent ?? firstStudent.id)}
-            disabled={!firstStudent}
-          >
-            👤 Student
-          </button>
-        </div>
         {reportsOn && revealed && students.length > 0 && (
           <button
+            className="tonal"
             onClick={() =>
               setReportFor(tab === "student" && student ? [student.id] : [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)).map((s) => s.id))
             }
             title="Printable report for parent evenings"
           >
-            🖨 {tab === "student" ? "Print report" : "Print all reports"}
+            <Icon name="print" size={20} /> {tab === "student" ? "Print report" : "Print all reports"}
           </button>
         )}
-        <div className="seg period-btns" role="group" aria-label="Period">
-          {PERIODS.map((p) => (
-            <button key={p.id} className={period === p.id ? "on" : ""} aria-pressed={period === p.id} onClick={() => setPeriod(p.id)}>
-              {p.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       <PrivacyGate label="behaviour, attendance and marks analysis">

@@ -12,7 +12,7 @@ const STATUSES: Array<{ code: AttendanceStatus; label: string }> = [
 ];
 
 export default function AttendanceView() {
-  const { currentClass, students, attendance, setAttendance, showToast, userPrefs, sensitiveRevealed, revealSensitive } =
+  const { students, attendance, setAttendance, showToast, userPrefs, sensitiveRevealed, revealSensitive } =
     useApp();
   const [date, setDate] = useState(today());
 
@@ -45,7 +45,6 @@ export default function AttendanceView() {
   return (
     <div>
       <div className="view-header">
-        <h1>{currentClass} — Attendance</h1>
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         <div className="spacer" />
         <div className="att-summary">
@@ -95,11 +94,13 @@ export default function AttendanceView() {
                       ))}
                 </td>
                 <td>
-                  <div className="row">
+                  <div className="att-seg" role="radiogroup" aria-label={`Attendance for ${studentName(s)}`}>
                     {STATUSES.map(({ code, label }) => (
                       <button
                         key={code}
                         title={label}
+                        role="radio"
+                        aria-checked={current === code}
                         className={`att-btn ${code} ${current === code ? "on" : ""}`}
                         onClick={() => setStatus(s.id, code)}
                       >

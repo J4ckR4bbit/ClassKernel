@@ -5,6 +5,7 @@ import { currentTimeZone } from "../../lib/time";
 import { FlipDisplay } from "../shared/FlipDigits";
 import { COLOR_STOPS, TimerPhase, phaseColor } from "./timer";
 import { useTimer } from "./timerStore";
+import Icon from "../../components/Icon";
 
 // The test timer, as a plugin: a big countdown for exams and timed tasks with
 // optional reading + writing phases. The countdown itself lives in
@@ -237,7 +238,7 @@ export default function TestTimer() {
 
           <div className="timer-start-row">
             <button className="primary" onClick={start}>
-              ▶ Start
+              <Icon name="play_arrow" size={20} /> Start
             </button>
           </div>
         </div>
@@ -323,11 +324,13 @@ export default function TestTimer() {
 
       <div className="timer-controls">
         {running ? (
-          <button onClick={pause}>⏸ Pause</button>
+          <button onClick={pause}>
+            <Icon name="pause" size={20} /> Pause
+          </button>
         ) : (
           !finished && (
             <button className="primary" onClick={resume}>
-              ▶ Resume
+              <Icon name="play_arrow" size={20} /> Resume
             </button>
           )
         )}
@@ -335,11 +338,13 @@ export default function TestTimer() {
           +1 min
         </button>
         <button onClick={skip} disabled={finished}>
-          {phase < phases.length - 1 ? "Skip phase ⏭" : "End ⏭"}
+          <Icon name="skip_next" size={20} /> {phase < phases.length - 1 ? "Skip phase" : "End"}
         </button>
-        <button onClick={toggleFullscreen}>⤢ Fullscreen</button>
+        <button onClick={toggleFullscreen}>
+          <Icon name="fullscreen" size={20} /> Fullscreen
+        </button>
         <button className="danger" onClick={stop}>
-          ✕ Stop
+          <Icon name="stop_circle" size={20} /> Stop
         </button>
       </div>
     </div>

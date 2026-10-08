@@ -17,6 +17,8 @@ import {
   fileNameFor,
   summarise,
 } from "./motion";
+import Icon from "../../components/Icon";
+import Segmented from "../../components/Segmented";
 
 const QUANTITIES: Array<{ key: Quantity; label: string }> = [
   { key: "position", label: "Position x–t" },
@@ -221,8 +223,8 @@ export default function MotionGraph() {
                     />
                   </td>
                   <td>
-                    <button className="small danger" title="Remove this stage" onClick={() => removeStage(i)}>
-                      ✕
+                    <button className="small icon-only danger" title="Remove this stage" aria-label="Remove this stage" onClick={() => removeStage(i)}>
+                      <Icon name="close" size={18} />
                     </button>
                   </td>
                 </tr>
@@ -258,17 +260,7 @@ export default function MotionGraph() {
           {QUANTITIES.map((q) => (
             <div key={q.key} className="mg-field">
               <span className="mg-field-label">{q.label}</span>
-              <span className="row" style={{ gap: 4 }}>
-                {MODES.map((m) => (
-                  <button
-                    key={m.value}
-                    className={`small ${v[q.key] === m.value ? "primary" : ""}`}
-                    onClick={() => set(q.key, m.value)}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </span>
+              <Segmented small label={q.label} options={MODES} value={v[q.key]} onChange={(m) => set(q.key, m)} />
             </div>
           ))}
         </div>

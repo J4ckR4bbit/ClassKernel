@@ -5,10 +5,10 @@ import { studentName } from "../lib/types";
 import { behaviourByStudent, formatDuration, visitSeconds } from "../lib/stats";
 import { dateInZone, dateTimeInZone, timeInZone } from "../lib/time";
 import PrivacyGate from "./PrivacyGate";
+import Icon from "./Icon";
 
 export default function BehaviourLogView() {
   const {
-    currentClass,
     students,
     behaviourEvents,
     behaviourCodes,
@@ -52,7 +52,6 @@ export default function BehaviourLogView() {
     <div>
       <PrivacyGate label="the behaviour history">
       <div className="view-header">
-        <h1>{currentClass} — Behaviour log</h1>
         <div className="spacer" />
         <select value={studentFilter} onChange={(e) => setStudentFilter(e.target.value)}>
           <option value="">All students</option>
@@ -127,7 +126,7 @@ export default function BehaviourLogView() {
                 </td>
                 <td>
                   <button
-                    className="small danger"
+                    className="icon-only small danger"
                     title="Delete this event"
                     onClick={() => {
                       const deleted = { ...e };
@@ -135,7 +134,7 @@ export default function BehaviourLogView() {
                       showToast("Behaviour event deleted", { label: "Undo", run: () => void addBehaviourEvent(deleted) });
                     }}
                   >
-                    ✕
+                    <Icon name="close" size={18} />
                   </button>
                 </td>
               </tr>
@@ -152,7 +151,9 @@ export default function BehaviourLogView() {
       </table>
       {filtered.length > 300 && <p className="muted">Showing the latest 300 of {filtered.length} events.</p>}
 
-      <h2 className="section-heading">🚻 Bathroom log</h2>
+      <h2 className="section-heading">
+        <Icon name="wc" size={20} /> Bathroom log
+      </h2>
       <table className="data">
         <thead>
           <tr>
@@ -182,11 +183,11 @@ export default function BehaviourLogView() {
                 </td>
                 <td>
                   <button
-                    className="small danger"
+                    className="icon-only small danger"
                     title="Delete this visit"
                     onClick={() => deleteVisit(v.studentId, v.start)}
                   >
-                    ✕
+                    <Icon name="close" size={18} />
                   </button>
                 </td>
               </tr>

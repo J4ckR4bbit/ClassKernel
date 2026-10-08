@@ -1,6 +1,7 @@
 import { useApp } from "../store/appStore";
 import { AttendanceStatus, BathroomVisit, BehaviourCode, Student, studentName } from "../lib/types";
 import { formatDuration, visitSeconds } from "../lib/stats";
+import Icon from "./Icon";
 
 interface Props {
   student: Student;
@@ -40,9 +41,15 @@ export default function StudentActions({ student, status, outVisit, onAttendance
             ))}
       </h4>
       {showNotes && <p className="muted" style={{ marginTop: 0 }}>{student.notes}</p>}
-      <div className="row" style={{ marginBottom: 2 }}>
+      <div className="att-seg" role="radiogroup" aria-label="Attendance" style={{ marginBottom: 2 }}>
         {(["P", "A", "L", "E"] as AttendanceStatus[]).map((code) => (
-          <button key={code} className={`att-btn ${code} ${status === code ? "on" : ""}`} onClick={() => onAttendance(code)}>
+          <button
+            key={code}
+            role="radio"
+            aria-checked={status === code}
+            className={`att-btn ${code} ${status === code ? "on" : ""}`}
+            onClick={() => onAttendance(code)}
+          >
             {code}
           </button>
         ))}
@@ -53,7 +60,8 @@ export default function StudentActions({ student, status, outVisit, onAttendance
         title="Time a bathroom trip; it's saved to the bathroom log when the student is back"
         onClick={onBathroom}
       >
-        {outVisit ? `🚻 Back from bathroom · ${formatDuration(visitSeconds(outVisit))}` : "🚻 Bathroom — start timer"}
+        <Icon name="wc" size={20} />
+        {outVisit ? `Back from bathroom · ${formatDuration(visitSeconds(outVisit))}` : "Bathroom — start timer"}
       </button>
       {positives.map((c) => (
         <button

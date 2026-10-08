@@ -5,10 +5,10 @@ import { displayStudentName, seatSurname } from "../lib/privacy";
 import { allSeatSlots } from "../lib/seating";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
 import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
+import Icon from "./Icon";
 
 export default function SeatingView() {
   const {
-    currentClass,
     students,
     desks,
     seating,
@@ -123,14 +123,13 @@ export default function SeatingView() {
   return (
     <div>
       <div className="view-header">
-        <h1>{currentClass} — Seating</h1>
         <select value={activePlan} onChange={(e) => setPlan(e.target.value)} disabled={isShuffling}>
           {planNames.map((n) => (
             <option key={n}>{n}</option>
           ))}
         </select>
         <button onClick={() => void newPlan()} disabled={isShuffling}>
-          + New plan
+          <Icon name="add" size={20} /> New plan
         </button>
         <button onClick={() => void deletePlan()} disabled={isShuffling}>
           Delete plan
@@ -145,7 +144,7 @@ export default function SeatingView() {
             disabled={isShuffling}
             title="Seats were assigned this lesson — enter your PIN to assign them again"
           >
-            🔒 Reseat…
+            <Icon name="lock" size={20} /> Reseat…
           </button>
         ) : (
           <button
@@ -154,11 +153,11 @@ export default function SeatingView() {
             disabled={desks.length === 0 || students.length === 0 || isShuffling}
             title="Reroll seating using your saved rules"
           >
-            🎲 {isShuffling ? "Randomising…" : "Randomise"}
+            <Icon name="casino" size={20} /> {isShuffling ? "Randomising…" : "Randomise"}
           </button>
         )}
         <button onClick={() => window.print()} disabled={isShuffling}>
-          🖨 Print
+          <Icon name="print" size={20} /> Print
         </button>
       </div>
 
@@ -166,7 +165,7 @@ export default function SeatingView() {
         <div className="panel">
           No room layout yet.{" "}
           <button className="small" onClick={() => setView("layout")}>
-            Design your room first →
+            Design your room first <Icon name="chevron_right" size={18} />
           </button>
         </div>
       ) : (
@@ -215,7 +214,11 @@ export default function SeatingView() {
               }}
               onSeatClick={onSeatClick}
             />
-            {isShuffling && <div className="shuffle-overlay no-print">🎲 Randomising seats…</div>}
+            {isShuffling && (
+              <div className="shuffle-overlay no-print">
+                <Icon name="casino" size={20} /> Randomising seats…
+              </div>
+            )}
           </div>
         </>
       )}

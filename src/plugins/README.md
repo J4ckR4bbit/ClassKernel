@@ -1,9 +1,13 @@
 # Plugins
 
 A plugin is an extra teaching tool that **ships with the app but is off until a
-teacher switches it on** in *Settings → Plugins*. Enabled plugins appear as
-cards in a **Tools** section on the Home page; nothing else about the app
-changes when one is off.
+teacher switches it on** in *Settings → Tools*. Enabled plugins appear as
+cards in a **Tools** section on the Home page and in the expanded navigation
+drawer; nothing else about the app changes when one is off.
+
+Teachers only ever see the word **tool**. "Plugin" is the name in the code and
+in the saved settings (`plugins_enabled`), and stays there so existing settings
+keep working.
 
 ## The shape of a plugin
 
@@ -70,7 +74,7 @@ Add an entry to `PLUGINS` in `registry.ts`:
   name: "Graph paper generator",
   tagline: "Build printable axes and grids at an exact mm size.",
   description: "…what it does, and what it saves.",
-  icon: "📐",
+  icon: "grid_on",                // a Material Symbol from components/Icon.tsx
   load: () => import("./graph-paper/GraphPaper").then((m) => m.default),
 }
 ```
@@ -105,9 +109,11 @@ const outcome = await savePluginFile({
 - **Lazy loading** with a "Loading …" fallback while the chunk arrives.
 - **An error boundary** per plugin: a crash shows a message inside the pane
   instead of blanking the app mid-lesson.
-- **The header** — back to Home, the icon, the name and the tagline. Your
-  component starts below that and gets the rest of the pane; it is laid out with
-  `height: 100%` available, so a two-column tool can fill it.
+- **The top app bar** — a back arrow to Home and the tool's name, with the
+  class menu on the right. A tool that works on the open class reads it from
+  the store and follows that menu; it doesn't need a class picker of its own.
+  Your component gets the rest of the pane; it is laid out with `height: 100%`
+  available, so a two-column tool can fill it.
 
 ## Where the pieces live
 
@@ -121,6 +127,6 @@ const outcome = await savePluginFile({
 | `shared/FlipDigits.tsx` | The split-flap digits (styles in `src/styles.css`, since the timer's pop-up uses them too). |
 | `src/components/TimerMini.tsx` | The test timer's corner pop-up — the one plugin with a piece outside the plugin pane. |
 | `src/components/PluginView.tsx` | Lazy loading, the error boundary, the chrome. |
-| `src/components/SettingsView.tsx` | The Plugins tab where they are switched on. |
+| `src/components/SettingsView.tsx` | The Tools tab where they are switched on. |
 | `src/components/HomeView.tsx` | The Tools section listing the enabled ones. |
 | `settings.csv` (`plugins_enabled`) | The teacher's choice, as a `;`-separated list of ids. |

@@ -4,6 +4,7 @@ import { newId } from "../lib/id";
 import { DEFAULT_DESK_SIZES, Desk, DeskShape, FrontEdge } from "../lib/types";
 import { PASTEL_PRESETS } from "../lib/tableColours";
 import RoomCanvas, { GRID, ROOM_H, ROOM_W, svgPointFromClient, toRoomCoords } from "./RoomCanvas";
+import Icon from "./Icon";
 
 const PALETTE: Array<{ shape: DeskShape; label: string }> = [
   { shape: "single", label: "+ Single desk" },
@@ -40,7 +41,6 @@ type Drag =
 
 export default function LayoutDesigner() {
   const {
-    currentClass,
     desks,
     setDesks,
     roomConfig,
@@ -263,7 +263,6 @@ export default function LayoutDesigner() {
   return (
     <div>
       <div className="view-header">
-        <h1>{currentClass} — Room layout</h1>
         <select
           value={roomConfig.frontEdge}
           onChange={(e) => void setRoomConfig({ ...roomConfig, frontEdge: e.target.value as FrontEdge })}
@@ -279,7 +278,7 @@ export default function LayoutDesigner() {
           <button onClick={removeCrop}>Remove view crop</button>
         ) : (
           <button onClick={addCrop} title="Seating and lesson views will show only this area, scaled up">
-            ⛶ Set view crop
+            <Icon name="crop" size={20} /> Set view crop
           </button>
         )}
         <div className="spacer" />
@@ -297,8 +296,8 @@ export default function LayoutDesigner() {
       </div>
       {selectedDesk && (
         <div className="palette">
-          <button onClick={rotateSelected}>⟳ Rotate</button>
-          <button onClick={duplicateSelected}>⧉ Duplicate</button>
+          <button onClick={rotateSelected}><Icon name="rotate_right" size={20} /> Rotate</button>
+          <button onClick={duplicateSelected}><Icon name="content_copy" size={20} /> Duplicate</button>
           <input
             style={{ width: 160 }}
             placeholder={selectedDesk.shape === "label" ? "Label text" : "Desk label"}
@@ -372,7 +371,7 @@ export default function LayoutDesigner() {
             <button onClick={() => resizeSelected(0, GRID)}>+</button>
           </div>
           <button className="danger" onClick={deleteSelected}>
-            ✕ Delete
+            <Icon name="delete" size={20} /> Delete
           </button>
         </div>
       )}
@@ -385,15 +384,15 @@ export default function LayoutDesigner() {
         <span className="spacer" style={{ flex: 1 }} />
         <span className="muted">Layouts:</span>
         <button onClick={() => void saveTemplate()} disabled={desks.length === 0} title="Save this room to reuse in another class">
-          💾 Save as template
+          <Icon name="save" size={20} /> Save as template
         </button>
         {layoutTemplates.map((name) => (
           <span key={name} className="template-chip">
             <button className="small" title="Apply this layout" onClick={() => void loadTemplate(name)}>
               {name}
             </button>
-            <button className="small danger" title="Delete template" onClick={() => void removeTemplate(name)}>
-              ✕
+            <button className="icon-only small danger" title="Delete template" onClick={() => void removeTemplate(name)}>
+              <Icon name="close" size={18} />
             </button>
           </span>
         ))}

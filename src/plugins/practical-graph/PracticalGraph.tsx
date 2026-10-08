@@ -12,6 +12,7 @@ import {
   fileNameFor,
   parseReadings,
 } from "./plot";
+import Icon from "../../components/Icon";
 
 /** A row of the readings table, kept as text so half-typed numbers survive. */
 interface Row {
@@ -194,8 +195,8 @@ export default function PracticalGraph() {
                     <input inputMode="decimal" value={r.y} onChange={(e) => setRow(i, { y: e.target.value })} />
                   </td>
                   <td>
-                    <button className="small danger" title="Remove this reading" onClick={() => removeRow(i)}>
-                      ✕
+                    <button className="small icon-only danger" title="Remove this reading" aria-label="Remove this reading" onClick={() => removeRow(i)}>
+                      <Icon name="close" size={18} />
                     </button>
                   </td>
                 </tr>
