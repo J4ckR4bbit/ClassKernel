@@ -56,13 +56,44 @@ test("marks per question: yellow while typing, grey once every question has a ma
   const cells = row.locator("input.grid-input");
 
   await cells.first().focus();
-  // The whole row, including the pinned name columns.
-  expect(await background(row.locator("td").nth(1))).toBe(YELLOW);
+  // The whole row, including the pinned first-name column (the surname keeps its position tint).
+  expect(await background(row.locator("td").nth(2))).toBe(YELLOW);
   const n = await cells.count();
   for (let c = 0; c < n - 1; c++) await cells.nth(c).fill("1");
   await expect(row).not.toHaveClass(/\bdone\b/); // one question still blank
   await cells.nth(n - 1).fill("1");
   await expect(row).toHaveClass(/\bdone\b/);
   await page.locator("h1").first().click(); // leave the row
-  expect(await background(row.locator("td").nth(1))).toBe(GREY);
+  expect(await background(row.locator("td").nth(2))).toBe(GREY);
+});
+
+test("only the students scroll: the headings and average rows stay put", async ({ page }) => {
+  await nav(page, "Marks");
+  await page.locator("tr", { hasText: "Forces & energy test" }).getByRole("button", { name: "Enter marks" }).click();
+  await reveal(page);
+  const top = (sel: string) => page.locator(sel).first().evaluate((e) => e.getBoundingClientRect().top);
+  const before = {
+    title: await top(".marking-view .view-header"),
+    heading: await top(".mark-grid thead tr:first-child th"),
+    average: await top(".mark-grid tfoot tr:last-child th"),
+    student: await top(".mark-grid tbody tr:first-child td"),
+  };
+  await page.locator(".mark-grid-wrap").evaluate((e) => (e.scrollTop = 150));
+  expect(await top(".marking-view .view-header")).toBe(before.title);
+  expect(await top(".mark-grid thead tr:first-child th")).toBe(before.heading);
+  expect(await top(".mark-grid tfoot tr:last-child th")).toBe(before.average);
+  expect(await top(".mark-grid tbody tr:first-child td")).toBeLessThan(before.student);
+  expect(await page.locator(".main-pane").evaluate((e) => e.scrollTop)).toBe(0);
+});
+
+test("the surname column is tinted blue at the top of the list to red at the bottom", async ({ page }) => {
+  await nav(page, "Marks");
+  await page.locator("tr", { hasText: "Forces & energy test" }).getByRole("button", { name: "Enter marks" }).click();
+  await reveal(page);
+  const surname = page.locator(".mark-grid tbody td.col-name.second");
+  const rgb = async (i: number) => (await background(surname.nth(i))).match(/\d+/g)!.map(Number);
+  const [r0, , b0] = await rgb(0);
+  const [rN, , bN] = await rgb((await surname.count()) - 1);
+  expect(b0).toBeGreaterThan(r0); // blue
+  expect(rN).toBeGreaterThan(bN); // red
 });

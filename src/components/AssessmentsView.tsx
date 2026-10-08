@@ -4,6 +4,7 @@ import { newId, today } from "../lib/id";
 import { Assessment, AssessmentQuestion, Mark, QuestionMark, studentName } from "../lib/types";
 import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankStudents, studentProvisional } from "../lib/stats";
 import { areasForGrade, shortLabel, subtopicsForGrade } from "../lib/topics";
+import { positionTint } from "../lib/listTint";
 import PrivacyGate from "./PrivacyGate";
 import Icon from "./Icon";
 
@@ -489,7 +490,7 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
   }
 
   return (
-    <div>
+    <div className="marking-view">
       <div className="view-header">
         <h1>
           Marking: {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
@@ -562,7 +563,10 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
               return (
                 <tr key={s.id} className={done ? "done" : undefined}>
                   <td className="col-no sticky-left">{r + 1}</td>
-                  <td className="col-name sticky-left second">{s.lastName}</td>
+                  {/* The tint shows how far down the list this student is. */}
+                  <td className="col-name sticky-left second" style={{ background: positionTint(r, nRows) }}>
+                    {s.lastName}
+                  </td>
                   <td className="col-name sticky-left third">{s.firstName}</td>
                   {questions.map((q, c) => {
                     const v = markOf(s.id, q.number);
@@ -685,7 +689,7 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
   const entered = sorted.filter((s) => markOf(s.id)?.mark != null).length;
 
   return (
-    <div>
+    <div className="marking-view">
       <div className="view-header">
         <h1>
           Marking: {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
@@ -699,14 +703,14 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
         </button>
       </div>
 
-      <div className="panel" style={{ padding: 0 }}>
+      <div className="panel quick-mark-list">
         {sorted.map((s, i) => {
           const m = markOf(s.id);
           const pct = m?.mark != null && assessment.totalMarks > 0 ? Math.round((m.mark / assessment.totalMarks) * 100) : null;
           const over = m?.mark != null && m.mark > assessment.totalMarks;
           return (
             <div key={s.id} className={`quick-mark-row ${m?.mark != null ? "done" : ""}`}>
-              <span className="name">
+              <span className="name" style={{ background: positionTint(i, sorted.length) }}>
                 {i + 1}. {studentName(s)}
               </span>
               <input
