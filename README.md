@@ -1,86 +1,61 @@
 # ClassKernel
 
-Fast, lightweight, offline-first classroom management for teachers. Windows desktop app built with Tauri 2 — ~10 MB, instant startup, **no accounts, no server, no internet required**.
+Fast, offline-first classroom management for teachers. A small Windows desktop app (Tauri 2, ~10 MB):
+**no accounts, no server, no internet**. Everything is saved as plain `.csv` and `.md` files in a folder you choose.
 
-## Getting it
+![The Lesson page: tap a seat to record behaviour or attendance](docs/images/lesson.png)
 
-Currently distributed as a standalone **Windows installer (`.exe`)** — grab the latest from the [Releases](../../releases) page and run it. No sign-in, nothing to configure; on first launch you pick a folder to keep your data in.
+**[Read the full documentation and user guide →](docs/README.md)**
+
+## Install
+
+Download the Windows installer (`.exe`) from the [Releases](../../releases) page and run it. On first launch, pick
+a folder for your data — ideally inside OneDrive or Google Drive, so it's backed up and synced.
 
 ## What it does
 
-- **Getting around** — a Material Design 3 interface in ClassKernel green. A navigation rail down the left holds the places you teach from — Home, Attendance, Seats, Lesson, Behaviour, Marks, Notes, with Settings at the foot — and expands into a drawer with full names and your enabled tools. The class you're working with is chosen once, from the menu at the top right, and every page follows it.
-- **Home** — every class as a card on the landing page, with one-tap **Randomise seating** or **Lesson** to start a lesson fast. Once a class's seats have been assigned, its card shows 🔒 **Seats assigned** until the lesson ends (or your reseat PIN unlocks it). Give each class a **colour** on its Class notes page and it shows as a band on its card, a dot beside it in the class menu, and an underline under the top bar on its pages.
-- **Students** — roster per class with flags (SEN, medical, …) and notes; bulk import by pasting a list of names.
-- **Attendance register** — one-tap Present / Absent / Late / Excused per lesson, with running rates and history per student.
-- **Room layout designer** — drag-and-drop desks (singles, doubles, group tables, teacher desk, doors, windows, free-text label boxes) onto a snap-to-grid canvas; rotate, recolour, resize, label, duplicate. Put the front of the room on any edge, scale the seat/desk/label text, set a **view crop** so seating views zoom to just the used part of the room, and **save a layout as a template** to reuse in another class.
-- **Seats** — multiple named seating plans per class. Seat students by hand, or press **Randomise** for an animated reroll: students are spread evenly across desks (front desks filled first) honouring your rules — keep-apart pairs, keep-together pairs, front-of-room pins. Those rules live in Settings, out of sight of the class, so all students see is the shuffle. Randomise runs **once per lesson** wherever you press it; a second go needs your reseat PIN, and ending the lesson (or a new day) unlocks it. Moving students by hand is never locked. Print any plan for cover teachers.
-- **Lesson** — the seating plan *is* the interface. Every seat shows the student and their running points for the lesson; tap a seat to log positive/negative behaviours (fully customisable buttons) or mark attendance. **Batch entry** records one behaviour for many students at once: choose it (say *Missing homework*), tap each student — tap again to deselect — and press Save; nothing is recorded until then, and the next batch starts straight away. Seats are assigned (**Randomise**) **once per lesson**: after that the button shows 🔒 and needs your reseat PIN (set in Settings → Teaching mode), until you end the lesson or a new day starts. **Teaching mode** comes in two styles — the full-screen room plan, or a **side panel**: a narrow, always-on-top list of students grouped by table — each table its own colour-coded card (the pastels in turn, or pick any colour with 🎨) — docked to the left or right edge of the screen so your slides and annotations keep the rest (batch entry works there too). **End lesson** saves each student's seat and behaviour to the class history.
-- **Seating insights** — from that saved history: how often each student has sat at each desk, which desk they behave best/worst at, and which pairings turn disruptive (one click to add them to the keep-apart list).
-- **Assessments** — build tests as a single mark or broken into questions, each tagged with a **topic** (from a per-grade topic bank) and a cognitive level. Enter marks in a keyboard-first grid: the student you're typing in is highlighted yellow, and a student turns grey once all their marks are in (every question, for a test marked per question). While marking, only the students scroll — the title, headings and average rows stay put — and a very light tint down the surname column, blue at the top through green, yellow and orange to red at the bottom, shows how far down the list you are. Results show as SA **levels** (7 = 80%+ … 1 = below 30%) or **symbols** (A = 80%+, B 70–79, C 60–69, D 50–59, E 40–49, F below 40%), chosen once under Settings → Assessments and used in the grid, the dashboards, parent reports and exports. The analysis lives in two tools (below).
-- **Dashboards** *(tool: Class & student dashboards)* — two tabs, both filtered to the last 2 weeks, the last 4 weeks or everything, and both opening with a short written summary built from fixed, explainable rules.
-  - **Class** — behaviour week by week, the most common issues and what's going well; **students to watch** (3 or more negative entries and below the class on points), **stars**, **best answerers**, students **rarely asked**, bathroom trips, low attendance, top marks and students flagged on marks; then the marks analysis (class means, mark distributions, attendance vs marks) and the seating insights. Tap a name to open that student.
-  - **Student** — everything recorded for one child: every assessment with mark, percentage, symbol, class mean and the gap to it; their trend against the class; strengths by topic and cognitive level (where tests were marked per question); behaviour by type and week with the latest entries; questions answered when picked; bathroom trips; and attendance. Step through the class with ‹ ›, or open a student from the Students list (its chart button) or the Behaviour log.
-  - Questions answered or missed with **Pick a student** count as questions, never as behaviour, so a student who can't answer isn't flagged as misbehaving.
-  - **Parent reports** *(tool: Parent reports)* — open it from Tools on Home for the whole class or one student, or, with the dashboards on too, use **Print report** on a student's tab (or **Print all reports** on the Class tab, one page each). It opens a print preview of a one-page A4 report for parent evenings: a parent-friendly summary (no class rank or staff-only wording), marks against the class average, topic strengths, behaviour as *Going well* / *To work on*, questions answered, attendance and bathroom trips. Pick the period and which sections to include; type a teacher's comment on each page (saved for next time) and there are lines at the bottom for notes during the meeting. Your school and name for the header go in Settings → General → Parent reports.
-- **Export to a spreadsheet** — Settings → Export turns everything collected into one `.xlsx` workbook: a sheet each for the roster, the register (log and per-student summary), the behaviour log and summary, assessments with their statistics, marks with percentages and symbols, per-question marks, per-topic performance, seating plans, lesson history and seating insights. Tick the classes and datasets you want, optionally limit it to a term with a date range, and save it anywhere — every sheet carries a **Class** column so several classes can be exported together and pivoted. Exports are snapshots; editing the spreadsheet never changes the app's data.
-- **Tools** — extra teaching tools that ship inside the app but stay switched off until you want them. Turn one on in **Settings → Tools** and it appears under **Tools** on the Home page and in the expanded navigation drawer; turn it off and the app is exactly as it was. The two analysis tools above (**Class & student dashboards** and **Parent reports**) work on the class chosen in the top bar (the parent-report preview fills the screen, so it repeats that class menu in its options); while the dashboards are off there's no Dashboard anywhere in the app and student names don't link to one. The teaching tools:
-  - **Test timer** — a big countdown for exams and timed tasks, with optional reading + writing phases, a chime at phase changes, and three display styles (countdown circle, hourglass, or flip clock). Save reusable presets and go fullscreen. Leave the timer screen and it keeps running as a small pop-up in the bottom-right corner (inside the side panel in teaching mode) with pause and a tap back to the full timer; when time is up the pop-up turns red and stays until you dismiss it. *It used to sit in the sidebar; it is now a tool like the rest, so switch it on once under Settings → Tools.*
-  - **Clock** — a full-screen classroom clock: a round analog face or the timer's flip digits, 24- or 12-hour, with or without seconds and the date, in the app's time zone or any other you pick.
-  - **Stopwatch** — a seven-segment LED-style stopwatch to hundredths of a second, with start / pause, lap and restart (also on the Space, L and R keys); laps list their split and running total with the fastest and slowest marked, and it keeps running if you leave the screen.
-  - **Graph paper generator** — builds axes and grids to your own dimensions.
-  - **Practical graph plotter** — paste a table of readings and get the plotted graph with a least-squares line of best fit, its gradient, y-intercept and R², optionally forced through the origin.
-  - **Motion graph builder** — describe a journey a stage at a time and get the position, velocity and acceleration graphs derived from it, so the three can never contradict each other, with any of them left blank for the question version.
-  - **Class noise meter** — the computer's microphone shows the room's noise as a big **percentage of a limit you set** (100% = at the limit), with the dB(A) reading under it, a green / amber / red bar on the same % scale (the limit marked at 100%) and a **graph of the last 5 minutes** in dB(A) with the limit marked. The screen flashes red with a "TOO LOUD" banner while the class stays over it. Leave the meter's screen and it keeps listening, as a small pop-up in the bottom-right corner (inside the side panel in teaching mode) showing the % and dB(A) in the same colours, with Stop and a tap back to the meter; it stacks with the test timer's pop-up. Calibrate it once against a phone sound-meter app; nothing is recorded or saved.
+| Page | |
+| --- | --- |
+| **Home** | Every class as a card, with one-tap **Randomise seating** or **Lesson**, plus your switched-on tools. |
+| **Attendance** | One-tap Present / Absent / Late / Excused register, with rates and history. |
+| **Seats** | Named seating plans. Seat students by hand, or **Randomise** with hidden keep-apart, keep-together and sit-at-the-front rules — once per lesson, then a PIN to reseat. Print for cover teachers. |
+| **Lesson** | The seating plan is the interface: tap a seat to log behaviour, attendance or a bathroom trip. Batch entry, a random student picker, a full-screen or side-panel teaching mode, and **End lesson** to save the seat history. |
+| **Behaviour** | Filterable behaviour log and bathroom log. |
+| **Marks** | Tests as a single mark or per question (tagged by topic and cognitive level), keyboard-first mark entry, SA levels or symbols. |
+| **Notes** | Class details, colour and Markdown notes. |
+| **Settings** | Privacy mode, display size, time zone, teaching mode, behaviour buttons, students, room-layout designer, seating rules, topic bank, backups and **.xlsx export**. |
 
-  The three graph tools save a 300 dpi PNG that drops into Word at exactly the printed size. Tools are compiled into the app: they work offline like everything else and save through the same file dialog as an export. See [`src/plugins/README.md`](src/plugins/README.md) to add one (in the code they are called plugins).
+**Optional tools**, off until switched on in Settings → Tools:
 
-## Where your data lives
+| Tool | |
+| --- | --- |
+| **Class & student dashboards** | How the class and each student are doing: behaviour, answers, attendance, marks, topic strengths, seating insights. |
+| **Parent reports** | One-page A4 reports per student for parent evenings. |
+| **Test timer** | Full-screen countdown with reading and writing phases; keeps running as a pop-up. |
+| **Clock** | Full-screen analog or flip clock, any time zone. |
+| **Stopwatch** | LED-style lab stopwatch with laps. |
+| **Graph paper generator** | Grids and axes at an exact mm size, saved as a 300 dpi PNG. |
+| **Practical graph plotter** | Readings in; graph, line of best fit, gradient and R² out. |
+| **Motion graph builder** | x–t, v–t and a–t graphs from one journey, so they always agree. |
+| **Class noise meter** | Shows the room's noise against a limit and warns the class when it's too loud. |
 
-Everything is stored as plain **`.csv` and `.md` files** in one folder you choose:
+## Your data
 
-```
-ClassroomData/
-  behaviours.csv                 # your behaviour buttons (shared across classes)
-  topics.csv                     # assessable topics by grade
-  cognitive_levels.csv           # question cognitive-level list
-  settings.csv                   # app-wide preferences (display, time zone, teaching mode, reseat PIN — stored only as a hash)
-  timer_presets.csv              # saved test-timer presets
-  layouts/<name>/                # reusable room templates (desks.csv + room.csv)
-  classes/7B-Science/
-    class.md                     # class details (incl. colour) + free-form notes
-    students.csv
-    attendance.csv
-    behaviour.csv                # logged behaviour events
-    desks.csv                    # room layout geometry (colours, sizes, label boxes, side-panel table colours)
-    room.csv                     # front-of-room edge, view crop, text sizes
-    seating.csv                  # named seating plans
-    seating_prefs.csv            # keep-apart / keep-together / front rules
-    lessons.csv                  # per-lesson seat + behaviour history (for insights)
-    assessments.csv
-    assessment_questions.csv     # per-question topic + cognitive level
-    question_marks.csv           # per-question marks
-    marks.csv                    # total marks per assessment
-    report_comments.csv          # teacher comments for parent reports
-  exports/                       # spreadsheet exports saved from Settings → Export
-  backups/                       # automatic snapshots (newest 14 kept)
-```
-
-Open any file in Excel or Notepad; move the folder between machines freely. **Pick a folder inside OneDrive or Google Drive** and the sync client gives you backup and access from other machines — the app itself never touches the network. Timestamps are saved in UTC so files mean the same thing on any machine; the app shows and exports every date and time in the time zone chosen under **Settings → General → Time zone** (by default, the computer's own). Every write is atomic (temp file + rename) so a sync mid-save can't corrupt anything, and a snapshot of the whole folder is taken into `backups/` at every launch.
+One folder of plain files that open in Excel or Notepad — one sub-folder per class. Saves are atomic, a backup of
+the whole folder is taken at every launch (newest 14 kept), and times are stored in UTC. See
+[Your data and backups](docs/user-guide/11-your-data.md) and the [data file reference](docs/data-files.md).
 
 ## Development
 
 ```bash
 npm install
-npm run dev          # UI in a browser with an in-memory demo dataset
-npm test             # unit tests (CSV round-trips, seat assigner, stats, insights, spreadsheet export, seat lock, PIN, table grouping, time zones)
-npm run test:e2e     # browser tests: builds the app and clicks through it in Chromium (first time: npx playwright install chromium)
-npm run tauri dev    # full desktop app (needs Rust; on Linux also webkit2gtk)
-npm run tauri build  # Windows installer (NSIS .exe) in src-tauri/target/release/bundle
+npm run dev            # UI in a browser with an in-memory demo class
+npm test               # unit tests
+npm run test:e2e       # browser tests (first time: npx playwright install chromium)
+npm run tauri dev      # desktop app (needs Rust)
+npm run tauri build    # Windows installer
 ```
 
-- Frontend: React + TypeScript + Vite, Zustand, PapaParse, Recharts, marked. Spreadsheet exports are written by a small built-in `.xlsx` writer (`src/lib/xlsx.ts`) rather than a dependency, so the installer stays small.
-- Backend: minimal Rust (Tauri 2) — atomic file writes, folder snapshots, folder and save-as pickers. No other native code.
-- App icons are generated: `node scripts/gen-icons.mjs`.
-- Browser tests (`e2e/`, Playwright) run the built app in demo mode, with a fresh demo class for every test and a fake microphone for the noise meter: every page and Settings tab, a lesson from register to end, marking (including the row highlighting), and each tool. A test also fails if anything reaches the browser console as an error. Run them after a change to the interface; they aren't part of CI.
-
-CI (`.github/workflows/build.yml`) runs the tests on every push and builds the Windows NSIS installer; tagging `v*` attaches the `.exe` to a GitHub release.
+React + TypeScript + Vite and Zustand on a minimal Rust (Tauri 2) backend. CI runs the tests and builds the
+installer on every push; tagging `v*` publishes a release. See [Development](docs/development.md), and
+[`src/plugins/README.md`](src/plugins/README.md) to add a tool.
