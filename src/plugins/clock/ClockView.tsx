@@ -144,10 +144,10 @@ export default function ClockView() {
       <div className="row clock-toolbar no-print">
         <div className="row" role="group" aria-label="Clock face">
           <button className={`chip ${opts.face === "analog" ? "selected" : ""}`} onClick={() => set({ face: "analog" })}>
-            🕒 Analog
+            Analog
           </button>
           <button className={`chip ${opts.face === "digital" ? "selected" : ""}`} onClick={() => set({ face: "digital" })}>
-            🔢 Digital
+            Digital
           </button>
         </div>
 

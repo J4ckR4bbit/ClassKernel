@@ -70,7 +70,7 @@ Add an entry to `PLUGINS` in `registry.ts`:
   name: "Graph paper generator",
   tagline: "Build printable axes and grids at an exact mm size.",
   description: "…what it does, and what it saves.",
-  icon: "📐",
+  icon: "grid_on",                // a Material Symbol from components/Icon.tsx
   load: () => import("./graph-paper/GraphPaper").then((m) => m.default),
 }
 ```

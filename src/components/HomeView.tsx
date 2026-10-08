@@ -5,6 +5,15 @@ import { today } from "../lib/id";
 import { isSeatingLocked, readLessonStart, readSeatedAt } from "../lib/lessonState";
 import { PLUGINS, enabledPlugins } from "../plugins/registry";
 import NewClassModal from "./NewClassModal";
+import Icon from "./Icon";
+
+/** Up to two letters for a class's avatar: "7B-Science" → "7B", "Grade 10 Physics" → "G1". */
+function initials(name: string): string {
+  const words = name.split(/[\s\-_]+/).filter(Boolean);
+  const first = words[0] ?? "";
+  if (/\d/.test(first) && first.length <= 3) return first.toUpperCase();
+  return ((first[0] ?? "") + (words[1]?.[0] ?? first[1] ?? "")).toUpperCase();
+}
 
 /**
  * Landing page: every class as a card with the two things a teacher reaches
@@ -12,11 +21,12 @@ import NewClassModal from "./NewClassModal";
  * lesson. Setup (students, room layout, seating rules) lives under Settings.
  *
  * Below the classes sits Tools: the plugins this teacher has switched on
- * (Settings → Plugins). Class-independent extras live here rather than in the
- * sidebar, which stays about the class in front of you.
+ * (Settings → Plugins). Class-independent extras live here and in the
+ * expanded navigation drawer, never among the class's own pages.
  */
 export default function HomeView() {
-  const { classes, openClass, setView, setPendingRandomise, createClass, userPrefs, openPlugin, requestSeatingUnlock } = useApp();
+  const { classes, currentClass, openClass, setView, setPendingRandomise, createClass, userPrefs, openPlugin, requestSeatingUnlock } =
+    useApp();
   // Re-read the per-class locks whenever the open class's lock changes.
   useApp((s) => s.seatingLockedAt);
   const lockedNow = (name: string) => isSeatingLocked(readSeatedAt(name), readLessonStart(name), today());
@@ -45,11 +55,11 @@ export default function HomeView() {
 
   return (
     <div>
-      <div className="view-header">
-        <h1>ClassKernel</h1>
+      <div className="home-section">
+        <h2>Classes</h2>
         <div className="spacer" />
-        <button className="primary" onClick={() => setShowNew(true)}>
-          + New class
+        <button className="tonal" onClick={() => setShowNew(true)}>
+          <Icon name="add" size={20} /> New class
         </button>
       </div>
 
@@ -63,12 +73,17 @@ export default function HomeView() {
           {active.map((c) => (
             <div
               key={c.name}
-              className={`class-card ${c.color ? "coloured" : ""}`}
+              className={`class-card ${c.color ? "coloured" : ""} ${c.name === currentClass ? "current" : ""}`}
               style={c.color ? ({ "--class-colour": c.color } as CSSProperties) : undefined}
             >
               <div className="class-card-head">
-                <h3>{c.name}</h3>
-                {meta(c) && <div className="muted">{meta(c)}</div>}
+                <span className="class-card-avatar" aria-hidden>
+                  {initials(c.name)}
+                </span>
+                <div>
+                  <h3>{c.name}</h3>
+                  {meta(c) && <div className="muted">{meta(c)}</div>}
+                </div>
               </div>
               <div className="class-card-actions">
                 {lockedNow(c.name) ? (
@@ -76,17 +91,19 @@ export default function HomeView() {
                     onClick={() => void reseat(c.name)}
                     title="Seats were assigned this lesson — enter your PIN to assign them again"
                   >
-                    🔒 Seats assigned
+                    <Icon name="lock" size={18} /> Seats assigned
                   </button>
                 ) : (
                   <button className="primary" onClick={() => void randomise(c.name)}>
-                    🎲 Randomise seating
+                    <Icon name="casino" size={18} /> Randomise seating
                   </button>
                 )}
-                <button onClick={() => void liveLesson(c.name)}>🎓 Live lesson</button>
+                <button onClick={() => void liveLesson(c.name)}>
+                  <Icon name="school" size={18} /> Live lesson
+                </button>
               </div>
-              <button className="class-card-open" onClick={() => void openClass(c.name).then(() => setView("seating"))}>
-                Open class →
+              <button className="text small class-card-open" onClick={() => void openClass(c.name).then(() => setView("seating"))}>
+                Open class <Icon name="chevron_right" size={18} />
               </button>
             </div>
           ))}
@@ -95,7 +112,9 @@ export default function HomeView() {
 
       {PLUGINS.length > 0 && (
         <>
-          <h2 className="section-heading">Tools</h2>
+          <div className="home-section">
+            <h2>Tools</h2>
+          </div>
           {tools.length === 0 ? (
             <div className="panel muted">
               Extra tools — the test timer, a clock, a stopwatch, graph makers, class and student dashboards, parent
@@ -106,7 +125,7 @@ export default function HomeView() {
               {tools.map((p) => (
                 <button key={p.id} className="tool-card" onClick={() => openPlugin(p.id)}>
                   <span className="tool-icon" aria-hidden>
-                    {p.icon}
+                    <Icon name={p.icon} size={26} />
                   </span>
                   <span className="tool-text">
                     <b>{p.name}</b>

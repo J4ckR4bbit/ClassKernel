@@ -5,10 +5,11 @@ import { Student } from "../lib/types";
 import { attendanceByStudent, behaviourByStudent } from "../lib/stats";
 import PrivacyGate from "./PrivacyGate";
 import { DASHBOARDS_ID } from "../plugins/registry";
+import Icon from "./Icon";
 
 export default function RosterView() {
-  const { currentClass, students, setStudents, attendance, behaviourEvents, showToast, confirmDialog, openStudentDashboard, userPrefs } = useApp();
-  // The 📊 shortcut is there only while the dashboards plugin is switched on.
+  const { students, setStudents, attendance, behaviourEvents, showToast, confirmDialog, openStudentDashboard, userPrefs } = useApp();
+  // The dashboard shortcut is there only while the dashboards plugin is switched on.
   const dashboardsOn = userPrefs.enabledPlugins.includes(DASHBOARDS_ID);
   const [showImport, setShowImport] = useState(false);
   const attSummaries = attendanceByStudent(attendance);
@@ -40,12 +41,11 @@ export default function RosterView() {
     <div>
       <PrivacyGate label="names, flags and notes">
       <div className="view-header">
-        <h1>{currentClass} — Students</h1>
         <span className="muted">{students.length} students</span>
         <div className="spacer" />
         <button onClick={() => setShowImport(true)}>Import list…</button>
         <button className="primary" onClick={addStudent}>
-          + Add student
+          <Icon name="add" size={20} /> Add student
         </button>
       </div>
 
@@ -106,17 +106,17 @@ export default function RosterView() {
                   {dashboardsOn && (
                     <>
                       <button
-                        className="small"
+                        className="icon-only small"
                         onClick={() => openStudentDashboard(s.id)}
                         title="Open this student's dashboard"
                         aria-label={`Dashboard for ${s.firstName} ${s.lastName}`}
                       >
-                        📊
+                        <Icon name="bar_chart" size={18} />
                       </button>{" "}
                     </>
                   )}
-                  <button className="small danger" onClick={() => void remove(s.id)} title="Remove student">
-                    ✕
+                  <button className="icon-only small danger" onClick={() => void remove(s.id)} title="Remove student">
+                    <Icon name="close" size={18} />
                   </button>
                 </td>
               </tr>

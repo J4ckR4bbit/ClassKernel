@@ -5,6 +5,7 @@ import { Assessment, AssessmentQuestion, Mark, QuestionMark, studentName } from 
 import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankStudents, studentProvisional } from "../lib/stats";
 import { areasForGrade, shortLabel, subtopicsForGrade } from "../lib/topics";
 import PrivacyGate from "./PrivacyGate";
+import Icon from "./Icon";
 
 export default function AssessmentsView() {
   const { currentClass, classes, students, assessments, setAssessments, marks, setMarks, assessmentQuestions, setAssessmentQuestions, questionMarks, setQuestionMarks, showToast, confirmDialog } = useApp();
@@ -62,10 +63,9 @@ export default function AssessmentsView() {
   return (
     <div>
       <div className="view-header">
-        <h1>{currentClass} — Assessments</h1>
         <div className="spacer" />
         <button className="primary" onClick={() => setShowNew(true)}>
-          + New assessment
+          <Icon name="add" size={20} /> New assessment
         </button>
       </div>
 
@@ -97,17 +97,17 @@ export default function AssessmentsView() {
                 </td>
                 <td>{stats.mean !== null ? `${Math.round(stats.mean)}%` : <span className="muted">—</span>}</td>
                 <td>
-                  <div className="row">
+                  <div className="row nowrap">
                     <button className="small primary" onClick={() => enterMarks(a)}>
-                      ✎ Enter marks
+                      <Icon name="edit" size={18} /> Enter marks
                     </button>
                     {a.questionCount > 1 && (
                       <button className="small" onClick={() => setSetupId(a.id)}>
                         Questions
                       </button>
                     )}
-                    <button className="small danger" onClick={() => void deleteAssessment(a)}>
-                      ✕
+                    <button className="icon-only small danger" onClick={() => void deleteAssessment(a)} title="Delete assessment">
+                      <Icon name="close" size={18} />
                     </button>
                   </div>
                 </td>
@@ -280,7 +280,7 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
     <div>
       <div className="view-header">
         <button className="small" onClick={onBack}>
-          ← Back
+          <Icon name="arrow_back" size={18} /> Back
         </button>
         <h1>
           {assessment.title} <span className="muted">— questions</span>
@@ -334,8 +334,13 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
                 </select>
               </td>
               <td>
-                <button className="small danger" onClick={() => removeRow(i)} disabled={rows.length <= 1}>
-                  ✕
+                <button
+                  className="icon-only small danger"
+                  onClick={() => removeRow(i)}
+                  disabled={rows.length <= 1}
+                  title="Remove question"
+                >
+                  <Icon name="close" size={18} />
                 </button>
               </td>
             </tr>
@@ -351,7 +356,9 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
       </datalist>
 
       <div className="row" style={{ marginTop: 10 }}>
-        <button onClick={addRow}>+ Add question</button>
+        <button onClick={addRow}>
+          <Icon name="add" size={20} /> Add question
+        </button>
         <div className="spacer" />
         <button className="primary" disabled={!valid} onClick={save}>
           Start marking →
@@ -489,10 +496,10 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
         </h1>
         <div className="spacer" />
         <button className="small" onClick={onEditQuestions}>
-          ✎ Edit questions
+          <Icon name="edit" size={18} /> Edit questions
         </button>
         <button className="primary" onClick={onDone}>
-          ✓ Done
+          <Icon name="check" size={18} /> Done
         </button>
       </div>
 
@@ -686,7 +693,7 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
           {entered}/{sorted.length} entered
         </span>
         <button className="primary" onClick={onDone}>
-          ✓ Done
+          <Icon name="check" size={18} /> Done
         </button>
       </div>
 
