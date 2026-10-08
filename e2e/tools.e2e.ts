@@ -187,7 +187,7 @@ test.describe("noise meter", () => {
     await expect(page.locator(".noise-mini")).toHaveCount(0); // not on its own screen
     await openTool(page, "Test timer");
     await page.locator("main button.primary", { hasText: "Start" }).click();
-    await nav(page, "Seating");
+    await nav(page, "Seats");
     await expect(page.locator(".mini-stack .noise-mini")).toBeVisible();
     await expect(page.locator(".mini-stack .timer-mini")).toBeVisible();
     await expect(page.locator(".noise-mini-pct")).toContainText(/\d+%/);

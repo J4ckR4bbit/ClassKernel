@@ -143,7 +143,7 @@ export default function BehaviourLogView() {
           {filtered.length === 0 && (
             <tr>
               <td colSpan={5} className="muted" style={{ textAlign: "center", padding: 24 }}>
-                No behaviour events match — log them from the Live lesson view.
+                No behaviour events match — log them from the Lesson screen.
               </td>
             </tr>
           )}
@@ -196,7 +196,7 @@ export default function BehaviourLogView() {
           {bathroomFiltered.length === 0 && (
             <tr>
               <td colSpan={6} className="muted" style={{ textAlign: "center", padding: 24 }}>
-                No bathroom visits match — start a timer from a seat in the Live lesson view.
+                No bathroom visits match — start a timer from a seat on the Lesson screen.
               </td>
             </tr>
           )}

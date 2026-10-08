@@ -212,7 +212,7 @@ const overviewSheet: Builder = (bundles) => [
     name: "Overview",
     columns: [
       "Class",
-      "Year",
+      "Grade",
       "Subject",
       "Room",
       "Archived",

@@ -34,7 +34,7 @@ export default function HomeView() {
   const active = classes.filter((c) => !c.archived);
   const tools = enabledPlugins(userPrefs.enabledPlugins);
 
-  const meta = (c: ClassInfo) => [c.subject, c.year && `Year ${c.year}`, c.room].filter(Boolean).join(" · ");
+  const meta = (c: ClassInfo) => [c.subject, c.year && `Grade ${c.year}`, c.room].filter(Boolean).join(" · ");
 
   const liveLesson = async (name: string) => {
     await openClass(name);
@@ -99,7 +99,7 @@ export default function HomeView() {
                   </button>
                 )}
                 <button onClick={() => void liveLesson(c.name)}>
-                  <Icon name="school" size={18} /> Live lesson
+                  <Icon name="school" size={18} /> Lesson
                 </button>
               </div>
               <button className="text small class-card-open" onClick={() => void openClass(c.name).then(() => setView("seating"))}>

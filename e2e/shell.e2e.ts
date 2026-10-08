@@ -6,7 +6,8 @@ import { expect, nav, settingsTab, test } from "./fixtures";
 test("the navigation rail expands into a drawer and back", async ({ page }) => {
   await page.getByRole("button", { name: "Expand the menu" }).click();
   await expect(page.locator(".nav-rail.expanded")).toBeVisible();
-  await expect(page.locator(".nav-rail .nav-label", { hasText: "Seating plans" })).toBeVisible();
+  // Expanded, it gives full names ("Notes" becomes "Class notes").
+  await expect(page.locator(".nav-rail .nav-label", { hasText: "Class notes" })).toBeVisible();
   await page.getByRole("button", { name: "Collapse the menu" }).click();
   await expect(page.locator(".nav-rail.expanded")).toHaveCount(0);
 });
@@ -14,8 +15,8 @@ test("the navigation rail expands into a drawer and back", async ({ page }) => {
 test("every place in the rail opens its page", async ({ page }) => {
   const titles: Record<string, string> = {
     Attendance: "Attendance",
-    Seating: "Seating plans",
-    Lesson: "Live lesson",
+    Seats: "Seats",
+    Lesson: "Lesson",
     Behaviour: "Behaviour log",
     Marks: "Marks",
     Notes: "Class notes",
@@ -77,4 +78,11 @@ test("Export saves a spreadsheet", async ({ page }) => {
   const download = page.waitForEvent("download");
   await page.locator("main button.primary", { hasText: "Export" }).first().click();
   expect((await download).suggestedFilename()).toMatch(/\.xlsx$/);
+});
+
+test("a class's grade is called Grade, on Class notes and its Home card", async ({ page }) => {
+  await nav(page, "Notes");
+  await expect(page.locator("main label", { hasText: /^Grade$/ })).toBeVisible();
+  await nav(page, "Home");
+  await expect(page.locator(".class-card").first()).toContainText("Grade 7");
 });

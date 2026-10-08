@@ -60,7 +60,7 @@ export default function ClassNotesView() {
 
       <div className="panel">
         <div className="row">
-          <label>Year</label>
+          <label>Grade</label>
           <input style={{ width: 80 }} value={year} onChange={(e) => setYear(e.target.value)} />
           <label>Subject</label>
           <input style={{ width: 160 }} value={subject} onChange={(e) => setSubject(e.target.value)} />
