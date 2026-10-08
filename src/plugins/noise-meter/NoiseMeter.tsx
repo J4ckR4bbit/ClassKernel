@@ -7,9 +7,14 @@ import { useNoiseMeter } from "./noiseStore";
 import Icon from "../../components/Icon";
 import LevelGraph from "./LevelGraph";
 
-/** The gauge's span in dB(A): a silent room to a shouting one. */
-const GAUGE_MIN = 30;
-const GAUGE_MAX = 100;
+/** The graph's span in dB(A): a silent room to a shouting one. */
+const GRAPH_MIN = 30;
+const GRAPH_MAX = 100;
+/**
+ * The bar shows the same % as the big figure, from 0 to this much of the
+ * limit: the limit sits two-thirds along, so "how far over" still shows.
+ */
+const BAR_MAX_PCT = 150;
 
 const ZONE_TEXT = { quiet: "Nice and quiet", warn: "Getting close…", loud: "Too loud!" } as const;
 
@@ -59,7 +64,10 @@ export default function NoiseMeter() {
   const setLimit = (v: number) => update({ limit: Math.min(LIMIT_MAX, Math.max(LIMIT_MIN, Math.round(v))) });
 
   const zone = level === null ? "quiet" : zoneFor(level, settings.limit);
-  const pct = (v: number) => Math.min(100, Math.max(0, ((v - GAUGE_MIN) / (GAUGE_MAX - GAUGE_MIN)) * 100));
+  const reading = level === null ? null : percentOfLimit(level, settings.limit);
+  // Where a % of the limit falls along the bar, as a % of the bar's width.
+  const along = (pctOfLimit: number) => Math.min(100, Math.max(0, (pctOfLimit / BAR_MAX_PCT) * 100));
+  const warnFrom = percentOfLimit(settings.limit - WARN_BAND, settings.limit);
   const calibrated = settings.offset !== null;
 
   const limitControl = (
@@ -88,8 +96,8 @@ export default function NoiseMeter() {
           TOO LOUD — bring it down
         </div>
       )}
-      <div className="nm-reading" aria-label={level === null ? undefined : `${percentOfLimit(level, settings.limit)} % of the limit`}>
-        {level === null ? "—" : percentOfLimit(level, settings.limit)}
+      <div className="nm-reading" aria-label={reading === null ? undefined : `${reading} % of the limit`}>
+        {reading ?? "—"}
         <span className="nm-unit">%</span>
       </div>
       <div className="nm-db">
@@ -104,17 +112,20 @@ export default function NoiseMeter() {
             : ZONE_TEXT[zone]}
       </div>
       <div className="nm-gauge" aria-hidden>
-        <div className="nm-gauge-warn" style={{ left: `${pct(settings.limit - WARN_BAND)}%`, width: `${pct(settings.limit) - pct(settings.limit - WARN_BAND)}%` }} />
-        <div className="nm-gauge-fill" style={{ width: `${level === null ? 0 : pct(level)}%` }} />
-        <div className="nm-gauge-limit" style={{ left: `${pct(settings.limit)}%` }} />
+        <div className="nm-gauge-warn" style={{ left: `${along(warnFrom)}%`, width: `${along(100) - along(warnFrom)}%` }} />
+        <div className="nm-gauge-fill" style={{ width: `${along(reading ?? 0)}%` }} />
+        <div className="nm-gauge-limit" style={{ left: `${along(100)}%` }} />
       </div>
       <div className="nm-scale" aria-hidden>
-        <span>{GAUGE_MIN}</span>
-        <span>{GAUGE_MAX}</span>
+        <span>0%</span>
+        <span className="nm-scale-limit" style={{ left: `${along(100)}%` }}>
+          100% = limit
+        </span>
+        <span>{BAR_MAX_PCT}%</span>
       </div>
       {limitControl}
       {!calibrated && <div className="nm-uncal">Not calibrated — readings are approximate</div>}
-      <LevelGraph samples={history} limit={settings.limit} min={GAUGE_MIN} max={GAUGE_MAX} />
+      <LevelGraph samples={history} limit={settings.limit} min={GRAPH_MIN} max={GRAPH_MAX} />
     </div>
   );
 

@@ -20,7 +20,7 @@ export default function LevelGraph({
 }: {
   samples: LevelSample[];
   limit: number;
-  /** The dB(A) at the bottom and top of the graph (the gauge's span). */
+  /** The dB(A) at the bottom and top of the graph. */
   min: number;
   max: number;
   windowMs?: number;

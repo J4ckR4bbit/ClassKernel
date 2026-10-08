@@ -764,7 +764,8 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .nm-gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--zone); transition: width 0.15s linear; }
 .nm-gauge-warn { position: absolute; top: 0; bottom: 0; background: rgba(217, 144, 26, 0.18); }
 .nm-gauge-limit { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #1d2733; }
-.nm-scale { display: flex; justify-content: space-between; width: min(100%, 900px); margin-top: -10px; font-size: 12px; color: var(--text-dim); }
+.nm-scale { position: relative; display: flex; justify-content: space-between; width: min(100%, 900px); margin-top: -10px; font-size: 12px; color: var(--text-dim); }
+.nm-scale-limit { position: absolute; top: 0; transform: translateX(-50%); font-weight: 700; color: #1d2733; white-space: nowrap; }
 .nm-limit { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; }
 .nm-limit button { font-size: 24px; min-width: 52px; min-height: 52px; font-weight: 700; }
 .nm-limit-value { font-size: 34px; min-width: 2.4ch; text-align: center; font-variant-numeric: tabular-nums; }
