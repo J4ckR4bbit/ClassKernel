@@ -41,7 +41,7 @@ export function useSeatingShuffle() {
     // Read live state at call time so the result is never stale.
     const { students, desks, seatingPrefs, roomConfig, showToast, seatingLocked } = useApp.getState();
     if (seatingLocked()) {
-      showToast("Seats already assigned this lesson — use 🔒 Reseat to unlock with your PIN");
+      showToast("Seats already assigned this lesson — use Reseat… to unlock with your PIN");
       return;
     }
     const result = assignRandomSeats(students, desks, activePlan, {

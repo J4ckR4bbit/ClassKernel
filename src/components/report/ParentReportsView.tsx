@@ -3,11 +3,10 @@ import { useApp } from "../../store/appStore";
 import { today } from "../../lib/id";
 import { ClassData } from "../../lib/insights";
 import PrivacyGate from "../PrivacyGate";
-import ClassPicker from "../ClassPicker";
 import ReportPreview from "./ReportPreview";
 
 /**
- * The Parent reports plugin: once the privacy cover is lifted, the full-screen
+ * The Parent reports tool: once the privacy cover is lifted, the full-screen
  * print preview for the open class, with the whole class or one student.
  */
 export default function ParentReportsView() {
@@ -39,11 +38,8 @@ export default function ParentReportsView() {
 
   return (
     <div>
-      <div className="view-header">
-        <ClassPicker />
-      </div>
       {!currentClass ? (
-        <div className="panel muted">Open a class first — choose one above or from the menu.</div>
+        <div className="panel muted">Pick a class from the menu at the top right to print its parent reports.</div>
       ) : (
         <PrivacyGate label="marks, behaviour and attendance reports">
           {revealed && <ReportPreview standalone studentIds={ids} data={data} initialFrom="" today={today()} onClose={goHome} />}

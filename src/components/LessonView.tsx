@@ -108,7 +108,7 @@ export default function LessonView() {
         <div className="panel">
           You need a room layout and a seating plan first.{" "}
           <button className="small" onClick={() => setView(desks.length === 0 ? "layout" : "seating")}>
-            {desks.length === 0 ? "Design your room →" : "Create a seating plan →"}
+            {desks.length === 0 ? "Design your room" : "Create a seating plan"} <Icon name="chevron_right" size={18} />
           </button>
         </div>
       </div>
@@ -272,7 +272,11 @@ export default function LessonView() {
         className={`seating-canvas ${focusMode ? "focus-canvas-wrap" : ""} ${isShuffling ? "shuffling" : ""} ${batch.active ? "batching" : ""}`}
         style={{ position: "relative" }}
       >
-        {isShuffling && <div className="shuffle-overlay no-print">🎲 Randomising seats…</div>}
+        {isShuffling && (
+          <div className="shuffle-overlay no-print">
+            <Icon name="casino" size={20} /> Randomising seats…
+          </div>
+        )}
         <RoomCanvas
           desks={desks}
           frontEdge={roomConfig.frontEdge}

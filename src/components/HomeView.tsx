@@ -21,7 +21,7 @@ function initials(name: string): string {
  * lesson. Setup (students, room layout, seating rules) lives under Settings.
  *
  * Below the classes sits Tools: the plugins this teacher has switched on
- * (Settings → Plugins). Class-independent extras live here and in the
+ * (Settings → Tools). Class-independent extras live here and in the
  * expanded navigation drawer, never among the class's own pages.
  */
 export default function HomeView() {
@@ -118,7 +118,7 @@ export default function HomeView() {
           {tools.length === 0 ? (
             <div className="panel muted">
               Extra tools — the test timer, a clock, a stopwatch, graph makers, class and student dashboards, parent
-              reports and more — ship with the app but stay switched off. Turn on the ones you want under <b>Settings → Plugins</b> and they appear here.
+              reports and more — ship with the app but stay switched off. Turn on the ones you want under <b>Settings → Tools</b> and they appear here.
             </div>
           ) : (
             <div className="home-grid">

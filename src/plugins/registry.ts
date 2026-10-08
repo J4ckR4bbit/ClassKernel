@@ -1,7 +1,8 @@
 // The plugin catalogue.
 //
 // A plugin is an extra teaching tool that ships inside the app but stays out of
-// the way until a teacher switches it on in Settings → Plugins. Each one is an
+// the way until a teacher switches it on in Settings → Tools (the interface
+// calls them tools; the code and saved settings still say plugin). Each one is an
 // ordinary React view, compiled in and lazily loaded, so it looks like the rest
 // of the app and reaches the disk through the same audited Rust commands as
 // everything else.
@@ -24,7 +25,7 @@ export interface PluginManifest {
   description: string;
   /**
    * Material Symbol for the Home card, the navigation drawer and Settings →
-   * Plugins. It must be one in components/Icon.tsx; add it there if not.
+   * Tools. It must be one in components/Icon.tsx; add it there if not.
    */
   icon: IconName;
   /**
@@ -47,7 +48,7 @@ export const PLUGINS: PluginManifest[] = [
     name: "Class & student dashboards",
     tagline: "How the class and each student are doing — behaviour, answers and marks.",
     description:
-      "Two dashboards for the open class. Class: a written summary, behaviour week by week, the top issues, students to watch, stars, best answerers, rarely asked, bathroom trips and attendance, plus the marks analysis. Student: everything recorded for one child, each assessment against the class average, and topic strengths. Filter to the last 2 weeks, 4 weeks or everything. It only reads your class data; nothing new is saved. While it's on, the 📊 button in the Students list and names in the Behaviour log open a student's dashboard.",
+      "Two dashboards for the open class. Class: a written summary, behaviour week by week, the top issues, students to watch, stars, best answerers, rarely asked, bathroom trips and attendance, plus the marks analysis. Student: everything recorded for one child, each assessment against the class average, and topic strengths. Filter to the last 2 weeks, 4 weeks or everything. It only reads your class data; nothing new is saved. While it's on, the chart button in the Students list and names in the Behaviour log open a student's dashboard.",
     icon: "bar_chart",
     load: () => import("../components/DashboardView").then((m) => m.default),
   },

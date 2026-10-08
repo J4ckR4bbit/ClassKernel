@@ -165,7 +165,7 @@ export default function SeatingView() {
         <div className="panel">
           No room layout yet.{" "}
           <button className="small" onClick={() => setView("layout")}>
-            Design your room first →
+            Design your room first <Icon name="chevron_right" size={18} />
           </button>
         </div>
       ) : (
@@ -214,7 +214,11 @@ export default function SeatingView() {
               }}
               onSeatClick={onSeatClick}
             />
-            {isShuffling && <div className="shuffle-overlay no-print">🎲 Randomising seats…</div>}
+            {isShuffling && (
+              <div className="shuffle-overlay no-print">
+                <Icon name="casino" size={20} /> Randomising seats…
+              </div>
+            )}
           </div>
         </>
       )}

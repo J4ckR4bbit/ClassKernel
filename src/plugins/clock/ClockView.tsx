@@ -3,6 +3,7 @@ import { currentTimeZone, listTimeZones } from "../../lib/time";
 import { FlipDisplay } from "../shared/FlipDigits";
 import { clockParts, digitalText, handAngles, offsetLabel, zoneCity } from "./clock";
 import "./clock.css";
+import Icon from "../../components/Icon";
 
 // A big classroom clock: a round analog face or the test timer's flip digits,
 // in any time zone. The face and options are remembered on this computer,
@@ -180,7 +181,9 @@ export default function ClockView() {
         </label>
 
         <div className="spacer" />
-        <button onClick={toggleFullscreen}>⤢ Fullscreen</button>
+        <button onClick={toggleFullscreen}>
+          <Icon name="fullscreen" size={20} /> Fullscreen
+        </button>
       </div>
 
       <div className="clock-stage">

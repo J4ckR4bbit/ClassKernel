@@ -16,6 +16,7 @@ import {
   WeeklyBehaviourChart,
   fmtPct,
 } from "./shared";
+import Icon from "../Icon";
 
 /**
  * One student at a glance: a written summary, then their marks (each
@@ -56,8 +57,8 @@ export default function StudentDashboard({
   return (
     <div className="dash-student">
       <div className="student-pick">
-        <button onClick={() => step(-1)} aria-label="Previous student" title="Previous student">
-          ‹
+        <button className="icon-btn" onClick={() => step(-1)} aria-label="Previous student" title="Previous student">
+          <Icon name="chevron_left" />
         </button>
         <select value={p.student.id} onChange={(e) => onPick(e.target.value)} aria-label="Student">
           {sorted.map((s) => (
@@ -66,8 +67,8 @@ export default function StudentDashboard({
             </option>
           ))}
         </select>
-        <button onClick={() => step(1)} aria-label="Next student" title="Next student">
-          ›
+        <button className="icon-btn" onClick={() => step(1)} aria-label="Next student" title="Next student">
+          <Icon name="chevron_right" />
         </button>
         <h2 className="student-name">{studentName(p.student)}</h2>
         {flags.map((f) => (
@@ -76,7 +77,11 @@ export default function StudentDashboard({
           </span>
         ))}
       </div>
-      {p.student.notes && <p className="muted student-notes">📝 {p.student.notes}</p>}
+      {p.student.notes && (
+        <p className="muted student-notes">
+          <Icon name="sticky_note_2" size={18} /> {p.student.notes}
+        </p>
+      )}
 
       <SummaryCard title={`How ${p.student.firstName || "this student"} is doing`} lines={summary} />
 
@@ -195,7 +200,9 @@ export default function StudentDashboard({
 
       <div className="dash-grid" style={{ marginTop: 16 }}>
         <div className="panel">
-          <h3>🙋 Questions</h3>
+          <h3>
+            <Icon name="person_raised_hand" size={20} /> Questions
+          </h3>
           {a.asked === 0 ? (
             <p className="muted">Not picked to answer in this period.</p>
           ) : (
@@ -216,7 +223,9 @@ export default function StudentDashboard({
         </div>
 
         <div className="panel">
-          <h3>🚻 Bathroom</h3>
+          <h3>
+            <Icon name="wc" size={20} /> Bathroom
+          </h3>
           {p.bathroom.trips === 0 ? (
             <p className="muted">No bathroom trips in this period.</p>
           ) : (
@@ -242,7 +251,9 @@ export default function StudentDashboard({
         </div>
 
         <div className="panel">
-          <h3>📅 Attendance</h3>
+          <h3>
+            <Icon name="event" size={20} /> Attendance
+          </h3>
           {att.total === 0 ? (
             <p className="muted">No attendance taken in this period.</p>
           ) : (

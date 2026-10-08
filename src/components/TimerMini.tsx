@@ -53,7 +53,15 @@ export default function TimerMini({ inline = false }: { inline?: boolean }) {
       role={timer.finished ? "alert" : "status"}
     >
       <button className="timer-mini-body" onClick={open} title="Open the test timer">
-        <span className="timer-mini-label">{timer.finished ? "⏰ Time's up" : current?.label}</span>
+        <span className="timer-mini-label">
+          {timer.finished ? (
+            <>
+              <Icon name="alarm" size={18} /> Time's up
+            </>
+          ) : (
+            current?.label
+          )}
+        </span>
         {!timer.finished && <span className="timer-mini-time">{formatCountdown(timer.remaining)}</span>}
         <span className="timer-mini-sub">
           {timer.finished ? "Tap to open the timer" : endsAt ? `ends at ${endsAt}` : "paused"}

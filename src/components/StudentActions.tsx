@@ -1,6 +1,7 @@
 import { useApp } from "../store/appStore";
 import { AttendanceStatus, BathroomVisit, BehaviourCode, Student, studentName } from "../lib/types";
 import { formatDuration, visitSeconds } from "../lib/stats";
+import Icon from "./Icon";
 
 interface Props {
   student: Student;
@@ -59,7 +60,8 @@ export default function StudentActions({ student, status, outVisit, onAttendance
         title="Time a bathroom trip; it's saved to the bathroom log when the student is back"
         onClick={onBathroom}
       >
-        {outVisit ? `🚻 Back from bathroom · ${formatDuration(visitSeconds(outVisit))}` : "🚻 Bathroom — start timer"}
+        <Icon name="wc" size={20} />
+        {outVisit ? `Back from bathroom · ${formatDuration(visitSeconds(outVisit))}` : "Bathroom — start timer"}
       </button>
       {positives.map((c) => (
         <button

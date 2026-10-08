@@ -17,6 +17,7 @@ import {
   weightedLevel,
   zoneFor,
 } from "./meter";
+import Icon from "../../components/Icon";
 
 const STORAGE_KEY = "classkernel.noiseMeter";
 /** The gauge's span in dB(A): a silent room to a shouting one. */
@@ -246,8 +247,8 @@ export default function NoiseMeter() {
   const display = (
     <div className={`nm-display zone-${zone} ${alarm.active ? "alarm" : ""} ${classView ? "class-view" : ""}`}>
       {classView && (
-        <button className="nm-close" onClick={closeClassView} title="Back to the controls (Esc)">
-          ✕
+        <button className="nm-close" onClick={closeClassView} title="Back to the controls (Esc)" aria-label="Back to the controls">
+          <Icon name="close" />
         </button>
       )}
       {alarm.active && (
@@ -289,14 +290,16 @@ export default function NoiseMeter() {
           <div className="panel">
             <div className="row">
               {running ? (
-                <button onClick={stop}>⏸ Stop</button>
+                <button onClick={stop}>
+                  <Icon name="mic_off" size={20} /> Stop
+                </button>
               ) : (
                 <button className="primary" onClick={() => void start()} disabled={starting}>
-                  ▶ {starting ? "Starting…" : "Start"}
+                  <Icon name="mic" size={20} /> {starting ? "Starting…" : "Start"}
                 </button>
               )}
               <button onClick={openClassView} disabled={!running} title="Fill the screen so the class can see it">
-                ⛶ Show to class
+                <Icon name="co_present" size={20} /> Show to class
               </button>
             </div>
             {error && <p className="nm-error">{error}</p>}

@@ -159,18 +159,18 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
                 onClick={() => logAnswer(answered)}
                 title="Record that they answered"
               >
-                ✓ {answered.label} {signed(answered.points)}
+                <Icon name="check" size={20} /> {answered.label} {signed(answered.points)}
               </button>
               <button
                 style={{ background: noAnswer.color }}
                 onClick={() => logAnswer(noAnswer)}
                 title="Record that they could not answer"
               >
-                ✗ {noAnswer.label} {signed(noAnswer.points)}
+                <Icon name="close" size={20} /> {noAnswer.label} {signed(noAnswer.points)}
               </button>
               {otherCodes.length > 0 && (
                 <button className="picker-other" onClick={() => setShowOthers((v) => !v)} aria-expanded={showOthers}>
-                  ⋯ Other behaviour
+                  <Icon name="more_horiz" size={20} /> Other behaviour
                 </button>
               )}
             </div>

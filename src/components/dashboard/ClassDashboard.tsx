@@ -86,7 +86,8 @@ export default function ClassDashboard({
       <h2 className="section-heading">Students</h2>
       <div className="people-grid">
         <PeopleList
-          title="⚠ Students to watch"
+          icon="warning"
+          title="Students to watch"
           hint="3 or more negative entries and below the class on points, or far below everyone else."
           people={p.watch}
           nameOf={nameOf}
@@ -95,7 +96,8 @@ export default function ClassDashboard({
           tone="warn"
         />
         <PeopleList
-          title="⭐ Stars"
+          icon="star"
+          title="Stars"
           hint="Most positive entries."
           people={p.stars}
           nameOf={nameOf}
@@ -104,7 +106,8 @@ export default function ClassDashboard({
           tone="good"
         />
         <PeopleList
-          title="🙋 Best answerers"
+          icon="person_raised_hand"
+          title="Best answerers"
           hint="Answered at least half the questions they were asked (asked 3 or more times)."
           people={p.answerers}
           nameOf={nameOf}
@@ -113,7 +116,8 @@ export default function ClassDashboard({
           tone="good"
         />
         <PeopleList
-          title="🔇 Rarely asked"
+          icon="voice_over_off"
+          title="Rarely asked"
           hint="Not picked to answer yet, or far less than most."
           people={p.rarelyAsked}
           nameOf={nameOf}
@@ -122,14 +126,16 @@ export default function ClassDashboard({
           max={10}
         />
         <PeopleList
-          title="🚻 Bathroom trips"
+          icon="wc"
+          title="Bathroom trips"
           people={p.bathroomUsers}
           nameOf={nameOf}
           onOpen={onOpenStudent}
           empty="No bathroom trips."
         />
         <PeopleList
-          title="📅 Attendance below 90%"
+          icon="event_busy"
+          title="Attendance below 90%"
           people={p.lowAttendance}
           nameOf={nameOf}
           onOpen={onOpenStudent}
@@ -137,7 +143,8 @@ export default function ClassDashboard({
           tone="warn"
         />
         <PeopleList
-          title="🏆 Top marks"
+          icon="trophy"
+          title="Top marks"
           people={p.topPerformers}
           nameOf={nameOf}
           onOpen={onOpenStudent}
@@ -145,7 +152,8 @@ export default function ClassDashboard({
           tone="good"
         />
         <PeopleList
-          title="📉 Flagged on marks"
+          icon="trending_down"
+          title="Flagged on marks"
           hint="Latest result well below their own average, far below the class, or three drops in a row."
           people={p.atRisk.map((f) => ({ studentId: f.studentId, value: 0, detail: f.reason }))}
           nameOf={nameOf}

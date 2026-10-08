@@ -24,7 +24,7 @@ class PluginBoundary extends Component<{ name: string; children: ReactNode }, { 
       return (
         <div className="panel muted">
           <b>{this.props.name}</b> stopped working: {this.state.error.message}. Everything else in ClassKernel is
-          unaffected — switch the plugin off under Settings → Plugins if it keeps happening.
+          unaffected — switch the tool off under Settings → Tools if it keeps happening.
         </div>
       );
     }
@@ -49,8 +49,8 @@ export default function PluginView() {
       <div>
         <div className="panel muted">
           {plugin
-            ? `"${plugin.name}" is switched off. Turn it back on under Settings → Plugins.`
-            : "That plugin isn't part of this version of the app."}
+            ? `"${plugin.name}" is switched off. Turn it back on under Settings → Tools.`
+            : "That tool isn't part of this version of the app."}
           <div className="row" style={{ marginTop: 10 }}>
             <button onClick={() => setView("home")}>
               <Icon name="arrow_back" size={20} /> Home

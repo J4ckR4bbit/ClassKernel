@@ -26,8 +26,9 @@ import RosterView from "./RosterView";
 import LayoutDesigner from "./LayoutDesigner";
 import ExportView from "./ExportView";
 import Icon, { IconName } from "./Icon";
+import Segmented from "./Segmented";
 
-type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments" | "plugins" | "export";
+type SettingsTab = "general" | "students" | "layout" | "seating" | "assessments" | "tools" | "export";
 
 const SIDE_LABELS: Record<LessonBarSide, string> = {
   top: "Top",
@@ -41,7 +42,7 @@ const SIDE_LABELS: Record<LessonBarSide, string> = {
 const TABS: Array<{ id: SettingsTab; label: string; icon: IconName; perClass: boolean }> = [
   { id: "general", label: "General", icon: "tune", perClass: false },
   { id: "assessments", label: "Assessments", icon: "quiz", perClass: false },
-  { id: "plugins", label: "Plugins", icon: "extension", perClass: false },
+  { id: "tools", label: "Tools", icon: "build", perClass: false },
   { id: "export", label: "Export", icon: "download", perClass: false },
   { id: "students", label: "Students", icon: "group", perClass: true },
   { id: "layout", label: "Room layout", icon: "grid_view", perClass: true },
@@ -81,7 +82,7 @@ export default function SettingsView() {
 
       {tab === "general" && <GeneralSettings />}
       {tab === "assessments" && <AssessmentSettings />}
-      {tab === "plugins" && <PluginSettings />}
+      {tab === "tools" && <PluginSettings />}
       {tab === "export" && <ExportView />}
       {perClass &&
         (active.length === 0 ? (
@@ -278,17 +279,12 @@ function GeneralSettings() {
         <p className="muted" style={{ marginTop: 0 }}>
           Make everything bigger for a large touch panel. Applies to the whole app immediately.
         </p>
-        <div className="row">
-          {[1, 1.25, 1.5, 1.75].map((v) => (
-            <button
-              key={v}
-              className={userPrefs.uiScale === v ? "primary" : ""}
-              onClick={() => void setUserPrefs({ ...userPrefs, uiScale: v })}
-            >
-              {Math.round(v * 100)}%
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label="Text and button size"
+          options={[1, 1.25, 1.5, 1.75].map((v) => ({ value: v, label: `${Math.round(v * 100)}%` }))}
+          value={userPrefs.uiScale}
+          onChange={(v) => void setUserPrefs({ ...userPrefs, uiScale: v })}
+        />
       </div>
 
       <TimeZoneSettings />
@@ -494,7 +490,7 @@ function ReportSettings() {
     <div className="panel">
       <h3>Parent reports</h3>
       <p className="muted" style={{ marginTop: 0 }}>
-        Printed at the top of each parent report (Dashboard → 🖨 Print report). Leave either blank to leave it off.
+        Printed at the top of each parent report (Dashboard → Print report). Leave either blank to leave it off.
       </p>
       <div className="form-grid report-settings">
         <label htmlFor="report-school">School name</label>
@@ -511,9 +507,9 @@ function TeachingModeSettings() {
   const { userPrefs, setUserPrefs, promptDialog, showToast } = useApp();
   const hasPin = !!userPrefs.reseatPinHash;
 
-  const styles: Array<{ id: TeachingStyle; label: string }> = [
-    { id: "room", label: "⛶ Room plan (full screen)" },
-    { id: "strip", label: "▥ Side panel of tables" },
+  const styles: Array<{ value: TeachingStyle; label: string; icon: IconName }> = [
+    { value: "room", label: "Room plan (full screen)", icon: "fullscreen" },
+    { value: "strip", label: "Side panel of tables", icon: "dock_to_left" },
   ];
 
   // Changing or removing a PIN needs the current one, so a student at the
@@ -560,52 +556,37 @@ function TeachingModeSettings() {
         the screen, always on top, so your slides and annotations keep the rest. You can switch between them during a
         lesson.
       </p>
-      <div className="row">
-        {styles.map((st) => (
-          <button
-            key={st.id}
-            className={userPrefs.teachingStyle === st.id ? "primary" : ""}
-            onClick={() => void setUserPrefs({ ...userPrefs, teachingStyle: st.id })}
-          >
-            {st.label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Teaching mode"
+        options={styles}
+        value={userPrefs.teachingStyle}
+        onChange={(v) => void setUserPrefs({ ...userPrefs, teachingStyle: v })}
+      />
 
       <h4>Side panel edge</h4>
-      <div className="row">
-        {(["left", "right"] as const).map((side) => (
-          <button
-            key={side}
-            className={userPrefs.dockSide === side ? "primary" : ""}
-            onClick={() => void setUserPrefs({ ...userPrefs, dockSide: side })}
-          >
-            {SIDE_LABELS[side]}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Side panel edge"
+        options={(["left", "right"] as const).map((side) => ({ value: side, label: SIDE_LABELS[side] }))}
+        value={userPrefs.dockSide}
+        onChange={(v) => void setUserPrefs({ ...userPrefs, dockSide: v })}
+      />
 
       <h4>Room plan buttons</h4>
       <p className="muted" style={{ marginTop: 0 }}>
         Which edge of the room-plan screen the lesson buttons (Pick a student, Randomise, End lesson) sit on. Put them
         within reach of where you stand.
       </p>
-      <div className="row">
-        {LESSON_BAR_SIDES.map((side) => (
-          <button
-            key={side}
-            className={userPrefs.lessonBarSide === side ? "primary" : ""}
-            onClick={() => void setUserPrefs({ ...userPrefs, lessonBarSide: side })}
-          >
-            {SIDE_LABELS[side]}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label="Room plan buttons"
+        options={LESSON_BAR_SIDES.map((side) => ({ value: side, label: SIDE_LABELS[side] }))}
+        value={userPrefs.lessonBarSide}
+        onChange={(v) => void setUserPrefs({ ...userPrefs, lessonBarSide: v })}
+      />
 
       <h4>Reseat PIN</h4>
       <p className="muted" style={{ marginTop: 0 }}>
-        Seats can be assigned (🎲 Randomise) once per lesson. After that the button shows 🔒 and needs this PIN to
-        assign them again, so nobody reshuffles the class by accident. Ending the lesson, or a new day, unlocks it.{" "}
+        Seats can be assigned (<b>Randomise</b>) once per lesson. After that the button shows a lock (<b>Reseat…</b>) and
+        needs this PIN to assign them again, so nobody reshuffles the class by accident. Ending the lesson, or a new day, unlocks it.{" "}
         {hasPin ? "A PIN is set." : "No PIN yet — set one now, or you'll be asked the first time you unlock."}
       </p>
       <div className="row">
@@ -689,7 +670,7 @@ function PluginSettings() {
 
   return (
     <div className="panel">
-      <h3>Plugins</h3>
+      <h3>Tools</h3>
       <p className="muted" style={{ marginTop: 0 }}>
         Extra tools that come with ClassKernel. Everything ships switched off, so the app stays exactly as it is until
         you turn something on — then it appears under <b>Tools</b> on the Home page. They are part of the app, so they
@@ -698,7 +679,7 @@ function PluginSettings() {
 
       {PLUGINS.length === 0 ? (
         <p className="muted" style={{ marginBottom: 0 }}>
-          This version of the app doesn't ship any plugins yet.
+          This version of the app doesn't ship any tools yet.
         </p>
       ) : (
         <ul className="plugin-list">

@@ -151,7 +151,9 @@ export default function BehaviourLogView() {
       </table>
       {filtered.length > 300 && <p className="muted">Showing the latest 300 of {filtered.length} events.</p>}
 
-      <h2 className="section-heading">🚻 Bathroom log</h2>
+      <h2 className="section-heading">
+        <Icon name="wc" size={20} /> Bathroom log
+      </h2>
       <table className="data">
         <thead>
           <tr>

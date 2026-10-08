@@ -361,7 +361,7 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
         </button>
         <div className="spacer" />
         <button className="primary" disabled={!valid} onClick={save}>
-          Start marking →
+          Start marking <Icon name="chevron_right" size={20} />
         </button>
       </div>
     </div>
