@@ -73,6 +73,7 @@ Open any file in Excel or Notepad; move the folder between machines freely. **Pi
 npm install
 npm run dev          # UI in a browser with an in-memory demo dataset
 npm test             # unit tests (CSV round-trips, seat assigner, stats, insights, spreadsheet export, seat lock, PIN, table grouping, time zones)
+npm run test:e2e     # browser tests: builds the app and clicks through it in Chromium (first time: npx playwright install chromium)
 npm run tauri dev    # full desktop app (needs Rust; on Linux also webkit2gtk)
 npm run tauri build  # Windows installer (NSIS .exe) in src-tauri/target/release/bundle
 ```
@@ -80,5 +81,6 @@ npm run tauri build  # Windows installer (NSIS .exe) in src-tauri/target/release
 - Frontend: React + TypeScript + Vite, Zustand, PapaParse, Recharts, marked. Spreadsheet exports are written by a small built-in `.xlsx` writer (`src/lib/xlsx.ts`) rather than a dependency, so the installer stays small.
 - Backend: minimal Rust (Tauri 2) — atomic file writes, folder snapshots, folder and save-as pickers. No other native code.
 - App icons are generated: `node scripts/gen-icons.mjs`.
+- Browser tests (`e2e/`, Playwright) run the built app in demo mode, with a fresh demo class for every test and a fake microphone for the noise meter: every page and Settings tab, a lesson from register to end, marking (including the row highlighting), and each tool. A test also fails if anything reaches the browser console as an error. Run them after a change to the interface; they aren't part of CI.
 
 CI (`.github/workflows/build.yml`) runs the tests on every push and builds the Windows NSIS installer; tagging `v*` attaches the `.exe` to a GitHub release.
