@@ -947,7 +947,7 @@ function AssessmentSettings() {
       <div className="panel">
         <h3>Assessable topics by grade</h3>
         <p className="muted" style={{ marginTop: 0 }}>
-          Shared across all classes and used to tag each question. Grade comes from a class's Year. Stored in{" "}
+          Shared across all classes and used to tag each question. Each class's grade is set on its Class notes page. Stored in{" "}
           <code>topics.csv</code>.
         </p>
         <div className="row" style={{ marginBottom: 12 }}>

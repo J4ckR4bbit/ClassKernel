@@ -6,6 +6,7 @@ import { BC } from "./behaviourColours";
 export interface ClassInfo {
   /** Folder name under classes/ — also the display identifier. */
   name: string;
+  /** The class's grade (shown as "Grade"; saved as `year:` in class.md). */
   year: string;
   subject: string;
   room: string;

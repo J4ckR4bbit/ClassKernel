@@ -17,7 +17,7 @@ test("attendance: all present, then one absent and one late", async ({ page }) =
 });
 
 test("seating: Randomise fills the seats, then locks until the PIN", async ({ page }) => {
-  await nav(page, "Seating");
+  await nav(page, "Seats");
   await page.locator("main button", { hasText: "Randomise" }).click();
   await expect(page.locator(".shuffle-overlay")).toBeVisible();
   await expect(page.locator(".shuffle-overlay")).toHaveCount(0, { timeout: 10_000 });
@@ -25,7 +25,7 @@ test("seating: Randomise fills the seats, then locks until the PIN", async ({ pa
   await expect(page.locator("main button", { hasText: "Reseat" })).toBeVisible();
 });
 
-test("live lesson: tap a seat and log a behaviour", async ({ page }) => {
+test("lesson: tap a seat and log a behaviour", async ({ page }) => {
   await nav(page, "Lesson");
   await seats(page).first().click({ force: true });
   const popover = page.locator(".behaviour-popover");
@@ -34,7 +34,7 @@ test("live lesson: tap a seat and log a behaviour", async ({ page }) => {
   await expect(toast(page)).toBeVisible();
 });
 
-test("live lesson: the bathroom timer starts and stops", async ({ page }) => {
+test("lesson: the bathroom timer starts and stops", async ({ page }) => {
   await nav(page, "Lesson");
   await seats(page).nth(2).click({ force: true });
   await page.locator(".behaviour-popover .bathroom-btn").click();
@@ -44,7 +44,7 @@ test("live lesson: the bathroom timer starts and stops", async ({ page }) => {
   await page.locator(".behaviour-popover .bathroom-btn").click();
 });
 
-test("live lesson: pick a student and record the answer", async ({ page }) => {
+test("lesson: pick a student and record the answer", async ({ page }) => {
   await nav(page, "Lesson");
   await page.getByRole("button", { name: "Pick a student" }).click();
   const answer = page.locator(".picker-answer button").first();
@@ -53,7 +53,7 @@ test("live lesson: pick a student and record the answer", async ({ page }) => {
   await expect(page.locator(".picker-card")).toHaveCount(0);
 });
 
-test("live lesson: batch entry records one behaviour for several students", async ({ page }) => {
+test("lesson: batch entry records one behaviour for several students", async ({ page }) => {
   await nav(page, "Lesson");
   await page.getByRole("button", { name: "Batch entry" }).click();
   await page.locator(".batch-panel .bh-btn").first().click();

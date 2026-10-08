@@ -45,7 +45,7 @@ export default function SeatingInsights() {
       <div className="panel">
         <h3>Seating insights</h3>
         <p className="muted">
-          Use <b>End lesson</b> on the Live lesson screen to save where students sat and how they behaved. After a few
+          Use <b>End lesson</b> on the Lesson screen to save where students sat and how they behaved. After a few
           lessons this panel shows which desks each student behaves best at, and which pairings tend to turn
           disruptive.
         </p>

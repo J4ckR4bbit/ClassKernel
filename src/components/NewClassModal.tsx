@@ -29,7 +29,7 @@ export default function NewClassModal({
         <div className="form-grid">
           <label>Name</label>
           <input autoFocus placeholder="e.g. 7B-Science" value={name} onChange={(e) => setName(e.target.value)} />
-          <label>Year</label>
+          <label>Grade</label>
           <input value={year} onChange={(e) => setYear(e.target.value)} />
           <label>Subject</label>
           <input value={subject} onChange={(e) => setSubject(e.target.value)} />

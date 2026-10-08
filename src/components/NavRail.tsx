@@ -20,8 +20,8 @@ interface Destination {
 export const DESTINATIONS: Destination[] = [
   { views: ["home"], icon: "home", label: "Home", name: "Home" },
   { views: ["attendance"], icon: "fact_check", label: "Attendance", name: "Attendance" },
-  { views: ["seating"], icon: "event_seat", label: "Seating", name: "Seating plans" },
-  { views: ["lesson"], icon: "school", label: "Lesson", name: "Live lesson" },
+  { views: ["seating"], icon: "event_seat", label: "Seats", name: "Seats" },
+  { views: ["lesson"], icon: "school", label: "Lesson", name: "Lesson" },
   { views: ["behaviourLog"], icon: "thumbs_up_down", label: "Behaviour", name: "Behaviour log" },
   { views: ["assessments"], icon: "grading", label: "Marks", name: "Marks" },
   { views: ["notes"], icon: "sticky_note_2", label: "Notes", name: "Class notes" },
