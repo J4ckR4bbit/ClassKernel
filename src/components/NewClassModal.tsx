@@ -18,7 +18,7 @@ export default function NewClassModal({
 
   const submit = async () => {
     if (!safeName) return;
-    await onCreate({ name: safeName, year, subject, room, notes: "", archived: false });
+    await onCreate({ name: safeName, year, subject, room, notes: "", archived: false, color: "" });
     onClose();
   };
 

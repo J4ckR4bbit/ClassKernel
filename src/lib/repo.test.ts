@@ -13,7 +13,7 @@ beforeEach(async () => {
   fs = new MemFS();
   setFS(fs);
   await repo.ensureDataDir(DIR);
-  await repo.saveClassInfo(DIR, { name: CLS, year: "7", subject: "Science", room: "Lab 2", notes: "hello", archived: false });
+  await repo.saveClassInfo(DIR, { name: CLS, year: "7", subject: "Science", room: "Lab 2", notes: "hello", archived: false, color: "#1f6f8b" });
 });
 
 describe("data folder", () => {
@@ -40,18 +40,40 @@ describe("class.md", () => {
   it("round-trips info and notes through the front matter", async () => {
     const classes = await repo.listClasses(DIR);
     expect(classes).toHaveLength(1);
-    expect(classes[0]).toMatchObject({ name: CLS, year: "7", subject: "Science", room: "Lab 2", notes: "hello" });
+    expect(classes[0]).toMatchObject({ name: CLS, year: "7", subject: "Science", room: "Lab 2", notes: "hello", color: "#1f6f8b" });
   });
 
   it("parses a file without front matter as pure notes", () => {
     const info = repo.parseClassMd("X", "just notes\nline 2");
     expect(info.notes).toBe("just notes\nline 2");
     expect(info.year).toBe("");
+    expect(info.color).toBe("");
+  });
+
+  it("loads older files without a colour, and ignores a malformed one", () => {
+    expect(repo.parseClassMd("X", "---\nname: X\nyear: 9\n---\n").color).toBe("");
+    expect(repo.parseClassMd("X", "---\nname: X\ncolor: red\n---\n").color).toBe("");
   });
 
   it("survives values containing colons", () => {
     const info = repo.parseClassMd("X", "---\nname: X\nroom: Block B: Lab 2\narchived: false\n---\n");
     expect(info.room).toBe("Block B: Lab 2");
+  });
+});
+
+describe("report_comments.csv", () => {
+  it("is empty for a class without comments", async () => {
+    expect(await repo.loadReportComments(DIR, CLS)).toEqual({});
+  });
+
+  it("round-trips comments with commas, quotes and line breaks, and drops blank ones", async () => {
+    const comments = {
+      s1: 'A pleasure to teach, works hard.\nNeeds to show working on "explain" questions.',
+      s2: "Keep it up!",
+      s3: "   ",
+    };
+    await repo.saveReportComments(DIR, CLS, comments);
+    expect(await repo.loadReportComments(DIR, CLS)).toEqual({ s1: comments.s1, s2: comments.s2 });
   });
 });
 
@@ -370,9 +392,24 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       dockSide: "right" as const,
       reseatPinHash: "a".repeat(64),
       timeZone: "Africa/Johannesburg",
+      gradeScale: "symbol" as const,
+      reportSchool: "St Benedict's College",
+      reportTeacher: "Mr K. Hilder",
     };
     await repo.saveUserPrefs(DIR, prefs);
     expect(await repo.loadUserPrefs(DIR)).toEqual(prefs);
+  });
+
+  it("leaves the report header names blank until they're set", async () => {
+    const fresh = await repo.loadUserPrefs(DIR);
+    expect(fresh.reportSchool).toBe("");
+    expect(fresh.reportTeacher).toBe("");
+  });
+
+  it("shows results as SA levels unless symbols were chosen", async () => {
+    expect((await repo.loadUserPrefs(DIR)).gradeScale).toBe("level");
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\ngrade_scale,letters\n");
+    expect((await repo.loadUserPrefs(DIR)).gradeScale).toBe("level");
   });
 
   it("defaults teaching mode to the room plan with no reseat PIN", async () => {
@@ -444,7 +481,7 @@ describe("rename", () => {
   it("moves the whole class folder", async () => {
     await repo.saveStudents(DIR, CLS, [{ id: "s1", firstName: "A", lastName: "B", gender: "", flags: "", notes: "" }]);
     await repo.renameClass(DIR, CLS, "8A-Science");
-    await repo.saveClassInfo(DIR, { name: "8A-Science", year: "8", subject: "Science", room: "", notes: "", archived: false });
+    await repo.saveClassInfo(DIR, { name: "8A-Science", year: "8", subject: "Science", room: "", notes: "", archived: false, color: "" });
     const students = await repo.loadStudents(DIR, "8A-Science");
     expect(students).toHaveLength(1);
   });

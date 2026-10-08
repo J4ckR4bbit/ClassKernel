@@ -34,7 +34,7 @@ function downloadInBrowser(fileName: string, bytes: Uint8Array): void {
  * and be pivoted afterwards.
  */
 export default function ExportView() {
-  const { dataDir, classes, currentClass, showToast } = useApp();
+  const { dataDir, classes, currentClass, showToast, userPrefs } = useApp();
 
   const [selectedClasses, setSelectedClasses] = useState<string[]>(() => {
     if (currentClass) return [currentClass];
@@ -77,8 +77,8 @@ export default function ExportView() {
   }, [dataDir, classKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sheets = useMemo(
-    () => (data ? buildSheets(data, { sections, from, to, dataDir: dataDir ?? "" }) : []),
-    [data, sections, from, to, dataDir],
+    () => (data ? buildSheets(data, { sections, from, to, dataDir: dataDir ?? "", gradeScale: userPrefs.gradeScale }) : []),
+    [data, sections, from, to, dataDir, userPrefs.gradeScale],
   );
   const rowsByName = useMemo(() => new Map(sheets.map((s) => [s.name, s.rows.length])), [sheets]);
   const totalRows = sheets.reduce((n, s) => n + s.rows.length, 0);

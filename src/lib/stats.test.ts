@@ -13,6 +13,8 @@ import {
   rankStudents,
   studentProvisional,
   symbolForPct,
+  gradeForPct,
+  letterForPct,
   visitSeconds,
 } from "./stats";
 import {
@@ -279,5 +281,20 @@ describe("bathroom visit durations", () => {
     expect(formatDuration(75)).toBe("1:15");
     expect(formatDuration(270)).toBe("4:30");
     expect(formatDuration(3661)).toBe("1:01:01");
+  });
+});
+
+describe("letterForPct / gradeForPct", () => {
+  it("gives A–F at each band edge", () => {
+    const cases: Array<[number, string]> = [[100, "A"], [80, "A"], [79.9, "B"], [70, "B"], [69.9, "C"], [60, "C"], [50, "D"], [49.9, "E"], [40, "E"], [39.9, "F"], [0, "F"]];
+    for (const [pct, letter] of cases) expect(letterForPct(pct)).toBe(letter);
+    expect(letterForPct(null)).toBe("");
+    expect(letterForPct(NaN)).toBe("");
+  });
+
+  it("follows the chosen scale", () => {
+    expect(gradeForPct(72, "level")).toBe("6");
+    expect(gradeForPct(72, "symbol")).toBe("B");
+    expect(gradeForPct(null, "symbol")).toBe("");
   });
 });

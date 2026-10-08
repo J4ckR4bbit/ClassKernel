@@ -4,6 +4,7 @@ import {
   BehaviourCode,
   CognitiveLevel,
   DEFAULT_TOPIC_AREAS,
+  GradeScale,
   LESSON_BAR_SIDES,
   LessonBarSide,
   SeatNameStyle,
@@ -13,6 +14,7 @@ import {
   TopicEntry,
   studentName,
 } from "../lib/types";
+import { GRADE_SCALES } from "../lib/stats";
 import { PLUGINS, togglePluginId } from "../plugins/registry";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import { BC, BEHAVIOUR_COLOURS } from "../lib/behaviourColours";
@@ -285,6 +287,8 @@ function GeneralSettings() {
 
       <TimeZoneSettings />
 
+      <ReportSettings />
+
       <TeachingModeSettings />
 
       <div className="panel">
@@ -461,6 +465,32 @@ function TimeZoneSettings() {
           ))}
         </select>
         <span className="muted">Now: {dateTimeInZone(now)}</span>
+      </div>
+    </div>
+  );
+}
+
+/** The names printed at the top of parent reports. Saved when you click away. */
+function ReportSettings() {
+  const { userPrefs, setUserPrefs } = useApp();
+  const [school, setSchool] = useState(userPrefs.reportSchool);
+  const [teacher, setTeacher] = useState(userPrefs.reportTeacher);
+  const save = () => {
+    if (school.trim() === userPrefs.reportSchool && teacher.trim() === userPrefs.reportTeacher) return;
+    void setUserPrefs({ ...userPrefs, reportSchool: school.trim(), reportTeacher: teacher.trim() });
+  };
+
+  return (
+    <div className="panel">
+      <h3>Parent reports</h3>
+      <p className="muted" style={{ marginTop: 0 }}>
+        Printed at the top of each parent report (Dashboard → 🖨 Print report). Leave either blank to leave it off.
+      </p>
+      <div className="form-grid report-settings">
+        <label htmlFor="report-school">School name</label>
+        <input id="report-school" value={school} onChange={(e) => setSchool(e.target.value)} onBlur={save} placeholder="e.g. St Benedict's College" />
+        <label htmlFor="report-teacher">Your name on reports</label>
+        <input id="report-teacher" value={teacher} onChange={(e) => setTeacher(e.target.value)} onBlur={save} placeholder="e.g. Mr K. Hilder" />
       </div>
     </div>
   );
@@ -1015,6 +1045,28 @@ function AssessmentSettings() {
         </label>
         <p className="muted" style={{ marginBottom: 0 }}>
           Tab always moves the other way. Arrow keys move one cell.
+        </p>
+      </div>
+
+      <div className="panel">
+        <h3>Show results as</h3>
+        <div className="row grade-scale-choice" role="radiogroup" aria-label="Show results as">
+          {(["level", "symbol"] as GradeScale[]).map((g) => (
+            <label key={g} className="row">
+              <input
+                type="radio"
+                name="grade-scale"
+                checked={userPrefs.gradeScale === g}
+                onChange={() => void setUserPrefs({ ...userPrefs, gradeScale: g })}
+              />
+              <span>
+                <b>{GRADE_SCALES[g].label}</b> <span className="muted">— {GRADE_SCALES[g].key}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        <p className="muted" style={{ marginBottom: 0 }}>
+          Used in the marking grid, the dashboards, parent reports and spreadsheet exports.
         </p>
       </div>
     </>

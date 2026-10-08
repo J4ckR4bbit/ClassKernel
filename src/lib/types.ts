@@ -12,6 +12,8 @@ export interface ClassInfo {
   /** Free-form markdown body of class.md (below the front matter). */
   notes: string;
   archived: boolean;
+  /** Colour-coding for the class (a BEHAVIOUR_COLOURS shade); "" = none. */
+  color: string;
 }
 
 export interface Student {
@@ -271,6 +273,9 @@ export type TeachingStyle = "room" | "strip";
 export type DockSide = "left" | "right";
 
 /** App-wide user preferences (settings.csv). */
+/** "level" = the SA achievement level 7–1; "symbol" = a letter A–F. */
+export type GradeScale = "level" | "symbol";
+
 export interface UserPrefs {
   /** In the marking grid, which direction Enter moves. Tab does the opposite. */
   markGridEnter: "across" | "down";
@@ -312,6 +317,12 @@ export interface UserPrefs {
    * and exported in. "" = the device's own zone. Storage is always UTC.
    */
   timeZone: string;
+  /** How a percentage is shown as a grade: SA level 7–1, or symbol A–F. */
+  gradeScale: GradeScale;
+  /** School name printed at the top of parent reports; "" = left off. */
+  reportSchool: string;
+  /** The teacher's name as printed on parent reports; "" = left off. */
+  reportTeacher: string;
 }
 
 export const DEFAULT_USER_PREFS: UserPrefs = {
@@ -328,6 +339,9 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   dockSide: "left",
   reseatPinHash: "",
   timeZone: "",
+  gradeScale: "level",
+  reportSchool: "",
+  reportTeacher: "",
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {

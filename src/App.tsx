@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { CSSProperties, useEffect, useState } from "react";
 import { useApp } from "./store/appStore";
 import Onboarding from "./components/Onboarding";
 import Sidebar from "./components/Sidebar";
@@ -11,7 +11,6 @@ import LessonView from "./components/LessonView";
 import TeachingStrip from "./components/TeachingStrip";
 import BehaviourLogView from "./components/BehaviourLogView";
 import AssessmentsView from "./components/AssessmentsView";
-import DashboardView from "./components/DashboardView";
 import ClassNotesView from "./components/ClassNotesView";
 import PluginView from "./components/PluginView";
 import SettingsView from "./components/SettingsView";
@@ -62,7 +61,11 @@ function readSidebarHidden(): boolean {
 }
 
 export default function App() {
-  const { booted, dataDir, currentClass, view, demoMode, focusMode, focusStyle, setFocusMode, boot, userPrefs } = useApp();
+  const { booted, dataDir, currentClass, classes, view, demoMode, focusMode, focusStyle, setFocusMode, boot, userPrefs } = useApp();
+  // The open class's colour underlines the headers of its own pages (not Home,
+  // Settings or the plugins, which aren't about one class).
+  const classPage = view !== "home" && view !== "settings" && view !== "plugin";
+  const classColour = classPage ? classes.find((c) => c.name === currentClass)?.color ?? "" : "";
 
   useEffect(() => {
     void boot();
@@ -128,7 +131,10 @@ export default function App() {
       ) : (
         <Sidebar onHide={() => toggleSidebar(true)} />
       )}
-      <main className="main-pane">
+      <main
+        className="main-pane"
+        style={classColour ? ({ "--class-colour": classColour } as CSSProperties) : undefined}
+      >
         {demoMode && (
           <div className="demo-banner">
             Demo mode — running in a browser without the desktop backend; data lives in memory only.
@@ -149,7 +155,6 @@ export default function App() {
             {view === "lesson" && <LessonView />}
             {view === "behaviourLog" && <BehaviourLogView />}
             {view === "assessments" && <AssessmentsView />}
-            {view === "dashboard" && <DashboardView />}
             {view === "notes" && <ClassNotesView />}
             {view === "plugin" && <PluginView />}
             {view === "settings" && <SettingsView />}

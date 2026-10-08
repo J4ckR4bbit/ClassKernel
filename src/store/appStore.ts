@@ -7,6 +7,7 @@ import { isSeatingLocked, readLessonStart, readSeatedAt, seatedKey } from "../li
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import { enterDock, enterFullscreen, restoreWindow } from "../lib/teachingWindow";
 import { setTimeZone } from "../lib/time";
+import { DASHBOARDS_ID } from "../plugins/registry";
 import {
   Assessment,
   AssessmentQuestion,
@@ -42,7 +43,6 @@ export type View =
   | "lesson"
   | "behaviourLog"
   | "assessments"
-  | "dashboard"
   | "notes"
   | "plugin"
   | "settings";
@@ -91,6 +91,8 @@ export interface AppState {
   pendingRandomise: boolean;
   /** Id of the plugin the "plugin" view is showing (see src/plugins/registry.ts). */
   activePlugin: string | null;
+  /** The student the Dashboard's Student tab shows; null = the Class tab. */
+  dashboardStudent: string | null;
   toast: Toast | null;
   dialog: DialogRequest | null;
   /**
@@ -116,6 +118,8 @@ export interface AppState {
   marks: Mark[];
   assessmentQuestions: AssessmentQuestion[];
   questionMarks: QuestionMark[];
+  /** Parent-report comment per student id (report_comments.csv). */
+  reportComments: Record<string, string>;
   roomConfig: RoomConfig;
   layoutTemplates: string[];
   // App-wide, loaded once with the data folder.
@@ -130,6 +134,8 @@ export interface AppState {
   setView(view: View): void;
   /** Open one of the enabled plugins full-pane. */
   openPlugin(id: string): void;
+  /** Open the Dashboard on one student's tab (null = back to the Class tab). */
+  openStudentDashboard(studentId: string | null): void;
   /** Enter or leave teaching mode; style defaults to the one chosen in Settings. */
   setFocusMode(on: boolean, style?: TeachingStyle): void;
   /** Whether the open class's seats have already been assigned this lesson. */
@@ -173,6 +179,8 @@ export interface AppState {
   setRoomConfig(config: RoomConfig): Promise<void>;
   setSeating(seats: SeatAssignment[]): Promise<void>;
   setSeatingPrefs(prefs: SeatingPrefs): Promise<void>;
+  /** Save (or clear, with "") one student's parent-report comment. */
+  setReportComment(studentId: string, comment: string): Promise<void>;
   addLessonRecords(records: LessonRecord[]): Promise<void>;
   setAssessments(assessments: Assessment[]): Promise<void>;
   setMarks(marks: Mark[]): Promise<void>;
@@ -222,6 +230,7 @@ export const useApp = create<AppState>((set, get) => {
   seatingLockedAt: null,
   pendingRandomise: false,
   activePlugin: null,
+  dashboardStudent: null,
   toast: null,
   dialog: null,
   sensitiveRevealed: false,
@@ -240,6 +249,7 @@ export const useApp = create<AppState>((set, get) => {
   marks: [],
   assessmentQuestions: [],
   questionMarks: [],
+  reportComments: {},
   roomConfig: DEFAULT_ROOM_CONFIG,
   layoutTemplates: [],
   topics: [],
@@ -300,6 +310,18 @@ export const useApp = create<AppState>((set, get) => {
 
   openPlugin(id) {
     set({ view: "plugin", activePlugin: id, sensitiveRevealed: false });
+  },
+  openStudentDashboard(studentId) {
+    // The dashboards are a plugin. Moving within them keeps the privacy
+    // reveal; arriving from another screen re-arms it like any navigation.
+    const { view, activePlugin } = get();
+    const within = view === "plugin" && activePlugin === DASHBOARDS_ID;
+    set({
+      view: "plugin",
+      activePlugin: DASHBOARDS_ID,
+      dashboardStudent: studentId,
+      ...(within ? {} : { sensitiveRevealed: false }),
+    });
   },
 
   setFocusMode(on, style) {
@@ -461,6 +483,7 @@ export const useApp = create<AppState>((set, get) => {
       assessmentQuestions,
       questionMarks,
       roomConfig,
+      reportComments,
     ] = await Promise.all([
       repo.loadStudents(dataDir, name),
       repo.loadAttendance(dataDir, name),
@@ -475,9 +498,11 @@ export const useApp = create<AppState>((set, get) => {
       repo.loadAssessmentQuestions(dataDir, name),
       repo.loadQuestionMarks(dataDir, name),
       repo.loadRoomConfig(dataDir, name),
+      repo.loadReportComments(dataDir, name),
     ]);
     set({
       currentClass: name,
+      dashboardStudent: null,
       students,
       attendance,
       behaviourEvents,
@@ -491,6 +516,7 @@ export const useApp = create<AppState>((set, get) => {
       assessmentQuestions,
       questionMarks,
       roomConfig,
+      reportComments,
       seatingLockedAt: readSeatedAt(name),
       sensitiveRevealed: false,
     });
@@ -615,6 +641,15 @@ export const useApp = create<AppState>((set, get) => {
     const { dataDir, currentClass } = get();
     set({ seatingPrefs });
     if (dataDir && currentClass) await guarded("seating rules", () => repo.saveSeatingPrefs(dataDir, currentClass, seatingPrefs));
+  },
+
+  async setReportComment(studentId, comment) {
+    const { dataDir, currentClass, reportComments } = get();
+    const next = { ...reportComments };
+    if (comment.trim()) next[studentId] = comment;
+    else delete next[studentId];
+    set({ reportComments: next });
+    if (dataDir && currentClass) await guarded("report comments", () => repo.saveReportComments(dataDir, currentClass, next));
   },
 
   async addLessonRecords(records) {

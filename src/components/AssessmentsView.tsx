@@ -2,7 +2,7 @@ import { type KeyboardEvent as ReactKeyboardEvent, useMemo, useRef, useState } f
 import { useApp } from "../store/appStore";
 import { newId, today } from "../lib/id";
 import { Assessment, AssessmentQuestion, Mark, QuestionMark, studentName } from "../lib/types";
-import { assessmentStats, gridCompletion, questionAverages, rankStudents, studentProvisional, symbolForPct } from "../lib/stats";
+import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankStudents, studentProvisional } from "../lib/stats";
 import { areasForGrade, shortLabel, subtopicsForGrade } from "../lib/topics";
 import PrivacyGate from "./PrivacyGate";
 
@@ -368,6 +368,8 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
  */
 function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessment: Assessment; grade: string; onDone: () => void; onEditQuestions: () => void }) {
   const { students, questionMarks, topics, userPrefs, assessmentQuestions } = useApp();
+  const scale = userPrefs.gradeScale;
+  const scaleInfo = GRADE_SCALES[scale];
   const questions = useMemo(
     () => assessmentQuestions.filter((q) => q.assessmentId === assessment.id).sort((a, b) => a.number - b.number),
     [assessmentQuestions, assessment.id],
@@ -524,8 +526,8 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
               ))}
               <th className="col-total sticky-right fourth">Total</th>
               <th className="col-total sticky-right third">%</th>
-              <th className="col-total sticky-right second" title="SA achievement code (7 = 80%+ … 1 = below 30%)">
-                Sym
+              <th className="col-total sticky-right second" title={`${scaleInfo.label}: ${scaleInfo.key}`}>
+                {scaleInfo.short}
               </th>
               <th className="col-total sticky-right">Rank</th>
             </tr>
@@ -579,7 +581,7 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
                   })}
                   <td className="col-total sticky-right fourth">{p.answered ? p.total : ""}</td>
                   <td className="col-total sticky-right third">{p.pct !== null ? `${Math.round(p.pct)}` : ""}</td>
-                  <td className="col-total sticky-right second">{p.answered ? symbolForPct(p.pct) : ""}</td>
+                  <td className="col-total sticky-right second">{p.answered ? gradeForPct(p.pct, scale) : ""}</td>
                   <td className="col-total sticky-right">{rank ?? ""}</td>
                 </tr>
               );
@@ -618,15 +620,15 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
               ))}
               <td className="sticky-right fourth"></td>
               <td className="sticky-right third">{classMean ?? ""}</td>
-              <td className="sticky-right second">{classMean !== null ? symbolForPct(classMean) : ""}</td>
+              <td className="sticky-right second">{classMean !== null ? gradeForPct(classMean, scale) : ""}</td>
               <td className="sticky-right"></td>
             </tr>
           </tfoot>
         </table>
       </div>
       <p className="muted">
-        <b>Sym</b> is the SA achievement code: 7 = 80%+, 6 = 70–79, 5 = 60–69, 4 = 50–59, 3 = 40–49, 2 = 30–39, 1 =
-        below 30%.
+        <b>{scaleInfo.short}</b> is the {scale === "level" ? "SA achievement level" : "symbol"}: {scaleInfo.key}. Switch
+        between levels and symbols under Settings › Assessments.
       </p>
       <p className="muted">
         {userPrefs.markGridEnter === "across"

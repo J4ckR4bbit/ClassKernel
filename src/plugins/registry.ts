@@ -32,8 +32,30 @@ export interface PluginManifest {
 
 /** The test timer's id; the TimerMini pop-up opens and checks it by this. */
 export const TEST_TIMER_ID = "test-timer";
+/** The dashboards' id; student-name shortcuts elsewhere open it by this. */
+export const DASHBOARDS_ID = "class-dashboards";
+/** The parent reports' id; the dashboards offer printing only when it's on. */
+export const PARENT_REPORTS_ID = "parent-reports";
 
 export const PLUGINS: PluginManifest[] = [
+  {
+    id: DASHBOARDS_ID,
+    name: "Class & student dashboards",
+    tagline: "How the class and each student are doing — behaviour, answers and marks.",
+    description:
+      "Two dashboards for the open class. Class: a written summary, behaviour week by week, the top issues, students to watch, stars, best answerers, rarely asked, bathroom trips and attendance, plus the marks analysis. Student: everything recorded for one child, each assessment against the class average, and topic strengths. Filter to the last 2 weeks, 4 weeks or everything. It only reads your class data; nothing new is saved. While it's on, the 📊 button in the Students list and names in the Behaviour log open a student's dashboard.",
+    icon: "📊",
+    load: () => import("../components/DashboardView").then((m) => m.default),
+  },
+  {
+    id: PARENT_REPORTS_ID,
+    name: "Parent reports",
+    tagline: "One-page A4 reports for parent evenings.",
+    description:
+      "Prints a one-page report per student — for one child or the whole class — with a parent-friendly summary, marks against the class average, topic strengths, behaviour, questions answered, attendance and bathroom trips. Choose the period and sections, type a teacher's comment on each page (saved with the class in report_comments.csv), and there are lines for notes during the meeting. With the dashboards on too, each dashboard gets a Print button.",
+    icon: "🖨",
+    load: () => import("../components/report/ParentReportsView").then((m) => m.default),
+  },
   {
     id: TEST_TIMER_ID,
     name: "Test timer",

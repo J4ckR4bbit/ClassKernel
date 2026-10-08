@@ -16,6 +16,7 @@
 //   classes/<class>/assessment_questions.csv  assessment_id,q_number,topic,marks,cognitive_level
 //   classes/<class>/question_marks.csv    assessment_id,student_id,q_number,mark
 //   classes/<class>/marks.csv             assessment_id,student_id,mark,comment
+//   classes/<class>/report_comments.csv   student_id,comment,updated  (parent-report comments)
 //   behaviours.csv, topics.csv, cognitive_levels.csv, settings.csv   app-wide (root)
 //   layouts/<name>/desks.csv + room.csv   reusable room templates
 //   backups/<stamp>/...                   rolling snapshots
@@ -102,6 +103,7 @@ export function serializeClassMd(info: ClassInfo): string {
     `subject: ${info.subject}`,
     `room: ${info.room}`,
     `archived: ${info.archived}`,
+    `color: ${info.color ?? ""}`,
     "---",
     "",
   ].join("\n");
@@ -109,7 +111,7 @@ export function serializeClassMd(info: ClassInfo): string {
 }
 
 export function parseClassMd(name: string, text: string): ClassInfo {
-  const info: ClassInfo = { name, year: "", subject: "", room: "", notes: "", archived: false };
+  const info: ClassInfo = { name, year: "", subject: "", room: "", notes: "", archived: false, color: "" };
   const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
   if (m) {
     for (const line of m[1].split(/\r?\n/)) {
@@ -121,6 +123,7 @@ export function parseClassMd(name: string, text: string): ClassInfo {
       else if (key === "subject") info.subject = value;
       else if (key === "room") info.room = value;
       else if (key === "archived") info.archived = value === "true";
+      else if (key === "color") info.color = /^#[0-9a-f]{6}$/i.test(value) ? value : "";
     }
     info.notes = text.slice(m[0].length).replace(/^\r?\n/, "");
   } else {
@@ -140,7 +143,7 @@ export async function listClasses(dataDir: string): Promise<ClassInfo[]> {
     if (await fs.exists(mdPath)) {
       classes.push(parseClassMd(e.name, await fs.readText(mdPath)));
     } else {
-      classes.push({ name: e.name, year: "", subject: "", room: "", notes: "", archived: false });
+      classes.push({ name: e.name, year: "", subject: "", room: "", notes: "", archived: false, color: "" });
     }
   }
   return classes.sort((a, b) => a.name.localeCompare(b.name));
@@ -426,6 +429,27 @@ export async function saveSeatingPrefs(dataDir: string, className: string, prefs
     ...prefs.frontIds.map((a) => ({ type: "front", a, b: "" })),
   ];
   await getFS().writeAtomic(p(classDir(dataDir, className), "seating_prefs.csv"), stringifyCsv(rows, SEATING_PREFS_COLS));
+}
+
+// ---------- parent-report comments (per class) ----------
+// The teacher's comment for each student's parent report. Kept apart from the
+// roster's private notes, which never print.
+
+const REPORT_COMMENT_COLS = ["student_id", "comment", "updated"];
+
+export async function loadReportComments(dataDir: string, className: string): Promise<Record<string, string>> {
+  const rows = await loadCsvFile(p(classDir(dataDir, className), "report_comments.csv"));
+  const out: Record<string, string> = {};
+  for (const r of rows) if (r.student_id && r.comment) out[r.student_id] = r.comment;
+  return out;
+}
+
+export async function saveReportComments(dataDir: string, className: string, comments: Record<string, string>): Promise<void> {
+  const updated = new Date().toISOString();
+  const rows = Object.entries(comments)
+    .filter(([, comment]) => comment.trim())
+    .map(([student_id, comment]) => ({ student_id, comment, updated }));
+  await getFS().writeAtomic(p(classDir(dataDir, className), "report_comments.csv"), stringifyCsv(rows, REPORT_COMMENT_COLS));
 }
 
 // ---------- lesson history (per class) ----------
@@ -834,6 +858,9 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
     reseatPinHash: /^[0-9a-f]{64}$/.test(kv.get("reseat_pin") ?? "") ? kv.get("reseat_pin")! : "",
     // An unknown zone (typo, or one this machine doesn't know) falls back to the device's.
     timeZone: isValidTimeZone(kv.get("time_zone") ?? "") ? kv.get("time_zone")! : "",
+    gradeScale: kv.get("grade_scale") === "symbol" ? "symbol" : "level",
+    reportSchool: kv.get("report_school") ?? "",
+    reportTeacher: kv.get("report_teacher") ?? "",
   };
 }
 
@@ -852,6 +879,9 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "dock_side", value: prefs.dockSide },
     { key: "reseat_pin", value: prefs.reseatPinHash },
     { key: "time_zone", value: prefs.timeZone },
+    { key: "grade_scale", value: prefs.gradeScale },
+    { key: "report_school", value: prefs.reportSchool },
+    { key: "report_teacher", value: prefs.reportTeacher },
   ];
   await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
 }

@@ -4,9 +4,12 @@ import { newId } from "../lib/id";
 import { Student } from "../lib/types";
 import { attendanceByStudent, behaviourByStudent } from "../lib/stats";
 import PrivacyGate from "./PrivacyGate";
+import { DASHBOARDS_ID } from "../plugins/registry";
 
 export default function RosterView() {
-  const { currentClass, students, setStudents, attendance, behaviourEvents, showToast, confirmDialog } = useApp();
+  const { currentClass, students, setStudents, attendance, behaviourEvents, showToast, confirmDialog, openStudentDashboard, userPrefs } = useApp();
+  // The 📊 shortcut is there only while the dashboards plugin is switched on.
+  const dashboardsOn = userPrefs.enabledPlugins.includes(DASHBOARDS_ID);
   const [showImport, setShowImport] = useState(false);
   const attSummaries = attendanceByStudent(attendance);
   const bhSummaries = behaviourByStudent(behaviourEvents);
@@ -60,7 +63,7 @@ export default function RosterView() {
             <th>Notes</th>
             <th style={{ width: 110 }}>Attendance</th>
             <th style={{ width: 90 }}>Behaviour</th>
-            <th style={{ width: 40 }}></th>
+            <th style={{ width: dashboardsOn ? 96 : 40 }}></th>
           </tr>
         </thead>
         <tbody>
@@ -100,6 +103,18 @@ export default function RosterView() {
                   )}
                 </td>
                 <td>
+                  {dashboardsOn && (
+                    <>
+                      <button
+                        className="small"
+                        onClick={() => openStudentDashboard(s.id)}
+                        title="Open this student's dashboard"
+                        aria-label={`Dashboard for ${s.firstName} ${s.lastName}`}
+                      >
+                        📊
+                      </button>{" "}
+                    </>
+                  )}
                   <button className="small danger" onClick={() => void remove(s.id)} title="Remove student">
                     ✕
                   </button>
