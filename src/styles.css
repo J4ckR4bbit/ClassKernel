@@ -977,3 +977,6 @@ table.data td.neg, .event-points.neg { color: var(--danger); font-weight: 600; }
   .report-comment-print { display: block; }
   .report-summary, .report-bar span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+.report-options select, .report-options .class-picker { width: 100%; min-height: 40px; }
+.report-empty { background: var(--panel); border-radius: var(--radius); padding: 24px; max-width: 210mm; margin: 0 auto; }
+.class-picker { min-height: 40px; font-size: 15px; }

@@ -98,8 +98,8 @@ export default function HomeView() {
           <h2 className="section-heading">Tools</h2>
           {tools.length === 0 ? (
             <div className="panel muted">
-              Extra tools — the test timer, a clock, a stopwatch, graph makers and more — ship with the app but stay
-              switched off. Turn on the ones you want under <b>Settings → Plugins</b> and they appear here.
+              Extra tools — the test timer, a clock, a stopwatch, graph makers, class and student dashboards, parent
+              reports and more — ship with the app but stay switched off. Turn on the ones you want under <b>Settings → Plugins</b> and they appear here.
             </div>
           ) : (
             <div className="home-grid">

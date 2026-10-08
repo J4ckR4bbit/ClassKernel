@@ -18,6 +18,8 @@ import ClassDashboard from "./dashboard/ClassDashboard";
 import StudentDashboard from "./dashboard/StudentDashboard";
 import PrivacyGate from "./PrivacyGate";
 import ReportPreview from "./report/ReportPreview";
+import ClassPicker from "./ClassPicker";
+import { PARENT_REPORTS_ID } from "../plugins/registry";
 
 const PERIOD_KEY = "classkernel.dashboardPeriod";
 
@@ -58,6 +60,8 @@ export default function DashboardView() {
   const closeReport = useCallback(() => setReportFor(null), []);
   // Printing is only offered once the privacy cover is lifted.
   const revealed = !userPrefs.privacyMode || sensitiveRevealed;
+  // Printing parent reports is a separate plugin; offer it only when it's on.
+  const reportsOn = userPrefs.enabledPlugins.includes(PARENT_REPORTS_ID);
   const [period, setPeriodState] = useState<Period>(readPeriod);
   const setPeriod = (p: Period) => {
     setPeriodState(p);
@@ -105,10 +109,21 @@ export default function DashboardView() {
 
   const profile = useMemo(() => (student ? studentProfile(student, data, cls, period, day) : null), [student, data, cls, period, day]);
 
+  if (!currentClass) {
+    return (
+      <div>
+        <div className="view-header">
+          <ClassPicker />
+        </div>
+        <div className="panel muted">Open a class first — choose one above or from the menu.</div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="view-header">
-        <h1>{currentClass} — Dashboard</h1>
+        <ClassPicker />
         <div className="spacer" />
         <div className="seg dash-tabs" role="tablist" aria-label="Dashboard">
           <button role="tab" aria-selected={tab === "class"} className={tab === "class" ? "on" : ""} onClick={() => openStudentDashboard(null)}>
@@ -124,7 +139,7 @@ export default function DashboardView() {
             👤 Student
           </button>
         </div>
-        {revealed && students.length > 0 && (
+        {reportsOn && revealed && students.length > 0 && (
           <button
             onClick={() =>
               setReportFor(tab === "student" && student ? [student.id] : [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)).map((s) => s.id))

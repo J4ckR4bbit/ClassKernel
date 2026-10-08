@@ -11,7 +11,6 @@ import LessonView from "./components/LessonView";
 import TeachingStrip from "./components/TeachingStrip";
 import BehaviourLogView from "./components/BehaviourLogView";
 import AssessmentsView from "./components/AssessmentsView";
-import DashboardView from "./components/DashboardView";
 import ClassNotesView from "./components/ClassNotesView";
 import PluginView from "./components/PluginView";
 import SettingsView from "./components/SettingsView";
@@ -156,7 +155,6 @@ export default function App() {
             {view === "lesson" && <LessonView />}
             {view === "behaviourLog" && <BehaviourLogView />}
             {view === "assessments" && <AssessmentsView />}
-            {view === "dashboard" && <DashboardView />}
             {view === "notes" && <ClassNotesView />}
             {view === "plugin" && <PluginView />}
             {view === "settings" && <SettingsView />}

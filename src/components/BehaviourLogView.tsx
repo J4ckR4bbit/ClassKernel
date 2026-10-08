@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
+import { DASHBOARDS_ID } from "../plugins/registry";
 import { studentName } from "../lib/types";
 import { behaviourByStudent, formatDuration, visitSeconds } from "../lib/stats";
 import { dateInZone, dateTimeInZone, timeInZone } from "../lib/time";
@@ -205,9 +206,11 @@ export default function BehaviourLogView() {
   );
 }
 
-/** A student's name that opens their dashboard. */
+/** A student's name; it opens their dashboard while the dashboards plugin is on. */
 function StudentLink({ id, name }: { id: string; name: string }) {
   const openStudentDashboard = useApp((s) => s.openStudentDashboard);
+  const dashboardsOn = useApp((s) => s.userPrefs.enabledPlugins.includes(DASHBOARDS_ID));
+  if (!dashboardsOn) return <>{name}</>;
   return (
     <button className="link-btn" onClick={() => openStudentDashboard(id)} title="Open this student's dashboard">
       {name}

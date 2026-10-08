@@ -7,6 +7,7 @@ import { isSeatingLocked, readLessonStart, readSeatedAt, seatedKey } from "../li
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import { enterDock, enterFullscreen, restoreWindow } from "../lib/teachingWindow";
 import { setTimeZone } from "../lib/time";
+import { DASHBOARDS_ID } from "../plugins/registry";
 import {
   Assessment,
   AssessmentQuestion,
@@ -42,7 +43,6 @@ export type View =
   | "lesson"
   | "behaviourLog"
   | "assessments"
-  | "dashboard"
   | "notes"
   | "plugin"
   | "settings";
@@ -312,13 +312,14 @@ export const useApp = create<AppState>((set, get) => {
     set({ view: "plugin", activePlugin: id, sensitiveRevealed: false });
   },
   openStudentDashboard(studentId) {
-    // Moving within the Dashboard keeps the privacy reveal; arriving from
-    // another screen re-arms it like any other navigation.
-    const within = get().view === "dashboard";
+    // The dashboards are a plugin. Moving within them keeps the privacy
+    // reveal; arriving from another screen re-arms it like any navigation.
+    const { view, activePlugin } = get();
+    const within = view === "plugin" && activePlugin === DASHBOARDS_ID;
     set({
-      view: "dashboard",
+      view: "plugin",
+      activePlugin: DASHBOARDS_ID,
       dashboardStudent: studentId,
-      activePlugin: null,
       ...(within ? {} : { sensitiveRevealed: false }),
     });
   },

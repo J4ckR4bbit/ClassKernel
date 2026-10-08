@@ -11,7 +11,6 @@ const NAV: Array<{ view: View; icon: string; label: string }> = [
   { view: "lesson", icon: "🎓", label: "Live lesson" },
   { view: "behaviourLog", icon: "📋", label: "Behaviour log" },
   { view: "assessments", icon: "📝", label: "Assessments" },
-  { view: "dashboard", icon: "📊", label: "Dashboard" },
   { view: "notes", icon: "🗒", label: "Class notes" },
   { view: "settings", icon: "⚙", label: "Settings" },
 ];

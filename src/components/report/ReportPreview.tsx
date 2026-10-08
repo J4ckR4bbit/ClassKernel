@@ -12,6 +12,7 @@ import {
   studentProfile,
 } from "../../lib/insights";
 import ParentReport, { longDate } from "./ParentReport";
+import ClassPicker from "../ClassPicker";
 
 const SECTIONS_KEY = "classkernel.reportSections";
 
@@ -48,6 +49,7 @@ export default function ReportPreview({
   initialFrom,
   today,
   onClose,
+  standalone = false,
 }: {
   studentIds: string[];
   data: ClassData;
@@ -55,6 +57,11 @@ export default function ReportPreview({
   initialFrom: string;
   today: string;
   onClose: () => void;
+  /**
+   * Opened as the Parent reports plugin rather than from a dashboard: adds a
+   * class picker and a whole-class / one-student choice to the options.
+   */
+  standalone?: boolean;
 }) {
   const { classes, currentClass, userPrefs, reportComments, setReportComment } = useApp();
   const [from, setFrom] = useState(initialFrom);
@@ -91,7 +98,10 @@ export default function ReportPreview({
   const ranged = useMemo(() => filterToRange(data, from, to || today), [data, from, to, today]);
   const cls = useMemo(() => classProfile(ranged, "all", to || today), [ranged, to, today]);
   const byId = useMemo(() => new Map(data.students.map((s) => [s.id, s])), [data.students]);
-  const students = studentIds.map((id) => byId.get(id)).filter((s): s is NonNullable<typeof s> => !!s);
+  // In the plugin, "" = the whole class, or one student's id.
+  const [only, setOnly] = useState("");
+  const chosen = standalone && only && byId.has(only) ? [only] : studentIds;
+  const students = chosen.map((id) => byId.get(id)).filter((s): s is NonNullable<typeof s> => !!s);
 
   const start = from || firstRecord(ranged);
   const periodLabel = start ? `${longDate(start)} – ${longDate(to || today)}` : `Up to ${longDate(to || today)}`;
@@ -110,6 +120,25 @@ export default function ReportPreview({
           {students.length === 1 ? "One page" : `${students.length} pages, one per student`}. Type a comment on each page — it's saved for next
           time.
         </p>
+
+        {standalone && (
+          <>
+            <h3>Class</h3>
+            <ClassPicker />
+            <h3>Students</h3>
+            <select value={only} onChange={(e) => setOnly(e.target.value)} aria-label="Students">
+              <option value="">Whole class ({studentIds.length})</option>
+              {studentIds.map((id) => {
+                const s = byId.get(id);
+                return s ? (
+                  <option key={id} value={id}>
+                    {s.lastName}, {s.firstName}
+                  </option>
+                ) : null;
+              })}
+            </select>
+          </>
+        )}
 
         <h3>Period</h3>
         <label className="report-field">
@@ -141,11 +170,12 @@ export default function ReportPreview({
           <button className="primary" onClick={() => window.print()} disabled={students.length === 0}>
             🖨 Print
           </button>
-          <button onClick={onClose}>Close</button>
+          <button onClick={onClose}>{standalone ? "← Home" : "Close"}</button>
         </div>
       </aside>
 
       <div className="report-pages">
+        {students.length === 0 && <div className="report-empty muted">There are no students in this class yet.</div>}
         {students.map((s) => {
           const profile = studentProfile(s, ranged, cls, "all", to || today);
           return (
