@@ -736,15 +736,22 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .nm-display {
   --zone: #2e9e5b; --zone-soft: #e6f4ec;
   position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 14px; padding: 24px; min-height: 0;
+  gap: clamp(6px, 1.4cqh, 14px); padding: 24px; min-height: 0; overflow: hidden;
+  /* Everything inside is sized from this panel, so it fits the side-by-side
+     view on a laptop as well as the full-screen class view. */
+  container-type: size;
   background: var(--zone-soft); border: 6px solid var(--zone); border-radius: var(--radius);
   transition: background 0.4s, border-color 0.4s;
 }
 .nm-display.zone-warn { --zone: #d9901a; --zone-soft: #fdf3e1; }
 .nm-display.zone-loud { --zone: #c0392b; --zone-soft: #fbe5e2; }
-.nm-reading { font-size: clamp(64px, 12vw, 180px); font-weight: 800; line-height: 1; color: var(--zone); font-variant-numeric: tabular-nums; }
+/* The big figure is the level as a % of the limit; the dB(A) sits under it. */
+.nm-display > * { flex-shrink: 0; }
+.nm-reading { font-size: clamp(44px, min(18cqw, 20cqh), 200px); font-weight: 800; line-height: 1; color: var(--zone); font-variant-numeric: tabular-nums; }
+.nm-db { font-size: clamp(18px, min(4.5cqw, 5cqh), 48px); font-weight: 700; line-height: 1; color: var(--zone); font-variant-numeric: tabular-nums; margin-top: -4px; }
+.nm-db .nm-unit { font-size: 0.45em; }
 .nm-unit { font-size: 0.28em; font-weight: 700; margin-left: 0.25em; }
-.nm-status { font-size: clamp(20px, 3vw, 40px); font-weight: 700; color: var(--zone); text-align: center; }
+.nm-status { font-size: clamp(18px, min(4.5cqw, 5cqh), 44px); font-weight: 700; color: var(--zone); text-align: center; }
 .nm-gauge { position: relative; width: min(100%, 900px); height: 34px; background: #fff; border: 2px solid var(--border); border-radius: 17px; overflow: hidden; }
 .nm-gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--zone); transition: width 0.15s linear; }
 .nm-gauge-warn { position: absolute; top: 0; bottom: 0; background: rgba(217, 144, 26, 0.18); }
@@ -755,9 +762,23 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .nm-limit-value { font-size: 34px; min-width: 2.4ch; text-align: center; font-variant-numeric: tabular-nums; }
 .nm-uncal { font-size: 13px; color: var(--text-dim); background: rgba(255, 255, 255, 0.7); padding: 3px 10px; border-radius: 10px; }
 
+/* The last five minutes, under everything else; it takes the height left over. */
+.nm-display > .nm-graph { flex: 1 1 0; min-height: 80px; max-height: 320px; }
+.nm-graph { display: flex; gap: 6px; width: min(100%, 900px); margin-top: 4px; }
+.nm-graph-y { position: relative; width: 40px; height: calc(100% - 20px); flex: none; font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.nm-graph-y span { position: absolute; right: 0; transform: translateY(-50%); }
+.nm-graph-y .nm-graph-unit { top: 50%; left: 0; right: auto; transform: translateY(-50%) rotate(-90deg); transform-origin: center; font-weight: 600; }
+.nm-graph-plot { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nm-graph-area { position: relative; flex: 1; min-height: 0; }
+.nm-graph-plot svg { display: block; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.75); border: 1px solid var(--border); border-radius: 8px; }
+.nm-graph-grid { stroke: rgba(29, 39, 51, 0.1); stroke-width: 1; }
+.nm-graph-limit { stroke: #1d2733; stroke-width: 2; stroke-dasharray: 8 6; }
+.nm-graph-limit-label { position: absolute; right: 6px; transform: translateY(-120%); font-size: 12px; font-weight: 700; color: #1d2733; background: rgba(255, 255, 255, 0.8); padding: 0 4px; border-radius: 4px; }
+.nm-graph-x { height: 20px; display: flex; align-items: flex-end; justify-content: space-between; font-size: 12px; color: var(--text-dim); }
+
 /* The alarm: slow (1 Hz) full-panel flash and a banner nobody can miss. */
 .nm-banner {
-  font-size: clamp(28px, 5vw, 72px); font-weight: 900; letter-spacing: 1px; text-align: center;
+  font-size: clamp(20px, min(5.5cqw, 7cqh), 72px); font-weight: 900; letter-spacing: 1px; text-align: center;
   color: #fff; background: #c0392b; padding: 10px 28px; border-radius: 12px; box-shadow: 0 6px 24px rgba(192, 57, 43, 0.4);
 }
 .nm-display.alarm { animation: nm-flash 1s steps(1, end) infinite; }
@@ -765,7 +786,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
   0% { background: #c0392b; border-color: #7d1f15; }
   50% { background: var(--zone-soft); border-color: var(--zone); }
 }
-.nm-display.alarm .nm-reading, .nm-display.alarm .nm-status { color: #1d2733; }
+.nm-display.alarm .nm-reading, .nm-display.alarm .nm-db, .nm-display.alarm .nm-status { color: #1d2733; }
 @media (prefers-reduced-motion: reduce) {
   .nm-display.alarm { animation: none; background: #f6c7c1; }
 }
@@ -945,10 +966,15 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 }
 .save-error-banner button { min-height: 34px; }
 
-/* ---------- test timer pop-up (bottom right, on any screen) ---------- */
+/* ---------- tool pop-ups (bottom right, on any screen) ---------- */
+/* The test timer and the noise meter, stacked when both are running. */
+.mini-stack {
+  position: fixed; right: 16px; bottom: 16px; z-index: 90;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none;
+}
+.mini-stack > * { pointer-events: auto; }
 .timer-mini {
   --tm-colour: #1F497D;
-  position: fixed; right: 16px; bottom: 16px; z-index: 90;
   display: flex; align-items: stretch; gap: 6px; padding: 6px;
   width: min(270px, calc(100vw - 32px));
   background: var(--panel); border: 3px solid var(--tm-colour); border-radius: 14px;
@@ -970,6 +996,33 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 @keyframes tm-pulse { 50% { box-shadow: 0 0 0 10px rgba(192, 57, 43, 0.25), 0 8px 28px rgba(20, 30, 40, 0.25); } }
 @media (prefers-reduced-motion: reduce) { .timer-mini.done { animation: none; } }
 .timer-mini.inline { position: static; width: auto; flex-shrink: 0; box-shadow: none; }
+
+/* The noise meter pop-up: the meter's zone colours, flashing red during the alarm. */
+.noise-mini {
+  --nm-colour: #2e9e5b; --nm-soft: #e6f4ec;
+  display: flex; align-items: stretch; gap: 6px; padding: 6px;
+  width: min(270px, calc(100vw - 32px));
+  background: var(--nm-soft); border: 3px solid var(--nm-colour); border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(20, 30, 40, 0.25);
+  transition: background 0.4s, border-color 0.4s;
+}
+.noise-mini.zone-warn { --nm-colour: #d9901a; --nm-soft: #fdf3e1; }
+.noise-mini.zone-loud { --nm-colour: #c0392b; --nm-soft: #fbe5e2; }
+.noise-mini-body {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0;
+  border: none; background: transparent; padding: 4px 8px; text-align: left; min-height: 0; border-radius: 10px; color: var(--text);
+}
+.noise-mini-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--nm-colour); }
+.noise-mini-pct { font-size: 34px; font-weight: 800; line-height: 1.05; color: var(--nm-colour); font-variant-numeric: tabular-nums; }
+.noise-mini-pct small { font-size: 0.5em; margin-left: 2px; }
+.noise-mini-sub { font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.noise-mini-actions { display: flex; flex-direction: column; gap: 6px; }
+.noise-mini-actions button { min-width: 48px; min-height: 0; flex: 1; padding: 4px 8px; border-radius: 10px; border-color: var(--md-outline-variant); color: var(--text); background: var(--panel); }
+.noise-mini.alarm { background: #c0392b; border-color: #7d1f15; animation: tm-pulse 1.4s ease-in-out infinite; }
+.noise-mini.alarm .noise-mini-label, .noise-mini.alarm .noise-mini-pct { color: #fff; }
+.noise-mini.alarm .noise-mini-sub { color: #fbe5e2; }
+@media (prefers-reduced-motion: reduce) { .noise-mini.alarm { animation: none; } }
+.noise-mini.inline { width: auto; flex-shrink: 0; box-shadow: none; }
 
 /* ---------- random-student picker ---------- */
 .picker-overlay {

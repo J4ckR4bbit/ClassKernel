@@ -11,6 +11,7 @@ import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
 import BatchPanel from "./BatchPanel";
 import TimerMini from "./TimerMini";
+import NoiseMini from "./NoiseMini";
 import Icon from "./Icon";
 
 const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
@@ -218,6 +219,7 @@ export default function TeachingStrip() {
           </div>
         )}
 
+        <NoiseMini inline />
         <TimerMini inline />
         {!batch.active && (
           <footer className="strip-foot">

@@ -6,11 +6,14 @@ import {
   LIMIT_MAX,
   QUIET_ALARM,
   TRIGGER_SECONDS,
+  HISTORY_MS,
   aWeightingDb,
   alarmStep,
   calibrationOffset,
   displayLevel,
   parseSettings,
+  percentOfLimit,
+  pushSample,
   timeWeighted,
   weightedLevel,
   zoneFor,
@@ -159,5 +162,33 @@ describe("stored settings", () => {
       deviceId: "mic-2",
     });
     expect(parseSettings('{"limit":500}').limit).toBe(LIMIT_MAX);
+  });
+});
+
+describe("percent of the limit", () => {
+  it("reads 100 % at the limit and goes over it when louder", () => {
+    expect(percentOfLimit(65, 65)).toBe(100);
+    expect(percentOfLimit(46, 65)).toBe(71);
+    expect(percentOfLimit(78, 65)).toBe(120);
+  });
+  it("never divides by zero", () => {
+    expect(percentOfLimit(50, 0)).toBe(0);
+  });
+});
+
+describe("history", () => {
+  it("keeps readings in order and drops those older than the window", () => {
+    let h = pushSample([], 0, 40);
+    h = pushSample(h, 1000, 45);
+    h = pushSample(h, HISTORY_MS + 500, 50);
+    expect(h).toEqual([
+      { t: 1000, db: 45 },
+      { t: HISTORY_MS + 500, db: 50 },
+    ]);
+  });
+  it("doesn't change the array it was given", () => {
+    const h = [{ t: 0, db: 40 }];
+    pushSample(h, 10, 41);
+    expect(h).toHaveLength(1);
   });
 });

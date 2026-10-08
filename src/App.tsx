@@ -18,6 +18,7 @@ import PluginView from "./components/PluginView";
 import SettingsView from "./components/SettingsView";
 import AppDialog from "./components/AppDialog";
 import TimerMini from "./components/TimerMini";
+import NoiseMini from "./components/NoiseMini";
 
 /** Toast + dialog + save-error UI shared by both shells. */
 function Overlays() {
@@ -46,7 +47,11 @@ function Overlays() {
           )}
         </div>
       )}
-      <TimerMini />
+      {/* The running tools' pop-ups, stacked in the bottom-right corner. */}
+      <div className="mini-stack no-print">
+        <NoiseMini />
+        <TimerMini />
+      </div>
       <AppDialog />
     </>
   );

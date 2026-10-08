@@ -41,6 +41,8 @@ export const TEST_TIMER_ID = "test-timer";
 export const DASHBOARDS_ID = "class-dashboards";
 /** The parent reports' id; the dashboards offer printing only when it's on. */
 export const PARENT_REPORTS_ID = "parent-reports";
+/** The noise meter's id; the NoiseMini pop-up opens and checks it by this. */
+export const NOISE_METER_ID = "noise-meter";
 
 export const PLUGINS: PluginManifest[] = [
   {
@@ -116,11 +118,11 @@ export const PLUGINS: PluginManifest[] = [
     load: () => import("./motion-graph/MotionGraph").then((m) => m.default),
   },
   {
-    id: "noise-meter",
+    id: NOISE_METER_ID,
     name: "Class noise meter",
     tagline: "Set a limit; the screen warns the class when it's too loud.",
     description:
-      "Listens through the computer's microphone and shows the room's noise in dB(A) on a big green / amber / red gauge, against a limit you set. When the class stays over the limit the screen flashes red with a “TOO LOUD” banner until it settles. Can be calibrated against a phone sound-meter app. Nothing is recorded or saved.",
+      "Listens through the computer's microphone and shows the room's noise as a percentage of a limit you set (100 % = at the limit), with the dB(A) reading under it, a green / amber / red gauge and a graph of the last 5 minutes. When the class stays over the limit the screen flashes red with a “TOO LOUD” banner until it settles. It keeps listening when you go to another screen, with a small pop-up in the corner, until you press Stop. Can be calibrated against a phone sound-meter app. Nothing is recorded or saved.",
     icon: "graphic_eq",
     load: () => import("./noise-meter/NoiseMeter").then((m) => m.default),
   },

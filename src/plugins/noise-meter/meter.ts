@@ -115,6 +115,36 @@ export function alarmStep(s: AlarmState, level: number, limit: number, dt: numbe
   return next;
 }
 
+/**
+ * The reading as a percentage of the limit, which is what the class sees:
+ * 100 % is at the limit, so "stay under 100" is the whole rule.
+ */
+export function percentOfLimit(level: number, limit: number): number {
+  return limit > 0 ? Math.round((level / limit) * 100) : 0;
+}
+
+// ---------- history (the graph under the reading) ----------
+
+/** How far back the graph goes: a rolling five minutes. */
+export const HISTORY_MS = 5 * 60_000;
+/** How often a point is added to it. */
+export const HISTORY_STEP_MS = 500;
+
+export interface LevelSample {
+  /** performance.now() when it was taken, in ms. */
+  t: number;
+  /** The displayed level, dB(A). */
+  db: number;
+}
+
+/** Add a reading and drop any older than the window. */
+export function pushSample(history: LevelSample[], t: number, db: number, windowMs = HISTORY_MS): LevelSample[] {
+  const from = t - windowMs;
+  let i = 0;
+  while (i < history.length && history[i].t < from) i++;
+  return [...history.slice(i), { t, db }];
+}
+
 // ---------- settings (per PC, in localStorage) ----------
 
 export interface MeterSettings {
