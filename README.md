@@ -84,8 +84,3 @@ npm run tauri build  # Windows installer (NSIS .exe) in src-tauri/target/release
 - Browser tests (`e2e/`, Playwright) run the built app in demo mode, with a fresh demo class for every test and a fake microphone for the noise meter: every page and Settings tab, a lesson from register to end, marking (including the row highlighting), and each tool. A test also fails if anything reaches the browser console as an error. Run them after a change to the interface; they aren't part of CI.
 
 CI (`.github/workflows/build.yml`) runs the tests on every push and builds the Windows NSIS installer; tagging `v*` attaches the `.exe` to a GitHub release.
-
-
-## Things do do in future
-Flagged, not changed: npm audit reports known security issues in packages the project already had (Vitest's and Vite's own dependencies, such as postcss, nanoid and tinypool). None come from the new test package. They're only used for building and testing, never shipped in the app, but updating them would be a sensible separate job.
-
