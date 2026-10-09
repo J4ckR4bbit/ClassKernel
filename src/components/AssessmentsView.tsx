@@ -4,7 +4,7 @@ import { newId, today } from "../lib/id";
 import { Assessment, AssessmentQuestion, Mark, QuestionMark, studentName } from "../lib/types";
 import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankStudents, studentProvisional } from "../lib/stats";
 import { areasForGrade, shortLabel, subtopicsForGrade } from "../lib/topics";
-import { positionTint } from "../lib/listTint";
+import { positionTint, rankTint } from "../lib/listTint";
 import PrivacyGate from "./PrivacyGate";
 import Icon from "./Icon";
 
@@ -456,6 +456,8 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
   // Live stats from the current store state.
   const studentIds = sorted.map((s) => s.id);
   const ranks = rankStudents(studentIds, questions, qm);
+  const bestRank = Math.min(...ranks.values());
+  const worstRank = Math.max(...ranks.values());
   const qAvg = questionAverages(questions, qm);
   const completion = gridCompletion(studentIds, questions, qm);
   const provisionals = new Map(sorted.map((s) => [s.id, studentProvisional(s.id, questions, qm)]));
@@ -504,7 +506,7 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
         </button>
       </div>
 
-      <div className="stat-tiles">
+      <div className="stat-tiles compact">
         <div className="stat-tile">
           <div className="value">{Math.round((1 - completion) * 100)}%</div>
           <div className="label">left to enter</div>
@@ -595,7 +597,10 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
                   <td className="col-total sticky-right fourth">{p.answered ? p.total : ""}</td>
                   <td className="col-total sticky-right third">{p.pct !== null ? `${Math.round(p.pct)}` : ""}</td>
                   <td className="col-total sticky-right second">{p.answered ? gradeForPct(p.pct, scale) : ""}</td>
-                  <td className="col-total sticky-right">{rank ?? ""}</td>
+                  {/* Tinted by rank: green for the top student to red for the lowest. */}
+                  <td className="col-total sticky-right" style={rank != null ? { background: rankTint(rank, bestRank, worstRank) } : undefined}>
+                    {rank ?? ""}
+                  </td>
                 </tr>
               );
             })}
@@ -639,16 +644,6 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
           </tfoot>
         </table>
       </div>
-      <p className="muted">
-        <b>{scaleInfo.short}</b> is the {scale === "level" ? "SA achievement level" : "symbol"}: {scaleInfo.key}. Switch
-        between levels and symbols under Settings › Assessments.
-      </p>
-      <p className="muted">
-        {userPrefs.markGridEnter === "across"
-          ? "Enter moves across the questions; Tab moves down to the next student."
-          : "Enter moves down to the next student; Tab moves across the questions."}{" "}
-        Leave a cell blank for a question not answered. Change this under Settings › Assessments.
-      </p>
     </div>
   );
 }
@@ -751,7 +746,6 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
           </p>
         )}
       </div>
-      <p className="muted">Type a mark and press Enter to jump to the next student. Leave blank for absent/not sat.</p>
     </div>
   );
 }

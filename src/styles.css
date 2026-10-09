@@ -568,6 +568,11 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .stat-tile { background: var(--md-surface-container-low); border-radius: var(--md-shape-m); padding: 14px 20px; min-width: 140px; }
 .stat-tile .value { font-size: 28px; font-weight: 400; line-height: 36px; }
 .stat-tile .label { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; color: var(--text-dim); }
+/* Slim chips on one line (the marking grid), leaving the room for the students. */
+.stat-tiles.compact { gap: 8px; margin-bottom: 8px; }
+.stat-tiles.compact .stat-tile { display: flex; align-items: baseline; gap: 6px; padding: 2px 12px; min-width: 0; border-radius: 14px; }
+.stat-tiles.compact .stat-tile .value { font-size: 14px; font-weight: 600; line-height: 22px; }
+.stat-tiles.compact .stat-tile .label { letter-spacing: 0.2px; }
 .section-heading { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 500; margin: 24px 0 12px; }
 .section-heading .icon { color: var(--md-on-surface-variant); }
 .desk-pill { display: inline-block; background: var(--md-surface-container-high); border: 1px solid var(--border); border-radius: 12px; padding: 2px 9px; font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -615,13 +620,12 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .mark-grid .grid-input.over { color: var(--danger); font-weight: 700; }
 
 /* ---------- marking screens: the page holds still, only the students scroll ----------
-   The title, stat tiles and the grid's two heading rows stay at the top, the
-   two average rows and the notes at the bottom. */
+   The title, stat chips and the grid's two heading rows stay at the top, the
+   two average rows at the bottom. */
 .main-pane:has(> .marking-view) { display: flex; flex-direction: column; overflow: hidden; }
 .marking-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .marking-view > * { flex-shrink: 0; }
 .marking-view > .mark-grid-wrap, .marking-view > .quick-mark-list { flex: 1 1 auto; min-height: 0; overflow: auto; }
-.marking-view > p { margin: 8px 0 0; }
 .quick-mark-list { padding: 0; margin-bottom: 0; }
 .mark-grid thead th { position: sticky; z-index: 2; }
 .mark-grid thead tr:first-child th { top: 0; height: 44px; }
