@@ -370,7 +370,7 @@ export function rankStudents(
   qmarks: QuestionMark[],
 ): Map<string, number> {
   const idx = markIndex(qmarks);
-  const totals: Array<{ id: string; total: number }> = [];
+  const totals = new Map<string, number>();
   for (const id of studentIds) {
     let total = 0;
     let answered = 0;
@@ -380,16 +380,25 @@ export function rankStudents(
       total += v;
       answered += 1;
     }
-    if (answered > 0) totals.push({ id, total });
+    if (answered > 0) totals.set(id, total);
   }
-  totals.sort((a, b) => b.total - a.total);
+  return rankByScore(totals);
+}
+
+/**
+ * Rank by score, highest = rank 1. Ties share the average of the positions they
+ * span (two tied for 3rd/4th both get 3.5). Used for a test's total and for a
+ * student's average across tests.
+ */
+export function rankByScore(scores: Map<string, number>): Map<string, number> {
+  const sorted = [...scores.entries()].sort((a, b) => b[1] - a[1]);
   const ranks = new Map<string, number>();
   let i = 0;
-  while (i < totals.length) {
+  while (i < sorted.length) {
     let j = i;
-    while (j + 1 < totals.length && totals[j + 1].total === totals[i].total) j++;
+    while (j + 1 < sorted.length && sorted[j + 1][1] === sorted[i][1]) j++;
     const avgRank = (i + 1 + (j + 1)) / 2; // positions are 0-based, ranks 1-based
-    for (let k = i; k <= j; k++) ranks.set(totals[k].id, avgRank);
+    for (let k = i; k <= j; k++) ranks.set(sorted[k][0], avgRank);
     i = j + 1;
   }
   return ranks;

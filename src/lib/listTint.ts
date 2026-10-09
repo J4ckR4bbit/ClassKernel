@@ -29,3 +29,11 @@ export function positionTint(index: number, count: number): string {
 export function rankTint(rank: number, best: number, worst: number): string {
   return tintAlong(worst > best ? (rank - best) / (worst - best) : 0, RANK_HUES);
 }
+
+/** The tint for every ranked student, from green for the top rank to red for the lowest. */
+export function rankTints(ranks: Map<string, number>): Map<string, string> {
+  const all = [...ranks.values()];
+  const best = Math.min(...all);
+  const worst = Math.max(...all);
+  return new Map([...ranks].map(([id, rank]) => [id, rankTint(rank, best, worst)]));
+}

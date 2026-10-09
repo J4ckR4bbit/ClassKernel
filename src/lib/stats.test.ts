@@ -10,6 +10,7 @@ import {
   histogram,
   overallPercent,
   questionAverages,
+  rankByScore,
   rankStudents,
   studentProvisional,
   symbolForPct,
@@ -231,6 +232,15 @@ describe("per-question grid helpers", () => {
     expect(ranks.get("s1")).toBe(1.5); // tied for 1st/2nd
     expect(ranks.get("s2")).toBe(1.5);
     expect(ranks.get("s3")).toBe(3);
+  });
+
+  it("rankByScore ranks highest first and averages ties, fractional scores too", () => {
+    const ranks = rankByScore(new Map([["a", 61.5], ["b", 80], ["c", 61.5], ["d", 40]]));
+    expect(ranks.get("b")).toBe(1);
+    expect(ranks.get("a")).toBe(2.5); // tied for 2nd/3rd
+    expect(ranks.get("c")).toBe(2.5);
+    expect(ranks.get("d")).toBe(4);
+    expect(rankByScore(new Map()).size).toBe(0);
   });
 
   it("gridCompletion is filled cells over total cells", () => {

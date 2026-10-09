@@ -2,10 +2,11 @@ import { type KeyboardEvent as ReactKeyboardEvent, useMemo, useRef, useState } f
 import { useApp } from "../store/appStore";
 import { newId, today } from "../lib/id";
 import { Assessment, AssessmentQuestion, Mark, QuestionMark, studentName } from "../lib/types";
-import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankStudents, studentProvisional } from "../lib/stats";
+import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankByScore, rankStudents, studentProvisional } from "../lib/stats";
 import { areasForGrade, shortLabel, subtopicsForGrade } from "../lib/topics";
-import { positionTint, rankTint } from "../lib/listTint";
+import { positionTint, rankTints } from "../lib/listTint";
 import PrivacyGate from "./PrivacyGate";
+import Markbook from "./Markbook";
 import Icon from "./Icon";
 
 export default function AssessmentsView() {
@@ -13,10 +14,13 @@ export default function AssessmentsView() {
   const [showNew, setShowNew] = useState(false);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const [setupId, setSetupId] = useState<string | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
+  const [showMarkbook, setShowMarkbook] = useState(false);
 
   const grade = classes.find((c) => c.name === currentClass)?.year ?? "";
   const marking = assessments.find((a) => a.id === markingId) ?? null;
   const setup = assessments.find((a) => a.id === setupId) ?? null;
+  const viewing = assessments.find((a) => a.id === viewingId) ?? null;
   const ordered = [...assessments].sort((a, b) => b.date.localeCompare(a.date));
 
   const questionsFor = (id: string) =>
@@ -61,10 +65,42 @@ export default function AssessmentsView() {
     );
   }
 
+  // Read-only pages: one test's marks, or every test in the markbook. Marking a
+  // test opened from here comes back here when done (marking is checked first).
+  if (viewing) {
+    return (
+      <PrivacyGate label="marks and rankings">
+        {viewing.questionCount > 1 ? (
+          <QuestionGrid
+            assessment={viewing}
+            grade={grade}
+            readOnly
+            onDone={() => setViewingId(null)}
+            onEditQuestions={() => setSetupId(viewing.id)}
+            onEnterMarks={() => enterMarks(viewing)}
+          />
+        ) : (
+          <MarkListView assessment={viewing} onBack={() => setViewingId(null)} onEnterMarks={() => enterMarks(viewing)} />
+        )}
+      </PrivacyGate>
+    );
+  }
+
+  if (showMarkbook) {
+    return (
+      <PrivacyGate label="marks and rankings">
+        <Markbook onBack={() => setShowMarkbook(false)} onOpen={(a) => setViewingId(a.id)} />
+      </PrivacyGate>
+    );
+  }
+
   return (
     <div>
       <div className="view-header">
         <div className="spacer" />
+        <button onClick={() => setShowMarkbook(true)} disabled={assessments.length === 0}>
+          <Icon name="grid_on" size={20} /> Markbook
+        </button>
         <button className="primary" onClick={() => setShowNew(true)}>
           <Icon name="add" size={20} /> New assessment
         </button>
@@ -80,7 +116,7 @@ export default function AssessmentsView() {
             <th style={{ width: 90 }}>Questions</th>
             <th style={{ width: 110 }}>Marked</th>
             <th style={{ width: 100 }}>Class mean</th>
-            <th style={{ width: 230 }}></th>
+            <th style={{ width: 320 }}></th>
           </tr>
         </thead>
         <tbody>
@@ -99,6 +135,9 @@ export default function AssessmentsView() {
                 <td>{stats.mean !== null ? `${Math.round(stats.mean)}%` : <span className="muted">—</span>}</td>
                 <td>
                   <div className="row nowrap">
+                    <button className="small" onClick={() => setViewingId(a.id)} title="See the marks without changing them">
+                      <Icon name="visibility" size={18} /> View
+                    </button>
                     <button className="small primary" onClick={() => enterMarks(a)}>
                       <Icon name="edit" size={18} /> Enter marks
                     </button>
@@ -373,8 +412,24 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
  * The spreadsheet-style marking grid for a multi-question test. Frozen name
  * columns on the left and total/percentage/rank on the right; a Marks (out-of)
  * row and a topic row in the header; live per-question and per-student stats.
+ * `readOnly` shows the same grid with the marks as plain text, to look at the
+ * results without the risk of changing one (Back is then `onDone`).
  */
-function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessment: Assessment; grade: string; onDone: () => void; onEditQuestions: () => void }) {
+function QuestionGrid({
+  assessment,
+  grade,
+  readOnly = false,
+  onDone,
+  onEditQuestions,
+  onEnterMarks,
+}: {
+  assessment: Assessment;
+  grade: string;
+  readOnly?: boolean;
+  onDone: () => void;
+  onEditQuestions: () => void;
+  onEnterMarks?: () => void;
+}) {
   const { students, questionMarks, topics, userPrefs, assessmentQuestions } = useApp();
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
@@ -456,8 +511,7 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
   // Live stats from the current store state.
   const studentIds = sorted.map((s) => s.id);
   const ranks = rankStudents(studentIds, questions, qm);
-  const bestRank = Math.min(...ranks.values());
-  const worstRank = Math.max(...ranks.values());
+  const rankTint = rankTints(ranks);
   const qAvg = questionAverages(questions, qm);
   const completion = gridCompletion(studentIds, questions, qm);
   const provisionals = new Map(sorted.map((s) => [s.id, studentProvisional(s.id, questions, qm)]));
@@ -480,6 +534,11 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
     return (
       <div>
         <div className="view-header">
+          {readOnly && (
+            <button className="small" onClick={onDone}>
+              <Icon name="arrow_back" size={18} /> Back
+            </button>
+          )}
           <h1>{assessment.title}</h1>
           <div className="spacer" />
           <button className="primary" onClick={onEditQuestions}>
@@ -493,18 +552,33 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
 
   return (
     <div className="marking-view">
-      <div className="view-header">
-        <h1>
-          Marking: {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
-        </h1>
-        <div className="spacer" />
-        <button className="small" onClick={onEditQuestions}>
-          <Icon name="edit" size={18} /> Edit questions
-        </button>
-        <button className="primary" onClick={onDone}>
-          <Icon name="check" size={18} /> Done
-        </button>
-      </div>
+      {readOnly ? (
+        <div className="view-header">
+          <button className="small" onClick={onDone}>
+            <Icon name="arrow_back" size={18} /> Back
+          </button>
+          <h1>
+            {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
+          </h1>
+          <div className="spacer" />
+          <button className="small" onClick={onEnterMarks}>
+            <Icon name="edit" size={18} /> Enter marks
+          </button>
+        </div>
+      ) : (
+        <div className="view-header">
+          <h1>
+            Marking: {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
+          </h1>
+          <div className="spacer" />
+          <button className="small" onClick={onEditQuestions}>
+            <Icon name="edit" size={18} /> Edit questions
+          </button>
+          <button className="primary" onClick={onDone}>
+            <Icon name="check" size={18} /> Done
+          </button>
+        </div>
+      )}
 
       <div className="stat-tiles compact">
         <div className="stat-tile">
@@ -522,7 +596,7 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
       </div>
 
       <div className="mark-grid-wrap">
-        <table className="mark-grid">
+        <table className={`mark-grid ${readOnly ? "read-only" : ""}`}>
           <thead>
             <tr>
               <th className="col-no sticky-left">No</th>
@@ -560,8 +634,8 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
             {sorted.map((s, r) => {
               const p = provisionals.get(s.id)!;
               const rank = ranks.get(s.id);
-              // Every question has a mark: the row greys out (the one being typed in is yellow, see styles.css).
-              const done = questions.length > 0 && questions.every((q) => markOf(s.id, q.number) != null);
+              // Every question has a mark: the row greys out while marking (the one being typed in is yellow, see styles.css).
+              const done = !readOnly && questions.length > 0 && questions.every((q) => markOf(s.id, q.number) != null);
               return (
                 <tr key={s.id} className={done ? "done" : undefined}>
                   <td className="col-no sticky-left">{r + 1}</td>
@@ -573,6 +647,13 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
                   {questions.map((q, c) => {
                     const v = markOf(s.id, q.number);
                     const over = v != null && v > q.marks;
+                    if (readOnly) {
+                      return (
+                        <td key={q.number} className="col-q">
+                          {v ?? ""}
+                        </td>
+                      );
+                    }
                     return (
                       <td key={q.number} className="col-q">
                         <input
@@ -598,7 +679,7 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
                   <td className="col-total sticky-right third">{p.pct !== null ? `${Math.round(p.pct)}` : ""}</td>
                   <td className="col-total sticky-right second">{p.answered ? gradeForPct(p.pct, scale) : ""}</td>
                   {/* Tinted by rank: green for the top student to red for the lowest. */}
-                  <td className="col-total sticky-right" style={rank != null ? { background: rankTint(rank, bestRank, worstRank) } : undefined}>
+                  <td className="col-total sticky-right" style={rank != null ? { background: rankTint.get(s.id) } : undefined}>
                     {rank ?? ""}
                   </td>
                 </tr>
@@ -745,6 +826,139 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
             Add students to the class first.
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A single-mark test's results, read-only: each student's mark, percentage,
+ * level/symbol, rank and comment, with the class averages under them.
+ */
+function MarkListView({ assessment, onBack, onEnterMarks }: { assessment: Assessment; onBack: () => void; onEnterMarks: () => void }) {
+  const { students, marks, userPrefs } = useApp();
+  const scale = userPrefs.gradeScale;
+  const scaleInfo = GRADE_SCALES[scale];
+  const sorted = useMemo(
+    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
+    [students],
+  );
+
+  const markOf = (studentId: string): Mark | undefined =>
+    marks.find((m) => m.assessmentId === assessment.id && m.studentId === studentId);
+  const entered = new Map<string, number>();
+  for (const s of sorted) {
+    const v = markOf(s.id)?.mark;
+    if (v != null) entered.set(s.id, v);
+  }
+  const ranks = rankByScore(entered);
+  const rankTint = rankTints(ranks);
+  const pctOf = (mark: number) => (assessment.totalMarks > 0 ? (mark / assessment.totalMarks) * 100 : null);
+  const values = [...entered.values()];
+  const meanMark = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+  const classMean = meanMark !== null ? pctOf(meanMark) : null;
+  const top = sorted.find((s) => ranks.get(s.id) === Math.min(...ranks.values())); // a tie for first shares rank 1.5
+  const topPct = top ? pctOf(entered.get(top.id)!) : null;
+
+  return (
+    <div className="marking-view">
+      <div className="view-header">
+        <button className="small" onClick={onBack}>
+          <Icon name="arrow_back" size={18} /> Back
+        </button>
+        <h1>
+          {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
+        </h1>
+        <div className="spacer" />
+        <button className="small" onClick={onEnterMarks}>
+          <Icon name="edit" size={18} /> Enter marks
+        </button>
+      </div>
+
+      <div className="stat-tiles compact">
+        <div className="stat-tile">
+          <div className="value">{sorted.length ? Math.round((1 - entered.size / sorted.length) * 100) : 0}%</div>
+          <div className="label">left to enter</div>
+        </div>
+        <div className="stat-tile">
+          <div className="value">{classMean !== null ? `${Math.round(classMean)}%` : "—"}</div>
+          <div className="label">class mean (entered)</div>
+        </div>
+        <div className="stat-tile">
+          <div className="value">{topPct !== null ? `${Math.round(topPct)}%` : "—"}</div>
+          <div className="label">{top ? `top: ${studentName(top)}` : "top of class"}</div>
+        </div>
+      </div>
+
+      <div className="mark-grid-wrap">
+        <table className="mark-grid read-only">
+          <thead>
+            <tr>
+              <th className="col-no sticky-left">No</th>
+              <th className="col-name sticky-left second">Surname</th>
+              <th className="col-name sticky-left third">Name</th>
+              <th className="col-total">
+                Mark
+                <div className="q-sub">/{assessment.totalMarks}</div>
+              </th>
+              <th className="col-total">%</th>
+              <th className="col-total" title={`${scaleInfo.label}: ${scaleInfo.key}`}>
+                {scaleInfo.short}
+              </th>
+              <th className="col-total">Rank</th>
+              <th className="col-comment">Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((s, r) => {
+              const m = markOf(s.id);
+              const v = entered.get(s.id);
+              const pct = v !== undefined ? pctOf(v) : null;
+              const rank = ranks.get(s.id);
+              return (
+                <tr key={s.id}>
+                  <td className="col-no sticky-left">{r + 1}</td>
+                  <td className="col-name sticky-left second" style={{ background: positionTint(r, sorted.length) }}>
+                    {s.lastName}
+                  </td>
+                  <td className="col-name sticky-left third">{s.firstName}</td>
+                  <td className="col-total">{v ?? ""}</td>
+                  <td className="col-total">{pct !== null ? Math.round(pct) : ""}</td>
+                  <td className="col-total">{pct !== null ? gradeForPct(pct, scale) : ""}</td>
+                  <td className="col-total" style={rank != null ? { background: rankTint.get(s.id) } : undefined}>
+                    {rank ?? ""}
+                  </td>
+                  <td className="col-comment">{m?.comment ?? ""}</td>
+                </tr>
+              );
+            })}
+            {sorted.length === 0 && (
+              <tr>
+                <td colSpan={8} className="muted" style={{ padding: 16 }}>
+                  Add students to the class first.
+                </td>
+              </tr>
+            )}
+          </tbody>
+          <tfoot>
+            <tr className="avg-row">
+              <th className="sticky-left" colSpan={3}>
+                Average (mark)
+              </th>
+              <td className="col-total">{meanMark !== null ? Math.round(meanMark * 10) / 10 : ""}</td>
+              <td colSpan={4}></td>
+            </tr>
+            <tr className="avg-row">
+              <th className="sticky-left" colSpan={3}>
+                Average (%)
+              </th>
+              <td></td>
+              <td className="col-total">{classMean !== null ? Math.round(classMean) : ""}</td>
+              <td className="col-total">{classMean !== null ? gradeForPct(Math.round(classMean), scale) : ""}</td>
+              <td colSpan={2}></td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   );

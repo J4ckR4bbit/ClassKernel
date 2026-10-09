@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { positionTint, rankTint } from "./listTint";
+import { positionTint, rankTint, rankTints } from "./listTint";
 
 const hue = (css: string) => Number(/hsl\((\d+)/.exec(css)?.[1]);
 
@@ -54,5 +54,15 @@ describe("rankTint", () => {
 
   it("is very light", () => {
     expect(rankTint(4, 1, 10)).toMatch(/ 92%\)$/);
+  });
+});
+
+describe("rankTints", () => {
+  it("tints each student by rank among those ranked", () => {
+    const tints = rankTints(new Map([["a", 2], ["b", 1], ["c", 3]]));
+    expect(hue(tints.get("b")!)).toBe(130);
+    expect(hue(tints.get("c")!)).toBe(4);
+    expect(tints.get("a")).toBe(rankTint(2, 1, 3));
+    expect(rankTints(new Map()).size).toBe(0);
   });
 });
