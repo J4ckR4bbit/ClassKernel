@@ -597,7 +597,7 @@ function QuestionGrid({ assessment, grade, onDone, onEditQuestions }: { assessme
                   <td className="col-total sticky-right fourth">{p.answered ? p.total : ""}</td>
                   <td className="col-total sticky-right third">{p.pct !== null ? `${Math.round(p.pct)}` : ""}</td>
                   <td className="col-total sticky-right second">{p.answered ? gradeForPct(p.pct, scale) : ""}</td>
-                  {/* Tinted like the surname, but by rank: blue at the top to red at the bottom. */}
+                  {/* Tinted by rank: green for the top student to red for the lowest. */}
                   <td className="col-total sticky-right" style={rank != null ? { background: rankTint(rank, bestRank, worstRank) } : undefined}>
                     {rank ?? ""}
                   </td>
@@ -746,7 +746,6 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
           </p>
         )}
       </div>
-      <p className="muted">Type a mark and press Enter to jump to the next student. Leave blank for absent/not sat.</p>
     </div>
   );
 }

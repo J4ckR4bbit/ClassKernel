@@ -621,12 +621,11 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 
 /* ---------- marking screens: the page holds still, only the students scroll ----------
    The title, stat chips and the grid's two heading rows stay at the top, the
-   two average rows (and the one-mark list's note) at the bottom. */
+   two average rows at the bottom. */
 .main-pane:has(> .marking-view) { display: flex; flex-direction: column; overflow: hidden; }
 .marking-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .marking-view > * { flex-shrink: 0; }
 .marking-view > .mark-grid-wrap, .marking-view > .quick-mark-list { flex: 1 1 auto; min-height: 0; overflow: auto; }
-.marking-view > p { margin: 8px 0 0; }
 .quick-mark-list { padding: 0; margin-bottom: 0; }
 .mark-grid thead th { position: sticky; z-index: 2; }
 .mark-grid thead tr:first-child th { top: 0; height: 44px; }

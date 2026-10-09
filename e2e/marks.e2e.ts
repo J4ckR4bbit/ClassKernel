@@ -98,7 +98,7 @@ test("the surname column is tinted blue at the top of the list to red at the bot
   expect(rN).toBeGreaterThan(bN); // red
 });
 
-test("the rank column is tinted blue for the top rank to red for the lowest", async ({ page }) => {
+test("the rank column is tinted green for the top rank to red for the lowest", async ({ page }) => {
   await nav(page, "Marks");
   await page.locator("tr", { hasText: "Forces & energy test" }).getByRole("button", { name: "Enter marks" }).click();
   await reveal(page);
@@ -107,8 +107,10 @@ test("the rank column is tinted blue for the top rank to red for the lowest", as
   const ranked = ranks.filter((r): r is number => r !== null);
   expect(ranked.length).toBeGreaterThan(1);
   const rgb = async (r: number) => (await background(rank.nth(ranks.indexOf(r)))).match(/\d+/g)!.map(Number);
-  const [r0, , b0] = await rgb(Math.min(...ranked));
-  const [rN, , bN] = await rgb(Math.max(...ranked));
-  expect(b0).toBeGreaterThan(r0); // blue
-  expect(rN).toBeGreaterThan(bN); // red
+  const [r0, g0, b0] = await rgb(Math.min(...ranked));
+  const [rN, gN, bN] = await rgb(Math.max(...ranked));
+  expect(g0).toBeGreaterThan(r0); // green
+  expect(g0).toBeGreaterThan(b0);
+  expect(rN).toBeGreaterThan(gN); // red
+  expect(rN).toBeGreaterThan(bN);
 });
