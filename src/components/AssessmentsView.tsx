@@ -8,6 +8,7 @@ import { areasForGrade, shortLabel, subtopicsForGrade } from "../lib/topics";
 import { positionTint, rankTints } from "../lib/listTint";
 import PrivacyGate from "./PrivacyGate";
 import Markbook from "./Markbook";
+import MarkSheetTools from "./MarkSheetTools";
 import Icon from "./Icon";
 
 export default function AssessmentsView() {
@@ -17,6 +18,9 @@ export default function AssessmentsView() {
   const [setupId, setSetupId] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [showMarkbook, setShowMarkbook] = useState(false);
+  // Bumped by an import so the marking screens re-read their (uncontrolled) inputs.
+  const [sheetVersion, setSheetVersion] = useState(0);
+  const imported = () => setSheetVersion((v) => v + 1);
 
   const grade = classes.find((c) => c.name === currentClass)?.year ?? "";
   const marking = assessments.find((a) => a.id === markingId) ?? null;
@@ -61,9 +65,16 @@ export default function AssessmentsView() {
     return (
       <PrivacyGate label="marks and rankings">
         {marking.questionCount > 1 ? (
-          <QuestionGrid assessment={marking} grade={grade} onDone={done} onEditQuestions={() => { setMarkingId(null); setSetupId(marking.id); }} />
+          <QuestionGrid
+            key={sheetVersion}
+            assessment={marking}
+            grade={grade}
+            onDone={done}
+            onEditQuestions={() => { setMarkingId(null); setSetupId(marking.id); }}
+            onImported={imported}
+          />
         ) : (
-          <QuickMarking assessment={marking} onDone={done} />
+          <QuickMarking key={sheetVersion} assessment={marking} onDone={done} onImported={imported} />
         )}
       </PrivacyGate>
     );
@@ -82,9 +93,10 @@ export default function AssessmentsView() {
             onDone={() => setViewingId(null)}
             onEditQuestions={() => setSetupId(viewing.id)}
             onEnterMarks={() => enterMarks(viewing)}
+            onImported={imported}
           />
         ) : (
-          <MarkListView assessment={viewing} onBack={() => setViewingId(null)} onEnterMarks={() => enterMarks(viewing)} />
+          <MarkListView assessment={viewing} onBack={() => setViewingId(null)} onEnterMarks={() => enterMarks(viewing)} onImported={imported} />
         )}
       </PrivacyGate>
     );
@@ -483,6 +495,7 @@ function QuestionGrid({
   onDone,
   onEditQuestions,
   onEnterMarks,
+  onImported,
 }: {
   assessment: Assessment;
   grade: string;
@@ -490,6 +503,8 @@ function QuestionGrid({
   onDone: () => void;
   onEditQuestions: () => void;
   onEnterMarks?: () => void;
+  /** After marks were imported from a spreadsheet. */
+  onImported: () => void;
 }) {
   const { students, questionMarks, topics, userPrefs, assessmentQuestions } = useApp();
   const scale = userPrefs.gradeScale;
@@ -622,6 +637,7 @@ function QuestionGrid({
             {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
           </h1>
           <div className="spacer" />
+          <MarkSheetTools assessment={assessment} onImported={onImported} />
           <button className="small" onClick={onEnterMarks}>
             <Icon name="edit" size={18} /> Enter marks
           </button>
@@ -632,6 +648,7 @@ function QuestionGrid({
             Marking: {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
           </h1>
           <div className="spacer" />
+          <MarkSheetTools assessment={assessment} onImported={onImported} />
           <button className="small" onClick={onEditQuestions}>
             <Icon name="edit" size={18} /> Edit questions
           </button>
@@ -794,7 +811,7 @@ function QuestionGrid({
  * Keyboard-first mark entry: type a mark, press Enter, the next student is
  * focused. Built for entering marks while working through a pile of papers.
  */
-function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: () => void }) {
+function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessment; onDone: () => void; onImported: () => void }) {
   const { students, marks, setMarks } = useApp();
   const sorted = useMemo(
     () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
@@ -835,6 +852,7 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
         <span className="muted">
           {entered}/{sorted.length} entered
         </span>
+        <MarkSheetTools assessment={assessment} onImported={onImported} />
         <button className="primary" onClick={onDone}>
           <Icon name="check" size={18} /> Done
         </button>
@@ -896,7 +914,17 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
  * A single-mark test's results, read-only: each student's mark, percentage,
  * level/symbol, rank and comment, with the class averages under them.
  */
-function MarkListView({ assessment, onBack, onEnterMarks }: { assessment: Assessment; onBack: () => void; onEnterMarks: () => void }) {
+function MarkListView({
+  assessment,
+  onBack,
+  onEnterMarks,
+  onImported,
+}: {
+  assessment: Assessment;
+  onBack: () => void;
+  onEnterMarks: () => void;
+  onImported: () => void;
+}) {
   const { students, marks, userPrefs } = useApp();
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
@@ -931,6 +959,7 @@ function MarkListView({ assessment, onBack, onEnterMarks }: { assessment: Assess
           {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
         </h1>
         <div className="spacer" />
+        <MarkSheetTools assessment={assessment} onImported={onImported} />
         <button className="small" onClick={onEnterMarks}>
           <Icon name="edit" size={18} /> Enter marks
         </button>

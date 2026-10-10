@@ -579,6 +579,13 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .desk-pill.good { background: #e3f0e8; border-color: #9cc7ac; color: #1f6b3f; }
 .desk-pill.bad { background: #f7e0dd; border-color: #d9a59c; color: #9c2f1f; }
 
+/* importing marks from a template: what was skipped, and a file made for another test */
+.import-preview { max-width: 640px; }
+.import-preview h3 { font-size: 14px; margin: 12px 0 6px; }
+.import-problems { max-height: 220px; overflow: auto; margin: 0; padding-left: 20px; font-size: 13px; }
+.import-problems li { margin: 2px 0; }
+.import-warning { display: flex; gap: 8px; align-items: flex-start; padding: 8px 12px; border-radius: var(--md-shape-xs); background: #fdf0d9; color: #6b4a00; }
+
 /* an assessment's weight, typed in its row on the Marks page */
 .weight-input, table.data td input.weight-input { width: 60px; min-height: 32px; padding: 3px 8px; text-align: right; font-variant-numeric: tabular-nums; }
 
