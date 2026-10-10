@@ -584,6 +584,9 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .import-preview h3 { font-size: 14px; margin: 12px 0 6px; }
 .import-problems { max-height: 220px; overflow: auto; margin: 0; padding-left: 20px; font-size: 13px; }
 .import-problems li { margin: 2px 0; }
+.import-changes { max-height: 200px; overflow: auto; margin: 8px 0 0; padding-left: 20px; font-size: 13px; }
+.import-changes:empty { display: none; }
+.import-absent summary { cursor: pointer; font-size: 13px; color: var(--text-dim); }
 .import-warning { display: flex; gap: 8px; align-items: flex-start; padding: 8px 12px; border-radius: var(--md-shape-xs); background: #fdf0d9; color: #6b4a00; }
 
 /* an assessment's weight, typed in its row on the Marks page */

@@ -1,20 +1,15 @@
 import { useRef, useState } from "react";
-import Papa from "papaparse";
 import { useApp } from "../store/appStore";
 import { Assessment } from "../lib/types";
 import { ImportPlan, MARKS_SHEET, applyImport, markTemplate, planImport, templateFileName } from "../lib/markSheet";
 import { buildXlsx } from "../lib/xlsx";
-import { readXlsx } from "../lib/xlsxRead";
+import { readSpreadsheetFile } from "../lib/spreadsheetFile";
 import { savePluginFile } from "../plugins/host";
 import Icon from "./Icon";
 
 /** The rows of a chosen file: the template's Marks sheet (else the first sheet), or a .csv. */
 async function readRows(file: File): Promise<{ rows: string[][]; about: string[][] | null }> {
-  if (/\.csv$/i.test(file.name)) {
-    // Papa works out the separator, so a semicolon .csv from SA-locale Excel reads too.
-    return { rows: Papa.parse<string[]>(await file.text()).data, about: null };
-  }
-  const sheets = await readXlsx(new Uint8Array(await file.arrayBuffer()));
+  const sheets = await readSpreadsheetFile(file);
   const marks = sheets.find((s) => s.name === MARKS_SHEET) ?? sheets[0];
   return { rows: marks?.rows ?? [], about: sheets.find((s) => s.name === "About")?.rows ?? null };
 }

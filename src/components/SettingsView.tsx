@@ -25,6 +25,7 @@ import * as repo from "../lib/repo";
 import { backupStamp } from "../lib/id";
 import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
 import RosterView from "./RosterView";
+import RosterSheetTools from "./RosterSheetTools";
 import LayoutDesigner from "./LayoutDesigner";
 import ExportView from "./ExportView";
 import Icon, { IconName } from "./Icon";
@@ -287,6 +288,18 @@ function GeneralSettings() {
           value={userPrefs.uiScale}
           onChange={(v) => void setUserPrefs({ ...userPrefs, uiScale: v })}
         />
+      </div>
+
+      <div className="panel">
+        <h3>Classes and students from a spreadsheet</h3>
+        <p className="muted" style={{ marginTop: 0 }}>
+          <b>Template</b> saves a workbook of every class (grade, subject, room) and its students (gender, flags, notes). Fill it in, for
+          example from the school's class lists at the start of the year, then import it: new classes and students are added and changed
+          details updated. Nobody is removed. For one class, use Template and Import spreadsheet on its Students page.
+        </p>
+        <div className="row">
+          <RosterSheetTools />
+        </div>
       </div>
 
       <TimeZoneSettings />

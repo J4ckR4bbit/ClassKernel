@@ -6,9 +6,10 @@ import { attendanceByStudent, behaviourByStudent } from "../lib/stats";
 import PrivacyGate from "./PrivacyGate";
 import { DASHBOARDS_ID } from "../plugins/registry";
 import Icon from "./Icon";
+import RosterSheetTools from "./RosterSheetTools";
 
 export default function RosterView() {
-  const { students, setStudents, attendance, behaviourEvents, showToast, confirmDialog, openStudentDashboard, userPrefs } = useApp();
+  const { students, setStudents, attendance, behaviourEvents, showToast, confirmDialog, openStudentDashboard, userPrefs, currentClass } = useApp();
   // The dashboard shortcut is there only while the dashboards plugin is switched on.
   const dashboardsOn = userPrefs.enabledPlugins.includes(DASHBOARDS_ID);
   const [showImport, setShowImport] = useState(false);
@@ -43,6 +44,7 @@ export default function RosterView() {
       <div className="view-header">
         <span className="muted">{students.length} students</span>
         <div className="spacer" />
+        {currentClass && <RosterSheetTools oneClass={currentClass} />}
         <button onClick={() => setShowImport(true)}>Import list…</button>
         <button className="primary" onClick={addStudent}>
           <Icon name="add" size={20} /> Add student
