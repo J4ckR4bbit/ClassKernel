@@ -5,7 +5,7 @@ import { readXlsx } from "./xlsxRead";
 import { buildXlsx, crc32 } from "./xlsx";
 import { Assessment, AssessmentQuestion, Mark, QuestionMark, Student } from "./types";
 
-const student = (id: string, firstName: string, lastName: string): Student => ({ id, firstName, lastName, gender: "", flags: "", notes: "" });
+const student = (id: string, firstName: string, lastName: string): Student => ({ id, firstName, lastName, adamNo: "", gender: "", flags: "", notes: "" });
 const students = [student("s1", "Amelia", "Adams"), student("s2", "Harry", "Baker"), student("s3", "Olivia", "Clark")];
 
 const single: Assessment = { id: "a1", title: "Cells test", date: "2026-08-28", totalMarks: 40, category: "Test", questionCount: 1, contentArea: "", kind: "informal", weight: 1 };
@@ -53,14 +53,14 @@ describe("marks template", () => {
     const marks: Mark[] = [{ assessmentId: "a1", studentId: "s2", mark: 31.5, comment: "late" }];
     const sheets = await readXlsx(buildXlsx(markTemplate(single, "7B", students, [], marks, [])));
     expect(sheets.map((s) => s.name)).toEqual(["Marks", "About"]);
-    expect(sheets[0].rows[0]).toEqual(["No", "Surname", "Name", "Mark (out of 40)", "Comment", "Student ID"]);
-    expect(sheets[0].rows[2]).toEqual(["2", "Baker", "Harry", "31.5", "late", "s2"]);
+    expect(sheets[0].rows[0]).toEqual(["No", "Surname", "Name", "Mark (out of 40)", "Comment", "Adam number", "Student ID"]);
+    expect(sheets[0].rows[2]).toEqual(["2", "Baker", "Harry", "31.5", "late", "", "s2"]);
     expect(sheets[1].rows.find((r) => r[0] === "Assessment ID")?.[1]).toBe("a1");
   });
 
   it("has a column per question, headed with its maximum", async () => {
     const sheets = await readXlsx(buildXlsx(markTemplate(perQ, "7B", students, questions, [], [])));
-    expect(sheets[0].rows[0]).toEqual(["No", "Surname", "Name", "Q1 (/7,5)", "Q2 (/12,5)", "Student ID"]);
+    expect(sheets[0].rows[0]).toEqual(["No", "Surname", "Name", "Q1 (/7,5)", "Q2 (/12,5)", "Adam number", "Student ID"]);
   });
 
   it("is named after the assessment", () => {
@@ -131,6 +131,14 @@ describe("planImport / applyImport", () => {
     const next = applyImport(plan, perQ, [], existing);
     expect(next.marks.find((m) => m.studentId === "s1")?.mark).toBe(18);
     expect(next.marks.find((m) => m.studentId === "s2")?.mark).toBe(12); // 3 imported + the 9 already there
+  });
+
+  it("recognises a student by Adam number when the Student ID is gone", () => {
+    const roster = [student("s1", "Amelia", "Adams"), { ...student("s2", "Harry", "Baker"), adamNo: "20417" }];
+    const rows = [["Adam number", "Surname", "Name", "Mark"], ["20417", "Baker-Smith", "H.", "28"]];
+    const plan = planImport(rows, null, single, [], roster, [], []);
+    expect(plan.problems).toEqual([]);
+    expect(plan.rows.map((r) => [r.studentId, r.values.get(1)])).toEqual([["s2", 28]]);
   });
 
   it("notices a file made for another assessment", () => {

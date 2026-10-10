@@ -251,9 +251,9 @@ const overviewSheet: Builder = (bundles) => [
 const studentsSheet: Builder = (bundles) => [
   {
     name: "Students",
-    columns: ["Class", "Student ID", "First name", "Surname", "Full name", "Gender", "Flags", "Notes"],
+    columns: ["Class", "Student ID", "Adam number", "First name", "Surname", "Full name", "Gender", "Flags", "Notes"],
     rows: bundles.flatMap((b) =>
-      b.students.map((s) => [b.info.name, s.id, s.firstName, s.lastName, studentName(s), s.gender, s.flags, s.notes]),
+      b.students.map((s) => [b.info.name, s.id, s.adamNo, s.firstName, s.lastName, studentName(s), s.gender, s.flags, s.notes]),
     ),
   },
 ];
@@ -413,7 +413,7 @@ const assessmentsSheet: Builder = (bundles) => [
 const marksSheet: Builder = (bundles, _data, options) => [
   {
     name: "Marks",
-    columns: ["Class", "Assessment", "Date", "Category", "Student ID", "Student", "Mark", "Out of", "Percent", GRADE_SCALES[options.gradeScale ?? "level"].label, "Comment"],
+    columns: ["Class", "Assessment", "Date", "Category", "Student ID", "Adam number", "Student", "Mark", "Out of", "Percent", GRADE_SCALES[options.gradeScale ?? "level"].label, "Comment"],
     rows: bundles.flatMap((b) => {
       const rows: (string | number | null)[][] = [];
       for (const a of [...b.assessments].sort((x, y) => x.date.localeCompare(y.date))) {
@@ -426,6 +426,7 @@ const marksSheet: Builder = (bundles, _data, options) => [
             a.date,
             a.category,
             s.id,
+            s.adamNo,
             studentName(s),
             mark?.mark ?? null,
             a.totalMarks,

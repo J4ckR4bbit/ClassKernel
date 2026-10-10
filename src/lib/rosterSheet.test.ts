@@ -5,7 +5,7 @@ import { buildXlsx } from "./xlsx";
 import { ClassInfo, Student } from "./types";
 
 const cls = (name: string, year = "", room = ""): ClassInfo => ({ name, year, subject: "Physical Science", room, notes: "", archived: false, color: "" });
-const stu = (id: string, firstName: string, lastName: string, extra: Partial<Student> = {}): Student => ({ id, firstName, lastName, gender: "", flags: "", notes: "", ...extra });
+const stu = (id: string, firstName: string, lastName: string, extra: Partial<Student> = {}): Student => ({ id, firstName, lastName, adamNo: "", gender: "", flags: "", notes: "", ...extra });
 
 const classes = [cls("G10 - Key L", "10", "M6"), cls("G12 - Key C", "12", "M6")];
 const students = new Map([
@@ -19,8 +19,8 @@ describe("roster workbook", () => {
   it("lists every class and its students, and reads back the same", async () => {
     const sheets = await readXlsx(buildXlsx(rosterWorkbook(classes, students, false)));
     expect(sheets.map((s) => s.name)).toEqual(["Students", "Classes", "About"]);
-    expect(sheets[0].rows[0]).toEqual(S);
-    expect(sheets[0].rows[2]).toEqual(["G10 - Key L", "Daniel", "Tye", "", "SEN", "", "s2"]);
+    expect(sheets[0].rows[0]).toEqual(["Class", "Surname", "Name", "Adam number", "Gender", "Flags", "Notes", "Student ID"]);
+    expect(sheets[0].rows[2]).toEqual(["G10 - Key L", "Daniel", "Tye", "", "", "SEN", "", "s2"]);
     expect(sheets[1].rows[1]).toEqual(["G10 - Key L", "10", "Physical Science", "M6"]);
     // Importing the untouched workbook changes nothing.
     const plan = planRosterImport(sheets, classes, students, null);
@@ -75,6 +75,23 @@ describe("planRosterImport", () => {
     expect(plan.students.map((c) => [c.student.id, c.isNew, c.changed])).toEqual([
       ["s1", false, ["Surname"]],
       ["s2", false, ["Notes"]],
+    ]);
+  });
+
+  it("recognises students by Adam number: a rename, Excel's dropped zeros, and filling numbers in by name", () => {
+    const withAdam = new Map([["G10 - Key L", [stu("s1", "Aidan", "Carter", { adamNo: "004512" }), stu("s2", "Tye", "Daniel")]]]);
+    const A = ["Class", "Surname", "Name", "Adam number"];
+    const plan = planRosterImport(
+      [sheet("Students", [A, ["G10 - Key L", "Carter-Jones", "Aidan", "4512"], ["G10 - Key L", "Daniel", "Tye", "4513"], ["G10 - Key L", "Moyo", "Tendai", "4514"]])],
+      classes,
+      withAdam,
+      null,
+    );
+    expect(plan.problems).toEqual([]);
+    expect(plan.students.map((c) => [c.student.id.startsWith("s-") ? "new" : c.student.id, c.changed, c.student.adamNo])).toEqual([
+      ["s1", ["Surname"], "004512"], // matched by Adam number (4512 = 004512): renamed, number kept as it was
+      ["s2", ["Adam number"], "4513"], // matched by name: number filled in
+      ["new", [], "4514"],
     ]);
   });
 

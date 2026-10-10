@@ -191,8 +191,8 @@ describe("taskShares", () => {
 
 describe("atRiskStudents", () => {
   const students: Student[] = [
-    { id: "s1", firstName: "A", lastName: "A", gender: "", flags: "", notes: "" },
-    { id: "s2", firstName: "B", lastName: "B", gender: "", flags: "", notes: "" },
+    { id: "s1", firstName: "A", lastName: "A", adamNo: "", gender: "", flags: "", notes: "" },
+    { id: "s2", firstName: "B", lastName: "B", adamNo: "", gender: "", flags: "", notes: "" },
   ];
 
   it("flags a sudden drop against the student's own average", () => {

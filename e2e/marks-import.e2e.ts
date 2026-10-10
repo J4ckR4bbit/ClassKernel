@@ -32,7 +32,7 @@ test("a single-mark template downloads with the class, and imports back what was
   const { name, sheets } = await downloadTemplate(page);
   expect(name).toBe("Marks - Mid-term exam.xlsx");
   const [marks, about] = sheets;
-  expect(marks.rows[0]).toEqual(["No", "Surname", "Name", "Mark (out of 80)", "Comment", "Student ID"]);
+  expect(marks.rows[0]).toEqual(["No", "Surname", "Name", "Mark (out of 80)", "Comment", "Adam number", "Student ID"]);
   expect(about.rows.some((r) => r[0] === "Assessment" && r[1] === "Mid-term exam")).toBe(true);
 
   // The demo leaves one student without a mark: fill it in, change another, and type one too big.

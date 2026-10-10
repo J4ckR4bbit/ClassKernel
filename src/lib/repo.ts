@@ -170,7 +170,7 @@ async function loadCsvFile(path: string): Promise<ReturnType<typeof parseCsv>> {
 
 // ---------- students ----------
 
-const STUDENT_COLS = ["id", "first_name", "last_name", "gender", "flags", "notes"];
+const STUDENT_COLS = ["id", "first_name", "last_name", "adam_no", "gender", "flags", "notes"];
 
 export async function loadStudents(dataDir: string, className: string): Promise<Student[]> {
   const rows = await loadCsvFile(p(classDir(dataDir, className), "students.csv"));
@@ -180,6 +180,7 @@ export async function loadStudents(dataDir: string, className: string): Promise<
       id: r.id,
       firstName: r.first_name ?? "",
       lastName: r.last_name ?? "",
+      adamNo: r.adam_no ?? "",
       gender: r.gender ?? "",
       flags: r.flags ?? "",
       notes: r.notes ?? "",
@@ -191,6 +192,7 @@ export async function saveStudents(dataDir: string, className: string, students:
     id: s.id,
     first_name: s.firstName,
     last_name: s.lastName,
+    adam_no: s.adamNo,
     gender: s.gender,
     flags: s.flags,
     notes: s.notes,

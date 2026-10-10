@@ -8,7 +8,7 @@
 // (the preview lists them). Nothing is saved until the teacher has seen it.
 
 import { newId } from "./id";
-import { ClassInfo, Student } from "./types";
+import { ClassInfo, Student, adamKey } from "./types";
 import { SheetSpec } from "./xlsx";
 import { ReadSheet } from "./xlsxRead";
 
@@ -16,7 +16,7 @@ export const CLASSES_SHEET = "Classes";
 export const STUDENTS_SHEET = "Students";
 
 const CLASS_COLUMNS = ["Class", "Grade", "Subject", "Room"];
-const STUDENT_COLUMNS = ["Class", "Surname", "Name", "Gender", "Flags", "Notes", "Student ID"];
+const STUDENT_COLUMNS = ["Class", "Surname", "Name", "Adam number", "Gender", "Flags", "Notes", "Student ID"];
 
 const byName = (a: Student, b: Student) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName);
 const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
@@ -38,7 +38,9 @@ const normFlags = (text: string) =>
  */
 export function rosterWorkbook(classes: ClassInfo[], studentsByClass: Map<string, Student[]>, forOneClass: boolean): SheetSpec[] {
   const students = classes.flatMap((c) =>
-    [...(studentsByClass.get(c.name) ?? [])].sort(byName).map((s) => [c.name, s.lastName, s.firstName, s.gender, s.flags.split(";").join("; "), s.notes, s.id]),
+    [...(studentsByClass.get(c.name) ?? [])]
+      .sort(byName)
+      .map((s) => [c.name, s.lastName, s.firstName, s.adamNo, s.gender, s.flags.split(";").join("; "), s.notes, s.id]),
   );
   return [
     { name: STUDENTS_SHEET, columns: STUDENT_COLUMNS, rows: students },
@@ -50,7 +52,7 @@ export function rosterWorkbook(classes: ClassInfo[], studentsByClass: Map<string
         ["How to use", "Students: one row per student, with their class in the Class column. New rows become new students."],
         ["", forOneClass ? "This file is for one class: rows for any other class are skipped." : "Classes: one row per class. A class named here or on the Students sheet that doesn't exist yet is created."],
         ["", "A blank cell leaves that detail as it is in ClassKernel. Nobody is removed by an import."],
-        ["", "Flags are separated by ; or , (e.g. SEN; Medical). Keep the Student ID column so renamed students are still recognised."],
+        ["", "Flags are separated by ; or , (e.g. SEN; Medical). Students are recognised by Student ID, then Adam number, then name, so keep those columns."],
         ["", forOneClass ? "Save the file, then on the class's Students page press Import spreadsheet." : "Save the file, then under Settings › General press Import classes and students."],
       ],
     },
@@ -175,6 +177,7 @@ export function planRosterImport(
         cls: h.col("class"),
         last: h.col("surname", "last name"),
         first: h.col("name", "first name", "firstname"),
+        adam: h.col("adam number", "adam no", "adam no.", "adam"),
         gender: h.col("gender"),
         flags: h.col("flags"),
         notes: h.col("notes"),
@@ -192,7 +195,9 @@ export function planRosterImport(
         const className = cls.info.name;
         const inClass = [...(studentsByClass.get(className) ?? []), ...studentChanges.filter((c) => c.className === className && c.isNew).map((c) => c.student)];
         const id = cell(cols.id);
-        const byId = id ? inClass.find((s) => s.id === id) : undefined;
+        const adam = adamKey(cell(cols.adam));
+        // Recognised by ClassKernel's id, then the school's Adam number, then the name.
+        const byId = (id ? inClass.find((s) => s.id === id) : undefined) ?? (adam ? inClass.find((s) => adamKey(s.adamNo) === adam) : undefined);
         const match = byId ?? inClass.find((s) => norm(s.lastName) === norm(last) && norm(s.firstName) === norm(first));
         if (!match && !last && !first) {
           problems.push(`${where}: no surname or name, so it was skipped.`);
@@ -205,20 +210,21 @@ export function planRosterImport(
         const prior = studentChanges.find((c) => c.className === className && c.student.id === match?.id);
         const change: StudentChange = prior ?? {
           className,
-          student: match ? { ...match } : { id: newId("s"), firstName: first, lastName: last, gender: "", flags: "", notes: "" },
+          student: match ? { ...match } : { id: newId("s"), firstName: first, lastName: last, adamNo: "", gender: "", flags: "", notes: "" },
           isNew: !match,
           changed: [],
         };
-        const set = (key: "firstName" | "lastName" | "gender" | "flags" | "notes", value: string, label: string) => {
+        const set = (key: "firstName" | "lastName" | "adamNo" | "gender" | "flags" | "notes", value: string, label: string) => {
           if (!value || value === change.student[key]) return;
           change.student[key] = value;
           if (!change.isNew && !change.changed.includes(label)) change.changed.push(label);
         };
-        // A new name only takes when the row was matched by its ID (a rename); otherwise the name is how it matched.
+        // A new name only takes when the row was matched by Student ID or Adam number (a rename); otherwise the name is how it matched.
         if (byId || change.isNew) {
           set("lastName", last, "Surname");
           set("firstName", first, "Name");
         }
+        if (adamKey(cell(cols.adam)) !== adamKey(change.student.adamNo)) set("adamNo", cell(cols.adam), "Adam number");
         set("gender", cell(cols.gender), "Gender");
         set("flags", normFlags(cell(cols.flags)), "Flags");
         set("notes", cell(cols.notes), "Notes");

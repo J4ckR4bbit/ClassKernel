@@ -34,8 +34,8 @@ beforeEach(async () => {
   await repo.ensureDataDir(DIR);
   await repo.saveClassInfo(DIR, { name: CLS, year: "7", subject: "Science", room: "Lab 2", notes: "", archived: false, color: "" });
   await repo.saveStudents(DIR, CLS, [
-    { id: "s1", firstName: "Anna", lastName: "Brown", gender: "F", flags: "SEN", notes: "sits at front" },
-    { id: "s2", firstName: "Ben", lastName: "Clark", gender: "M", flags: "", notes: "" },
+    { id: "s1", firstName: "Anna", lastName: "Brown", adamNo: "", gender: "F", flags: "SEN", notes: "sits at front" },
+    { id: "s2", firstName: "Ben", lastName: "Clark", adamNo: "", gender: "M", flags: "", notes: "" },
   ]);
   await repo.saveAttendance(DIR, CLS, [
     { date: "2026-01-10", studentId: "s1", status: "P", note: "" },
@@ -182,7 +182,7 @@ describe("buildSheets", () => {
     expect(cell(s, 0, "Percent")).toBe(90);
     expect(cell(s, 0, "Level")).toBe("7");
     // Ben has no mark for the second test: the row stays, the mark is blank.
-    const missing = s.rows.find((r) => r[1] === "Topic test 2" && r[5] === "Ben Clark")!;
+    const missing = s.rows.find((r) => r[1] === "Topic test 2" && r[s.columns.indexOf("Student")] === "Ben Clark")!;
     expect(missing[s.columns.indexOf("Mark")]).toBeNull();
     expect(missing[s.columns.indexOf("Percent")]).toBeNull();
   });
@@ -280,7 +280,7 @@ describe("multi-class exports", () => {
   it("stacks classes into the same sheets with a Class column", async () => {
     await repo.saveClassInfo(DIR, { name: "8A-Science", year: "8", subject: "Science", room: "Lab 1", notes: "", archived: false, color: "" });
     await repo.saveStudents(DIR, "8A-Science", [
-      { id: "t1", firstName: "Cara", lastName: "Diaz", gender: "F", flags: "", notes: "" },
+      { id: "t1", firstName: "Cara", lastName: "Diaz", adamNo: "", gender: "F", flags: "", notes: "" },
     ]);
     const both = await loadExportData(DIR, [CLS, "8A-Science"]);
     const students = sheet(buildSheets(both, { sections: ["students"] }), "Students");

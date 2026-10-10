@@ -22,13 +22,13 @@ test("one class: its students download, and the import adds, updates and skips w
   const { name, sheets } = await downloadWorkbook(page);
   expect(name).toBe("Students - 7B-Science.xlsx");
   const students = sheets.find((s) => s.name === "Students")!;
-  expect(students.rows[0]).toEqual(["Class", "Surname", "Name", "Gender", "Flags", "Notes", "Student ID"]);
+  expect(students.rows[0]).toEqual(["Class", "Surname", "Name", "Adam number", "Gender", "Flags", "Notes", "Student ID"]);
   expect(students.rows.length - 1).toBe(count);
   expect(sheets.find((s) => s.name === "Classes")!.rows).toHaveLength(2); // heading + this class
 
-  students.rows[1][5] = "Sits near the front"; // update a note
-  students.rows.push(["", "Ndlovu", "Sipho", "M", "SEN, Medical", "", ""]); // a new student, class left blank
-  students.rows.push(["9C-Maths", "Other", "Class", "", "", "", ""]); // another class: skipped
+  students.rows[1][6] = "Sits near the front"; // update a note
+  students.rows.push(["", "Ndlovu", "Sipho", "30561", "M", "SEN, Medical", "", ""]); // a new student, class left blank
+  students.rows.push(["9C-Maths", "Other", "Class", "", "", "", "", ""]); // another class: skipped
   await page.getByTestId("roster-import-file").setInputFiles({ name: "students.xlsx", mimeType: "application/octet-stream", buffer: Buffer.from(rebuild(sheets)) });
 
   const dialog = page.getByRole("dialog", { name: "Import spreadsheet" });
@@ -39,8 +39,9 @@ test("one class: its students download, and the import adds, updates and skips w
 
   await expect(page.locator("main table.data tbody tr")).toHaveCount(count + 1);
   const sipho = page.locator("main table.data tbody tr").filter({ has: page.locator('input[value="Ndlovu"]') });
-  await expect(sipho.locator("td").nth(3).locator("input")).toHaveValue("SEN;Medical");
-  await expect(page.locator("main table.data tbody tr").first().locator("td").nth(4).locator("input")).toHaveValue("Sits near the front");
+  await expect(sipho.locator("td").nth(2).locator("input")).toHaveValue("30561"); // Adam no.
+  await expect(sipho.locator("td").nth(4).locator("input")).toHaveValue("SEN;Medical");
+  await expect(page.locator("main table.data tbody tr").first().locator("td").nth(5).locator("input")).toHaveValue("Sits near the front");
 });
 
 test("every class: the workbook creates a new class with its students", async ({ page }) => {
@@ -52,7 +53,7 @@ test("every class: the workbook creates a new class with its students", async ({
   expect(classes.rows[0]).toEqual(["Class", "Grade", "Subject", "Room"]);
 
   classes.rows.push(["G12 - Key C", "12", "Physical Science", "M6"]);
-  students.rows.push(["G12 - Key C", "Mokoena", "Lebo", "M", "", "", ""], ["G12 - Key C", "Pillay", "Anika", "F", "", "", ""]);
+  students.rows.push(["G12 - Key C", "Mokoena", "Lebo", "", "M", "", "", ""], ["G12 - Key C", "Pillay", "Anika", "", "F", "", "", ""]);
   await page.getByTestId("classes-import-file").setInputFiles({ name: "all.xlsx", mimeType: "application/octet-stream", buffer: Buffer.from(rebuild(sheets)) });
 
   const dialog = page.getByRole("dialog", { name: "Import classes and students" });
@@ -66,4 +67,21 @@ test("every class: the workbook creates a new class with its students", async ({
   await settingsTab(page, "Students");
   await reveal(page);
   await expect(page.locator("main table.data tbody tr")).toHaveCount(2);
+});
+
+test("a student renamed in the sheet is still recognised by Adam number", async ({ page }) => {
+  await settingsTab(page, "Students");
+  await reveal(page);
+  const count = await page.locator("main table.data tbody tr").count();
+  // Only Surname, Name and Adam number, as from the school's own list: the first student's surname corrected.
+  const first = page.locator("main table.data tbody tr").first().locator("input");
+  const adam = await first.nth(2).inputValue();
+  expect(adam).not.toBe("");
+  const csv = `Surname;Name;Adam number\r\nAdams-Ngcobo;${await first.nth(0).inputValue()};${adam}\r\n`;
+  await page.getByTestId("roster-import-file").setInputFiles({ name: "adam.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
+  const dialog = page.getByRole("dialog", { name: "Import spreadsheet" });
+  await expect(dialog.locator(".stat-tile").nth(0)).toContainText("0"); // no new students
+  await dialog.getByRole("button", { name: "Import" }).click();
+  await expect(page.locator("main table.data tbody tr")).toHaveCount(count);
+  await expect(page.locator('input[value="Adams-Ngcobo"]')).toHaveCount(1);
 });

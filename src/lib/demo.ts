@@ -58,6 +58,7 @@ export async function seedDemoData(): Promise<string> {
       id: newId("s"),
       firstName: FIRST[i],
       lastName: LAST[(i * 7) % LAST.length],
+      adamNo: String(21403 + i * 17),
       gender: i % 2 ? "M" : "F",
       flags: i === 3 ? "SEN" : i === 11 ? "Medical" : "",
       notes: "",

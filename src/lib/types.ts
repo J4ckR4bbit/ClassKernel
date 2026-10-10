@@ -18,12 +18,28 @@ export interface ClassInfo {
 }
 
 export interface Student {
+  /** ClassKernel's own id (s-xxxxxxxx), made when the student is added; never changes. */
   id: string;
   firstName: string;
   lastName: string;
+  /**
+   * The school's number for the student in Adam, its administration system,
+   * which links to the school database; "" until filled in. Imports match on it.
+   */
+  adamNo: string;
   gender: string; // free text: "M", "F", other, or empty
   flags: string; // semicolon-separated tags e.g. "SEN;Medical"
   notes: string;
+}
+
+/**
+ * An Adam number as compared on import: spaces dropped, case ignored, and an
+ * all-digit number without its leading zeros ("00123" and "123" match, as
+ * Excel may have turned one into the other). "" when there is none.
+ */
+export function adamKey(adamNo: string): string {
+  const s = adamNo.replace(/\s+/g, "").toLowerCase();
+  return /^\d+$/.test(s) ? s.replace(/^0+(?=\d)/, "") : s;
 }
 
 export type AttendanceStatus = "P" | "A" | "L" | "E";

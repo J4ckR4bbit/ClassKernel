@@ -7,7 +7,7 @@
 // as it is; nothing is saved until the teacher has seen what will change.
 
 import { fmtDecimal, parseDecimal } from "./format";
-import { Assessment, AssessmentQuestion, Mark, QuestionMark, Student } from "./types";
+import { Assessment, AssessmentQuestion, Mark, QuestionMark, Student, adamKey } from "./types";
 import { SheetSpec } from "./xlsx";
 
 /** The template's main sheet; the second, About, says which assessment it is for. */
@@ -46,12 +46,12 @@ export function markTemplate(
     questionMarks.find((m) => m.assessmentId === a.id && m.studentId === id && m.number === n)?.mark ?? null;
 
   const columns = perQuestion
-    ? ["No", "Surname", "Name", ...questions.map(questionHeading), "Student ID"]
-    : ["No", "Surname", "Name", `Mark (out of ${fmtDecimal(a.totalMarks)})`, "Comment", "Student ID"];
+    ? ["No", "Surname", "Name", ...questions.map(questionHeading), "Adam number", "Student ID"]
+    : ["No", "Surname", "Name", `Mark (out of ${fmtDecimal(a.totalMarks)})`, "Comment", "Adam number", "Student ID"];
   const rows = sorted.map((s, i) =>
     perQuestion
-      ? [i + 1, s.lastName, s.firstName, ...questions.map((q) => qMarkOf(s.id, q.number)), s.id]
-      : [i + 1, s.lastName, s.firstName, markOf(s.id)?.mark ?? null, markOf(s.id)?.comment ?? "", s.id],
+      ? [i + 1, s.lastName, s.firstName, ...questions.map((q) => qMarkOf(s.id, q.number)), s.adamNo, s.id]
+      : [i + 1, s.lastName, s.firstName, markOf(s.id)?.mark ?? null, markOf(s.id)?.comment ?? "", s.adamNo, s.id],
   );
 
   const about: SheetSpec = {
@@ -67,7 +67,7 @@ export function markTemplate(
       [],
       ["How to use", `Type the marks on the ${MARKS_SHEET} sheet: one row per student${perQuestion ? ", one column per question" : ""}.`],
       ["", "A blank cell leaves that mark as it is in ClassKernel. A decimal comma or point both work (8,5 or 8.5)."],
-      ["", "Keep the heading row and the Student ID column; you can sort the rows any way you like."],
+      ["", "Keep the heading row. Students are recognised by Student ID, then Adam number, then name; sort the rows any way you like."],
       ["", "Save the file, then in ClassKernel open this assessment and press Import marks."],
     ],
   };
@@ -105,8 +105,8 @@ const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
 
 /**
  * Read a filled-in sheet (rows of cell text, any header row position) against
- * one assessment: match each row to a student by Student ID, or by surname and
- * name, check every mark lies between 0 and its maximum, and count what would
+ * one assessment: match each row to a student by Student ID, Adam number, or
+ * surname and name, check every mark lies between 0 and its maximum, and count what would
  * change. `aboutRows` is the template's About sheet, when the file has one.
  */
 export function planImport(
@@ -131,6 +131,7 @@ export function planImport(
   const header = rows[headerAt].map(norm);
   const col = (...names: string[]) => header.findIndex((h) => names.includes(h));
   const idCol = col("student id");
+  const adamCol = col("adam number", "adam no", "adam no.", "adam");
   const surnameCol = col("surname");
   const nameCol = col("name", "first name", "firstname");
   const commentCol = perQuestion ? -1 : col("comment");
@@ -156,6 +157,7 @@ export function planImport(
   }
 
   const byId = new Map(students.map((s) => [s.id, s]));
+  const byAdam = new Map(students.filter((s) => adamKey(s.adamNo)).map((s) => [adamKey(s.adamNo), s]));
   const byFullName = new Map(students.map((s) => [`${norm(s.lastName)}|${norm(s.firstName)}`, s]));
   const seen = new Set<string>();
   const out: ImportRow[] = [];
@@ -170,7 +172,8 @@ export function planImport(
     const surname = cell(surnameCol);
     const first = cell(nameCol);
     const label = `Row ${r + 1}${surname || first ? ` (${[surname, first].filter(Boolean).join(", ")})` : ""}`;
-    const student = byId.get(cell(idCol)) ?? byFullName.get(`${norm(surname)}|${norm(first)}`);
+    // Recognised by ClassKernel's id, then the school's Adam number, then the name.
+    const student = byId.get(cell(idCol)) ?? byAdam.get(adamKey(cell(adamCol))) ?? byFullName.get(`${norm(surname)}|${norm(first)}`);
     if (!student) {
       problems.push(`${label}: no such student in this class, so the row was skipped.`);
       continue;

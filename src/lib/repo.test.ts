@@ -80,8 +80,8 @@ describe("report_comments.csv", () => {
 describe("students.csv", () => {
   it("round-trips students including commas, quotes and unicode", async () => {
     const students: Student[] = [
-      { id: "s1", firstName: "Anna", lastName: "O'Brien", gender: "F", flags: "SEN;Medical", notes: 'says "hi", loves commas' },
-      { id: "s2", firstName: "Zoë", lastName: "Müller", gender: "", flags: "", notes: "line1\nline2" },
+      { id: "s1", firstName: "Anna", lastName: "O'Brien", adamNo: "", gender: "F", flags: "SEN;Medical", notes: 'says "hi", loves commas' },
+      { id: "s2", firstName: "Zoë", lastName: "Müller", adamNo: "", gender: "", flags: "", notes: "line1\nline2" },
     ];
     await repo.saveStudents(DIR, CLS, students);
     const loaded = await repo.loadStudents(DIR, CLS);
@@ -91,7 +91,12 @@ describe("students.csv", () => {
   it("writes a header row even for an empty roster", async () => {
     await repo.saveStudents(DIR, CLS, []);
     const raw = await fs.readText(`${DIR}/classes/${CLS}/students.csv`);
-    expect(raw.trim()).toBe("id,first_name,last_name,gender,flags,notes");
+    expect(raw.trim()).toBe("id,first_name,last_name,adam_no,gender,flags,notes");
+  });
+
+  it("reads a roster from before Adam numbers with them blank", async () => {
+    await fs.writeAtomic(`${DIR}/classes/${CLS}/students.csv`, "id,first_name,last_name,gender,flags,notes\r\ns1,Ann,Lee,F,,\r\n");
+    expect((await repo.loadStudents(DIR, CLS))[0]).toMatchObject({ id: "s1", adamNo: "", gender: "F" });
   });
 });
 
@@ -477,7 +482,7 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
 
 describe("backups", () => {
   it("restores a snapshot over the live files, taking a safety copy first", async () => {
-    const s1: Student = { id: "s1", firstName: "Amelia", lastName: "Adams", gender: "", flags: "SEN", notes: "" };
+    const s1: Student = { id: "s1", firstName: "Amelia", lastName: "Adams", adamNo: "", gender: "", flags: "SEN", notes: "" };
     await repo.saveStudents(DIR, CLS, [s1]);
     // Fake the app-start snapshot of the current state (the desktop backend
     // does this in Rust; MemFS snapshots don't copy).
@@ -503,7 +508,7 @@ describe("backups", () => {
 
 describe("rename", () => {
   it("moves the whole class folder", async () => {
-    await repo.saveStudents(DIR, CLS, [{ id: "s1", firstName: "A", lastName: "B", gender: "", flags: "", notes: "" }]);
+    await repo.saveStudents(DIR, CLS, [{ id: "s1", firstName: "A", lastName: "B", adamNo: "", gender: "", flags: "", notes: "" }]);
     await repo.renameClass(DIR, CLS, "8A-Science");
     await repo.saveClassInfo(DIR, { name: "8A-Science", year: "8", subject: "Science", room: "", notes: "", archived: false, color: "" });
     const students = await repo.loadStudents(DIR, "8A-Science");
