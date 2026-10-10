@@ -9,6 +9,8 @@ import {
   gridCompletion,
   histogram,
   overallPercent,
+  taskShares,
+  weightedMark,
   questionAverages,
   rankByScore,
   rankStudents,
@@ -27,6 +29,7 @@ import {
   NO_ANSWER_BEHAVIOUR,
   QuestionMark,
   Student,
+  defaultKind,
 } from "./types";
 
 const mkAssessment = (id: string, total: number, date = "2026-01-01"): Assessment => ({
@@ -37,6 +40,8 @@ const mkAssessment = (id: string, total: number, date = "2026-01-01"): Assessmen
   category: "Test",
   questionCount: 1,
   contentArea: "",
+  kind: "informal",
+  weight: 1,
 });
 
 describe("attendanceSummary", () => {
@@ -119,7 +124,10 @@ describe("histogram", () => {
   });
 });
 
-describe("overallPercent", () => {
+describe("overallPercent / weightedMark", () => {
+  const task = (id: string, total: number, kind: "informal" | "exam", weight = 1) => ({ ...mkAssessment(id, total), kind, weight });
+  const mark = (assessmentId: string, m: number): Mark => ({ assessmentId, studentId: "s1", mark: m, comment: "" });
+
   it("averages assessment percentages equally", () => {
     const assessments = [mkAssessment("a1", 100), mkAssessment("a2", 50)];
     const marks: Mark[] = [
@@ -131,6 +139,53 @@ describe("overallPercent", () => {
 
   it("returns null with no marks", () => {
     expect(overallPercent("s1", [mkAssessment("a1", 100)], [])).toBeNull();
+  });
+
+  it("counts each task by its weight within its side", () => {
+    const tests = [task("t1", 100, "informal", 1), task("t2", 100, "informal", 3)];
+    // (40×1 + 80×3) / 4 = 70
+    expect(overallPercent("s1", tests, [mark("t1", 40), mark("t2", 80)])).toBeCloseTo(70);
+  });
+
+  it("blends informal and exam by the grade's split", () => {
+    const tasks = [task("t1", 50, "informal"), task("t2", 100, "informal"), task("x1", 200, "exam")];
+    const marks = [mark("t1", 40), mark("t2", 60), mark("x1", 100)]; // informal 80 and 60 → 70; exam 50
+    expect(weightedMark("s1", tasks, marks, 75)).toEqual({ informal: 70, exam: 50, overall: 70 * 0.25 + 50 * 0.75 });
+    expect(overallPercent("s1", tasks, marks, 40)).toBeCloseTo(70 * 0.6 + 50 * 0.4);
+  });
+
+  it("uses the side that has marks alone until the other has some", () => {
+    const tasks = [task("t1", 100, "informal"), task("x1", 100, "exam")];
+    expect(overallPercent("s1", tasks, [mark("t1", 64)], 75)).toBeCloseTo(64); // exam not written yet
+    expect(overallPercent("s1", tasks, [mark("x1", 52)], 75)).toBeCloseTo(52);
+  });
+
+  it("leaves out weight 0 tasks and unmarked (absent) entries", () => {
+    const tasks = [task("t1", 100, "informal", 0), task("t2", 100, "informal")];
+    const marks = [mark("t1", 10), mark("t2", 90), { assessmentId: "t3", studentId: "s1", mark: null, comment: "" }];
+    expect(overallPercent("s1", tasks, marks)).toBeCloseTo(90);
+  });
+
+  it("gives no mark when the only side a student has counts 0%", () => {
+    const tasks = [task("t1", 100, "informal"), task("x1", 100, "exam")];
+    expect(overallPercent("s1", tasks, [mark("t1", 70)], 100)).toBeNull();
+  });
+});
+
+describe("taskShares", () => {
+  const task = (id: string, kind: "informal" | "exam", weight = 1) => ({ ...mkAssessment(id, 50), kind, weight });
+
+  it("splits each side's share by weight, so the shares add up to 100", () => {
+    const shares = taskShares([task("t1", "informal"), task("t2", "informal", 3), task("x1", "exam")], 60);
+    expect(shares.get("t1")).toBeCloseTo(10); // 40% informal × 1/4
+    expect(shares.get("t2")).toBeCloseTo(30); // 40% × 3/4
+    expect(shares.get("x1")).toBeCloseTo(60);
+  });
+
+  it("gives a side with no tasks' share to the other, and weight 0 nothing", () => {
+    const shares = taskShares([task("t1", "informal"), task("t2", "informal", 0)], 75);
+    expect(shares.get("t1")).toBeCloseTo(100);
+    expect(shares.get("t2")).toBe(0);
   });
 });
 
@@ -214,7 +269,7 @@ describe("per-question grid helpers", () => {
     expect(studentProvisional("s4", questions, qmarks)).toMatchObject({ total: 0, maxSoFar: 0, answered: 0, pct: null });
   });
 
-  it("rankStudents ranks by total, excludes non-starters, averages ties", () => {
+  it("rankStudents ranks by total, excludes non-starters", () => {
     const ranks = rankStudents(ids, questions, qmarks);
     expect(ranks.get("s2")).toBe(1); // 24, highest
     expect(ranks.get("s1")).toBe(2); // 18
@@ -222,24 +277,25 @@ describe("per-question grid helpers", () => {
     expect(ranks.has("s4")).toBe(false); // no marks → unranked
   });
 
-  it("rankStudents averages tied totals", () => {
+  it("rankStudents gives tied totals the better place", () => {
     const tied: QuestionMark[] = [
       { assessmentId: "a1", studentId: "s1", number: 1, mark: 10 },
       { assessmentId: "a1", studentId: "s2", number: 1, mark: 10 },
       { assessmentId: "a1", studentId: "s3", number: 1, mark: 4 },
     ];
     const ranks = rankStudents(["s1", "s2", "s3"], questions, tied);
-    expect(ranks.get("s1")).toBe(1.5); // tied for 1st/2nd
-    expect(ranks.get("s2")).toBe(1.5);
+    expect(ranks.get("s1")).toBe(1); // tied for first: both 1
+    expect(ranks.get("s2")).toBe(1);
     expect(ranks.get("s3")).toBe(3);
   });
 
-  it("rankByScore ranks highest first and averages ties, fractional scores too", () => {
-    const ranks = rankByScore(new Map([["a", 61.5], ["b", 80], ["c", 61.5], ["d", 40]]));
-    expect(ranks.get("b")).toBe(1);
-    expect(ranks.get("a")).toBe(2.5); // tied for 2nd/3rd
-    expect(ranks.get("c")).toBe(2.5);
-    expect(ranks.get("d")).toBe(4);
+  it("rankByScore ranks highest first; ties share the better place and the next skips", () => {
+    const ranks = rankByScore(new Map([["a", 61.5], ["b", 80], ["c", 61.5], ["d", 40], ["e", 80]]));
+    expect(ranks.get("b")).toBe(1); // b and e tied for first
+    expect(ranks.get("e")).toBe(1);
+    expect(ranks.get("a")).toBe(3); // a and c tied for third
+    expect(ranks.get("c")).toBe(3);
+    expect(ranks.get("d")).toBe(5);
     expect(rankByScore(new Map()).size).toBe(0);
   });
 
@@ -254,14 +310,21 @@ describe("symbolForPct", () => {
   it("maps percentages to the SA 7-level code at each boundary", () => {
     expect(symbolForPct(100)).toBe("7");
     expect(symbolForPct(80)).toBe("7");
-    expect(symbolForPct(79.9)).toBe("6");
+    expect(symbolForPct(79.4)).toBe("6");
     expect(symbolForPct(70)).toBe("6");
     expect(symbolForPct(60)).toBe("5");
     expect(symbolForPct(50)).toBe("4");
     expect(symbolForPct(40)).toBe("3");
     expect(symbolForPct(30)).toBe("2");
-    expect(symbolForPct(29.9)).toBe("1");
+    expect(symbolForPct(29.4)).toBe("1");
     expect(symbolForPct(0)).toBe("1");
+  });
+
+  it("grades the rounded %, the figure the screens show", () => {
+    expect(symbolForPct(79.5)).toBe("7"); // shown as 80%
+    expect(symbolForPct(79.6)).toBe("7");
+    expect(symbolForPct(69.49)).toBe("5"); // shown as 69%
+    expect(symbolForPct(29.5)).toBe("2");
   });
 
   it("is blank when there's no percentage to grade", () => {
@@ -296,15 +359,29 @@ describe("bathroom visit durations", () => {
 
 describe("letterForPct / gradeForPct", () => {
   it("gives A–F at each band edge", () => {
-    const cases: Array<[number, string]> = [[100, "A"], [80, "A"], [79.9, "B"], [70, "B"], [69.9, "C"], [60, "C"], [50, "D"], [49.9, "E"], [40, "E"], [39.9, "F"], [0, "F"]];
+    const cases: Array<[number, string]> = [[100, "A"], [80, "A"], [79.4, "B"], [70, "B"], [69.4, "C"], [60, "C"], [50, "D"], [49.4, "E"], [40, "E"], [39.4, "F"], [0, "F"]];
     for (const [pct, letter] of cases) expect(letterForPct(pct)).toBe(letter);
     expect(letterForPct(null)).toBe("");
     expect(letterForPct(NaN)).toBe("");
+  });
+
+  it("grades the rounded % too", () => {
+    expect(letterForPct(79.5)).toBe("A");
+    expect(letterForPct(39.6)).toBe("E");
+    expect(gradeForPct(59.5, "symbol")).toBe("C");
+    expect(gradeForPct(59.5, "level")).toBe("5");
   });
 
   it("follows the chosen scale", () => {
     expect(gradeForPct(72, "level")).toBe("6");
     expect(gradeForPct(72, "symbol")).toBe("B");
     expect(gradeForPct(null, "symbol")).toBe("");
+  });
+});
+
+describe("defaultKind", () => {
+  it("counts a category naming an exam as an examination, anything else as informal", () => {
+    for (const c of ["Exam", "Examination", "June exam", "Prelim Exams", "Mid-year examinations"]) expect(defaultKind(c)).toBe("exam");
+    for (const c of ["Test", "Quiz", "Example task", "Practical", ""]) expect(defaultKind(c)).toBe("informal");
   });
 });

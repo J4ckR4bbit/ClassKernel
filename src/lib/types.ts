@@ -174,6 +174,18 @@ export interface Assessment {
   questionCount: number;
   /** Content area the whole test sits in (e.g. "Chemistry"). "" = mixed/none. */
   contentArea: string;
+  /** Which side of the weighted mark it counts towards (see stats.weightedMark). */
+  kind: AssessmentKind;
+  /** Its weight within its side: 1 = normal, 2 = counts double, 0 = doesn't count. */
+  weight: number;
+}
+
+/** Informal tasks (tests, practicals, projects…) or examinations. */
+export type AssessmentKind = "informal" | "exam";
+
+/** Examination when the category says so (Exam, Examination, June exam…), else informal: the default for a new or older assessment. */
+export function defaultKind(category: string): AssessmentKind {
+  return /\bexam(s|inations?)?\b/i.test(category) ? "exam" : "informal";
 }
 
 export interface Mark {
@@ -324,6 +336,20 @@ export interface UserPrefs {
   reportSchool: string;
   /** The teacher's name as printed on parent reports; "" = left off. */
   reportTeacher: string;
+  /**
+   * Per grade (ClassInfo.year), the examinations' share of the weighted mark in
+   * percent; informal tasks get the rest. A grade not listed uses
+   * DEFAULT_EXAM_WEIGHT.
+   */
+  examWeights: Record<string, number>;
+}
+
+/** The examinations' share (%) of the weighted mark for a grade nobody has set. */
+export const DEFAULT_EXAM_WEIGHT = 50;
+
+/** The examinations' share (%) of the weighted mark for a grade. */
+export function examWeightFor(prefs: Pick<UserPrefs, "examWeights">, grade: string): number {
+  return prefs.examWeights[grade] ?? DEFAULT_EXAM_WEIGHT;
 }
 
 export const DEFAULT_USER_PREFS: UserPrefs = {
@@ -343,6 +369,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   gradeScale: "level",
   reportSchool: "",
   reportTeacher: "",
+  examWeights: {},
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {

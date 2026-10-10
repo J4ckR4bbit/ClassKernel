@@ -14,7 +14,7 @@ async function openTest(page: Page, title: string, button: "View" | "Enter marks
 }
 
 /** The rank cells (the last of the right-pinned columns) of the students. */
-const rankCells = (page: Page) => page.locator(".mark-grid tbody td.sticky-right:not(.second):not(.third):not(.fourth)");
+const rankCells = (page: Page) => page.locator(".mark-grid tbody td.sticky-right:not(.second):not(.third):not(.fourth):not(.fifth)");
 
 test("View on a per-question test shows the grid's numbers with nothing to type in", async ({ page }) => {
   await openTest(page, "Forces & energy test", "Enter marks");
@@ -68,11 +68,11 @@ test("the markbook shows every test, each student's average and rank, and opens 
   await expect(page.locator(".mark-grid input")).toHaveCount(0);
   await expect(page.locator(".mark-grid thead th.col-test .test-link")).toHaveCount(tests);
 
-  // Each average sits within the student's own test percentages.
+  // Each weighted mark sits within the student's own test percentages.
   const rows = page.locator(".mark-grid tbody tr");
   for (let i = 0; i < 3; i++) {
     const cells = (await rows.nth(i).locator("td.col-test").allTextContents()).filter((t) => t.trim()).map(Number);
-    const avg = Number(await rows.nth(i).locator("td.divider").textContent());
+    const avg = Number(await rows.nth(i).locator("td.final").textContent());
     expect(avg).toBeGreaterThanOrEqual(Math.min(...cells) - 1);
     expect(avg).toBeLessThanOrEqual(Math.max(...cells) + 1);
   }
@@ -112,4 +112,70 @@ test("the markbook keeps its headings and class average in place while the stude
     return wrap.getBoundingClientRect().top + wrap.clientTop + wrap.clientHeight - row.bottom;
   });
   expect(Math.abs(gap)).toBeLessThan(2);
+});
+
+/** The markbook's cells for one student row, by column. */
+async function markbookRow(page: Page, surname: string) {
+  const row = page.locator(".mark-grid tbody tr", { hasText: surname });
+  const num = async (sel: string) => {
+    const t = (await row.locator(sel).textContent())?.trim() ?? "";
+    return t ? Number(t) : null;
+  };
+  return { informal: await num("td.fifth"), exam: await num("td.fourth"), mark: await num("td.final") };
+}
+
+test("the markbook blends informal tasks and exams by the grade's split from Settings", async ({ page }) => {
+  // The demo's Mid-term exam counts as an examination; the rest are informal, all at weight 1.
+  await nav(page, "Settings");
+  await page.getByText("Assessments", { exact: true }).first().click();
+  const examShare = page.getByLabel(/Examinations' share/);
+  await examShare.fill("75");
+  await examShare.press("Enter");
+  await expect(page.locator(".weighting-table tbody td").nth(1)).toHaveText("25%");
+
+  await nav(page, "Marks");
+  await page.getByRole("button", { name: "Markbook" }).click();
+  await reveal(page);
+  await expect(page.locator(".stat-tiles")).toContainText("25 / 75");
+  await expect(page.locator(".mark-grid thead th.col-test", { hasText: "Mid-term exam" })).toContainText("Exam · 75%");
+  const { informal, exam, mark } = await markbookRow(page, "Clark");
+  expect(informal).not.toBeNull();
+  expect(exam).not.toBeNull();
+  expect(Math.abs(mark! - (informal! * 0.25 + exam! * 0.75))).toBeLessThanOrEqual(1); // the columns are rounded
+});
+
+test("a task's kind and weight are set in the list, and its share follows", async ({ page }) => {
+  await nav(page, "Marks");
+  const row = page.locator("main table.data tbody tr", { hasText: "Cells test" });
+  await expect(row).toContainText("16,7%"); // three informal tasks share 50%
+  await row.getByLabel("Weight").fill("2");
+  await expect(row).toContainText("25%"); // 50% × 2/4
+  await row.getByLabel("Counts as").selectOption("exam");
+  await expect(row).toContainText("33,3%"); // two exams at weights 1 and 2 share 50%
+});
+
+test("marks take a decimal comma and show one", async ({ page }) => {
+  await nav(page, "Marks");
+  await page.locator("tr", { hasText: "Forces & energy test" }).getByRole("button", { name: "Enter marks" }).click();
+  await reveal(page);
+  const row = page.locator(".mark-grid tbody tr").nth(1);
+  await row.locator("input.grid-input").first().fill("3,5");
+  await expect(row.locator("td.sticky-right.fourth")).toHaveText(/,5$/); // the total
+  await page.getByRole("button", { name: "Done" }).click();
+  await page.locator("tr", { hasText: "Forces & energy test" }).getByRole("button", { name: "View" }).click();
+  await expect(page.locator(".mark-grid tbody tr").nth(1).locator("td.col-q").first()).toHaveText("3,5");
+  await expect(page.locator(".mark-grid tfoot")).not.toContainText(".");
+});
+
+test("students tied for first both rank 1, and the next is 3rd", async ({ page }) => {
+  await openTest(page, "Mid-term exam", "Enter marks");
+  const marks = page.locator(".quick-mark-row input.mark-input");
+  await marks.nth(0).fill("80");
+  await marks.nth(1).fill("80");
+  await page.getByRole("button", { name: "Done" }).click();
+  await page.locator("tr", { hasText: "Mid-term exam" }).getByRole("button", { name: "View" }).click();
+  const ranks = (await page.locator(".mark-grid tbody td:nth-child(7)").allTextContents()).map((t) => t.trim());
+  expect(ranks.slice(0, 2)).toEqual(["1", "1"]);
+  expect(ranks).toContain("3");
+  expect(ranks).not.toContain("2");
 });

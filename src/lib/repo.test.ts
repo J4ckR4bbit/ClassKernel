@@ -289,7 +289,7 @@ describe("marks.csv", () => {
 describe("assessments.csv", () => {
   it("round-trips question count and content area", async () => {
     await repo.saveAssessments(DIR, CLS, [
-      { id: "a1", title: "Phys Test 1", date: "2026-02-01", totalMarks: 85, category: "Test", questionCount: 6, contentArea: "Physics" },
+      { id: "a1", title: "Phys Test 1", date: "2026-02-01", totalMarks: 85, category: "Test", questionCount: 6, contentArea: "Physics", kind: "informal", weight: 1 },
     ]);
     const loaded = await repo.loadAssessments(DIR, CLS);
     expect(loaded[0]).toEqual({
@@ -300,7 +300,18 @@ describe("assessments.csv", () => {
       category: "Test",
       questionCount: 6,
       contentArea: "Physics",
+      kind: "informal",
+      weight: 1,
     });
+  });
+
+  it("round-trips an examination and its weight", async () => {
+    await repo.saveAssessments(DIR, CLS, [
+      { id: "a1", title: "June exam", date: "2026-06-01", totalMarks: 150, category: "Exam", questionCount: 1, contentArea: "", kind: "exam", weight: 2.5 },
+      { id: "a2", title: "Practice", date: "2026-05-01", totalMarks: 20, category: "Test", questionCount: 1, contentArea: "", kind: "informal", weight: 0 },
+    ]);
+    const loaded = await repo.loadAssessments(DIR, CLS);
+    expect(loaded.map((a) => [a.kind, a.weight])).toEqual([["exam", 2.5], ["informal", 0]]);
   });
 
   it("defaults questionCount to 1 for legacy rows without the column", async () => {
@@ -311,6 +322,18 @@ describe("assessments.csv", () => {
     );
     const loaded = await repo.loadAssessments(DIR, CLS);
     expect(loaded[0]).toMatchObject({ id: "a1", totalMarks: 50, questionCount: 1, contentArea: "" });
+    // That early format's weight meant the same as today's; with no kind column, the category decides.
+    expect(loaded[0]).toMatchObject({ weight: 2, kind: "informal" });
+  });
+
+  it("files without kind or weight count exams by category, everything at weight 1", async () => {
+    await fs.writeAtomic(
+      `${DIR}/classes/${CLS}/assessments.csv`,
+      "assessment_id,title,date,total_marks,category,question_count,content_area\r\n" +
+        "a1,T1,2026-01-01,50,Test,1,\r\na2,Prelim,2026-08-01,150,Prelim Exam,1,\r\n",
+    );
+    const loaded = await repo.loadAssessments(DIR, CLS);
+    expect(loaded.map((a) => [a.kind, a.weight])).toEqual([["informal", 1], ["exam", 1]]);
   });
 });
 
@@ -395,6 +418,7 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       gradeScale: "symbol" as const,
       reportSchool: "St Benedict's College",
       reportTeacher: "Mr K. Hilder",
+      examWeights: { "10": 60, "12": 75, "8": 37.5 },
     };
     await repo.saveUserPrefs(DIR, prefs);
     expect(await repo.loadUserPrefs(DIR)).toEqual(prefs);

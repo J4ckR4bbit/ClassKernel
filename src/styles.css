@@ -579,6 +579,9 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .desk-pill.good { background: #e3f0e8; border-color: #9cc7ac; color: #1f6b3f; }
 .desk-pill.bad { background: #f7e0dd; border-color: #d9a59c; color: #9c2f1f; }
 
+/* an assessment's weight, typed in its row on the Marks page */
+.weight-input, table.data td input.weight-input { width: 60px; min-height: 32px; padding: 3px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+
 /* ---------- multi-question marking grid ---------- */
 .mark-grid-wrap { overflow-x: auto; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); background: var(--panel); }
 .mark-grid { border-collapse: separate; border-spacing: 0; font-size: 13px; }
@@ -623,6 +626,16 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .mark-grid.read-only tbody td { padding-top: 4px; padding-bottom: 4px; font-variant-numeric: tabular-nums; }
 .mark-grid .col-comment { min-width: 220px; text-align: left; white-space: normal; }
 .mark-grid .col-test { width: 88px; min-width: 88px; max-width: 88px; }
+/* markbook: five pinned columns on the right (Informal, Exam, Mark, level, Rank), a little wider; a taller first heading row for two-line titles and the share */
+.markbook .col-total { width: 62px; min-width: 62px; }
+.markbook .sticky-right.second { right: 62px; }
+.markbook .sticky-right.third { right: 124px; }
+.markbook .sticky-right.fourth { right: 186px; }
+.markbook .sticky-right.fifth { right: 248px; }
+.markbook .sticky-right.plain { border-left: none; }
+.markbook td.final { font-weight: 600; }
+.mark-grid.markbook thead tr:first-child th { height: 58px; }
+.mark-grid.markbook thead .topic-row th { top: 58px; }
 .mark-grid .test-link { display: block; width: 100%; text-align: center; }
 .mark-grid .test-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; white-space: normal; overflow-wrap: anywhere; font-size: 12px; line-height: 15px; }
 

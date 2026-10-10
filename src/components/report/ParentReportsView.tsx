@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useApp } from "../../store/appStore";
+import { useApp, useExamWeight } from "../../store/appStore";
 import { today } from "../../lib/id";
 import { ClassData } from "../../lib/insights";
 import PrivacyGate from "../PrivacyGate";
@@ -25,9 +25,10 @@ export default function ParentReportsView() {
     sensitiveRevealed,
     setView,
   } = useApp();
+  const examWeight = useExamWeight();
   const data: ClassData = useMemo(
-    () => ({ students, attendance, behaviourEvents, bathroomVisits, assessments, marks, assessmentQuestions, questionMarks, behaviourCodes }),
-    [students, attendance, behaviourEvents, bathroomVisits, assessments, marks, assessmentQuestions, questionMarks, behaviourCodes],
+    () => ({ students, attendance, behaviourEvents, bathroomVisits, assessments, marks, assessmentQuestions, questionMarks, behaviourCodes, examWeight }),
+    [students, attendance, behaviourEvents, bathroomVisits, assessments, marks, assessmentQuestions, questionMarks, behaviourCodes, examWeight],
   );
   const ids = useMemo(
     () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)).map((s) => s.id),

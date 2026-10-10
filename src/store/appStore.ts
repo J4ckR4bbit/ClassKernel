@@ -14,6 +14,7 @@ import {
   AttendanceEntry,
   BathroomVisit,
   BehaviourCode,
+  examWeightFor,
   BehaviourEvent,
   ClassInfo,
   CognitiveLevel,
@@ -740,3 +741,8 @@ export const useApp = create<AppState>((set, get) => {
   },
   };
 });
+
+/** The current class's grade split: the examinations' share (%) of the weighted mark. */
+export function useExamWeight(): number {
+  return useApp((s) => examWeightFor(s.userPrefs, s.classes.find((c) => c.name === s.currentClass)?.year ?? ""));
+}

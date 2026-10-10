@@ -52,8 +52,8 @@ beforeEach(async () => {
     { date: "2026-03-05", studentId: "s2", start: "2026-03-05T11:00:00.000Z", end: "" },
   ]);
   await repo.saveAssessments(DIR, CLS, [
-    { id: "a1", title: "Topic test 1", date: "2026-01-20", totalMarks: 20, category: "Test", questionCount: 2, contentArea: "Chemistry" },
-    { id: "a2", title: "Topic test 2", date: "2026-03-20", totalMarks: 50, category: "Test", questionCount: 1, contentArea: "Physics" },
+    { id: "a1", title: "Topic test 1", date: "2026-01-20", totalMarks: 20, category: "Test", questionCount: 2, contentArea: "Chemistry", kind: "informal", weight: 1 },
+    { id: "a2", title: "Topic test 2", date: "2026-03-20", totalMarks: 50, category: "Test", questionCount: 1, contentArea: "Physics", kind: "informal", weight: 1 },
   ]);
   await repo.saveMarks(DIR, CLS, [
     { assessmentId: "a1", studentId: "s1", mark: 18, comment: "excellent" },

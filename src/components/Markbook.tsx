@@ -1,7 +1,8 @@
 import { useMemo } from "react";
-import { useApp } from "../store/appStore";
+import { useApp, useExamWeight } from "../store/appStore";
 import { Assessment, studentName } from "../lib/types";
-import { GRADE_SCALES, assessmentStats, gradeForPct, overallPercent, percentage, rankByScore } from "../lib/stats";
+import { GRADE_SCALES, assessmentStats, gradeForPct, percentage, rankByScore, taskShares, weightedMark } from "../lib/stats";
+import { fmtDecimal } from "../lib/format";
 import { positionTint, rankTints } from "../lib/listTint";
 import Icon from "./Icon";
 
@@ -15,12 +16,14 @@ function shortDate(iso: string): string {
 
 /**
  * Every assessment's marks for the class on one read-only page: students down
- * the side, assessments across the top (newest first) as percentages, then each
- * student's average over the tests they have a mark for, its level/symbol and
- * their rank on it. A test's heading opens that test's marks.
+ * the side, assessments across the top (newest first) as percentages, each with
+ * its share of the final mark. Then each student's informal and examination
+ * averages, their weighted mark (the grade's split, Settings › Assessments), its
+ * level/symbol and their rank on it. A test's heading opens that test's marks.
  */
 export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpen: (a: Assessment) => void }) {
   const { students, assessments, marks, userPrefs } = useApp();
+  const examWeight = useExamWeight();
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
   const sorted = useMemo(
@@ -28,22 +31,28 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
     [students],
   );
   const tests = useMemo(() => [...assessments].sort((a, b) => b.date.localeCompare(a.date)), [assessments]);
+  const shares = taskShares(assessments, examWeight);
 
   const pctOf = (studentId: string, a: Assessment) => {
     const m = marks.find((m) => m.assessmentId === a.id && m.studentId === studentId);
     return m ? percentage(m, a) : null;
   };
-  // The same average the dashboards use: every test counts equally.
-  const averages = new Map<string, number>();
-  for (const s of sorted) {
-    const avg = overallPercent(s.id, assessments, marks);
-    if (avg !== null) averages.set(s.id, avg);
-  }
-  const ranks = rankByScore(averages);
+  // The same weighted mark the dashboards and parent reports use.
+  const weighted = new Map(sorted.map((s) => [s.id, weightedMark(s.id, assessments, marks, examWeight)]));
+  const finals = new Map<string, number>();
+  for (const [id, w] of weighted) if (w.overall !== null) finals.set(id, w.overall);
+  const ranks = rankByScore(finals);
   const rankTint = rankTints(ranks);
   const testMeans = tests.map((a) => assessmentStats(a, marks).mean);
-  const classAverage = averages.size ? Math.round([...averages.values()].reduce((a, b) => a + b, 0) / averages.size) : null;
-  const top = sorted.find((s) => ranks.get(s.id) === Math.min(...ranks.values())); // a tie for first shares rank 1.5
+  const meanOf = (values: Array<number | null>) => {
+    const v = values.filter((x): x is number => x !== null);
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+  };
+  const classInformal = meanOf([...weighted.values()].map((w) => w.informal));
+  const classExam = meanOf([...weighted.values()].map((w) => w.exam));
+  const classAverage = meanOf([...finals.values()]);
+  const top = sorted.find((s) => ranks.get(s.id) === 1);
+  const pct = (n: number | null) => (n !== null ? String(Math.round(n)) : "");
 
   return (
     <div className="marking-view">
@@ -59,12 +68,18 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
           <div className="value">{tests.length}</div>
           <div className="label">{tests.length === 1 ? "assessment" : "assessments"}</div>
         </div>
+        <div className="stat-tile" title="The grade's split, set under Settings › Assessments">
+          <div className="value">
+            {fmtDecimal(100 - examWeight, 1)} / {fmtDecimal(examWeight, 1)}
+          </div>
+          <div className="label">informal / exam</div>
+        </div>
         <div className="stat-tile">
-          <div className="value">{classAverage !== null ? `${classAverage}%` : "—"}</div>
+          <div className="value">{classAverage !== null ? `${Math.round(classAverage)}%` : "—"}</div>
           <div className="label">class average</div>
         </div>
         <div className="stat-tile">
-          <div className="value">{top ? `${Math.round(averages.get(top.id)!)}%` : "—"}</div>
+          <div className="value">{top ? `${Math.round(finals.get(top.id)!)}%` : "—"}</div>
           <div className="label">{top ? `top: ${studentName(top)}` : "top of class"}</div>
         </div>
       </div>
@@ -78,13 +93,25 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
               <th className="col-name sticky-left third">Name</th>
               {tests.map((a) => (
                 <th key={a.id} className="col-test">
-                  <button className="link-btn test-link" onClick={() => onOpen(a)} title={`${a.title} (out of ${a.totalMarks}): open its marks`}>
+                  <button className="link-btn test-link" onClick={() => onOpen(a)} title={`${a.title} (out of ${fmtDecimal(a.totalMarks)}): open its marks`}>
                     <span className="test-title">{a.title}</span>
                   </button>
+                  <div className="q-sub" title="Its share of the final mark">
+                    {a.kind === "exam" ? "Exam · " : ""}
+                    {fmtDecimal(shares.get(a.id) ?? 0, 1)}%
+                  </div>
                 </th>
               ))}
-              <th className="col-total sticky-right third divider">
-                Avg
+              <th className="col-total sticky-right fifth divider" title="Weighted average of the informal tasks">
+                Informal
+                <div className="q-sub">%</div>
+              </th>
+              <th className="col-total sticky-right fourth plain" title="Weighted average of the examinations">
+                Exam
+                <div className="q-sub">%</div>
+              </th>
+              <th className="col-total sticky-right third" title="The two blended by the grade's split">
+                Mark
                 <div className="q-sub">%</div>
               </th>
               <th className="col-total sticky-right second" title={`${scaleInfo.label}: ${scaleInfo.key}`}>
@@ -101,14 +128,16 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
                   {shortDate(a.date)}
                 </th>
               ))}
-              <th className="sticky-right third divider"></th>
+              <th className="sticky-right fifth divider"></th>
+              <th className="sticky-right fourth plain"></th>
+              <th className="sticky-right third"></th>
               <th className="sticky-right second"></th>
               <th className="sticky-right"></th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((s, r) => {
-              const avg = averages.get(s.id);
+              const w = weighted.get(s.id)!;
               const rank = ranks.get(s.id);
               return (
                 <tr key={s.id}>
@@ -117,16 +146,15 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
                     {s.lastName}
                   </td>
                   <td className="col-name sticky-left third">{s.firstName}</td>
-                  {tests.map((a) => {
-                    const pct = pctOf(s.id, a);
-                    return (
-                      <td key={a.id} className="col-test">
-                        {pct !== null ? Math.round(pct) : ""}
-                      </td>
-                    );
-                  })}
-                  <td className="col-total sticky-right third divider">{avg !== undefined ? Math.round(avg) : ""}</td>
-                  <td className="col-total sticky-right second">{avg !== undefined ? gradeForPct(avg, scale) : ""}</td>
+                  {tests.map((a) => (
+                    <td key={a.id} className="col-test">
+                      {pct(pctOf(s.id, a))}
+                    </td>
+                  ))}
+                  <td className="col-total sticky-right fifth divider">{pct(w.informal)}</td>
+                  <td className="col-total sticky-right fourth plain">{pct(w.exam)}</td>
+                  <td className="col-total sticky-right third final">{pct(w.overall)}</td>
+                  <td className="col-total sticky-right second">{w.overall !== null ? gradeForPct(w.overall, scale) : ""}</td>
                   <td className="col-total sticky-right" style={rank != null ? { background: rankTint.get(s.id) } : undefined}>
                     {rank ?? ""}
                   </td>
@@ -135,7 +163,7 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={tests.length + 6} className="muted" style={{ padding: 16 }}>
+                <td colSpan={tests.length + 8} className="muted" style={{ padding: 16 }}>
                   Add students to the class first.
                 </td>
               </tr>
@@ -148,10 +176,12 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
               </th>
               {tests.map((a, i) => (
                 <td key={a.id} className="col-test">
-                  {testMeans[i] !== null ? Math.round(testMeans[i]!) : ""}
+                  {pct(testMeans[i])}
                 </td>
               ))}
-              <td className="sticky-right third divider">{classAverage ?? ""}</td>
+              <td className="sticky-right fifth divider">{pct(classInformal)}</td>
+              <td className="sticky-right fourth plain">{pct(classExam)}</td>
+              <td className="sticky-right third">{pct(classAverage)}</td>
               <td className="sticky-right second">{classAverage !== null ? gradeForPct(classAverage, scale) : ""}</td>
               <td className="sticky-right"></td>
             </tr>

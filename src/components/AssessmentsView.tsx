@@ -1,8 +1,9 @@
 import { type KeyboardEvent as ReactKeyboardEvent, useMemo, useRef, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useApp, useExamWeight } from "../store/appStore";
 import { newId, today } from "../lib/id";
-import { Assessment, AssessmentQuestion, Mark, QuestionMark, studentName } from "../lib/types";
-import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankByScore, rankStudents, studentProvisional } from "../lib/stats";
+import { Assessment, AssessmentKind, AssessmentQuestion, Mark, QuestionMark, defaultKind, studentName } from "../lib/types";
+import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankByScore, rankStudents, studentProvisional, taskShares } from "../lib/stats";
+import { fmtDecimal, parseDecimal } from "../lib/format";
 import { areasForGrade, shortLabel, subtopicsForGrade } from "../lib/topics";
 import { positionTint, rankTints } from "../lib/listTint";
 import PrivacyGate from "./PrivacyGate";
@@ -22,6 +23,9 @@ export default function AssessmentsView() {
   const setup = assessments.find((a) => a.id === setupId) ?? null;
   const viewing = assessments.find((a) => a.id === viewingId) ?? null;
   const ordered = [...assessments].sort((a, b) => b.date.localeCompare(a.date));
+  const shares = taskShares(assessments, useExamWeight());
+  const update = (a: Assessment, patch: Partial<Assessment>) =>
+    void setAssessments(assessments.map((x) => (x.id === a.id ? { ...x, ...patch } : x)));
 
   const questionsFor = (id: string) =>
     assessmentQuestions.filter((q) => q.assessmentId === id).sort((a, b) => a.number - b.number);
@@ -110,12 +114,16 @@ export default function AssessmentsView() {
         <thead>
           <tr>
             <th>Title</th>
-            <th style={{ width: 110 }}>Date</th>
-            <th style={{ width: 110 }}>Content area</th>
-            <th style={{ width: 90 }}>Out of</th>
-            <th style={{ width: 90 }}>Questions</th>
-            <th style={{ width: 110 }}>Marked</th>
-            <th style={{ width: 100 }}>Class mean</th>
+            <th style={{ width: 100 }}>Date</th>
+            <th style={{ width: 100 }}>Content area</th>
+            <th style={{ width: 64 }}>Out of</th>
+            <th style={{ width: 80 }}>Questions</th>
+            <th style={{ width: 140 }}>Counts as</th>
+            <th style={{ width: 120 }} title="Its weight among tasks of the same kind (1 = normal, 2 = counts double, 0 = doesn't count), and the share of the final mark that gives it">
+              Weight · share
+            </th>
+            <th style={{ width: 80 }}>Marked</th>
+            <th style={{ width: 90 }}>Class mean</th>
             <th style={{ width: 320 }}></th>
           </tr>
         </thead>
@@ -129,6 +137,18 @@ export default function AssessmentsView() {
                 <td>{a.contentArea || <span className="muted">—</span>}</td>
                 <td>{a.totalMarks}</td>
                 <td>{a.questionCount > 1 ? a.questionCount : <span className="muted">1</span>}</td>
+                <td>
+                  <select value={a.kind} onChange={(e) => update(a, { kind: e.target.value as AssessmentKind })} aria-label="Counts as">
+                    <option value="informal">Informal</option>
+                    <option value="exam">Examination</option>
+                  </select>
+                </td>
+                <td>
+                  <div className="row nowrap">
+                    <WeightInput value={a.weight} onChange={(weight) => update(a, { weight })} />
+                    <span className="muted">{fmtDecimal(shares.get(a.id) ?? 0, 1)}%</span>
+                  </div>
+                </td>
                 <td>
                   {stats.entered}/{students.length}
                 </td>
@@ -156,7 +176,7 @@ export default function AssessmentsView() {
           })}
           {assessments.length === 0 && (
             <tr>
-              <td colSpan={8} className="muted" style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={10} className="muted" style={{ textAlign: "center", padding: 24 }}>
                 No assessments yet — create one, then use the quick-marking tool while you mark.
               </td>
             </tr>
@@ -189,10 +209,15 @@ function NewAssessmentModal({ grade, onClose, onCreate }: { grade: string; onClo
   const [questions, setQuestions] = useState("1");
   const [contentArea, setContentArea] = useState("");
   const [category, setCategory] = useState("Test");
+  // Follows the category ("Exam" → Examination) until chosen by hand.
+  const [kindChoice, setKindChoice] = useState<AssessmentKind | null>(null);
+  const kind = kindChoice ?? defaultKind(category);
+  const [weight, setWeight] = useState("1");
 
   const qCount = Math.max(1, Math.floor(Number(questions) || 1));
   const single = qCount === 1;
-  const valid = title.trim() && (!single || Number(totalMarks) > 0);
+  const weightValue = parseDecimal(weight);
+  const valid = title.trim() && (!single || parseDecimal(totalMarks) > 0) && weightValue >= 0;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -217,11 +242,23 @@ function NewAssessmentModal({ grade, onClose, onCreate }: { grade: string; onClo
           {single && (
             <>
               <label>Out of</label>
-              <input type="number" min={1} value={totalMarks} onChange={(e) => setTotalMarks(e.target.value)} />
+              <input inputMode="decimal" value={totalMarks} onChange={(e) => setTotalMarks(e.target.value)} />
             </>
           )}
           <label>Category</label>
           <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Test / Quiz / Homework / Exam" />
+          <label>Counts as</label>
+          <select value={kind} onChange={(e) => setKindChoice(e.target.value as AssessmentKind)}>
+            <option value="informal">Informal task</option>
+            <option value="exam">Examination</option>
+          </select>
+          <label>Weight</label>
+          <input
+            inputMode="decimal"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            title="Among tasks of the same kind: 1 = normal, 2 = counts double, 0 = doesn't count"
+          />
         </div>
         {!single && (
           <p className="muted" style={{ margin: "0 0 4px" }}>
@@ -238,10 +275,12 @@ function NewAssessmentModal({ grade, onClose, onCreate }: { grade: string; onClo
                 id: newId("a"),
                 title: title.trim(),
                 date,
-                totalMarks: single ? Number(totalMarks) : 0,
+                totalMarks: single ? parseDecimal(totalMarks) : 0,
                 category: category.trim(),
                 questionCount: qCount,
                 contentArea,
+                kind,
+                weight: weightValue,
               })
             }
           >
@@ -262,16 +301,38 @@ interface QRow {
 /**
  * Clamp a typed grid cell to [0, max], mirroring the reference app: over-max or
  * negative entries are silently corrected rather than flagged. In-range text is
- * returned untouched so part-typed values (e.g. "1.") aren't disturbed.
+ * returned untouched so part-typed values (e.g. "1,") aren't disturbed. A
+ * decimal comma or point both work.
  */
 function clampCell(raw: string, max: number): string {
   const t = raw.trim();
   if (t === "") return "";
-  const n = Number(t);
+  const n = parseDecimal(t);
   if (!Number.isFinite(n)) return raw;
-  if (n > max) return String(max);
+  if (n > max) return fmtDecimal(max);
   if (n < 0) return "0";
   return raw;
+}
+
+/**
+ * An assessment's weight, typed with a decimal comma or point. Saved as you
+ * type whenever it reads as a number of 0 or more; leaving the box shows the
+ * saved value again.
+ */
+function WeightInput({ value, onChange }: { value: number; onChange: (weight: number) => void }) {
+  return (
+    <input
+      className="weight-input"
+      inputMode="decimal"
+      aria-label="Weight"
+      defaultValue={fmtDecimal(value)}
+      onChange={(e) => {
+        const w = parseDecimal(e.target.value);
+        if (w >= 0) onChange(w);
+      }}
+      onBlur={(e) => (e.target.value = fmtDecimal(value))}
+    />
+  );
 }
 
 /**
@@ -451,7 +512,7 @@ function QuestionGrid({
   // total into marks.csv so the dashboard stays in sync. Reads fresh store state
   // so fast typing across cells never loses an edit.
   const setCell = (studentId: string, number: number, raw: string) => {
-    const value = raw.trim() === "" ? null : Number(raw);
+    const value = raw.trim() === "" ? null : parseDecimal(raw);
     if (value !== null && !Number.isFinite(value)) return;
     const store = useApp.getState();
     const restQM = store.questionMarks.filter(
@@ -650,7 +711,7 @@ function QuestionGrid({
                     if (readOnly) {
                       return (
                         <td key={q.number} className="col-q">
-                          {v ?? ""}
+                          {v != null ? fmtDecimal(v) : ""}
                         </td>
                       );
                     }
@@ -663,7 +724,7 @@ function QuestionGrid({
                           className={`grid-input ${over ? "over" : ""}`}
                           inputMode="decimal"
                           autoFocus={r === 0 && c === 0}
-                          defaultValue={v ?? ""}
+                          defaultValue={v != null ? fmtDecimal(v) : ""}
                           onFocus={(e) => e.currentTarget.select()}
                           onChange={(e) => {
                             const fixed = clampCell(e.target.value, q.marks);
@@ -675,7 +736,7 @@ function QuestionGrid({
                       </td>
                     );
                   })}
-                  <td className="col-total sticky-right fourth">{p.answered ? p.total : ""}</td>
+                  <td className="col-total sticky-right fourth">{p.answered ? fmtDecimal(p.total) : ""}</td>
                   <td className="col-total sticky-right third">{p.pct !== null ? `${Math.round(p.pct)}` : ""}</td>
                   <td className="col-total sticky-right second">{p.answered ? gradeForPct(p.pct, scale) : ""}</td>
                   {/* Tinted by rank: green for the top student to red for the lowest. */}
@@ -700,7 +761,7 @@ function QuestionGrid({
               </th>
               {qAvg.map((a) => (
                 <td key={a.number} className="col-q">
-                  {a.meanMark !== null ? Math.round(a.meanMark * 10) / 10 : ""}
+                  {a.meanMark !== null ? fmtDecimal(a.meanMark, 1) : ""}
                 </td>
               ))}
               <td className="sticky-right fourth"></td>
@@ -745,7 +806,7 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
     marks.find((m) => m.assessmentId === assessment.id && m.studentId === studentId);
 
   const setMark = (studentId: string, raw: string, comment?: string) => {
-    const value = raw.trim() === "" ? null : Number(raw);
+    const value = raw.trim() === "" ? null : parseDecimal(raw);
     if (value !== null && !Number.isFinite(value)) return;
     const rest = marks.filter((m) => !(m.assessmentId === assessment.id && m.studentId === studentId));
     const existing = markOf(studentId);
@@ -796,7 +857,7 @@ function QuickMarking({ assessment, onDone }: { assessment: Assessment; onDone: 
                 className="mark-input"
                 inputMode="decimal"
                 autoFocus={i === 0}
-                defaultValue={m?.mark ?? ""}
+                defaultValue={m?.mark != null ? fmtDecimal(m.mark) : ""}
                 onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => setMark(s.id, e.target.value)}
                 onKeyDown={(e) => {
@@ -857,7 +918,7 @@ function MarkListView({ assessment, onBack, onEnterMarks }: { assessment: Assess
   const values = [...entered.values()];
   const meanMark = values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
   const classMean = meanMark !== null ? pctOf(meanMark) : null;
-  const top = sorted.find((s) => ranks.get(s.id) === Math.min(...ranks.values())); // a tie for first shares rank 1.5
+  const top = sorted.find((s) => ranks.get(s.id) === 1);
   const topPct = top ? pctOf(entered.get(top.id)!) : null;
 
   return (
@@ -922,7 +983,7 @@ function MarkListView({ assessment, onBack, onEnterMarks }: { assessment: Assess
                     {s.lastName}
                   </td>
                   <td className="col-name sticky-left third">{s.firstName}</td>
-                  <td className="col-total">{v ?? ""}</td>
+                  <td className="col-total">{v !== undefined ? fmtDecimal(v) : ""}</td>
                   <td className="col-total">{pct !== null ? Math.round(pct) : ""}</td>
                   <td className="col-total">{pct !== null ? gradeForPct(pct, scale) : ""}</td>
                   <td className="col-total" style={rank != null ? { background: rankTint.get(s.id) } : undefined}>
@@ -945,7 +1006,7 @@ function MarkListView({ assessment, onBack, onEnterMarks }: { assessment: Assess
               <th className="sticky-left" colSpan={3}>
                 Average (mark)
               </th>
-              <td className="col-total">{meanMark !== null ? Math.round(meanMark * 10) / 10 : ""}</td>
+              <td className="col-total">{meanMark !== null ? fmtDecimal(meanMark, 1) : ""}</td>
               <td colSpan={4}></td>
             </tr>
             <tr className="avg-row">
@@ -954,7 +1015,7 @@ function MarkListView({ assessment, onBack, onEnterMarks }: { assessment: Assess
               </th>
               <td></td>
               <td className="col-total">{classMean !== null ? Math.round(classMean) : ""}</td>
-              <td className="col-total">{classMean !== null ? gradeForPct(Math.round(classMean), scale) : ""}</td>
+              <td className="col-total">{classMean !== null ? gradeForPct(classMean, scale) : ""}</td>
               <td colSpan={2}></td>
             </tr>
           </tfoot>

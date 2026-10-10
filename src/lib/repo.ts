@@ -12,7 +12,7 @@
 //   classes/<class>/seating.csv           plan_name,desk_id,seat_index,student_id
 //   classes/<class>/seating_prefs.csv     type,a,b   (random-seating constraints)
 //   classes/<class>/lessons.csv           session_id,date,timestamp,student_id,desk_id,desk_label,seatmates,points,positives,negatives
-//   classes/<class>/assessments.csv       assessment_id,title,date,total_marks,category,question_count,content_area
+//   classes/<class>/assessments.csv       assessment_id,title,date,total_marks,category,question_count,content_area,kind,weight
 //   classes/<class>/assessment_questions.csv  assessment_id,q_number,topic,marks,cognitive_level
 //   classes/<class>/question_marks.csv    assessment_id,student_id,q_number,mark
 //   classes/<class>/marks.csv             assessment_id,student_id,mark,comment
@@ -41,6 +41,7 @@ import {
   DEFAULT_COGNITIVE_LEVELS,
   DEFAULT_ROOM_CONFIG,
   DEFAULT_SEATING_PREFS,
+  defaultKind,
   Desk,
   DeskShape,
   FrontEdge,
@@ -596,7 +597,7 @@ export async function deleteLayoutTemplate(dataDir: string, name: string): Promi
 
 // ---------- assessments + marks ----------
 
-const ASSESSMENT_COLS = ["assessment_id", "title", "date", "total_marks", "category", "question_count", "content_area"];
+const ASSESSMENT_COLS = ["assessment_id", "title", "date", "total_marks", "category", "question_count", "content_area", "kind", "weight"];
 
 export async function loadAssessments(dataDir: string, className: string): Promise<Assessment[]> {
   const rows = await loadCsvFile(p(classDir(dataDir, className), "assessments.csv"));
@@ -610,6 +611,9 @@ export async function loadAssessments(dataDir: string, className: string): Promi
       category: r.category ?? "",
       questionCount: Math.max(1, num(r.question_count, 1)),
       contentArea: r.content_area ?? "",
+      // Files from before weighting have neither column: informal or exam by category, weight 1.
+      kind: r.kind === "exam" || r.kind === "informal" ? r.kind : defaultKind(r.category ?? ""),
+      weight: Math.max(0, num(r.weight, 1)),
     }));
 }
 
@@ -622,6 +626,8 @@ export async function saveAssessments(dataDir: string, className: string, assess
     category: a.category,
     question_count: a.questionCount,
     content_area: a.contentArea,
+    kind: a.kind,
+    weight: a.weight,
   }));
   await getFS().writeAtomic(p(classDir(dataDir, className), "assessments.csv"), stringifyCsv(rows, ASSESSMENT_COLS));
 }
@@ -861,7 +867,21 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
     gradeScale: kv.get("grade_scale") === "symbol" ? "symbol" : "level",
     reportSchool: kv.get("report_school") ?? "",
     reportTeacher: kv.get("report_teacher") ?? "",
+    examWeights: parseExamWeights(kv.get("exam_weights") ?? ""),
   };
+}
+
+/** "10=60;12=75" → { "10": 60, "12": 75 }; anything unreadable or out of 0–100 is dropped. */
+export function parseExamWeights(text: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const part of text.split(";")) {
+    const at = part.lastIndexOf("=");
+    if (at <= 0) continue;
+    const grade = part.slice(0, at).trim();
+    const pct = Number(part.slice(at + 1).trim().replace(",", "."));
+    if (grade && Number.isFinite(pct) && pct >= 0 && pct <= 100) out[grade] = pct;
+  }
+  return out;
 }
 
 export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<void> {
@@ -882,6 +902,12 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "grade_scale", value: prefs.gradeScale },
     { key: "report_school", value: prefs.reportSchool },
     { key: "report_teacher", value: prefs.reportTeacher },
+    {
+      key: "exam_weights",
+      value: Object.entries(prefs.examWeights)
+        .map(([grade, pct]) => `${grade}=${pct}`)
+        .join(";"),
+    },
   ];
   await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
 }
