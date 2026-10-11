@@ -5,6 +5,7 @@
 // over the class's data; "today" always comes in as an argument.
 
 import { dateInZone } from "./time";
+import { fmtNum, fmtPct, fmtSigned } from "./format";
 import {
   AnswerTally,
   AtRiskFlag,
@@ -16,6 +17,7 @@ import {
   attendanceSummary,
   formatDuration,
   overallPercent,
+  rankByScore,
   percentage,
   visitSeconds,
 } from "./stats";
@@ -42,6 +44,8 @@ export interface ClassData {
   assessmentQuestions: AssessmentQuestion[];
   questionMarks: QuestionMark[];
   behaviourCodes: BehaviourCode[];
+  /** The class's grade split: the examinations' share (%) of the weighted mark. Default 50. */
+  examWeight?: number;
 }
 
 // ---------- periods ----------
@@ -112,23 +116,9 @@ export function previousPeriod(data: ClassData, period: Period, today: string): 
   return keepBetween(data, addDays(start, -PERIOD_DAYS[period]), addDays(start, -1));
 }
 
-// ---------- number formatting (SA: decimal comma, U+2212 minus) ----------
+// ---------- number formatting (SA: decimal comma, U+2212 minus; see format.ts) ----------
 
-/** A number to `dp` decimals with a decimal comma: 1.25 → "1,3". */
-export function fmtNum(n: number, dp = 0): string {
-  const s = Math.abs(n).toFixed(dp).replace(".", ",");
-  return n < 0 && Number(s.replace(",", ".")) !== 0 ? `−${s}` : s;
-}
-
-export function fmtPct(pct: number | null, dp = 0): string {
-  return pct === null ? "—" : `${fmtNum(pct, dp)}%`;
-}
-
-/** Points with a sign: +3, −2, 0, and one decimal when it isn't whole (a median): −0,5. */
-export function fmtSigned(n: number): string {
-  const s = fmtNum(n, Number.isInteger(n) ? 0 : 1);
-  return n > 0 ? `+${s}` : s;
-}
+export { fmtNum, fmtPct, fmtSigned };
 
 function median(values: number[]): number | null {
   if (values.length === 0) return null;
@@ -291,17 +281,6 @@ function withClass(mine: TopicScore[], cls: TopicScore[]): TopicScore[] {
   return mine.map((t) => ({ ...t, classPct: byName.get(t.name) ?? null }));
 }
 
-/** Rank by overall percentage, 1 = top; ties share the better position. */
-function overallRanks(overalls: Map<string, number>): Map<string, number> {
-  const sorted = [...overalls.entries()].sort((a, b) => b[1] - a[1]);
-  const ranks = new Map<string, number>();
-  sorted.forEach(([id, pct], i) => {
-    const prev = sorted[i - 1];
-    ranks.set(id, prev && prev[1] === pct ? ranks.get(prev[0])! : i + 1);
-  });
-  return ranks;
-}
-
 /** Topics this close together aren't worth calling a strength or weakness. */
 export const TOPIC_GAP = 10;
 
@@ -449,7 +428,7 @@ export function classProfile(data: ClassData, period: Period, today: string): Cl
   // Marks.
   const overalls = new Map<string, number>();
   for (const s of students) {
-    const pct = overallPercent(s.id, data.assessments, data.marks);
+    const pct = overallPercent(s.id, data.assessments, data.marks, data.examWeight);
     if (pct !== null) overalls.set(s.id, pct);
   }
   const classAverage = overalls.size ? [...overalls.values()].reduce((a, b) => a + b, 0) / overalls.size : null;
@@ -478,7 +457,7 @@ export function classProfile(data: ClassData, period: Period, today: string): Cl
     lowAttendance,
     classAverage,
     overalls,
-    ranks: overallRanks(overalls),
+    ranks: rankByScore(overalls),
     topPerformers,
     atRisk: atRiskStudents(students, data.assessments, data.marks),
     medianNet,

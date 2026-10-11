@@ -80,8 +80,8 @@ describe("report_comments.csv", () => {
 describe("students.csv", () => {
   it("round-trips students including commas, quotes and unicode", async () => {
     const students: Student[] = [
-      { id: "s1", firstName: "Anna", lastName: "O'Brien", gender: "F", flags: "SEN;Medical", notes: 'says "hi", loves commas' },
-      { id: "s2", firstName: "Zoë", lastName: "Müller", gender: "", flags: "", notes: "line1\nline2" },
+      { id: "s1", firstName: "Anna", lastName: "O'Brien", adamNo: "", gender: "F", flags: "SEN;Medical", notes: 'says "hi", loves commas' },
+      { id: "s2", firstName: "Zoë", lastName: "Müller", adamNo: "", gender: "", flags: "", notes: "line1\nline2" },
     ];
     await repo.saveStudents(DIR, CLS, students);
     const loaded = await repo.loadStudents(DIR, CLS);
@@ -91,7 +91,12 @@ describe("students.csv", () => {
   it("writes a header row even for an empty roster", async () => {
     await repo.saveStudents(DIR, CLS, []);
     const raw = await fs.readText(`${DIR}/classes/${CLS}/students.csv`);
-    expect(raw.trim()).toBe("id,first_name,last_name,gender,flags,notes");
+    expect(raw.trim()).toBe("id,first_name,last_name,adam_no,gender,flags,notes");
+  });
+
+  it("reads a roster from before Adam numbers with them blank", async () => {
+    await fs.writeAtomic(`${DIR}/classes/${CLS}/students.csv`, "id,first_name,last_name,gender,flags,notes\r\ns1,Ann,Lee,F,,\r\n");
+    expect((await repo.loadStudents(DIR, CLS))[0]).toMatchObject({ id: "s1", adamNo: "", gender: "F" });
   });
 });
 
@@ -289,7 +294,7 @@ describe("marks.csv", () => {
 describe("assessments.csv", () => {
   it("round-trips question count and content area", async () => {
     await repo.saveAssessments(DIR, CLS, [
-      { id: "a1", title: "Phys Test 1", date: "2026-02-01", totalMarks: 85, category: "Test", questionCount: 6, contentArea: "Physics" },
+      { id: "a1", title: "Phys Test 1", date: "2026-02-01", totalMarks: 85, category: "Test", questionCount: 6, contentArea: "Physics", kind: "informal", weight: 1 },
     ]);
     const loaded = await repo.loadAssessments(DIR, CLS);
     expect(loaded[0]).toEqual({
@@ -300,7 +305,18 @@ describe("assessments.csv", () => {
       category: "Test",
       questionCount: 6,
       contentArea: "Physics",
+      kind: "informal",
+      weight: 1,
     });
+  });
+
+  it("round-trips an examination and its weight", async () => {
+    await repo.saveAssessments(DIR, CLS, [
+      { id: "a1", title: "June exam", date: "2026-06-01", totalMarks: 150, category: "Exam", questionCount: 1, contentArea: "", kind: "exam", weight: 2.5 },
+      { id: "a2", title: "Practice", date: "2026-05-01", totalMarks: 20, category: "Test", questionCount: 1, contentArea: "", kind: "informal", weight: 0 },
+    ]);
+    const loaded = await repo.loadAssessments(DIR, CLS);
+    expect(loaded.map((a) => [a.kind, a.weight])).toEqual([["exam", 2.5], ["informal", 0]]);
   });
 
   it("defaults questionCount to 1 for legacy rows without the column", async () => {
@@ -311,6 +327,18 @@ describe("assessments.csv", () => {
     );
     const loaded = await repo.loadAssessments(DIR, CLS);
     expect(loaded[0]).toMatchObject({ id: "a1", totalMarks: 50, questionCount: 1, contentArea: "" });
+    // That early format's weight meant the same as today's; with no kind column, the category decides.
+    expect(loaded[0]).toMatchObject({ weight: 2, kind: "informal" });
+  });
+
+  it("files without kind or weight count exams by category, everything at weight 1", async () => {
+    await fs.writeAtomic(
+      `${DIR}/classes/${CLS}/assessments.csv`,
+      "assessment_id,title,date,total_marks,category,question_count,content_area\r\n" +
+        "a1,T1,2026-01-01,50,Test,1,\r\na2,Prelim,2026-08-01,150,Prelim Exam,1,\r\n",
+    );
+    const loaded = await repo.loadAssessments(DIR, CLS);
+    expect(loaded.map((a) => [a.kind, a.weight])).toEqual([["informal", 1], ["exam", 1]]);
   });
 });
 
@@ -395,6 +423,7 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       gradeScale: "symbol" as const,
       reportSchool: "St Benedict's College",
       reportTeacher: "Mr K. Hilder",
+      examWeights: { "10": 60, "12": 75, "8": 37.5 },
     };
     await repo.saveUserPrefs(DIR, prefs);
     expect(await repo.loadUserPrefs(DIR)).toEqual(prefs);
@@ -453,7 +482,7 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
 
 describe("backups", () => {
   it("restores a snapshot over the live files, taking a safety copy first", async () => {
-    const s1: Student = { id: "s1", firstName: "Amelia", lastName: "Adams", gender: "", flags: "SEN", notes: "" };
+    const s1: Student = { id: "s1", firstName: "Amelia", lastName: "Adams", adamNo: "", gender: "", flags: "SEN", notes: "" };
     await repo.saveStudents(DIR, CLS, [s1]);
     // Fake the app-start snapshot of the current state (the desktop backend
     // does this in Rust; MemFS snapshots don't copy).
@@ -479,7 +508,7 @@ describe("backups", () => {
 
 describe("rename", () => {
   it("moves the whole class folder", async () => {
-    await repo.saveStudents(DIR, CLS, [{ id: "s1", firstName: "A", lastName: "B", gender: "", flags: "", notes: "" }]);
+    await repo.saveStudents(DIR, CLS, [{ id: "s1", firstName: "A", lastName: "B", adamNo: "", gender: "", flags: "", notes: "" }]);
     await repo.renameClass(DIR, CLS, "8A-Science");
     await repo.saveClassInfo(DIR, { name: "8A-Science", year: "8", subject: "Science", room: "", notes: "", archived: false, color: "" });
     const students = await repo.loadStudents(DIR, "8A-Science");

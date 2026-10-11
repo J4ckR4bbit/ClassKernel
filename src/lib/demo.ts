@@ -58,6 +58,7 @@ export async function seedDemoData(): Promise<string> {
       id: newId("s"),
       firstName: FIRST[i],
       lastName: LAST[(i * 7) % LAST.length],
+      adamNo: String(21403 + i * 17),
       gender: i % 2 ? "M" : "F",
       flags: i === 3 ? "SEN" : i === 11 ? "Medical" : "",
       notes: "",
@@ -248,12 +249,14 @@ export async function seedDemoData(): Promise<string> {
     category: "Test",
     questionCount: forcesQuestions.length,
     contentArea: "Physics",
+    kind: "informal",
+    weight: 1,
   };
 
   const singleAssessments: Assessment[] = [
-    { id: newId("a"), title: "Cells test", date: shiftDate(-42), totalMarks: 40, category: "Test", questionCount: 1, contentArea: "" },
-    { id: newId("a"), title: "Energy project", date: shiftDate(-14), totalMarks: 50, category: "Project", questionCount: 1, contentArea: "Physics" },
-    { id: newId("a"), title: "Mid-term exam", date: shiftDate(-2), totalMarks: 80, category: "Exam", questionCount: 1, contentArea: "" },
+    { id: newId("a"), title: "Cells test", date: shiftDate(-42), totalMarks: 40, category: "Test", questionCount: 1, contentArea: "", kind: "informal", weight: 1 },
+    { id: newId("a"), title: "Energy project", date: shiftDate(-14), totalMarks: 50, category: "Project", questionCount: 1, contentArea: "Physics", kind: "informal", weight: 1 },
+    { id: newId("a"), title: "Mid-term exam", date: shiftDate(-2), totalMarks: 80, category: "Exam", questionCount: 1, contentArea: "", kind: "exam", weight: 1 },
   ];
   const assessments: Assessment[] = [forces, ...singleAssessments];
   await repo.saveAssessments(dataDir, className, assessments);

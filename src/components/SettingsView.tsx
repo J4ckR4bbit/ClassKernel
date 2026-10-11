@@ -12,9 +12,11 @@ import {
   Student,
   TeachingStyle,
   TopicEntry,
+  examWeightFor,
   studentName,
 } from "../lib/types";
 import { GRADE_SCALES } from "../lib/stats";
+import { fmtDecimal, parseDecimal } from "../lib/format";
 import { PLUGINS, togglePluginId } from "../plugins/registry";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import { BC, BEHAVIOUR_COLOURS } from "../lib/behaviourColours";
@@ -23,6 +25,7 @@ import * as repo from "../lib/repo";
 import { backupStamp } from "../lib/id";
 import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
 import RosterView from "./RosterView";
+import RosterSheetTools from "./RosterSheetTools";
 import LayoutDesigner from "./LayoutDesigner";
 import ExportView from "./ExportView";
 import Icon, { IconName } from "./Icon";
@@ -285,6 +288,18 @@ function GeneralSettings() {
           value={userPrefs.uiScale}
           onChange={(v) => void setUserPrefs({ ...userPrefs, uiScale: v })}
         />
+      </div>
+
+      <div className="panel">
+        <h3>Classes and students from a spreadsheet</h3>
+        <p className="muted" style={{ marginTop: 0 }}>
+          <b>Template</b> saves a workbook of every class (grade, subject, room) and its students (gender, flags, notes). Fill it in, for
+          example from the school's class lists at the start of the year, then import it: new classes and students are added and changed
+          details updated. Nobody is removed. For one class, use Template and Import spreadsheet on its Students page.
+        </p>
+        <div className="row">
+          <RosterSheetTools />
+        </div>
       </div>
 
       <TimeZoneSettings />
@@ -1070,7 +1085,78 @@ function AssessmentSettings() {
           Used in the marking grid, the dashboards, parent reports and spreadsheet exports.
         </p>
       </div>
+
+      <WeightingSettings grades={grades} />
     </>
+  );
+}
+
+/** "10" → "G10", "8" → "G08"; anything else as it is. */
+const gradeLabel = (g: string) => (/^\d+$/.test(g) ? `G${g.padStart(2, "0")}` : g);
+
+/**
+ * Per grade, how the informal tasks and the examinations make up a student's
+ * weighted mark (the markbook, dashboards and parent reports). Each task's own
+ * weight within its side is set on the Marks page.
+ */
+function WeightingSettings({ grades }: { grades: string[] }) {
+  const { userPrefs, setUserPrefs } = useApp();
+  const setExam = (grade: string, text: string) => {
+    const pct = parseDecimal(text);
+    if (pct >= 0 && pct <= 100) void setUserPrefs({ ...userPrefs, examWeights: { ...userPrefs.examWeights, [grade]: pct } });
+  };
+  return (
+    <div className="panel">
+      <h3>Weighting: informal tasks and examinations</h3>
+      <p className="muted" style={{ marginTop: 0 }}>
+        A student's mark blends their informal tasks with their examinations in these shares. Until a student has written an
+        examination, their informal tasks make up the whole mark. Set each task's own weight, and whether it is informal or an
+        examination, on the Marks page.
+      </p>
+      {grades.length === 0 ? (
+        <p className="muted" style={{ marginBottom: 0 }}>
+          Give a class its grade on its Class notes page to set the weighting for that grade.
+        </p>
+      ) : (
+        <table className="data weighting-table">
+          <thead>
+            <tr>
+              <th>Grade</th>
+              <th style={{ width: 130 }}>Informal</th>
+              <th style={{ width: 130 }}>Examinations</th>
+            </tr>
+          </thead>
+          <tbody>
+            {grades.map((g) => {
+              const exam = examWeightFor(userPrefs, g);
+              return (
+                <tr key={g}>
+                  <td>{gradeLabel(g)}</td>
+                  <td>{fmtDecimal(100 - exam, 1)}%</td>
+                  <td>
+                    <div className="row nowrap">
+                      <input
+                        key={exam}
+                        className="weight-input"
+                        inputMode="decimal"
+                        aria-label={`Examinations' share for ${gradeLabel(g)}`}
+                        defaultValue={fmtDecimal(exam, 1)}
+                        onBlur={(e) => {
+                          setExam(g, e.target.value);
+                          e.target.value = fmtDecimal(examWeightFor(useApp.getState().userPrefs, g), 1);
+                        }}
+                        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                      />
+                      %
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 }
 

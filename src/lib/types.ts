@@ -18,12 +18,28 @@ export interface ClassInfo {
 }
 
 export interface Student {
+  /** ClassKernel's own id (s-xxxxxxxx), made when the student is added; never changes. */
   id: string;
   firstName: string;
   lastName: string;
+  /**
+   * The school's number for the student in Adam, its administration system,
+   * which links to the school database; "" until filled in. Imports match on it.
+   */
+  adamNo: string;
   gender: string; // free text: "M", "F", other, or empty
   flags: string; // semicolon-separated tags e.g. "SEN;Medical"
   notes: string;
+}
+
+/**
+ * An Adam number as compared on import: spaces dropped, case ignored, and an
+ * all-digit number without its leading zeros ("00123" and "123" match, as
+ * Excel may have turned one into the other). "" when there is none.
+ */
+export function adamKey(adamNo: string): string {
+  const s = adamNo.replace(/\s+/g, "").toLowerCase();
+  return /^\d+$/.test(s) ? s.replace(/^0+(?=\d)/, "") : s;
 }
 
 export type AttendanceStatus = "P" | "A" | "L" | "E";
@@ -174,6 +190,18 @@ export interface Assessment {
   questionCount: number;
   /** Content area the whole test sits in (e.g. "Chemistry"). "" = mixed/none. */
   contentArea: string;
+  /** Which side of the weighted mark it counts towards (see stats.weightedMark). */
+  kind: AssessmentKind;
+  /** Its weight within its side: 1 = normal, 2 = counts double, 0 = doesn't count. */
+  weight: number;
+}
+
+/** Informal tasks (tests, practicals, projects…) or examinations. */
+export type AssessmentKind = "informal" | "exam";
+
+/** Examination when the category says so (Exam, Examination, June exam…), else informal: the default for a new or older assessment. */
+export function defaultKind(category: string): AssessmentKind {
+  return /\bexam(s|inations?)?\b/i.test(category) ? "exam" : "informal";
 }
 
 export interface Mark {
@@ -324,6 +352,20 @@ export interface UserPrefs {
   reportSchool: string;
   /** The teacher's name as printed on parent reports; "" = left off. */
   reportTeacher: string;
+  /**
+   * Per grade (ClassInfo.year), the examinations' share of the weighted mark in
+   * percent; informal tasks get the rest. A grade not listed uses
+   * DEFAULT_EXAM_WEIGHT.
+   */
+  examWeights: Record<string, number>;
+}
+
+/** The examinations' share (%) of the weighted mark for a grade nobody has set. */
+export const DEFAULT_EXAM_WEIGHT = 50;
+
+/** The examinations' share (%) of the weighted mark for a grade. */
+export function examWeightFor(prefs: Pick<UserPrefs, "examWeights">, grade: string): number {
+  return prefs.examWeights[grade] ?? DEFAULT_EXAM_WEIGHT;
 }
 
 export const DEFAULT_USER_PREFS: UserPrefs = {
@@ -343,6 +385,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   gradeScale: "level",
   reportSchool: "",
   reportTeacher: "",
+  examWeights: {},
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {

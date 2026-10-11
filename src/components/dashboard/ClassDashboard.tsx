@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { studentName } from "../../lib/types";
-import { assessmentStats, attendanceByStudent, histogram, percentage } from "../../lib/stats";
+import { assessmentStats, attendanceByStudent, histogram, overallPercent, percentage } from "../../lib/stats";
 import { ClassData, ClassProfile, fmtSigned } from "../../lib/insights";
 import SeatingInsights from "../SeatingInsights";
 import {
@@ -197,15 +197,10 @@ function MarksCharts({ data }: { data: ClassData }) {
   const attSummaries = attendanceByStudent(attendance);
   const scatterData = students
     .map((s) => {
-      const pcts = ordered
-        .map((a) => {
-          const m = marks.find((x) => x.assessmentId === a.id && x.studentId === s.id);
-          return m ? percentage(m, a) : null;
-        })
-        .filter((v): v is number => v !== null);
+      const avg = overallPercent(s.id, ordered, marks, data.examWeight);
       const att = attSummaries.get(s.id)?.rate;
-      if (!pcts.length || att == null) return null;
-      return { x: Math.round(att * 100), y: Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length), name: studentName(s) };
+      if (avg === null || att == null) return null;
+      return { x: Math.round(att * 100), y: Math.round(avg), name: studentName(s) };
     })
     .filter((d): d is { x: number; y: number; name: string } => d !== null);
 

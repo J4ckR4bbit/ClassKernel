@@ -6,9 +6,10 @@ import { attendanceByStudent, behaviourByStudent } from "../lib/stats";
 import PrivacyGate from "./PrivacyGate";
 import { DASHBOARDS_ID } from "../plugins/registry";
 import Icon from "./Icon";
+import RosterSheetTools from "./RosterSheetTools";
 
 export default function RosterView() {
-  const { students, setStudents, attendance, behaviourEvents, showToast, confirmDialog, openStudentDashboard, userPrefs } = useApp();
+  const { students, setStudents, attendance, behaviourEvents, showToast, confirmDialog, openStudentDashboard, userPrefs, currentClass } = useApp();
   // The dashboard shortcut is there only while the dashboards plugin is switched on.
   const dashboardsOn = userPrefs.enabledPlugins.includes(DASHBOARDS_ID);
   const [showImport, setShowImport] = useState(false);
@@ -20,7 +21,7 @@ export default function RosterView() {
   };
 
   const addStudent = () => {
-    void setStudents([...students, { id: newId("s"), firstName: "", lastName: "", gender: "", flags: "", notes: "" }]);
+    void setStudents([...students, { id: newId("s"), firstName: "", lastName: "", adamNo: "", gender: "", flags: "", notes: "" }]);
   };
 
   const remove = async (id: string) => {
@@ -43,6 +44,7 @@ export default function RosterView() {
       <div className="view-header">
         <span className="muted">{students.length} students</span>
         <div className="spacer" />
+        {currentClass && <RosterSheetTools oneClass={currentClass} />}
         <button onClick={() => setShowImport(true)}>Import list…</button>
         <button className="primary" onClick={addStudent}>
           <Icon name="add" size={20} /> Add student
@@ -58,6 +60,9 @@ export default function RosterView() {
           <tr>
             <th style={{ width: 160 }}>First name</th>
             <th style={{ width: 160 }}>Last name</th>
+            <th style={{ width: 110 }} title="The school's number for the student in Adam">
+              Adam no.
+            </th>
             <th style={{ width: 80 }}>Gender</th>
             <th style={{ width: 140 }}>Flags</th>
             <th>Notes</th>
@@ -77,6 +82,14 @@ export default function RosterView() {
                 </td>
                 <td>
                   <input value={s.lastName} onChange={(e) => update(s.id, { lastName: e.target.value })} />
+                </td>
+                <td>
+                  <input
+                    value={s.adamNo}
+                    onChange={(e) => update(s.id, { adamNo: e.target.value })}
+                    placeholder="—"
+                    aria-label={`Adam number for ${s.firstName} ${s.lastName}`}
+                  />
                 </td>
                 <td>
                   <input value={s.gender} onChange={(e) => update(s.id, { gender: e.target.value })} placeholder="—" />
@@ -124,7 +137,7 @@ export default function RosterView() {
           })}
           {students.length === 0 && (
             <tr>
-              <td colSpan={8} className="muted" style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={9} className="muted" style={{ textAlign: "center", padding: 24 }}>
                 No students yet — add them one by one or paste a whole list with “Import list…”.
               </td>
             </tr>
@@ -168,7 +181,7 @@ function ImportModal({ onClose, onImport }: { onClose: () => void; onImport: (st
           first = parts[0] ?? "";
           last = parts.slice(1).join(" ");
         }
-        return { id: newId("s"), firstName: first, lastName: last, gender: "", flags: "", notes: "" };
+        return { id: newId("s"), firstName: first, lastName: last, adamNo: "", gender: "", flags: "", notes: "" };
       });
   };
 

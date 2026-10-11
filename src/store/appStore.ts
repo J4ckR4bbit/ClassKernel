@@ -14,6 +14,7 @@ import {
   AttendanceEntry,
   BathroomVisit,
   BehaviourCode,
+  examWeightFor,
   BehaviourEvent,
   ClassInfo,
   CognitiveLevel,
@@ -156,6 +157,14 @@ export interface AppState {
   retrySave(): Promise<void>;
 
   createClass(info: ClassInfo): Promise<void>;
+  /** Every class's students, read from disk (the current class's from memory). */
+  loadAllStudents(): Promise<Map<string, Student[]>>;
+  /**
+   * Write a classes-and-students import: each class's details, and the full
+   * student list of each class it touched. Opens the first new class when no
+   * class was open.
+   */
+  importRoster(classes: ClassInfo[], students: Map<string, Student[]>): Promise<void>;
   openClass(name: string): Promise<void>;
   updateClassInfo(info: ClassInfo): Promise<void>;
   renameClass(oldName: string, newName: string): Promise<void>;
@@ -466,6 +475,26 @@ export const useApp = create<AppState>((set, get) => {
     await get().openClass(info.name);
   },
 
+  async loadAllStudents() {
+    const { dataDir, classes, currentClass, students } = get();
+    const out = new Map<string, Student[]>();
+    if (!dataDir) return out;
+    for (const c of classes) out.set(c.name, c.name === currentClass ? students : await repo.loadStudents(dataDir, c.name));
+    return out;
+  },
+
+  async importRoster(classes, students) {
+    const { dataDir, currentClass } = get();
+    if (!dataDir) return;
+    await guarded("classes and students", async () => {
+      for (const info of classes) await repo.saveClassInfo(dataDir, info);
+      for (const [name, list] of students) await repo.saveStudents(dataDir, name, list);
+    });
+    set({ classes: await repo.listClasses(dataDir) });
+    if (currentClass && students.has(currentClass)) set({ students: students.get(currentClass)! });
+    else if (!currentClass && classes.length) await get().openClass(classes[0].name);
+  },
+
   async openClass(name) {
     const { dataDir } = get();
     if (!dataDir) return;
@@ -740,3 +769,8 @@ export const useApp = create<AppState>((set, get) => {
   },
   };
 });
+
+/** The current class's grade split: the examinations' share (%) of the weighted mark. */
+export function useExamWeight(): number {
+  return useApp((s) => examWeightFor(s.userPrefs, s.classes.find((c) => c.name === s.currentClass)?.year ?? ""));
+}

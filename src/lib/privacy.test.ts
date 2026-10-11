@@ -6,6 +6,7 @@ const student = (firstName: string, lastName: string): Student => ({
   id: "s",
   firstName,
   lastName,
+  adamNo: "",
   gender: "",
   flags: "",
   notes: "",
