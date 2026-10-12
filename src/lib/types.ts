@@ -358,6 +358,11 @@ export interface UserPrefs {
    * DEFAULT_EXAM_WEIGHT.
    */
   examWeights: Record<string, number>;
+  /**
+   * Grades that use another grade's assessable topics instead of their own,
+   * e.g. { "11": "10" }: grade 11 tags questions from grade 10's list.
+   */
+  topicLinks: Record<string, string>;
 }
 
 /** The examinations' share (%) of the weighted mark for a grade nobody has set. */
@@ -386,6 +391,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   reportSchool: "",
   reportTeacher: "",
   examWeights: {},
+  topicLinks: {},
 };
 
 export const SEAT_COUNTS: Record<DeskShape, number> = {

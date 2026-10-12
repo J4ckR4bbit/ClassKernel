@@ -57,6 +57,8 @@ student records; the dashboards count them as questions, not behaviour.
 | `subtopic` | Topic a question can be tagged with. Empty on an area's placeholder row. |
 | `short` | Short label for the marking-grid heading. |
 
+A grade that shares another grade's list has no rows of its own; see `topic_links` in `settings.csv`.
+
 ### `cognitive_levels.csv`
 
 | Column | Meaning |
@@ -83,6 +85,7 @@ Two columns, `key` and `value`:
 | `mark_entry_enter` | `across` or `down` |
 | `grade_scale` | `level` or `symbol` |
 | `exam_weights` | The examinations' share (%) of the weighted mark per grade, `;`-separated, e.g. `10=60;12=75`. A grade not listed is 50. |
+| `topic_links` | Grades that use another grade's topic list, `;`-separated, e.g. `11=10;12=10` (G11 and G12 use G10's list in `topics.csv`). |
 | `report_school`, `report_teacher` | Parent-report header |
 | `plugins_enabled` | Switched-on tools, `;`-separated ids: `class-dashboards`, `parent-reports`, `test-timer`, `clock`, `stopwatch`, `graph-paper`, `practical-graph`, `motion-graph`, `noise-meter` |
 

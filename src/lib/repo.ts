@@ -870,6 +870,7 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
     reportSchool: kv.get("report_school") ?? "",
     reportTeacher: kv.get("report_teacher") ?? "",
     examWeights: parseExamWeights(kv.get("exam_weights") ?? ""),
+    topicLinks: parseTopicLinks(kv.get("topic_links") ?? ""),
   };
 }
 
@@ -882,6 +883,19 @@ export function parseExamWeights(text: string): Record<string, number> {
     const grade = part.slice(0, at).trim();
     const pct = Number(part.slice(at + 1).trim().replace(",", "."));
     if (grade && Number.isFinite(pct) && pct >= 0 && pct <= 100) out[grade] = pct;
+  }
+  return out;
+}
+
+/** "11=10;12=10" → { "11": "10", "12": "10" }; blanks and a grade pointing at itself are dropped. */
+export function parseTopicLinks(text: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const part of text.split(";")) {
+    const at = part.indexOf("=");
+    if (at <= 0) continue;
+    const grade = part.slice(0, at).trim();
+    const source = part.slice(at + 1).trim();
+    if (grade && source && grade !== source) out[grade] = source;
   }
   return out;
 }
@@ -908,6 +922,12 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
       key: "exam_weights",
       value: Object.entries(prefs.examWeights)
         .map(([grade, pct]) => `${grade}=${pct}`)
+        .join(";"),
+    },
+    {
+      key: "topic_links",
+      value: Object.entries(prefs.topicLinks)
+        .map(([grade, source]) => `${grade}=${source}`)
         .join(";"),
     },
   ];

@@ -4,7 +4,7 @@ import { newId, today } from "../lib/id";
 import { Assessment, AssessmentKind, AssessmentQuestion, Mark, QuestionMark, defaultKind, studentName } from "../lib/types";
 import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankByScore, rankStudents, studentProvisional, taskShares } from "../lib/stats";
 import { fmtDecimal, parseDecimal } from "../lib/format";
-import { areasForGrade, shortLabel, subtopicsForGrade } from "../lib/topics";
+import { areasForGrade, shortLabel, subtopicsForGrade, topicGrade } from "../lib/topics";
 import { positionTint, rankTints } from "../lib/listTint";
 import PrivacyGate from "./PrivacyGate";
 import Markbook from "./Markbook";
@@ -12,7 +12,7 @@ import MarkSheetTools from "./MarkSheetTools";
 import Icon from "./Icon";
 
 export default function AssessmentsView() {
-  const { currentClass, classes, students, assessments, setAssessments, marks, setMarks, assessmentQuestions, setAssessmentQuestions, questionMarks, setQuestionMarks, showToast, confirmDialog } = useApp();
+  const { currentClass, classes, students, assessments, setAssessments, marks, setMarks, assessmentQuestions, setAssessmentQuestions, questionMarks, setQuestionMarks, showToast, confirmDialog, userPrefs } = useApp();
   const [showNew, setShowNew] = useState(false);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const [setupId, setSetupId] = useState<string | null>(null);
@@ -22,7 +22,8 @@ export default function AssessmentsView() {
   const [sheetVersion, setSheetVersion] = useState(0);
   const imported = () => setSheetVersion((v) => v + 1);
 
-  const grade = classes.find((c) => c.name === currentClass)?.year ?? "";
+  // The grade whose topic list this class tags questions from (its own, or one it shares).
+  const grade = topicGrade(userPrefs.topicLinks, classes.find((c) => c.name === currentClass)?.year ?? "");
   const marking = assessments.find((a) => a.id === markingId) ?? null;
   const setup = assessments.find((a) => a.id === setupId) ?? null;
   const viewing = assessments.find((a) => a.id === viewingId) ?? null;
