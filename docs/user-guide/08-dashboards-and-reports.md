@@ -24,6 +24,10 @@ summary built from fixed, explainable rules, so you can always see why someone i
 **Summary and tiles** — class average, attendance, positive and negative entries, net points, questions answered
 (from Pick a student) and bathroom trips.
 
+Every average, rank and "top" student on the dashboards uses each student's **weighted mark** — the same one as the
+[markbook](07-marks.md#the-markbook), blending informal tasks and examinations by the grade's split (see
+[Weighting](07-marks.md#weighting)). Tied students share the better place.
+
 **Behaviour** — positive and negative entries week by week, the **top issues**, and **what's going well**.
 
 **Students** — the people who stand out, each list with the rule that puts a student on it. Tap a name to open
@@ -39,7 +43,7 @@ that student's dashboard.
 | **Rarely asked** | Not picked to answer yet, or far less than most. |
 | **Bathroom trips** | Most trips, with time out. |
 | **Attendance below 90%** | With their absences and lates. |
-| **Top marks** | Highest average. |
+| **Top marks** | Highest weighted mark. |
 | **Flagged on marks** | Latest result well below their own average, far below the class, or three drops in a row. |
 
 Answers from Pick a student count as questions, never as behaviour, so a student who can't answer isn't listed as
@@ -72,8 +76,8 @@ get here from the **chart** button in Settings → Students, or a student's name
 ![The Student dashboard](../images/dashboard-student.png)
 
 - **Flags and notes** beside the name.
-- **Summary and tiles**: average and rank in the class, level or symbol, attendance, behaviour, questions answered,
-  bathroom trips.
+- **Summary and tiles**: weighted mark and rank in the class, level or symbol, attendance, behaviour, questions
+  answered, bathroom trips.
 - **Marks**: every assessment with mark, %, level or symbol, the class mean and the gap to it (±); their trend
   against the class; and, for tests marked per question, strengths **by topic** and **by cognitive level** beside
   the class's.
@@ -118,7 +122,7 @@ Put your **school name** and **your name** at the top of every page under
 
 ![One student's report page](../images/parent-report-preview.png)
 
-- A **parent-friendly summary** — no class rank and no staff-only wording.
+- A **parent-friendly summary** — with the weighted mark, but no class rank and no staff-only wording.
 - **Marks** against the class average, with a small trend chart.
 - **Topic strengths** by topic and by cognitive level (for tests marked per question).
 - **Behaviour** as *Going well* and *To work on*, and questions answered in class.

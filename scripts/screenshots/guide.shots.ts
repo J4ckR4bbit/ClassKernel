@@ -1,6 +1,9 @@
 import { Locator, Page, test as base } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { ALL_TOOLS, enableTools, expect, nav, openTool, reveal, settingsTab, test } from "../../e2e/fixtures";
+import { ReadSheet, readXlsx } from "../../src/lib/xlsxRead";
+import { buildXlsx } from "../../src/lib/xlsx";
 
 // Every picture in the user guide. Each test opens a fresh demo class (as the
 // browser tests do), walks one chapter of the guide and saves full-screen
@@ -63,6 +66,15 @@ async function shotFrom(page: Page, heading: Locator, name: string, ms?: number)
   await heading.evaluate((e) => e.scrollIntoView({ block: "start" }));
   await shot(page, name, ms);
 }
+
+/** Press the open page's Template button and read the workbook it downloads. */
+async function downloadTemplate(page: Page): Promise<ReadSheet[]> {
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Template" }).click()]);
+  return readXlsx(new Uint8Array(readFileSync((await download.path())!)));
+}
+
+/** The (edited) sheets as an .xlsx, as a teacher saving in Excel would. */
+const rebuild = (sheets: ReadSheet[]) => buildXlsx(sheets.map((s) => ({ name: s.name, columns: s.rows[0], rows: s.rows.slice(1) })));
 
 const panel = (page: Page, title: string) => page.locator("main .panel", { has: page.locator("h3", { hasText: title }) }).first();
 const seats = (page: Page) => page.locator(".seat-square.occupied");
@@ -127,8 +139,19 @@ test("home, the class menu and setting up a class", async ({ page }) => {
   await settingsTab(page, "Students");
   await shot(page, "privacy-cover");
   await reveal(page);
-  await page.locator("main tbody tr").nth(3).locator("input").nth(4).fill("Sits near the board; extra time in tests");
+  await page.locator("main tbody tr").nth(3).locator("input").nth(5).fill("Extra time in tests");
   await shot(page, "students");
+
+  // The class list as a spreadsheet: change one note, add a student, and a row for another class.
+  const roster = await downloadTemplate(page);
+  const sheet = roster.find((s) => s.name === "Students")!;
+  sheet.rows[2][6] = "Wears glasses";
+  sheet.rows.push(["", "Ndlovu", "Sipho", "30561", "M", "SEN", "", ""]);
+  sheet.rows.push(["9C-Maths", "Mokoena", "Thandi", "", "F", "", "", ""]);
+  await page.getByTestId("roster-import-file").setInputFiles({ name: "7B-Science.xlsx", mimeType: "application/octet-stream", buffer: Buffer.from(rebuild(roster)) });
+  await shotOf(page, modal(page), "roster-import-preview", 2);
+  await modal(page).getByRole("button", { name: "Cancel" }).click();
+
   await page.getByRole("button", { name: "Import list…" }).click();
   await modal(page).locator("textarea").fill("Thandi Mokoena\nLiam van der Merwe\nNaidoo, Priya\nSipho Dlamini");
   await shotOf(page, modal(page), "import-students", 2);
@@ -268,7 +291,7 @@ test("marks", async ({ page }) => {
   await page.getByRole("button", { name: "New assessment" }).click();
   const form = modal(page);
   await form.locator("input").nth(0).fill("Waves & sound test");
-  await form.locator("select").selectOption("Physics");
+  await form.locator("select").first().selectOption("Physics");
   await form.locator("input[type=number]").first().fill("4");
   await shotOf(page, form, "new-assessment", 2);
   await form.locator("button.primary").click();
@@ -300,6 +323,31 @@ test("marks", async ({ page }) => {
   await page.locator(".quick-mark-row input.mark-input").nth(2).focus();
   await shot(page, "quick-marking");
   await page.getByRole("button", { name: "Done" }).click();
+
+  // View: the same test read-only, with its spreadsheet buttons.
+  await page.locator("tr", { hasText: "Mid-term exam" }).getByRole("button", { name: "View" }).click();
+  await reveal(page);
+  await shot(page, "marks-view");
+  await shotOf(page, page.locator("main .view-header"), "marks-view-toolbar", 6);
+
+  // Its template, filled in: one new mark, one changed, one too big.
+  const sheets = await downloadTemplate(page);
+  const sheetRows = sheets[0].rows;
+  const blank = sheetRows.findIndex((r, i) => i > 0 && !r[3]);
+  const [changed, tooBig] = [1, 2, 3].filter((i) => i !== blank);
+  sheetRows[blank][3] = "61,5";
+  sheetRows[changed][3] = "79";
+  sheetRows[changed][4] = "Re-marked";
+  sheetRows[tooBig][3] = "95";
+  await page.getByTestId("mark-import-file").first().setInputFiles({ name: "Marks - Mid-term exam.xlsx", mimeType: "application/octet-stream", buffer: Buffer.from(rebuild(sheets)) });
+  await shotOf(page, modal(page), "mark-import-preview", 2);
+  await modal(page).getByRole("button", { name: "Cancel" }).click();
+  await page.locator("main .view-header").getByRole("button", { name: "Back" }).click();
+
+  // The markbook: every test at once, with the weighted mark.
+  await page.getByRole("button", { name: "Markbook" }).click();
+  await reveal(page);
+  await shot(page, "markbook");
 });
 
 test("tools: switching on, dashboards and parent reports", async ({ page }) => {
@@ -431,6 +479,7 @@ test("settings", async ({ page }) => {
   await settingsTab(page, "General");
   await shot(page, "settings-general");
   await page.setViewportSize({ width: 1280, height: 1100 });
+  await shotOf(page, panel(page, "Classes and students from a spreadsheet"), "settings-classes-spreadsheet", 0);
   await shotOf(page, panel(page, "Teaching mode"), "settings-teaching-mode", 0);
   await shotOf(page, panel(page, "Behaviour buttons"), "settings-behaviour-buttons", 0);
   // The demo's in-memory folder, shown as a teacher's real one would be.
@@ -443,6 +492,7 @@ test("settings", async ({ page }) => {
   await settingsTab(page, "Assessments");
   await shot(page, "settings-assessments");
   await shotOf(page, [panel(page, "Mark entry"), panel(page, "Show results as")], "settings-mark-entry-and-results", 0);
+  await shotOf(page, panel(page, "Weighting"), "settings-weighting", 0);
 
   await settingsTab(page, "Export");
   await shot(page, "settings-export");

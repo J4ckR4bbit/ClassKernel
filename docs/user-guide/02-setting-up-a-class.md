@@ -42,7 +42,10 @@ Go to **Settings → Students**. Like every per-class Settings tab, it works on 
 ![The Students tab](../images/students.png)
 
 - **Add student** adds an empty row; type straight into it. Every change saves as you type.
-- **Import list…** adds a whole class at once (below).
+- **Template** and **Import spreadsheet** set up or update the class from a spreadsheet; **Import list…** pastes a
+  list of names (both below).
+- **Adam no.** is the student's number in Adam, the school's administration system. It's optional, but with it
+  filled in, spreadsheet imports of students and marks recognise the student even after a change of name.
 - **Flags** are short tags separated by semicolons, e.g. `SEN;Medical`. They show as amber tags on the register
   and dashboards. **Notes** are free text. Both stay off class-facing screens unless you choose otherwise in
   [Settings → General](10-settings.md#privacy-on-the-big-screen).
@@ -56,6 +59,35 @@ Go to **Settings → Students**. Like every per-class Settings tab, it works on 
 
 Paste one student per line, either as **First Last** or as **Last, First** (as copied from a school report or a
 spreadsheet column). The dialog counts the students it found; press **Import** to add them.
+
+### From a spreadsheet
+
+For a class list with Adam numbers, flags and notes — or to update details for the whole class at once — use a
+spreadsheet:
+
+1. **Template** saves an Excel workbook of the class (`Students - <class>.xlsx`). Its **Students** sheet has the
+   columns *Class, Surname, Name, Adam number, Gender, Flags, Notes, Student ID*, with a row for every student
+   already in the class; a **Classes** sheet holds the class's grade, subject and room.
+2. Fill it in or correct it in Excel, Google Sheets or LibreOffice: add rows for new students, change details,
+   paste a list straight from Adam. Flags may be separated by `;` or `,`.
+3. **Import spreadsheet** reads it back (`.xlsx` or `.csv`) and shows what it will do before anything is saved:
+
+   ![The import preview](../images/roster-import-preview.png)
+
+   - new students, and the details that will change for each existing one;
+   - anyone in the class who isn't in the file (they stay as they are);
+   - every row it **skipped** and why — for example, a row for another class.
+
+   Press **Import** to apply it, or **Cancel**.
+
+Students are recognised by their **Student ID** (ClassKernel's own number, in the last column), then their
+**Adam number**, then their surname and name — so keep those columns, and sort the rows any way you like. A blank
+cell leaves that detail as it is, and **nobody is ever removed** by an import.
+
+To set up **every class** at once — say from the school's class lists at the start of the year — use
+**Settings → General → Classes and students from a spreadsheet**. It works the same way, with all your classes in
+one workbook (`Classes and students.xlsx`), and a class named in the file that doesn't exist yet is created
+(see [Settings](10-settings.md#classes-and-students-from-a-spreadsheet)).
 
 ## Room layout
 
