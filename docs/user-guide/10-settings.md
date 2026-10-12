@@ -7,8 +7,8 @@ the tabs to the right belong to the class chosen in the top bar.
 
 | Tab | Covers | Applies to |
 | --- | --- | --- |
-| [General](#general) | Privacy, display size, time zone, parent-report header, teaching mode, behaviour buttons, data folder | The whole app |
-| [Assessments](#assessments) | Topic bank, cognitive levels, mark entry, levels or symbols | The whole app |
+| [General](#general) | Privacy, display size, classes and students from a spreadsheet, time zone, parent-report header, teaching mode, behaviour buttons, data folder | The whole app |
+| [Assessments](#assessments) | Topic bank, cognitive levels, mark entry, levels or symbols, weighting | The whole app |
 | [Tools](#tools) | Switching tools on and off | The whole app |
 | [Export](#export) | Spreadsheet export | Any classes you tick |
 | [Students](02-setting-up-a-class.md#students) | The class list | The chosen class |
@@ -34,6 +34,22 @@ Every setting saves as soon as you change it.
 ### Display size
 
 **100% / 125% / 150% / 175%** makes the whole app bigger for a large touch panel. It applies immediately.
+
+### Classes and students from a spreadsheet
+
+![Classes and students from a spreadsheet](../images/settings-classes-spreadsheet.png)
+
+For setting up a whole year at once, for example from the school's class lists:
+
+- **Template** saves one workbook (`Classes and students.xlsx`) of every active class: a **Classes** sheet (*Class,
+  Grade, Subject, Room*) and a **Students** sheet (*Class, Surname, Name, Adam number, Gender, Flags, Notes,
+  Student ID*).
+- **Import classes and students** reads it back. A class named in the file that doesn't exist yet is **created**;
+  new students are added to their class and changed details updated. The preview lists every change, anyone not in
+  the file, and every row skipped and why, before anything is saved. Nobody is removed.
+
+For one class, use **Template** and **Import spreadsheet** on its Students tab (see
+[Setting up a class](02-setting-up-a-class.md#from-a-spreadsheet)).
 
 ### Time zone
 
@@ -112,7 +128,18 @@ on its [Class notes](02-setting-up-a-class.md#class-notes-details-colour-and-not
 - **Mark entry** — whether **Enter** in the per-question grid moves **across** to the next question or **down** to
   the next student. Tab always moves the other way.
 - **Show results as** — **Level** (7 = 80%+ … 1 = below 30%) or **Symbol** (A = 80%+ … F = below 40%). Used in the
-  marking grid, the dashboards, parent reports and spreadsheet exports. See [Marks](07-marks.md#levels-or-symbols).
+  marking grid, the markbook, the dashboards, parent reports and spreadsheet exports. See
+  [Marks](07-marks.md#levels-or-symbols).
+
+### Weighting: informal tasks and examinations
+
+![The weighting table](../images/settings-weighting.png)
+
+One row per grade (G08, G10, …). Type the **examinations' share** of the weighted mark; the informal tasks get the
+rest. Every grade starts at 50 / 50. A student who hasn't written an examination yet is marked on their informal
+tasks alone. Each task's own weight, and whether it counts as informal or an examination, is set on the Marks page
+(see [Weighting](07-marks.md#weighting)). The grades listed are those of your classes (set on each Class notes
+page) and of the topic bank.
 
 ## Tools
 
@@ -142,14 +169,14 @@ Turns what you've collected into one Excel workbook (`.xlsx`) that also opens in
 | Sheet | Contains | Ticked to start |
 | --- | --- | --- |
 | Class overview | One row per class: roll, attendance rate, behaviour points, mean mark | ✓ |
-| Students | Roster with gender, flags and notes | ✓ |
+| Students | Roster with Adam number, gender, flags and notes | ✓ |
 | Attendance log | Every register mark, one row per student per date | ✓ |
 | Attendance summary | Per student: present, absent, late, excused and rate | ✓ |
 | Behaviour log | Every behaviour event with its points | ✓ |
 | Behaviour summary | Per student: positives, negatives and net points | ✓ |
 | Bathroom log | Every timed bathroom trip | ✓ |
-| Assessments | Each test with mean, median, range and spread | ✓ |
-| Marks | Per student per assessment: mark, % and level or symbol | ✓ |
+| Assessments | Each test with whether it counts as informal or an examination, its weight, and its mean, median, range and spread | ✓ |
+| Marks | Per student per assessment (with the Adam number): mark, % and level or symbol | ✓ |
 | Question marks | Per-question marks with topic and cognitive level (large) | |
 | Topic performance | Per student per topic: marks gained out of marks available | ✓ |
 | Seating plans | Which student sits at which desk seat | |
