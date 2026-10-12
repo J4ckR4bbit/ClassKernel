@@ -77,11 +77,13 @@ test("a class colour shows on its Home card and under the top bar", async ({ pag
 
 test("a class card opens its Lesson, Seats, Marks and Class notes pages", async ({ page }) => {
   const card = page.locator(".class-card").first();
-  await expect(card.locator(".class-card-actions button")).toHaveText(["Lesson", "Seating", "Marks"]);
+  await expect(card.locator(".class-card-actions button")).toHaveText(["Seating", "Marks", "Lesson"]);
+  // Lesson is the full-width, filled button under the other two.
+  await expect(card.getByRole("button", { name: "Lesson", exact: true })).toHaveClass(/primary/);
   for (const [button, title] of [
-    ["Lesson", "Lesson"],
     ["Seating", "Seats"],
     ["Marks", "Marks"],
+    ["Lesson", "Lesson"],
   ]) {
     await nav(page, "Home");
     await card.getByRole("button", { name: button, exact: true }).click();

@@ -562,8 +562,9 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 }
 .class-card-head h3 { margin: 0; font-size: 16px; font-weight: 500; line-height: 24px; }
 .class-card-head .muted { font-size: 13px; }
-.class-card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.class-card-actions button { flex: 1 1 auto; }
+/* Seating and Marks side by side, with Lesson the big button across the bottom. */
+.class-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.class-card-lesson { grid-column: 1 / -1; }
 .class-card-open { align-self: flex-start; }
 
 /* ---------- settings ---------- */

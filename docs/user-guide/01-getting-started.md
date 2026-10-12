@@ -76,9 +76,9 @@ Home shows every active class as a card.
 
 | Button | What it does |
 | --- | --- |
-| **Lesson** | Opens the class's live Lesson page. |
 | **Seating** | Opens the class's Seats page, where you randomise or move students. |
 | **Marks** | Opens the class's Marks page. |
+| **Lesson** (the big button) | Opens the class's live Lesson page. |
 | **Open class** | Opens the class's Class notes page: its details, colour and notes. |
 | **New class** (top right of Home) | Creates a class. |
 
