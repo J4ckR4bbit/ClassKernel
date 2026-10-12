@@ -75,7 +75,7 @@ test("a class colour shows on its Home card and under the top bar", async ({ pag
   expect(underline).not.toBe("rgba(0, 0, 0, 0)");
 });
 
-test("a class card opens its Lesson, Seats and Marks pages", async ({ page }) => {
+test("a class card opens its Lesson, Seats, Marks and Class notes pages", async ({ page }) => {
   const card = page.locator(".class-card").first();
   await expect(card.locator(".class-card-actions button")).toHaveText(["Lesson", "Seating", "Marks"]);
   for (const [button, title] of [
@@ -87,6 +87,9 @@ test("a class card opens its Lesson, Seats and Marks pages", async ({ page }) =>
     await card.getByRole("button", { name: button, exact: true }).click();
     await expect(page.locator(".top-bar-title")).toHaveText(title);
   }
+  await nav(page, "Home");
+  await card.getByRole("button", { name: "Open class" }).click();
+  await expect(page.locator(".top-bar-title")).toHaveText("Class notes");
 });
 
 test("Export saves a spreadsheet", async ({ page }) => {

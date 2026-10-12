@@ -78,7 +78,7 @@ export default function HomeView() {
                   <Icon name="grading" size={18} /> Marks
                 </button>
               </div>
-              <button className="text small class-card-open" onClick={() => void go(c.name, "seating")}>
+              <button className="text small class-card-open" onClick={() => void go(c.name, "notes")}>
                 Open class <Icon name="chevron_right" size={18} />
               </button>
             </div>
