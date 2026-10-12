@@ -88,8 +88,6 @@ export interface AppState {
    * moment the lock is set or lifted.
    */
   seatingLockedAt: string | null;
-  /** Set by Home to ask the Seating view to auto-run an animated reroll on arrival. */
-  pendingRandomise: boolean;
   /** Id of the plugin the "plugin" view is showing (see src/plugins/registry.ts). */
   activePlugin: string | null;
   /** The student the Dashboard's Student tab shows; null = the Class tab. */
@@ -147,7 +145,6 @@ export interface AppState {
   unlockSeating(): void;
   /** Ask for the reseat PIN (creating one if none is set); true if unlocked. */
   requestSeatingUnlock(): Promise<boolean>;
-  setPendingRandomise(on: boolean): void;
   showToast(message: string, action?: { label: string; run: () => void }): void;
   revealSensitive(): void;
   confirmDialog(opts: Omit<DialogRequest, "kind" | "placeholder" | "initial">): Promise<boolean>;
@@ -237,7 +234,6 @@ export const useApp = create<AppState>((set, get) => {
   focusMode: false,
   focusStyle: "room",
   seatingLockedAt: null,
-  pendingRandomise: false,
   activePlugin: null,
   dashboardStudent: null,
   toast: null,
@@ -410,10 +406,6 @@ export const useApp = create<AppState>((set, get) => {
     get().unlockSeating();
     showToast("Seat assignment unlocked");
     return true;
-  },
-
-  setPendingRandomise(on) {
-    set({ pendingRandomise: on });
   },
 
   showToast(message, action) {

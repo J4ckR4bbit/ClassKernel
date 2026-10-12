@@ -1,8 +1,6 @@
 import { CSSProperties, useState } from "react";
-import { useApp } from "../store/appStore";
+import { View, useApp } from "../store/appStore";
 import { ClassInfo } from "../lib/types";
-import { today } from "../lib/id";
-import { isSeatingLocked, readLessonStart, readSeatedAt } from "../lib/lessonState";
 import { PLUGINS, enabledPlugins } from "../plugins/registry";
 import NewClassModal from "./NewClassModal";
 import Icon from "./Icon";
@@ -16,41 +14,25 @@ function initials(name: string): string {
 }
 
 /**
- * Landing page: every class as a card with the two things a teacher reaches
- * for at the start of a lesson — reroll the seating, or jump into the live
- * lesson. Setup (students, room layout, seating rules) lives under Settings.
+ * Landing page: every class as a card that opens straight into the pages a
+ * teacher reaches for — the live lesson, the seating plan and the marks.
+ * Setup (students, room layout, seating rules) lives under Settings.
  *
  * Below the classes sits Tools: the plugins this teacher has switched on
  * (Settings → Tools). Class-independent extras live here and in the
  * expanded navigation drawer, never among the class's own pages.
  */
 export default function HomeView() {
-  const { classes, currentClass, openClass, setView, setPendingRandomise, createClass, userPrefs, openPlugin, requestSeatingUnlock } =
-    useApp();
-  // Re-read the per-class locks whenever the open class's lock changes.
-  useApp((s) => s.seatingLockedAt);
-  const lockedNow = (name: string) => isSeatingLocked(readSeatedAt(name), readLessonStart(name), today());
+  const { classes, currentClass, openClass, setView, createClass, userPrefs, openPlugin } = useApp();
   const [showNew, setShowNew] = useState(false);
   const active = classes.filter((c) => !c.archived);
   const tools = enabledPlugins(userPrefs.enabledPlugins);
 
   const meta = (c: ClassInfo) => [c.subject, c.year && `Grade ${c.year}`, c.room].filter(Boolean).join(" · ");
 
-  const liveLesson = async (name: string) => {
+  const go = async (name: string, view: View) => {
     await openClass(name);
-    setView("lesson");
-  };
-
-  const randomise = async (name: string) => {
-    await openClass(name);
-    setPendingRandomise(true);
-    setView("seating");
-  };
-
-  // Seats were already assigned this lesson: the PIN unlocks another go.
-  const reseat = async (name: string) => {
-    await openClass(name);
-    await requestSeatingUnlock();
+    setView(view);
   };
 
   return (
@@ -86,23 +68,17 @@ export default function HomeView() {
                 </div>
               </div>
               <div className="class-card-actions">
-                {lockedNow(c.name) ? (
-                  <button
-                    onClick={() => void reseat(c.name)}
-                    title="Seats were assigned this lesson — enter your PIN to assign them again"
-                  >
-                    <Icon name="lock" size={18} /> Seats assigned
-                  </button>
-                ) : (
-                  <button className="primary" onClick={() => void randomise(c.name)}>
-                    <Icon name="casino" size={18} /> Randomise seating
-                  </button>
-                )}
-                <button onClick={() => void liveLesson(c.name)}>
+                <button className="primary" onClick={() => void go(c.name, "lesson")}>
                   <Icon name="school" size={18} /> Lesson
                 </button>
+                <button onClick={() => void go(c.name, "seating")}>
+                  <Icon name="event_seat" size={18} /> Seating
+                </button>
+                <button onClick={() => void go(c.name, "assessments")}>
+                  <Icon name="grading" size={18} /> Marks
+                </button>
               </div>
-              <button className="text small class-card-open" onClick={() => void openClass(c.name).then(() => setView("seating"))}>
+              <button className="text small class-card-open" onClick={() => void go(c.name, "seating")}>
                 Open class <Icon name="chevron_right" size={18} />
               </button>
             </div>

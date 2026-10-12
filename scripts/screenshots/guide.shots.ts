@@ -210,9 +210,6 @@ test("seats", async ({ page }) => {
   await page.locator("main button", { hasText: "Reseat" }).click();
   await shotOf(page, modal(page), "reseat-pin-create", 2);
   await modal(page).getByRole("button", { name: "Cancel" }).click();
-
-  await nav(page, "Home");
-  await shotOf(page, page.locator(".class-card").first(), "class-card-locked", 10);
 });
 
 test("lesson", async ({ page }) => {

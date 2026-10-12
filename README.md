@@ -16,7 +16,7 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 
 | Page | |
 | --- | --- |
-| **Home** | Every class as a card, with one-tap **Randomise seating** or **Lesson**, plus your switched-on tools. |
+| **Home** | Every class as a card in its own colour, with one-tap **Lesson**, **Seating** and **Marks**, plus your switched-on tools. |
 | **Attendance** | One-tap Present / Absent / Late / Excused register, with rates and history. |
 | **Seats** | Named seating plans. Seat students by hand, or **Randomise** with hidden keep-apart, keep-together and sit-at-the-front rules — once per lesson, then a PIN to reseat. Print for cover teachers. |
 | **Lesson** | The seating plan is the interface: tap a seat to log behaviour, attendance or a bathroom trip. Batch entry, a random student picker, a full-screen or side-panel teaching mode, and **End lesson** to save the seat history. |

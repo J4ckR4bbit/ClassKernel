@@ -26,7 +26,7 @@ saved as plain files in a folder you choose.
    (ideally inside OneDrive or Google Drive).
 2. **New class** on Home → add students under **Settings → Students** (paste a list with **Import list…**).
 3. Draw the room under **Settings → Room layout**.
-4. **Randomise seating** from the class's Home card.
+4. **Seating** on the class's Home card, then **Randomise**.
 5. Take the register on **Attendance**, then teach from **Lesson**: tap a seat to record behaviour.
 6. Press **End lesson** at the end.
 

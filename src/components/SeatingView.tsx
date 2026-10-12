@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useApp } from "../store/appStore";
 import { SeatAssignment, studentName } from "../lib/types";
 import { displayStudentName, seatSurname } from "../lib/privacy";
@@ -16,8 +16,6 @@ export default function SeatingView() {
     showToast,
     setView,
     roomConfig,
-    pendingRandomise,
-    setPendingRandomise,
     userPrefs,
     confirmDialog,
     promptDialog,
@@ -109,16 +107,6 @@ export default function SeatingView() {
     setPickedStudent(null);
     randomise(activePlan);
   };
-
-  // Arriving from the Home "Randomise seating" button: run the animated reroll
-  // once the class's desks and students are loaded, then clear the request.
-  useEffect(() => {
-    if (pendingRandomise && desks.length > 0 && students.length > 0 && !isShuffling) {
-      setPendingRandomise(false);
-      randomise(activePlan);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingRandomise, desks.length, students.length]);
 
   return (
     <div>

@@ -76,13 +76,14 @@ Home shows every active class as a card.
 
 | Button | What it does |
 | --- | --- |
-| **Randomise seating** | Opens the class's Seats page and rerolls the seating straight away. |
 | **Lesson** | Opens the class's live Lesson page. |
-| **Open class** | Opens the class's Seats page without changing anything. |
+| **Seating** | Opens the class's Seats page, where you randomise or move students. |
+| **Marks** | Opens the class's Marks page. |
+| **Open class** | Opens the class's Seats page. |
 | **New class** (top right of Home) | Creates a class. |
 
-Once a class's seats have been assigned for the lesson, its card shows **🔒 Seats assigned** instead of
-**Randomise seating** (see [Seats](04-seats.md#once-per-lesson-and-the-reseat-pin)).
+A class with a colour (set on its [Class notes](02-setting-up-a-class.md#class-notes-details-colour-and-notes) page)
+shows it along the top of its card and in the circle with its initials.
 
 Below the classes is the **Tools** section. It stays empty, with a short note, until you switch tools on under
 **Settings → Tools**.
