@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useApp, useLessonRunning } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
 import { AttendanceStatus, BehaviourCode, BehaviourEvent, LessonRecord, SeatAssignment, studentName } from "../lib/types";
 import { eventsOnDate, formatDuration, visitSeconds } from "../lib/stats";
-import { lessonStartKey } from "../lib/lessonState";
+import { lessonStartKey, lessonStartedMessage } from "../lib/lessonState";
 import { deskDisplayLabels } from "../lib/tables";
 import { pickedKey } from "../components/StudentPicker";
 
@@ -34,7 +34,10 @@ export function useLessonSession() {
     userPrefs,
     confirmDialog,
     unlockSeating,
+    startLesson: beginLesson,
+    stopLesson,
   } = useApp();
+  const running = useLessonRunning();
 
   // "This lesson" is everything logged since the last End-lesson reset (or the
   // start of today if a lesson has never been ended for this class).
@@ -122,6 +125,12 @@ export function useLessonSession() {
     void setAttendance([...rest, { date: today(), studentId, status, note: "" }]);
   };
 
+  /** Start the lesson: everyone not yet marked today is marked present. */
+  const startLesson = async () => {
+    const added = await beginLesson();
+    if (added !== null) showToast(lessonStartedMessage("Lesson started", added));
+  };
+
   /** Save each student's seat and behaviour to history, then start a fresh lesson. Resolves true if ended. */
   const endLesson = async (planSeats: SeatAssignment[]): Promise<boolean> => {
     if (!currentClass || planSeats.length === 0) return false;
@@ -163,12 +172,15 @@ export function useLessonSession() {
     localStorage.removeItem(pickedKey(currentClass));
     // A new lesson may have its seats assigned again.
     unlockSeating();
+    stopLesson();
     setLessonStart(timestamp);
     showToast(`Lesson ended — saved ${records.length} seat records to history`);
     return true;
   };
 
   return {
+    running,
+    startLesson,
     byId,
     lessonEvents,
     pointsToday,

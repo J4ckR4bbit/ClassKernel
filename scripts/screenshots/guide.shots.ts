@@ -263,6 +263,7 @@ test("lesson", async ({ page }) => {
   await page.locator(".strip-colour-hint button", { hasText: "Done" }).click();
   await page.getByTitle("Exit teaching mode (Esc)").click();
 
+  await page.getByRole("button", { name: "Start lesson" }).click();
   await page.getByRole("button", { name: "End lesson" }).click();
   await shotOf(page, modal(page), "end-lesson-dialog", 2);
   await modal(page).locator("button.primary").click();

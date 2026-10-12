@@ -488,6 +488,8 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .lesson-btn > .icon { color: var(--md-primary); }
 .lesson-btn.danger > .icon { color: inherit; }
 .lesson-btn.danger { background: var(--md-error-container); border-color: transparent; color: var(--md-on-error-container); }
+.lesson-btn.start { background: var(--md-primary-container); border-color: transparent; color: var(--md-on-primary-container); }
+.lesson-btn.start > .icon { color: inherit; }
 .lesson-head { margin-bottom: 8px; }
 .lesson-head select { min-height: 44px; font-size: 15px; }
 .lesson-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }

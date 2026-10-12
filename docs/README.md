@@ -12,7 +12,7 @@ saved as plain files in a folder you choose.
 2. [Setting up a class](user-guide/02-setting-up-a-class.md) — create a class, add students (or import them from a spreadsheet), draw the room, seating rules
 3. [Attendance](user-guide/03-attendance.md) — take the register
 4. [Seats](user-guide/04-seats.md) — seating plans, Randomise, the once-per-lesson lock and reseat PIN
-5. [Lesson](user-guide/05-lesson.md) — record behaviour and attendance from the seating plan, bathroom trips, Pick a student, batch entry, teaching mode, End lesson
+5. [Lesson](user-guide/05-lesson.md) — record behaviour and attendance from the seating plan, bathroom trips, Pick a student, batch entry, teaching mode, Start and End lesson
 6. [Behaviour log](user-guide/06-behaviour-log.md) — filter and correct behaviour entries, the bathroom log
 7. [Marks](user-guide/07-marks.md) — assessments, quick marking, the per-question grid, viewing results, the markbook, weighting, marks from a spreadsheet, levels and symbols
 8. [Dashboards and parent reports](user-guide/08-dashboards-and-reports.md) — class and student dashboards, seating insights, printed reports
@@ -26,8 +26,8 @@ saved as plain files in a folder you choose.
    (ideally inside OneDrive or Google Drive).
 2. **New class** on Home → add students under **Settings → Students** (paste a list with **Import list…**).
 3. Draw the room under **Settings → Room layout**.
-4. **Seating** on the class's Home card, then **Randomise**.
-5. Take the register on **Attendance**, then teach from **Lesson**: tap a seat to record behaviour.
+4. **Seating** on the class's Home card, then **Randomise**. This starts the lesson and marks the class present.
+5. Mark any absences on **Attendance**, then teach from **Lesson**: tap a seat to record behaviour.
 6. Press **End lesson** at the end.
 
 ## Reference

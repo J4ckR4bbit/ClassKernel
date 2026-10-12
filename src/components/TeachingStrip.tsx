@@ -229,9 +229,15 @@ export default function TeachingStrip() {
             <button onClick={() => setPickerOpen(true)} disabled={busy}>
               <Icon name="person_raised_hand" size={20} /> Pick a student
             </button>
-            <button className="danger" onClick={() => void lesson.endLesson(planSeats).then((ok) => ok && closeActions())} disabled={busy}>
-              <Icon name="stop_circle" size={20} /> End lesson
-            </button>
+            {lesson.running ? (
+              <button className="danger" onClick={() => void lesson.endLesson(planSeats).then((ok) => ok && closeActions())} disabled={busy}>
+                <Icon name="stop_circle" size={20} /> End lesson
+              </button>
+            ) : (
+              <button className="tonal" onClick={() => void lesson.startLesson()} disabled={busy}>
+                <Icon name="play_arrow" size={20} /> Start lesson
+              </button>
+            )}
           </footer>
         )}
 

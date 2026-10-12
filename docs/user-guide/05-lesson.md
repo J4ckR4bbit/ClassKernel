@@ -17,10 +17,10 @@ A lesson needs a room layout and a seating plan. Without them the page links you
 | --- | --- |
 | ***n* events this lesson** | Everything recorded since the last **End lesson** (or since the start of today, if you've never ended one for this class). |
 | **Plan menu** | Appears when the class has more than one seating plan. |
-| **End lesson** | Saves the lesson to the class history and starts a fresh count. See [End lesson](#end-lesson). |
+| **Start lesson** / **End lesson** | Starts the lesson and marks the class present, then becomes **End lesson**, which saves the lesson to the class history and starts a fresh count. See [Start lesson](#start-lesson) and [End lesson](#end-lesson). |
 | **Batch entry** | Records one behaviour for several students at once. |
 | **Pick a student** | Chooses a student at random to answer a question. |
-| **Randomise** / **🔒 Reseat…** | Rerolls the seating, once per lesson (see [Seats](04-seats.md#once-per-lesson-and-the-reseat-pin)). |
+| **Randomise** / **🔒 Reseat…** | Rerolls the seating, once per lesson (see [Seats](04-seats.md#once-per-lesson-and-the-reseat-pin)). Also starts the lesson if it isn't running yet. |
 | **Teaching mode** | Opens your default [teaching mode](#teaching-mode). |
 | **Side panel** / **Room plan** | Opens the *other* teaching mode. |
 
@@ -138,9 +138,21 @@ coloured card.
 | **Dock** button | Moves the panel to the other edge of the screen. |
 | **Full-screen** button | Switches to the room-plan teaching mode. |
 | **✕** (or **Esc**) | Leaves teaching mode. |
-| **Batch entry**, **Pick a student**, **End lesson** | As above. In batch entry, tap students' rows to select them. |
+| **Batch entry**, **Pick a student**, **Start lesson** / **End lesson** | As above. In batch entry, tap students' rows to select them. |
 
 Running tools (the test timer and the noise meter) show their pop-ups inside the panel.
+
+## Start lesson
+
+Press **Start lesson** at the start of the lesson, or **Randomise** the seating (on the Lesson or Seats page), which
+starts it too. Starting a lesson:
+
+- marks every student who has no attendance mark for today **present**. Marks already made (an absence from the
+  register, say) stay as they are, so adjust the exceptions afterwards on [Attendance](03-attendance.md) or from a
+  seat;
+- turns the button into **End lesson**.
+
+A lesson that is never ended stops running at the end of the day.
 
 ## End lesson
 
@@ -154,7 +166,8 @@ This:
   the [seating insights](08-dashboards-and-reports.md#seating-insights) learn from);
 - starts a fresh **events this lesson** count;
 - **unlocks Randomise** for the next lesson;
-- resets **Pick a student**'s no-repeat list.
+- resets **Pick a student**'s no-repeat list;
+- turns the button back into **Start lesson**.
 
 Behaviour events and attendance are saved the moment you record them — End lesson doesn't need to be pressed for
 them to be kept.

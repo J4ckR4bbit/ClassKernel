@@ -19,7 +19,7 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 | **Home** | Every class as a card in its own colour, with one-tap **Lesson**, **Seating** and **Marks**, plus your switched-on tools. |
 | **Attendance** | One-tap Present / Absent / Late / Excused register, with rates and history. |
 | **Seats** | Named seating plans. Seat students by hand, or **Randomise** with hidden keep-apart, keep-together and sit-at-the-front rules — once per lesson, then a PIN to reseat. Print for cover teachers. |
-| **Lesson** | The seating plan is the interface: tap a seat to log behaviour, attendance or a bathroom trip. Batch entry, a random student picker, a full-screen or side-panel teaching mode, and **End lesson** to save the seat history. |
+| **Lesson** | The seating plan is the interface: tap a seat to log behaviour, attendance or a bathroom trip. Batch entry, a random student picker, a full-screen or side-panel teaching mode, **Start lesson** (marks the class present; Randomise starts it too) and **End lesson** to save the seat history. |
 | **Behaviour** | Filterable behaviour log and bathroom log. |
 | **Marks** | Tests as a single mark or per question (tagged by topic and cognitive level), keyboard-first mark entry, a read-only **View** and a class **Markbook**, informal / examination **weighting**, and spreadsheet **templates** to fill in and import. SA levels or symbols. |
 | **Notes** | Class details, colour and Markdown notes. |
