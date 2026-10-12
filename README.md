@@ -1,10 +1,11 @@
 # ClassKernel
 
-Fast, lightweight, offline-first classroom management for teachers. Windows desktop app built with Tauri 2 — ~10 MB, instant startup, **no accounts, no server, no internet required**.
+Fast, offline-first classroom management for teachers. A small Windows desktop app (Tauri 2, ~10 MB):
+**no accounts, no server, no internet**. Everything is saved as plain `.csv` and `.md` files in a folder you choose.
 
-## Getting it
+![The Lesson page: tap a seat to record behaviour or attendance](docs/images/lesson.png)
 
-Currently distributed as a standalone **Windows installer (`.exe`)** — grab the latest from the [Releases](../../releases) page and run it. No sign-in, nothing to configure; on first launch you pick a folder to keep your data in.
+**[Read the full documentation and user guide →](docs/README.md)**
 
 ## What it does
 
@@ -36,7 +37,8 @@ Currently distributed as a standalone **Windows installer (`.exe`)** — grab th
 
 ## Where your data lives
 
-Everything is stored as plain **`.csv` and `.md` files** in one folder you choose:
+Download the Windows installer (`.exe`) from the [Releases](../../releases) page and run it. On first launch, pick
+a folder for your data — ideally inside OneDrive or Google Drive, so it's backed up and synced.
 
 ```
 ClassroomData/
@@ -65,22 +67,48 @@ ClassroomData/
   backups/                       # automatic snapshots (newest 14 kept)
 ```
 
-Open any file in Excel or Notepad; move the folder between machines freely. **Pick a folder inside OneDrive or Google Drive** and the sync client gives you backup and access from other machines — the app itself never touches the network. Timestamps are saved in UTC so files mean the same thing on any machine; the app shows and exports every date and time in the time zone chosen under **Settings → General → Time zone** (by default, the computer's own). Every write is atomic (temp file + rename) so a sync mid-save can't corrupt anything, and a snapshot of the whole folder is taken into `backups/` at every launch.
+| Page | |
+| --- | --- |
+| **Home** | Every class as a card, with one-tap **Randomise seating** or **Lesson**, plus your switched-on tools. |
+| **Attendance** | One-tap Present / Absent / Late / Excused register, with rates and history. |
+| **Seats** | Named seating plans. Seat students by hand, or **Randomise** with hidden keep-apart, keep-together and sit-at-the-front rules — once per lesson, then a PIN to reseat. Print for cover teachers. |
+| **Lesson** | The seating plan is the interface: tap a seat to log behaviour, attendance or a bathroom trip. Batch entry, a random student picker, a full-screen or side-panel teaching mode, and **End lesson** to save the seat history. |
+| **Behaviour** | Filterable behaviour log and bathroom log. |
+| **Marks** | Tests as a single mark or per question (tagged by topic and cognitive level), keyboard-first mark entry, SA levels or symbols. |
+| **Notes** | Class details, colour and Markdown notes. |
+| **Settings** | Privacy mode, display size, time zone, teaching mode, behaviour buttons, students, room-layout designer, seating rules, topic bank, backups and **.xlsx export**. |
+
+**Optional tools**, off until switched on in Settings → Tools:
+
+| Tool | |
+| --- | --- |
+| **Class & student dashboards** | How the class and each student are doing: behaviour, answers, attendance, marks, topic strengths, seating insights. |
+| **Parent reports** | One-page A4 reports per student for parent evenings. |
+| **Test timer** | Full-screen countdown with reading and writing phases; keeps running as a pop-up. |
+| **Clock** | Full-screen analog or flip clock, any time zone. |
+| **Stopwatch** | LED-style lab stopwatch with laps. |
+| **Graph paper generator** | Grids and axes at an exact mm size, saved as a 300 dpi PNG. |
+| **Practical graph plotter** | Readings in; graph, line of best fit, gradient and R² out. |
+| **Motion graph builder** | x–t, v–t and a–t graphs from one journey, so they always agree. |
+| **Class noise meter** | Shows the room's noise against a limit and warns the class when it's too loud. |
+
+## Your data
+
+One folder of plain files that open in Excel or Notepad — one sub-folder per class. Saves are atomic, a backup of
+the whole folder is taken at every launch (newest 14 kept), and times are stored in UTC. See
+[Your data and backups](docs/user-guide/11-your-data.md) and the [data file reference](docs/data-files.md).
 
 ## Development
 
 ```bash
 npm install
-npm run dev          # UI in a browser with an in-memory demo dataset
-npm test             # unit tests (CSV round-trips, seat assigner, stats, insights, spreadsheet export, seat lock, PIN, table grouping, time zones)
-npm run test:e2e     # browser tests: builds the app and clicks through it in Chromium (first time: npx playwright install chromium)
-npm run tauri dev    # full desktop app (needs Rust; on Linux also webkit2gtk)
-npm run tauri build  # Windows installer (NSIS .exe) in src-tauri/target/release/bundle
+npm run dev            # UI in a browser with an in-memory demo class
+npm test               # unit tests
+npm run test:e2e       # browser tests (first time: npx playwright install chromium)
+npm run tauri dev      # desktop app (needs Rust)
+npm run tauri build    # Windows installer
 ```
 
-- Frontend: React + TypeScript + Vite, Zustand, PapaParse, Recharts, marked. Spreadsheet exports are written by a small built-in `.xlsx` writer (`src/lib/xlsx.ts`) rather than a dependency, so the installer stays small.
-- Backend: minimal Rust (Tauri 2) — atomic file writes, folder snapshots, folder and save-as pickers. No other native code.
-- App icons are generated: `node scripts/gen-icons.mjs`.
-- Browser tests (`e2e/`, Playwright) run the built app in demo mode, with a fresh demo class for every test and a fake microphone for the noise meter: every page and Settings tab, a lesson from register to end, marking (including the row highlighting), and each tool. A test also fails if anything reaches the browser console as an error. Run them after a change to the interface; they aren't part of CI.
-
-CI (`.github/workflows/build.yml`) runs the tests on every push and builds the Windows NSIS installer; tagging `v*` attaches the `.exe` to a GitHub release.
+React + TypeScript + Vite and Zustand on a minimal Rust (Tauri 2) backend. CI runs the tests and builds the
+installer on every push; tagging `v*` publishes a release. See [Development](docs/development.md), and
+[`src/plugins/README.md`](src/plugins/README.md) to add a tool.
