@@ -112,6 +112,12 @@ on its [Class notes](02-setting-up-a-class.md#class-notes-details-colour-and-not
 
 - Choose the **Grade**, or **+ Grade** to add one. A new grade starts with the content areas *Chemistry*, *Physics*
   and *Science Skills*.
+- **Same topics as** lets several grades share one list: pick *G10* for G11, and G11's classes tag questions from
+  G10's topics. A note shows which grades share the list, and a change made from any of them changes it for all of
+  them. If the grade had subtopics of its own, you're asked first, because its own list is replaced. Choose
+  **— its own list —** to stop sharing: the grade keeps a copy of the topics to change on its own.
+- The **✕** beside the grade deletes it with its topics. Grades that shared its list keep it. A grade that a class
+  still has stays in the list until that class's grade is changed on its Class notes page.
 - Each **content area** has a table of **subtopics**, each with an optional **short label** (e.g. *Nrg* for
   *Energy*) used as the column heading in the marking grid.
 - Type a subtopic into the bottom row and press **Enter**, or **paste a whole column from a spreadsheet** into it.

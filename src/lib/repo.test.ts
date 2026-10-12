@@ -424,6 +424,7 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       reportSchool: "St Benedict's College",
       reportTeacher: "Mr K. Hilder",
       examWeights: { "10": 60, "12": 75, "8": 37.5 },
+      topicLinks: { "11": "10", "12": "10" },
     };
     await repo.saveUserPrefs(DIR, prefs);
     expect(await repo.loadUserPrefs(DIR)).toEqual(prefs);
@@ -470,6 +471,12 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
     expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("left");
     await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\nlesson_bar_side,sideways\n");
     expect((await repo.loadUserPrefs(DIR)).lessonBarSide).toBe("left");
+  });
+
+  it("reads which grades share a topic list, dropping blanks and self-links", async () => {
+    expect((await repo.loadUserPrefs(DIR)).topicLinks).toEqual({});
+    await getFS().writeAtomic(`${DIR}/settings.csv`, "key,value\ntopic_links,11=10; 12 = 10 ;9=9;=8;7=\n");
+    expect((await repo.loadUserPrefs(DIR)).topicLinks).toEqual({ "11": "10", "12": "10" });
   });
 
   it("clamps a bad ui_scale back into range", async () => {

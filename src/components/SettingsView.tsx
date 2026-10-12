@@ -23,7 +23,17 @@ import { BC, BEHAVIOUR_COLOURS } from "../lib/behaviourColours";
 import { dateTimeInZone, deviceTimeZone, listTimeZones } from "../lib/time";
 import * as repo from "../lib/repo";
 import { backupStamp } from "../lib/id";
-import { areasForGrade, gradesInTopics, subtopicsForGrade } from "../lib/topics";
+import {
+  TopicBank,
+  areasForGrade,
+  deleteGrade,
+  gradesInTopics,
+  shareTopics,
+  subtopicsForGrade,
+  topicGrade,
+  topicGroup,
+  unshareTopics,
+} from "../lib/topics";
 import RosterView from "./RosterView";
 import RosterSheetTools from "./RosterSheetTools";
 import LayoutDesigner from "./LayoutDesigner";
@@ -874,80 +884,138 @@ function SeatingPrefsEditor({
 function AssessmentSettings() {
   const { classes, topics, setTopics, cognitiveLevels, setCognitiveLevels, userPrefs, setUserPrefs, showToast, confirmDialog, promptDialog } =
     useApp();
+  const links = userPrefs.topicLinks;
 
   const grades = useMemo(() => {
     const set = new Set<string>();
     for (const c of classes) if (c.year) set.add(c.year);
     for (const g of gradesInTopics(topics)) set.add(g);
+    for (const g of Object.keys(links)) set.add(g);
     return [...set].sort();
-  }, [classes, topics]);
+  }, [classes, topics, links]);
 
   const [pickedGrade, setPickedGrade] = useState("");
   const grade = pickedGrade || grades[0] || "";
-  const areas = areasForGrade(topics, grade);
+  // The grade whose rows hold this grade's list: itself, or the grade it shares with.
+  const list = topicGrade(links, grade);
+  const group = topicGroup(links, grade);
+  const groupLabel = joinAnd(group.map(gradeLabel));
+  const areas = areasForGrade(topics, list);
+
+  const saveBank = (bank: TopicBank) => {
+    if (bank.topics !== topics) void setTopics(bank.topics);
+    if (bank.links !== links) void setUserPrefs({ ...userPrefs, topicLinks: bank.links });
+  };
 
   const addGrade = async () => {
     const g = (await promptDialog({ title: "Add a grade / year", placeholder: "e.g. 8 or 12" }))?.trim();
     if (!g) return;
     setPickedGrade(g);
-    if (!areasForGrade(topics, g).length) {
+    if (!areasForGrade(topics, topicGrade(links, g)).length) {
       void setTopics([...topics, ...DEFAULT_TOPIC_AREAS.map((area) => ({ grade: g, area, subtopic: "", short: "" }))]);
     }
   };
 
+  const removeGrade = async () => {
+    const usedBy = classes.filter((c) => c.year === grade).map((c) => c.name);
+    const others = group.filter((g) => g !== grade);
+    const own = list === grade ? subtopicsForGrade(topics, grade).length : 0;
+    const body = [
+      list !== grade
+        ? `It only shares ${gradeLabel(list)}'s topics, which stay as they are.`
+        : others.length
+          ? `${joinAnd(others.map(gradeLabel))} keep${others.length === 1 ? "s" : ""} its topics.`
+          : own
+            ? `Its ${own} subtopic${own === 1 ? " is" : "s are"} removed.`
+            : "",
+      usedBy.length
+        ? `${joinAnd(usedBy)} still ${usedBy.length === 1 ? "has" : "have"} this grade, so it stays in the list until that is changed on the Class notes page.`
+        : "",
+    ];
+    const ok = await confirmDialog({
+      title: `Delete grade ${gradeLabel(grade)}?`,
+      body: body.filter(Boolean).join(" ") || undefined,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+    saveBank(deleteGrade({ topics, links }, grade));
+    setPickedGrade("");
+  };
+
+  const shareWith = async (source: string) => {
+    if (!source) {
+      saveBank(unshareTopics({ topics, links }, grade));
+      showToast(`${gradeLabel(grade)} has its own copy of the topics now`);
+      return;
+    }
+    const own = list === grade ? subtopicsForGrade(topics, grade).length : 0;
+    if (own) {
+      const movers = group.length > 1 ? joinAnd(group.map(gradeLabel)) : gradeLabel(grade);
+      const ok = await confirmDialog({
+        title: `Use ${gradeLabel(source)}'s topics?`,
+        body: `${movers} will use ${gradeLabel(source)}'s list, and ${gradeLabel(grade)}'s own ${own} subtopic${own === 1 ? " is" : "s are"} removed.`,
+        confirmLabel: "Use the same topics",
+        danger: true,
+      });
+      if (!ok) return;
+    }
+    saveBank(shareTopics({ topics, links }, grade, source));
+  };
+
   const addArea = async () => {
     const area = (await promptDialog({ title: "New content area", placeholder: "e.g. Chemistry" }))?.trim();
-    if (!area || !grade || topics.some((t) => t.grade === grade && t.area === area)) return;
-    void setTopics([...topics, { grade, area, subtopic: "", short: "" }]);
+    if (!area || !list || topics.some((t) => t.grade === list && t.area === area)) return;
+    void setTopics([...topics, { grade: list, area, subtopic: "", short: "" }]);
   };
 
   const removeArea = async (area: string) => {
     const ok = await confirmDialog({
       title: `Remove "${area}"?`,
-      body: `The area and its subtopics are removed for grade ${grade}.`,
+      body: `The area and its subtopics are removed for ${group.length > 1 ? groupLabel : `grade ${grade}`}.`,
       confirmLabel: "Remove",
       danger: true,
     });
     if (!ok) return;
-    void setTopics(topics.filter((t) => !(t.grade === grade && t.area === area)));
+    void setTopics(topics.filter((t) => !(t.grade === list && t.area === area)));
   };
 
   // Add one or many subtopics to an area (used by the table's row + paste input).
   const addSubtopics = (area: string, rows: Array<{ subtopic: string; short: string }>) => {
-    const existing = new Set(subtopicsForGrade(topics, grade, area).map((s) => s.subtopic));
+    const existing = new Set(subtopicsForGrade(topics, list, area).map((s) => s.subtopic));
     const toAdd: TopicEntry[] = [];
     for (const r of rows) {
       const subtopic = r.subtopic.trim();
       if (!subtopic || existing.has(subtopic) || toAdd.some((t) => t.subtopic === subtopic)) continue;
-      toAdd.push({ grade, area, subtopic, short: r.short.trim() });
+      toAdd.push({ grade: list, area, subtopic, short: r.short.trim() });
     }
     if (toAdd.length === 0) return;
     // drop the area placeholder now that it has real subtopics
-    const cleaned = topics.filter((t) => !(t.grade === grade && t.area === area && t.subtopic === ""));
+    const cleaned = topics.filter((t) => !(t.grade === list && t.area === area && t.subtopic === ""));
     void setTopics([...cleaned, ...toAdd]);
   };
 
   const renameSubtopic = (area: string, oldSub: string, raw: string) => {
     const newSub = raw.trim();
     if (!newSub || newSub === oldSub) return;
-    if (topics.some((t) => t.grade === grade && t.area === area && t.subtopic === newSub)) {
+    if (topics.some((t) => t.grade === list && t.area === area && t.subtopic === newSub)) {
       showToast(`"${newSub}" already exists in ${area}`);
       return;
     }
     void setTopics(
-      topics.map((t) => (t.grade === grade && t.area === area && t.subtopic === oldSub ? { ...t, subtopic: newSub } : t)),
+      topics.map((t) => (t.grade === list && t.area === area && t.subtopic === oldSub ? { ...t, subtopic: newSub } : t)),
     );
   };
 
   const setShort = (area: string, subtopic: string, short: string) =>
     void setTopics(
-      topics.map((t) => (t.grade === grade && t.area === area && t.subtopic === subtopic ? { ...t, short: short.trim() } : t)),
+      topics.map((t) => (t.grade === list && t.area === area && t.subtopic === subtopic ? { ...t, short: short.trim() } : t)),
     );
 
   const removeSubtopic = (area: string, subtopic: string) => {
-    let next = topics.filter((t) => !(t.grade === grade && t.area === area && t.subtopic === subtopic));
-    if (!next.some((t) => t.grade === grade && t.area === area)) {
-      next = [...next, { grade, area, subtopic: "", short: "" } as TopicEntry];
+    let next = topics.filter((t) => !(t.grade === list && t.area === area && t.subtopic === subtopic));
+    if (!next.some((t) => t.grade === list && t.area === area)) {
+      next = [...next, { grade: list, area, subtopic: "", short: "" } as TopicEntry];
     }
     void setTopics(next);
   };
@@ -956,6 +1024,9 @@ function AssessmentSettings() {
     void setCognitiveLevels(cognitiveLevels.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   const addLevel = () => void setCognitiveLevels([...cognitiveLevels, { code: `L${cognitiveLevels.length + 1}`, label: "" }]);
   const removeLevel = (i: number) => void setCognitiveLevels(cognitiveLevels.filter((_, j) => j !== i));
+
+  // Grades this one can share with: any other grade that keeps its own list.
+  const sources = grades.filter((g) => g !== grade && !links[g]);
 
   return (
     <>
@@ -967,23 +1038,46 @@ function AssessmentSettings() {
         </p>
         <div className="row" style={{ marginBottom: 12 }}>
           <span className="muted">Grade:</span>
-          <select value={grade} onChange={(e) => setPickedGrade(e.target.value)}>
+          <select value={grade} onChange={(e) => setPickedGrade(e.target.value)} aria-label="Grade">
             {grades.length === 0 && <option value="">— none —</option>}
             {grades.map((g) => (
               <option key={g} value={g}>
-                {g}
+                {gradeLabel(g)}
               </option>
             ))}
           </select>
+          {grade && (
+            <button className="icon-only small danger" onClick={() => void removeGrade()} title="Delete grade">
+              <Icon name="close" size={18} />
+            </button>
+          )}
           <button className="small" onClick={() => void addGrade()}>
             <Icon name="add" size={20} /> Grade
           </button>
+          {grade && (links[grade] || sources.length > 0) && (
+            <label className="row topic-share">
+              <span className="muted">Same topics as:</span>
+              <select value={list === grade ? "" : list} onChange={(e) => void shareWith(e.target.value)}>
+                <option value="">— its own list —</option>
+                {sources.map((g) => (
+                  <option key={g} value={g}>
+                    {gradeLabel(g)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
 
         {!grade ? (
           <p className="muted">Add a grade to start building its topic list.</p>
         ) : (
           <>
+            {group.length > 1 && (
+              <p className="topic-shared-note">
+                <Icon name="groups" size={18} /> One list for {groupLabel}: a change here changes it for all of them.
+              </p>
+            )}
             <p className="muted" style={{ marginTop: 0 }}>
               Type subtopics into a table, or paste a column straight from a spreadsheet. Paste two tab-separated
               columns to fill Subtopic and Short at once.
@@ -997,7 +1091,7 @@ function AssessmentSettings() {
                   </button>
                 </div>
                 <TopicAreaTable
-                  rows={subtopicsForGrade(topics, grade, area)}
+                  rows={subtopicsForGrade(topics, list, area)}
                   onRename={(oldSub, val) => renameSubtopic(area, oldSub, val)}
                   onSetShort={(sub, val) => setShort(area, sub, val)}
                   onRemove={(sub) => removeSubtopic(area, sub)}
@@ -1093,6 +1187,10 @@ function AssessmentSettings() {
 
 /** "10" → "G10", "8" → "G08"; anything else as it is. */
 const gradeLabel = (g: string) => (/^\d+$/.test(g) ? `G${g.padStart(2, "0")}` : g);
+
+/** ["G10", "G11", "G12"] → "G10, G11 and G12". */
+const joinAnd = (items: string[]) =>
+  items.length < 2 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 
 /**
  * Per grade, how the informal tasks and the examinations make up a student's
