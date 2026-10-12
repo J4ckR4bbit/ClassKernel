@@ -7,6 +7,7 @@ const mkStudent = (id: string, gender = ""): Student => ({
   id,
   firstName: id.toUpperCase(),
   lastName: "Test",
+  adamNo: "",
   gender,
   flags: "",
   notes: "",

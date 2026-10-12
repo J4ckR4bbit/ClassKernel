@@ -25,7 +25,7 @@ import { DEFAULT_BEHAVIOURS, BehaviourEvent, Student } from "./types";
 
 const TODAY = "2026-10-07"; // a Wednesday
 
-const S = (id: string, firstName: string): Student => ({ id, firstName, lastName: id.toUpperCase(), gender: "", flags: "", notes: "" });
+const S = (id: string, firstName: string): Student => ({ id, firstName, lastName: id.toUpperCase(), adamNo: "", gender: "", flags: "", notes: "" });
 const ev = (studentId: string, code: string, date: string, points: number): BehaviourEvent => ({
   timestamp: `${date}T09:00:00.000Z`,
   studentId,
@@ -69,8 +69,8 @@ function data(): ClassData {
       { date: "2026-10-05", studentId: "b", status: "P", note: "" },
     ],
     assessments: [
-      { id: "t1", title: "Test 1", date: "2026-09-20", totalMarks: 20, category: "Test", questionCount: 2, contentArea: "" },
-      { id: "t2", title: "Test 2", date: "2026-10-03", totalMarks: 50, category: "Test", questionCount: 1, contentArea: "" },
+      { id: "t1", title: "Test 1", date: "2026-09-20", totalMarks: 20, category: "Test", questionCount: 2, contentArea: "", kind: "informal", weight: 1 },
+      { id: "t2", title: "Test 2", date: "2026-10-03", totalMarks: 50, category: "Test", questionCount: 1, contentArea: "", kind: "informal", weight: 1 },
     ],
     marks: [
       { assessmentId: "t1", studentId: "a", mark: 18, comment: "" },

@@ -11,6 +11,7 @@ import {
   loadExportData,
 } from "../lib/exporter";
 import { buildXlsx } from "../lib/xlsx";
+import { fmtDecimal } from "../lib/format";
 
 /** Hand the workbook to the browser as a download (dev / demo mode only). */
 function downloadInBrowser(fileName: string, bytes: Uint8Array): void {
@@ -218,7 +219,7 @@ export default function ExportView() {
                   </td>
                   <td>{s.label}</td>
                   <td className="muted">{s.description}</td>
-                  <td>{on ? (data ? rows.toLocaleString() : "…") : "—"}</td>
+                  <td>{on ? (data ? fmtDecimal(rows) : "…") : "—"}</td>
                 </tr>
               );
             })}
@@ -241,7 +242,7 @@ export default function ExportView() {
         <h3>Export</h3>
         <p className="muted" style={{ marginTop: 0 }}>
           {data
-            ? `${sheets.length} sheets · ${totalRows.toLocaleString()} rows · opens in Excel, LibreOffice or Google Sheets.`
+            ? `${sheets.length} sheets · ${fmtDecimal(totalRows)} rows · opens in Excel, LibreOffice or Google Sheets.`
             : "Pick at least one class above."}
         </p>
         <div className="row">

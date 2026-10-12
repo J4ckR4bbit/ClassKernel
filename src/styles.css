@@ -568,11 +568,29 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .stat-tile { background: var(--md-surface-container-low); border-radius: var(--md-shape-m); padding: 14px 20px; min-width: 140px; }
 .stat-tile .value { font-size: 28px; font-weight: 400; line-height: 36px; }
 .stat-tile .label { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; color: var(--text-dim); }
+/* Slim chips on one line (the marking grid), leaving the room for the students. */
+.stat-tiles.compact { gap: 8px; margin-bottom: 8px; }
+.stat-tiles.compact .stat-tile { display: flex; align-items: baseline; gap: 6px; padding: 2px 12px; min-width: 0; border-radius: 14px; }
+.stat-tiles.compact .stat-tile .value { font-size: 14px; font-weight: 600; line-height: 22px; }
+.stat-tiles.compact .stat-tile .label { letter-spacing: 0.2px; }
 .section-heading { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 500; margin: 24px 0 12px; }
 .section-heading .icon { color: var(--md-on-surface-variant); }
 .desk-pill { display: inline-block; background: var(--md-surface-container-high); border: 1px solid var(--border); border-radius: 12px; padding: 2px 9px; font-size: 12px; font-variant-numeric: tabular-nums; }
 .desk-pill.good { background: #e3f0e8; border-color: #9cc7ac; color: #1f6b3f; }
 .desk-pill.bad { background: #f7e0dd; border-color: #d9a59c; color: #9c2f1f; }
+
+/* importing marks from a template: what was skipped, and a file made for another test */
+.import-preview { max-width: 640px; }
+.import-preview h3 { font-size: 14px; margin: 12px 0 6px; }
+.import-problems { max-height: 220px; overflow: auto; margin: 0; padding-left: 20px; font-size: 13px; }
+.import-problems li { margin: 2px 0; }
+.import-changes { max-height: 200px; overflow: auto; margin: 8px 0 0; padding-left: 20px; font-size: 13px; }
+.import-changes:empty { display: none; }
+.import-absent summary { cursor: pointer; font-size: 13px; color: var(--text-dim); }
+.import-warning { display: flex; gap: 8px; align-items: flex-start; padding: 8px 12px; border-radius: var(--md-shape-xs); background: #fdf0d9; color: #6b4a00; }
+
+/* an assessment's weight, typed in its row on the Marks page */
+.weight-input, table.data td input.weight-input { width: 60px; min-height: 32px; padding: 3px 8px; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ---------- multi-question marking grid ---------- */
 .mark-grid-wrap { overflow-x: auto; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); background: var(--panel); }
@@ -605,7 +623,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .mark-grid .sticky-right.second { right: 54px; }
 .mark-grid .sticky-right.third { right: 108px; }
 .mark-grid .sticky-right.fourth { right: 162px; }
-.mark-grid .sticky-right.fourth { border-left: 2px solid var(--border); }
+.mark-grid .sticky-right.fourth, .mark-grid .sticky-right.divider { border-left: 2px solid var(--border); }
 .mark-grid tfoot .avg-row th, .mark-grid tfoot .avg-row td { background: var(--md-surface-container-low); color: var(--text-dim); font-size: 12px; font-variant-numeric: tabular-nums; }
 .mark-grid tfoot .sticky-left { background: var(--md-surface-container-low); text-align: left; }
 
@@ -614,21 +632,37 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .mark-grid .grid-input:focus { border-color: var(--accent); background: #fff; outline: none; }
 .mark-grid .grid-input.over { color: var(--danger); font-weight: 700; }
 
+/* read-only marks (View on a test, and the markbook): plain numbers, a little more air than the input rows */
+.mark-grid.read-only tbody td { padding-top: 4px; padding-bottom: 4px; font-variant-numeric: tabular-nums; }
+.mark-grid .col-comment { min-width: 220px; text-align: left; white-space: normal; }
+.mark-grid .col-test { width: 88px; min-width: 88px; max-width: 88px; }
+/* markbook: five pinned columns on the right (Informal, Exam, Mark, level, Rank), a little wider; a taller first heading row for two-line titles and the share */
+.markbook .col-total { width: 62px; min-width: 62px; }
+.markbook .sticky-right.second { right: 62px; }
+.markbook .sticky-right.third { right: 124px; }
+.markbook .sticky-right.fourth { right: 186px; }
+.markbook .sticky-right.fifth { right: 248px; }
+.markbook .sticky-right.plain { border-left: none; }
+.markbook td.final { font-weight: 600; }
+.mark-grid.markbook thead tr:first-child th { height: 58px; }
+.mark-grid.markbook thead .topic-row th { top: 58px; }
+.mark-grid .test-link { display: block; width: 100%; text-align: center; }
+.mark-grid .test-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; white-space: normal; overflow-wrap: anywhere; font-size: 12px; line-height: 15px; }
+
 /* ---------- marking screens: the page holds still, only the students scroll ----------
-   The title, stat tiles and the grid's two heading rows stay at the top, the
-   two average rows and the notes at the bottom. */
+   The title, stat chips and the grid's heading rows stay at the top, the
+   average rows at the bottom. The read-only marks pages use the same layout. */
 .main-pane:has(> .marking-view) { display: flex; flex-direction: column; overflow: hidden; }
 .marking-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .marking-view > * { flex-shrink: 0; }
 .marking-view > .mark-grid-wrap, .marking-view > .quick-mark-list { flex: 1 1 auto; min-height: 0; overflow: auto; }
-.marking-view > p { margin: 8px 0 0; }
 .quick-mark-list { padding: 0; margin-bottom: 0; }
 .mark-grid thead th { position: sticky; z-index: 2; }
 .mark-grid thead tr:first-child th { top: 0; height: 44px; }
 .mark-grid thead .topic-row th { top: 44px; }
 .mark-grid tfoot th, .mark-grid tfoot td { position: sticky; z-index: 2; height: 28px; }
 .mark-grid tfoot tr:last-child > * { bottom: 0; }
-.mark-grid tfoot tr:first-child > * { bottom: 28px; }
+.mark-grid tfoot tr:first-child:not(:last-child) > * { bottom: 28px; }
 .mark-grid thead .sticky-left, .mark-grid thead .sticky-right, .mark-grid tfoot .sticky-left, .mark-grid tfoot .sticky-right { z-index: 3; }
 
 /* ---------- print ---------- */

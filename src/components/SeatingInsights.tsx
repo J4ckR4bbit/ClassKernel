@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import { useApp } from "../store/appStore";
 import { studentName } from "../lib/types";
 import { disruptivePairs, studentDeskStats, studentOverallAverages } from "../lib/lessons";
+import { fmtNum } from "../lib/format";
 
-const fmt = (n: number) => (n > 0 ? `+${n.toFixed(1)}` : n.toFixed(1));
+const fmt = (n: number) => (n > 0 ? `+${fmtNum(n, 1)}` : fmtNum(n, 1));
 
 /**
  * Teacher-facing analysis of the per-lesson seating history: how often each

@@ -8,6 +8,7 @@ import {
   AttendanceEntry,
   BathroomVisit,
   BehaviourEvent,
+  DEFAULT_EXAM_WEIGHT,
   GradeScale,
   Mark,
   NO_ANSWER_BEHAVIOUR,
@@ -143,10 +144,12 @@ export function percentage(mark: Mark, assessment: Assessment): number | null {
 /**
  * The South African 7-level achievement code for a percentage, matching the
  * "Sym" column of the reference mark-entry app. 7 = 80–100% down to 1 = 0–29%.
+ * Graded on the whole-number % the screens show, so 79,6% reads 80% and is a 7.
  * Returns "" when there's no percentage to grade (e.g. nothing entered).
  */
 export function symbolForPct(pct: number | null): string {
   if (pct === null || !Number.isFinite(pct)) return "";
+  pct = Math.round(pct);
   if (pct >= 80) return "7";
   if (pct >= 70) return "6";
   if (pct >= 60) return "5";
@@ -156,9 +159,10 @@ export function symbolForPct(pct: number | null): string {
   return "1";
 }
 
-/** The letter symbol for a percentage: A 80%+, B 70–79, C 60–69, D 50–59, E 40–49, F below 40. */
+/** The letter symbol for a percentage: A 80%+, B 70–79, C 60–69, D 50–59, E 40–49, F below 40 (on the rounded %, as for levels). */
 export function letterForPct(pct: number | null): string {
   if (pct === null || !Number.isFinite(pct)) return "";
+  pct = Math.round(pct);
   if (pct >= 80) return "A";
   if (pct >= 70) return "B";
   if (pct >= 60) return "C";
@@ -212,19 +216,62 @@ export function histogram(pcts: number[]): { bin: string; count: number }[] {
   return bins.map((count, i) => ({ bin: i === 9 ? "90-100" : `${i * 10}-${i * 10 + 10}`, count }));
 }
 
-/** Mean overall percentage per student across all assessments they have marks for. */
-export function overallPercent(studentId: string, assessments: Assessment[], marks: Mark[]): number | null {
-  let count = 0;
-  let acc = 0;
+export interface WeightedMark {
+  /** Weighted mean % over the informal tasks the student has a mark for. */
+  informal: number | null;
+  /** Weighted mean % over the examinations the student has a mark for. */
+  exam: number | null;
+  /** The two blended by the grade's split: the student's mark. */
+  overall: number | null;
+}
+
+/** The two sides of the weighted mark, each a share (%) of the whole. */
+function sideShares(examWeight: number, hasInformal: boolean, hasExam: boolean): { informal: number; exam: number } {
+  const exam = hasExam ? Math.min(100, Math.max(0, examWeight)) : 0;
+  const informal = hasInformal ? 100 - Math.min(100, Math.max(0, examWeight)) : 0;
+  const total = exam + informal;
+  // A side with nothing in it drops out and the other stands alone.
+  return total > 0 ? { informal: (informal * 100) / total, exam: (exam * 100) / total } : { informal: 0, exam: 0 };
+}
+
+/**
+ * A student's weighted mark. Within each side (informal tasks, examinations)
+ * every task's % counts by its weight; the two sides are then blended by the
+ * grade's split, `examWeight` % to the examinations. A side the student has no
+ * marks on yet (no exam written) drops out, so the mark is the other side alone.
+ */
+export function weightedMark(studentId: string, assessments: Assessment[], marks: Mark[], examWeight = DEFAULT_EXAM_WEIGHT): WeightedMark {
+  const sums = { informal: { acc: 0, w: 0 }, exam: { acc: 0, w: 0 } };
   for (const a of assessments) {
+    if (!(a.weight > 0)) continue;
     const m = marks.find((m) => m.assessmentId === a.id && m.studentId === studentId);
-    if (!m) continue;
-    const pct = percentage(m, a);
+    const pct = m ? percentage(m, a) : null;
     if (pct === null) continue;
-    acc += pct;
-    count += 1;
+    sums[a.kind].acc += pct * a.weight;
+    sums[a.kind].w += a.weight;
   }
-  return count > 0 ? acc / count : null;
+  const informal = sums.informal.w > 0 ? sums.informal.acc / sums.informal.w : null;
+  const exam = sums.exam.w > 0 ? sums.exam.acc / sums.exam.w : null;
+  const share = sideShares(examWeight, informal !== null, exam !== null);
+  const overall = share.informal + share.exam > 0 ? ((informal ?? 0) * share.informal + (exam ?? 0) * share.exam) / 100 : null;
+  return { informal, exam, overall };
+}
+
+/** A student's mark across all their assessments: the weighted mark (see weightedMark). */
+export function overallPercent(studentId: string, assessments: Assessment[], marks: Mark[], examWeight = DEFAULT_EXAM_WEIGHT): number | null {
+  return weightedMark(studentId, assessments, marks, examWeight).overall;
+}
+
+/**
+ * Each assessment's share (%) of the weighted mark for a student who wrote
+ * everything: its side's share of the split times its weight over that side's
+ * total weight. Shown on the markbook so the weights read as percentages.
+ */
+export function taskShares(assessments: Assessment[], examWeight = DEFAULT_EXAM_WEIGHT): Map<string, number> {
+  const total = { informal: 0, exam: 0 };
+  for (const a of assessments) if (a.weight > 0) total[a.kind] += a.weight;
+  const share = sideShares(examWeight, total.informal > 0, total.exam > 0);
+  return new Map(assessments.map((a) => [a.id, a.weight > 0 && total[a.kind] > 0 ? (share[a.kind] * a.weight) / total[a.kind] : 0]));
 }
 
 /** Per-student series of percentages in assessment date order (nulls skipped). */
@@ -360,9 +407,8 @@ export function studentProvisional(
 
 /**
  * Rank students by their current total (highest = rank 1). Students who have no
- * marks entered (didn't sit / not started) are left out. Ties share the average
- * of the positions they span, matching the reference marksheet (e.g. two tied
- * for 3rd/4th both get 3.5).
+ * marks entered (didn't sit / not started) are left out. Ties share the better
+ * place (two tied for first are both 1, and the next is 3).
  */
 export function rankStudents(
   studentIds: string[],
@@ -370,7 +416,7 @@ export function rankStudents(
   qmarks: QuestionMark[],
 ): Map<string, number> {
   const idx = markIndex(qmarks);
-  const totals: Array<{ id: string; total: number }> = [];
+  const totals = new Map<string, number>();
   for (const id of studentIds) {
     let total = 0;
     let answered = 0;
@@ -380,18 +426,23 @@ export function rankStudents(
       total += v;
       answered += 1;
     }
-    if (answered > 0) totals.push({ id, total });
+    if (answered > 0) totals.set(id, total);
   }
-  totals.sort((a, b) => b.total - a.total);
+  return rankByScore(totals);
+}
+
+/**
+ * Rank by score, highest = rank 1. Ties share the better place: two tied for
+ * first are both 1 and the next is 3 (as on a school report). Used for a test's
+ * total and for a student's weighted mark.
+ */
+export function rankByScore(scores: Map<string, number>): Map<string, number> {
+  const sorted = [...scores.entries()].sort((a, b) => b[1] - a[1]);
   const ranks = new Map<string, number>();
-  let i = 0;
-  while (i < totals.length) {
-    let j = i;
-    while (j + 1 < totals.length && totals[j + 1].total === totals[i].total) j++;
-    const avgRank = (i + 1 + (j + 1)) / 2; // positions are 0-based, ranks 1-based
-    for (let k = i; k <= j; k++) ranks.set(totals[k].id, avgRank);
-    i = j + 1;
-  }
+  sorted.forEach(([id, score], i) => {
+    const prev = sorted[i - 1];
+    ranks.set(id, prev && prev[1] === score ? ranks.get(prev[0])! : i + 1);
+  });
   return ranks;
 }
 
