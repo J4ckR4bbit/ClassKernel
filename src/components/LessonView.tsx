@@ -148,9 +148,19 @@ export default function LessonView() {
       <Icon name="casino" /> {isShuffling ? "Randomising…" : "Randomise"}
     </button>
   );
-  const endButton = (
+  // One button for both ends of the lesson. Randomise also starts it.
+  const endButton = lesson.running ? (
     <button className="lesson-btn danger lesson-end" onClick={() => void endLesson()} disabled={busy}>
       <Icon name="stop_circle" /> End lesson
+    </button>
+  ) : (
+    <button
+      className="lesson-btn start lesson-end"
+      onClick={() => void lesson.startLesson()}
+      disabled={busy}
+      title="Start the lesson: everyone not yet marked today is marked present"
+    >
+      <Icon name="play_arrow" /> Start lesson
     </button>
   );
   const batchPanel = <BatchPanel entry={batch} behaviourCodes={behaviourCodes} layout={sideBar ? "strip" : "bar"} />;

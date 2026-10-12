@@ -36,8 +36,9 @@ Moving students by hand is never locked.
 
 ## Randomise
 
-Press **Randomise** (or **Randomise seating** on the class's Home card). Names flash across the seats for about a
-second so the class can see it really is a shuffle, then settle.
+Press **Randomise** (**Seating** on the class's Home card brings you here). Names flash across the seats for about a
+second so the class can see it really is a shuffle, then settle. If the lesson hasn't been started yet, Randomise
+starts it and marks the class present (see [Start lesson](05-lesson.md#start-lesson)).
 
 ![Randomise in progress](../images/seats-randomising.png)
 
@@ -49,11 +50,10 @@ How it seats the class:
 
 ## Once per lesson, and the reseat PIN
 
-Seats are assigned **once per lesson**, wherever you press Randomise (Seats, Lesson or Home). After that the button
-becomes **🔒 Reseat…** and the Home card shows **🔒 Seats assigned**, so nobody reshuffles the class by accident.
+Seats are assigned **once per lesson**, whether you press Randomise on Seats or Lesson. After that the button
+becomes **🔒 Reseat…**, so nobody reshuffles the class by accident.
 
 ![The toolbar after seats have been assigned](../images/seats-toolbar-locked.png)
-![A class card with seats assigned](../images/class-card-locked.png)
 
 The lock lifts when you **End lesson** (see [Lesson](05-lesson.md#end-lesson)) or on the next day. To assign seats
 again within the same lesson, press **Reseat…** and enter your **reseat PIN**.

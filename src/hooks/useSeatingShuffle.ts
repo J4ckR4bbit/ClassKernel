@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { SeatAssignment } from "../lib/types";
 import { assignRandomSeats } from "../lib/seating";
+import { lessonStartedMessage } from "../lib/lessonState";
 
 const SHUFFLE_FRAMES = 12;
 const SHUFFLE_INTERVAL = 90;
@@ -15,6 +16,7 @@ const SHUFFLE_INTERVAL = 90;
  * Seats are assigned once per lesson: after a successful reroll the class is
  * locked (see lessonState.ts) until End lesson, a new day, or the reseat PIN.
  * Every Randomise button goes through here, so the lock can't be sidestepped.
+ * A reroll also starts the lesson if one isn't running yet.
  */
 export function useSeatingShuffle() {
   const [shuffleFrame, setShuffleFrame] = useState<SeatAssignment[] | null>(null);
@@ -75,10 +77,11 @@ export function useSeatingShuffle() {
           ...cur.seating.filter((s) => s.planName !== activePlan),
           ...result.assignments.map((a) => ({ ...a, planName: activePlan })),
         ]);
-        cur.showToast(
-          result.violations.length
-            ? `Seated with ${result.violations.length} unmet constraint${result.violations.length > 1 ? "s" : ""}`
-            : "Seating randomised",
+        const seated = result.violations.length
+          ? `Seated with ${result.violations.length} unmet constraint${result.violations.length > 1 ? "s" : ""}`
+          : "Seating randomised";
+        void cur.startLesson().then((added) =>
+          useApp.getState().showToast(added === null ? seated : lessonStartedMessage(`${seated}, lesson started`, added)),
         );
       }
     }, SHUFFLE_INTERVAL);

@@ -3,7 +3,16 @@ import { backupStamp, nowIso, today } from "../lib/id";
 import { getFS, isTauri } from "../lib/fs";
 import * as repo from "../lib/repo";
 import { seedDemoData } from "../lib/demo";
-import { isSeatingLocked, readLessonStart, readSeatedAt, seatedKey } from "../lib/lessonState";
+import {
+  isLessonRunning,
+  isSeatingLocked,
+  lessonRunningKey,
+  markUnmarkedPresent,
+  readLessonRunning,
+  readLessonStart,
+  readSeatedAt,
+  seatedKey,
+} from "../lib/lessonState";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import { enterDock, enterFullscreen, restoreWindow } from "../lib/teachingWindow";
 import { setTimeZone } from "../lib/time";
@@ -88,8 +97,11 @@ export interface AppState {
    * moment the lock is set or lifted.
    */
   seatingLockedAt: string | null;
-  /** Set by Home to ask the Seating view to auto-run an animated reroll on arrival. */
-  pendingRandomise: boolean;
+  /**
+   * When the open class's lesson was started (localStorage, see lessonState.ts),
+   * mirrored so the Start / End lesson buttons flip the moment it changes.
+   */
+  lessonRunningSince: string | null;
   /** Id of the plugin the "plugin" view is showing (see src/plugins/registry.ts). */
   activePlugin: string | null;
   /** The student the Dashboard's Student tab shows; null = the Class tab. */
@@ -147,7 +159,15 @@ export interface AppState {
   unlockSeating(): void;
   /** Ask for the reseat PIN (creating one if none is set); true if unlocked. */
   requestSeatingUnlock(): Promise<boolean>;
-  setPendingRandomise(on: boolean): void;
+  /** Whether the open class has a lesson running (started, not yet ended). */
+  lessonRunning(): boolean;
+  /**
+   * Start the open class's lesson and mark every student without a mark today
+   * present. Resolves to how many were marked, or null if one was already running.
+   */
+  startLesson(): Promise<number | null>;
+  /** The lesson is over (End lesson): the button goes back to Start lesson. */
+  stopLesson(): void;
   showToast(message: string, action?: { label: string; run: () => void }): void;
   revealSensitive(): void;
   confirmDialog(opts: Omit<DialogRequest, "kind" | "placeholder" | "initial">): Promise<boolean>;
@@ -237,7 +257,7 @@ export const useApp = create<AppState>((set, get) => {
   focusMode: false,
   focusStyle: "room",
   seatingLockedAt: null,
-  pendingRandomise: false,
+  lessonRunningSince: null,
   activePlugin: null,
   dashboardStudent: null,
   toast: null,
@@ -412,8 +432,39 @@ export const useApp = create<AppState>((set, get) => {
     return true;
   },
 
-  setPendingRandomise(on) {
-    set({ pendingRandomise: on });
+  lessonRunning() {
+    const { currentClass, lessonRunningSince } = get();
+    return !!currentClass && isLessonRunning(lessonRunningSince, readLessonStart(currentClass), today());
+  },
+
+  async startLesson() {
+    const { currentClass, students, attendance, setAttendance } = get();
+    if (!currentClass || get().lessonRunning()) return null;
+    const at = nowIso();
+    try {
+      localStorage.setItem(lessonRunningKey(currentClass), at);
+    } catch {
+      // It still counts as running for this session.
+    }
+    set({ lessonRunningSince: at });
+    const marked = markUnmarkedPresent(
+      attendance,
+      students.map((s) => s.id),
+      today(),
+    );
+    if (marked.added) await setAttendance(marked.attendance);
+    return marked.added;
+  },
+
+  stopLesson() {
+    const { currentClass } = get();
+    if (!currentClass) return;
+    try {
+      localStorage.removeItem(lessonRunningKey(currentClass));
+    } catch {
+      // Nothing stored to clear.
+    }
+    set({ lessonRunningSince: null });
   },
 
   showToast(message, action) {
@@ -547,6 +598,7 @@ export const useApp = create<AppState>((set, get) => {
       roomConfig,
       reportComments,
       seatingLockedAt: readSeatedAt(name),
+      lessonRunningSince: readLessonRunning(name),
       sensitiveRevealed: false,
     });
   },
@@ -769,6 +821,13 @@ export const useApp = create<AppState>((set, get) => {
   },
   };
 });
+
+/** Whether the open class has a lesson running; re-renders when it starts or ends. */
+export function useLessonRunning(): boolean {
+  useApp((s) => s.lessonRunningSince);
+  useApp((s) => s.currentClass);
+  return useApp.getState().lessonRunning();
+}
 
 /** The current class's grade split: the examinations' share (%) of the weighted mark. */
 export function useExamWeight(): number {

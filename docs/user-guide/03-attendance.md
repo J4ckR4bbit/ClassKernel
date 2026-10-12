@@ -27,6 +27,10 @@ immediately. Students are listed by surname.
 
 To take or correct the register for another day, change the **date** at the top left.
 
+Starting a lesson (**Start lesson** on the Lesson page, or **Randomise**) also marks everyone present who has no mark
+for today yet. Marks you've already made, such as an absence, stay as they are. See
+[Start lesson](05-lesson.md#start-lesson).
+
 You can also mark attendance from the live lesson: tap a student's seat and use the same P / A / L / E buttons
 (see [Lesson](05-lesson.md#tap-a-seat)).
 

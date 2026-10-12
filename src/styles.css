@@ -488,6 +488,8 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .lesson-btn > .icon { color: var(--md-primary); }
 .lesson-btn.danger > .icon { color: inherit; }
 .lesson-btn.danger { background: var(--md-error-container); border-color: transparent; color: var(--md-on-error-container); }
+.lesson-btn.start { background: var(--md-primary-container); border-color: transparent; color: var(--md-on-primary-container); }
+.lesson-btn.start > .icon { color: inherit; }
 .lesson-head { margin-bottom: 8px; }
 .lesson-head select { min-height: 44px; font-size: 15px; }
 .lesson-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -1231,6 +1233,8 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 
 /* ---------- class colours ---------- */
 .class-card.coloured { border-top: 6px solid var(--class-colour); }
+/* Every class colour is deep enough to carry white text (src/lib/behaviourColours.ts). */
+.class-card.coloured .class-card-avatar { background: var(--class-colour); color: #fff; }
 .class-dot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 0; box-shadow: 0 0 0 1px var(--md-outline-variant); }
 .class-dot.none { background: transparent; box-shadow: inset 0 0 0 1px var(--md-outline); }
 .top-bar { border-bottom: 3px solid var(--class-colour, transparent); }
