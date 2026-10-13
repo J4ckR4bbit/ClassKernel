@@ -34,6 +34,33 @@ test("lesson: tap a seat and log a behaviour", async ({ page }) => {
   await expect(toast(page)).toBeVisible();
 });
 
+test("lesson: tapping off a seat's pop-up closes it, and another seat opens that student's", async ({ page }) => {
+  await nav(page, "Lesson");
+  const popover = page.locator(".behaviour-popover");
+  await seats(page).first().click({ force: true });
+  await expect(popover).toBeVisible();
+  await page.locator("main .lesson-head").click();
+  await expect(popover).toHaveCount(0);
+
+  await seats(page).nth(1).click({ force: true });
+  await expect(popover).toBeVisible();
+  const first = await popover.locator("h4").textContent();
+  // A seat across the room, clear of the open pop-up.
+  await seats(page).last().click({ force: true });
+  await expect(popover).toBeVisible();
+  await expect(popover.locator("h4")).not.toHaveText(first ?? "");
+});
+
+test("side panel: tapping off a student's sheet closes it", async ({ page }) => {
+  await nav(page, "Lesson");
+  await page.getByRole("button", { name: "Side panel" }).click();
+  await page.locator(".strip .strip-student").first().click();
+  const sheet = page.locator(".strip-sheet");
+  await expect(sheet).toBeVisible();
+  await page.locator(".strip .strip-class").click();
+  await expect(sheet).toHaveCount(0);
+});
+
 test("lesson: the bathroom timer starts and stops", async ({ page }) => {
   await nav(page, "Lesson");
   await seats(page).nth(2).click({ force: true });

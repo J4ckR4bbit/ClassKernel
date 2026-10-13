@@ -6,6 +6,7 @@ import { displayStudentName, seatSurname } from "../lib/privacy";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
 import { useLessonSession } from "../hooks/useLessonSession";
 import { useBatchEntry } from "../hooks/useBatchEntry";
+import { useDismissOnOutside } from "../hooks/useDismissOnOutside";
 import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
@@ -78,6 +79,8 @@ export default function LessonView() {
   // Clamp the popover inside the canvas container once its size is known.
   const canvasBoxRef = useRef<HTMLDivElement | null>(null);
   const popRef = useRef<HTMLDivElement | null>(null);
+  // Tapping anywhere off the pop-up closes it without recording anything.
+  useDismissOnOutside(popRef, !!popover, () => setPopover(null));
   const [popPos, setPopPos] = useState<{ left: number; top: number } | null>(null);
   useLayoutEffect(() => {
     if (!popover || !canvasBoxRef.current || !popRef.current) {
