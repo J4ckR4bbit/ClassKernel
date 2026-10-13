@@ -31,7 +31,7 @@ Press **New assessment**.
 | --- | --- |
 | **Title** | e.g. *Waves & sound test*. |
 | **Date** | Defaults to today. |
-| **Content area** | From the topic bank for the class's grade (Settings → Assessments). Choose *none / mixed* for a test across areas. |
+| **Content area** | From the topic bank for the class's grade, or for the grade it shares a list with (Settings → Assessments). Choose *none / mixed* for a test across areas. |
 | **Number of questions** | **1** records a single mark per student. **More than 1** records a mark per question, each tagged with a topic and cognitive level. |
 | **Out of** | Only for a single mark. For per-question tests the total is added up from the questions. |
 | **Category** | Free text, e.g. *Test*, *Quiz*, *Homework*, *Exam*, *Project*. The dashboards compare means by category. |
@@ -47,8 +47,9 @@ setup first (**Set up questions**).
 
 For each question, give:
 
-- **Topic** — type, or choose from the suggestions. Suggestions come from the class grade's topic bank, filtered to
-  the test's content area; you can still type a topic that isn't in the bank.
+- **Topic** — type, or choose from the suggestions. Suggestions come from the class grade's topic bank (or the list
+  that grade shares with another), filtered to the test's content area; you can still type a topic that isn't in
+  the bank.
 - **Marks** — what the question is out of.
 - **Cognitive level** — from the list under Settings → Assessments (by default L1 *Recall* to L4
   *Evaluation / Synthesis*).

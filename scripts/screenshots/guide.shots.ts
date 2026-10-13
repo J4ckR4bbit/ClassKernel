@@ -488,9 +488,15 @@ test("settings", async ({ page }) => {
   await shotOf(page, panel(page, "Data"), "settings-data", 0);
 
   await settingsTab(page, "Assessments");
-  await shot(page, "settings-assessments");
   await shotOf(page, [panel(page, "Mark entry"), panel(page, "Show results as")], "settings-mark-entry-and-results", 0);
   await shotOf(page, panel(page, "Weighting"), "settings-weighting", 0);
+  // A second grade sharing the demo grade's topics, so the picture shows Same topics as and its note.
+  await page.getByRole("button", { name: "Grade", exact: true }).click();
+  await modal(page).locator("input").fill("8");
+  await modal(page).locator("button.primary").click();
+  await page.getByLabel("Same topics as:").selectOption("7");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await shot(page, "settings-assessments");
 
   await settingsTab(page, "Export");
   await shot(page, "settings-export");

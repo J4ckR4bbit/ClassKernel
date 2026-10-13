@@ -118,8 +118,8 @@ The app fills the screen with the room plan. Tapping seats works exactly as abov
 
 ![Teaching mode: the full-screen room plan](../images/teaching-room-plan.png)
 
-The buttons are grouped (**Record**, **Seating**, **View**), with **End lesson** set apart so it isn't hit by
-accident. Choose which edge they sit on — left, right, top or bottom — under
+The buttons are grouped (**Record**, **Seating**, **View**), with **Start lesson** / **End lesson** set apart so it
+isn't hit by accident. Choose which edge they sit on — left, right, top or bottom — under
 [Settings → General → Teaching mode](10-settings.md#teaching-mode), so they're under your hand where you stand.
 
 ### Side panel

@@ -23,7 +23,7 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 | **Behaviour** | Filterable behaviour log and bathroom log. |
 | **Marks** | Tests as a single mark or per question (tagged by topic and cognitive level), keyboard-first mark entry, a read-only **View** and a class **Markbook**, informal / examination **weighting**, and spreadsheet **templates** to fill in and import. SA levels or symbols. |
 | **Notes** | Class details, colour and Markdown notes. |
-| **Settings** | Students (with Adam numbers, and class lists from a spreadsheet), room-layout designer, seating rules, privacy mode, display size, time zone, teaching mode, behaviour buttons, topic bank, weighting, backups and **.xlsx export**. |
+| **Settings** | Students (with Adam numbers, and class lists from a spreadsheet), room-layout designer, seating rules, privacy mode, display size, time zone, teaching mode, behaviour buttons, topic bank by grade (grades can share one list), weighting, backups and **.xlsx export**. |
 
 **Optional tools**, off until switched on in Settings → Tools:
 
