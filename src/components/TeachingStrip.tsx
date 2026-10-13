@@ -1,4 +1,4 @@
-import { CSSProperties, useMemo, useState } from "react";
+import { CSSProperties, useMemo, useRef, useState } from "react";
 import { useApp } from "../store/appStore";
 import { AttendanceStatus, BehaviourCode, SEAT_COUNTS } from "../lib/types";
 import { displayStudentName } from "../lib/privacy";
@@ -7,6 +7,7 @@ import { PASTEL_PRESETS, autoTableColour, tableTint } from "../lib/tableColours"
 import { enterDock } from "../lib/teachingWindow";
 import { useLessonSession } from "../hooks/useLessonSession";
 import { useBatchEntry } from "../hooks/useBatchEntry";
+import { useDismissOnOutside } from "../hooks/useDismissOnOutside";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
 import BatchPanel from "./BatchPanel";
@@ -64,6 +65,9 @@ export default function TeachingStrip() {
   };
 
   const closeActions = () => setActionsFor(null);
+  // Tapping anywhere off the student's sheet closes it without recording anything.
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  useDismissOnOutside(sheetRef, actionsFor !== null, closeActions);
   const onRowTap = (studentId: string) => {
     if (batch.active) {
       if (batch.batch?.code) batch.toggle(studentId);
@@ -242,7 +246,7 @@ export default function TeachingStrip() {
         )}
 
         {actionStudent && !batch.active && (
-          <div className="strip-sheet behaviour-popover">
+          <div ref={sheetRef} className="strip-sheet behaviour-popover">
             <StudentActions
               student={actionStudent}
               status={statusOf(actionStudent.id)}

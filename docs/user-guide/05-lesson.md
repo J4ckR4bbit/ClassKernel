@@ -37,7 +37,8 @@ Tap any student's seat and a pop-up opens beside it:
 - **Behaviour buttons**: positive ones first, then negative, each with its points. Tap one to record it. They are
   your own buttons, set up under
   [Settings → General → Behaviour buttons](10-settings.md#behaviour-buttons).
-- **Close** closes the pop-up without recording anything.
+- **Close**, or a tap anywhere outside the pop-up, closes it without recording anything. Tapping another
+  student's seat closes this pop-up and opens theirs. The student sheet in the side panel closes the same way.
 
 Every recording shows a message with **Undo** for a few seconds. With privacy mode on, the message says
 *"recorded"* rather than the student's name.
