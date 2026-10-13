@@ -78,6 +78,8 @@ book and follow your school's data-handling policy for where it lives and who ca
 | Randomise shows **🔒 Reseat…** | Seats were already assigned this lesson. Press **End lesson**, or **Reseat…** and your PIN. See [Seats](04-seats.md#once-per-lesson-and-the-reseat-pin). |
 | Forgotten the reseat PIN | Close ClassKernel, open `settings.csv` in the data folder with Notepad, delete the value on the `reseat_pin` row (keep `reseat_pin,`), and save. The next unlock asks you to create a new PIN. |
 | A page says *No class selected* | Choose a class from the class menu at the top right. |
+| A test offers no topics to choose from | The class's grade has no topic list. Check its grade on the Class notes page is a plain number (`10`, not `08` or `2026`) that matches a grade under Settings → Assessments, or set that grade to share another grade's list with **Same topics as**. |
+| An unexpected grade (e.g. *G2026*) is listed under Settings → Assessments | A class has that as its grade. Change the class's grade on its Class notes page, then delete the grade with the **✕** beside it. |
 | Lesson says it needs a room layout or seating plan | Draw the room under Settings → Room layout, then seat the class on Seats. |
 | The marks or behaviour page shows only a button | That's the privacy cover; press **Show student details**. |
 | Pick a student says *No students to pick* | Everyone is marked absent or excused. Untick **Skip absent students**. |
