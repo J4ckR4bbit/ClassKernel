@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { AttendanceStatus, BehaviourCode } from "../lib/types";
 import { formatDuration, visitSeconds } from "../lib/stats";
 import { displayStudentName, seatSurname } from "../lib/privacy";
@@ -26,7 +26,16 @@ interface Popover {
  * selection instead, so one behaviour can be saved for many students at once.
  */
 export default function LessonView() {
-  const { desks, seating, behaviourCodes, setView, roomConfig, focusMode, setFocusMode, userPrefs } = useApp();
+  const { desks, seating, behaviourCodes, setView, roomConfig, focusMode, setFocusMode, userPrefs } = useAppPick(
+    "desks",
+    "seating",
+    "behaviourCodes",
+    "setView",
+    "roomConfig",
+    "focusMode",
+    "setFocusMode",
+    "userPrefs",
+  );
   const planNames = useMemo(() => [...new Set(seating.map((s) => s.planName))].sort(), [seating]);
   const [plan, setPlan] = useState(planNames[0] ?? "Default");
   const activePlan = planNames.includes(plan) ? plan : planNames[0];

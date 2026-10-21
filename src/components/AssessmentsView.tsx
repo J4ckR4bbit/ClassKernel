@@ -1,5 +1,5 @@
 import { type KeyboardEvent as ReactKeyboardEvent, useMemo, useRef, useState } from "react";
-import { useApp, useExamWeight } from "../store/appStore";
+import { useApp, useExamWeight, useAppPick } from "../store/appStore";
 import { newId, today } from "../lib/id";
 import { Assessment, AssessmentKind, AssessmentQuestion, Mark, QuestionMark, defaultKind, studentName } from "../lib/types";
 import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankByScore, rankStudents, studentProvisional, taskShares } from "../lib/stats";
@@ -12,7 +12,37 @@ import MarkSheetTools from "./MarkSheetTools";
 import Icon from "./Icon";
 
 export default function AssessmentsView() {
-  const { currentClass, classes, students, assessments, setAssessments, marks, setMarks, assessmentQuestions, setAssessmentQuestions, questionMarks, setQuestionMarks, showToast, confirmDialog, userPrefs } = useApp();
+  const {
+    currentClass,
+    classes,
+    students,
+    assessments,
+    setAssessments,
+    marks,
+    setMarks,
+    assessmentQuestions,
+    setAssessmentQuestions,
+    questionMarks,
+    setQuestionMarks,
+    showToast,
+    confirmDialog,
+    userPrefs,
+  } = useAppPick(
+    "currentClass",
+    "classes",
+    "students",
+    "assessments",
+    "setAssessments",
+    "marks",
+    "setMarks",
+    "assessmentQuestions",
+    "setAssessmentQuestions",
+    "questionMarks",
+    "setQuestionMarks",
+    "showToast",
+    "confirmDialog",
+    "userPrefs",
+  );
   const [showNew, setShowNew] = useState(false);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const [setupId, setSetupId] = useState<string | null>(null);
@@ -214,7 +244,7 @@ export default function AssessmentsView() {
 }
 
 function NewAssessmentModal({ grade, onClose, onCreate }: { grade: string; onClose: () => void; onCreate: (a: Assessment) => void }) {
-  const { topics } = useApp();
+  const { topics } = useAppPick("topics");
   const areas = useMemo(() => areasForGrade(topics, grade), [topics, grade]);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(today());
@@ -354,7 +384,21 @@ function WeightInput({ value, onChange }: { value: number; onChange: (weight: nu
  * level. Saving writes the question list and sets the test's total to their sum.
  */
 function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Assessment; grade: string; onBack: () => void; onStart: () => void }) {
-  const { topics, cognitiveLevels, assessmentQuestions, setAssessmentQuestions, assessments, setAssessments } = useApp();
+  const {
+    topics,
+    cognitiveLevels,
+    assessmentQuestions,
+    setAssessmentQuestions,
+    assessments,
+    setAssessments,
+  } = useAppPick(
+    "topics",
+    "cognitiveLevels",
+    "assessmentQuestions",
+    "setAssessmentQuestions",
+    "assessments",
+    "setAssessments",
+  );
   const existing = useMemo(
     () => assessmentQuestions.filter((q) => q.assessmentId === assessment.id).sort((a, b) => a.number - b.number),
     [assessmentQuestions, assessment.id],
@@ -507,7 +551,13 @@ function QuestionGrid({
   /** After marks were imported from a spreadsheet. */
   onImported: () => void;
 }) {
-  const { students, questionMarks, topics, userPrefs, assessmentQuestions } = useApp();
+  const { students, questionMarks, topics, userPrefs, assessmentQuestions } = useAppPick(
+    "students",
+    "questionMarks",
+    "topics",
+    "userPrefs",
+    "assessmentQuestions",
+  );
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
   const questions = useMemo(
@@ -813,7 +863,7 @@ function QuestionGrid({
  * focused. Built for entering marks while working through a pile of papers.
  */
 function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessment; onDone: () => void; onImported: () => void }) {
-  const { students, marks, setMarks } = useApp();
+  const { students, marks, setMarks } = useAppPick("students", "marks", "setMarks");
   const sorted = useMemo(
     () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
     [students],
@@ -926,7 +976,7 @@ function MarkListView({
   onEnterMarks: () => void;
   onImported: () => void;
 }) {
-  const { students, marks, userPrefs } = useApp();
+  const { students, marks, userPrefs } = useAppPick("students", "marks", "userPrefs");
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
   const sorted = useMemo(

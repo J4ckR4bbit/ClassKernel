@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 
 /**
  * The app's confirm/prompt modal, driven by `confirmDialog` / `promptDialog`
@@ -8,7 +8,7 @@ import { useApp } from "../store/appStore";
  * suppress entirely).
  */
 export default function AppDialog() {
-  const { dialog, resolveDialog } = useApp();
+  const { dialog, resolveDialog } = useAppPick("dialog", "resolveDialog");
   const [text, setText] = useState("");
 
   useEffect(() => {

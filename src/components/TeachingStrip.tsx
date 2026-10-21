@@ -1,5 +1,5 @@
 import { CSSProperties, useMemo, useRef, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { AttendanceStatus, BehaviourCode, SEAT_COUNTS } from "../lib/types";
 import { displayStudentName } from "../lib/privacy";
 import { groupSeatsByTable } from "../lib/tables";
@@ -24,7 +24,27 @@ const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
  * record one behaviour for several students with a tap each.
  */
 export default function TeachingStrip() {
-  const { currentClass, desks, setDesks, seating, behaviourCodes, roomConfig, setFocusMode, userPrefs, setUserPrefs } = useApp();
+  const {
+    currentClass,
+    desks,
+    setDesks,
+    seating,
+    behaviourCodes,
+    roomConfig,
+    setFocusMode,
+    userPrefs,
+    setUserPrefs,
+  } = useAppPick(
+    "currentClass",
+    "desks",
+    "setDesks",
+    "seating",
+    "behaviourCodes",
+    "roomConfig",
+    "setFocusMode",
+    "userPrefs",
+    "setUserPrefs",
+  );
   const planNames = useMemo(() => [...new Set(seating.map((s) => s.planName))].sort(), [seating]);
   const [plan, setPlan] = useState(planNames[0] ?? "Default");
   const activePlan = planNames.includes(plan) ? plan : planNames[0];

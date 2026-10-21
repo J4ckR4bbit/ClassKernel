@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { useTimer } from "../plugins/test-timer/timerStore";
 import { COLOR_STOPS, formatCountdown, phaseColor } from "../plugins/test-timer/timer";
 import { TEST_TIMER_ID } from "../plugins/registry";
@@ -13,7 +13,15 @@ import Icon from "./Icon";
  * be missed mid-lesson.
  */
 export default function TimerMini({ inline = false }: { inline?: boolean }) {
-  const { view, activePlugin, focusMode, focusStyle, setFocusMode, openPlugin, userPrefs } = useApp();
+  const { view, activePlugin, focusMode, focusStyle, setFocusMode, openPlugin, userPrefs } = useAppPick(
+    "view",
+    "activePlugin",
+    "focusMode",
+    "focusStyle",
+    "setFocusMode",
+    "openPlugin",
+    "userPrefs",
+  );
   const { timer, dismissed, pause, resume, dismiss, stop } = useTimer();
   const onTimerScreen = view === "plugin" && activePlugin === TEST_TIMER_ID && !focusMode;
   const enabled = userPrefs.enabledPlugins.includes(TEST_TIMER_ID);

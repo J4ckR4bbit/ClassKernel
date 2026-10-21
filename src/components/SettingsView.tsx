@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useApp, useAppPick } from "../store/appStore";
 import {
   BehaviourCode,
   CognitiveLevel,
@@ -63,7 +63,7 @@ const TABS: Array<{ id: SettingsTab; label: string; icon: IconName; perClass: bo
 ];
 
 export default function SettingsView() {
-  const { classes, currentClass } = useApp();
+  const { classes, currentClass } = useAppPick("classes", "currentClass");
   const active = useMemo(() => classes.filter((c) => !c.archived), [classes]);
   const [tab, setTab] = useState<SettingsTab>("general");
   const perClass = TABS.find((t) => t.id === tab)?.perClass;
@@ -131,7 +131,22 @@ function GeneralSettings() {
     confirmDialog,
     promptDialog,
     chooseDataDir,
-  } = useApp();
+  } = useAppPick(
+    "behaviourCodes",
+    "setBehaviourCodes",
+    "behaviourEvents",
+    "setBehaviourEvents",
+    "currentClass",
+    "dataDir",
+    "pickAndSetDataDir",
+    "classes",
+    "showToast",
+    "userPrefs",
+    "setUserPrefs",
+    "confirmDialog",
+    "promptDialog",
+    "chooseDataDir",
+  );
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   // Row elements, kept so a pointer drag can hit-test which row it is over.
@@ -465,7 +480,7 @@ function GeneralSettings() {
 /** List of snapshot backups with one-tap restore (a safety copy is taken first). */
 /** The zone every date and time is shown and exported in (storage stays UTC). */
 function TimeZoneSettings() {
-  const { userPrefs, setUserPrefs } = useApp();
+  const { userPrefs, setUserPrefs } = useAppPick("userPrefs", "setUserPrefs");
   const zones = useMemo(() => listTimeZones(), []);
   const device = deviceTimeZone();
   // Tick once a minute so the "now" preview stays current.
@@ -504,7 +519,7 @@ function TimeZoneSettings() {
 
 /** The names printed at the top of parent reports. Saved when you click away. */
 function ReportSettings() {
-  const { userPrefs, setUserPrefs } = useApp();
+  const { userPrefs, setUserPrefs } = useAppPick("userPrefs", "setUserPrefs");
   const [school, setSchool] = useState(userPrefs.reportSchool);
   const [teacher, setTeacher] = useState(userPrefs.reportTeacher);
   const save = () => {
@@ -530,7 +545,12 @@ function ReportSettings() {
 
 /** Teaching-mode preferences: which mode opens, where its buttons sit, and the reseat PIN. */
 function TeachingModeSettings() {
-  const { userPrefs, setUserPrefs, promptDialog, showToast } = useApp();
+  const { userPrefs, setUserPrefs, promptDialog, showToast } = useAppPick(
+    "userPrefs",
+    "setUserPrefs",
+    "promptDialog",
+    "showToast",
+  );
   const hasPin = !!userPrefs.reseatPinHash;
 
   const styles: Array<{ value: TeachingStyle; label: string; icon: IconName }> = [
@@ -688,7 +708,7 @@ function BackupRestore({
  * enabled ones show up under Tools on the Home page.
  */
 function PluginSettings() {
-  const { userPrefs, setUserPrefs, openPlugin } = useApp();
+  const { userPrefs, setUserPrefs, openPlugin } = useAppPick("userPrefs", "setUserPrefs", "openPlugin");
   const enabled = userPrefs.enabledPlugins;
 
   const toggle = (id: string) =>
@@ -749,7 +769,7 @@ function PluginSettings() {
  * only ever see the "Randomise" button reroll.
  */
 function ClassSeatingSettings() {
-  const { students, seatingPrefs, setSeatingPrefs } = useApp();
+  const { students, seatingPrefs, setSeatingPrefs } = useAppPick("students", "seatingPrefs", "setSeatingPrefs");
   return <SeatingPrefsEditor students={students} prefs={seatingPrefs} onChange={setSeatingPrefs} />;
 }
 
@@ -883,8 +903,29 @@ function SeatingPrefsEditor({
  * behaviour. All shared across classes.
  */
 function AssessmentSettings() {
-  const { classes, topics, setTopics, cognitiveLevels, setCognitiveLevels, userPrefs, setUserPrefs, showToast, confirmDialog, promptDialog } =
-    useApp();
+  const {
+    classes,
+    topics,
+    setTopics,
+    cognitiveLevels,
+    setCognitiveLevels,
+    userPrefs,
+    setUserPrefs,
+    showToast,
+    confirmDialog,
+    promptDialog,
+  } = useAppPick(
+    "classes",
+    "topics",
+    "setTopics",
+    "cognitiveLevels",
+    "setCognitiveLevels",
+    "userPrefs",
+    "setUserPrefs",
+    "showToast",
+    "confirmDialog",
+    "promptDialog",
+  );
   const links = userPrefs.topicLinks;
 
   const grades = useMemo(() => {
@@ -1199,7 +1240,7 @@ const joinAnd = (items: string[]) =>
  * weight within its side is set on the Marks page.
  */
 function WeightingSettings({ grades }: { grades: string[] }) {
-  const { userPrefs, setUserPrefs } = useApp();
+  const { userPrefs, setUserPrefs } = useAppPick("userPrefs", "setUserPrefs");
   const setExam = (grade: string, text: string) => {
     const pct = parseDecimal(text);
     if (pct >= 0 && pct <= 100) void setUserPrefs({ ...userPrefs, examWeights: { ...userPrefs.examWeights, [grade]: pct } });

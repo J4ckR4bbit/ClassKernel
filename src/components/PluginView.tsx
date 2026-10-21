@@ -1,5 +1,5 @@
 import { Component, ReactNode, Suspense, lazy, useMemo } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { PluginManifest, enabledPlugins, pluginById } from "../plugins/registry";
 import Icon from "./Icon";
 
@@ -40,7 +40,7 @@ class PluginBoundary extends Component<{ name: string; children: ReactNode }, { 
  * through the same Rust commands (see src/plugins/host.ts).
  */
 export default function PluginView() {
-  const { activePlugin, userPrefs, setView } = useApp();
+  const { activePlugin, userPrefs, setView } = useAppPick("activePlugin", "userPrefs", "setView");
   const plugin = activePlugin ? pluginById(activePlugin) : undefined;
   const on = !!plugin && enabledPlugins(userPrefs.enabledPlugins).some((p) => p.id === plugin.id);
 

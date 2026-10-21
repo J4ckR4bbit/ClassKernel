@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { SeatAssignment, studentName } from "../lib/types";
 import { displayStudentName, seatSurname } from "../lib/privacy";
 import { allSeatSlots } from "../lib/seating";
@@ -19,7 +19,18 @@ export default function SeatingView() {
     userPrefs,
     confirmDialog,
     promptDialog,
-  } = useApp();
+  } = useAppPick(
+    "students",
+    "desks",
+    "seating",
+    "setSeating",
+    "showToast",
+    "setView",
+    "roomConfig",
+    "userPrefs",
+    "confirmDialog",
+    "promptDialog",
+  );
   // Plans exist in seating.csv once they have a row; freshly created empty
   // plans are tracked locally until their first seat is placed.
   const [extraPlans, setExtraPlans] = useState<string[]>([]);

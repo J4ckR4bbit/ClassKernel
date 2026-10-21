@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import { backupStamp, nowIso, today } from "../lib/id";
 import { getFS, isTauri } from "../lib/fs";
 import * as repo from "../lib/repo";
@@ -821,6 +822,22 @@ export const useApp = create<AppState>((set, get) => {
   },
   };
 });
+
+/**
+ * Subscribe to just these fields of the store: the component re-renders only
+ * when one of them changes, not on every toast, tap or keystroke elsewhere in
+ * the app (which a bare `useApp()` does). Actions never change, so picking
+ * them costs nothing.
+ */
+export function useAppPick<K extends keyof AppState>(...keys: K[]): Pick<AppState, K> {
+  return useApp(
+    useShallow((s) => {
+      const picked = {} as Pick<AppState, K>;
+      for (const k of keys) picked[k] = s[k];
+      return picked;
+    }),
+  );
+}
 
 /** Whether the open class has a lesson running; re-renders when it starts or ends. */
 export function useLessonRunning(): boolean {

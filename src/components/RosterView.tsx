@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { newId } from "../lib/id";
 import { Student } from "../lib/types";
 import { attendanceByStudent, behaviourByStudent } from "../lib/stats";
@@ -9,7 +9,27 @@ import Icon from "./Icon";
 import RosterSheetTools from "./RosterSheetTools";
 
 export default function RosterView() {
-  const { students, setStudents, attendance, behaviourEvents, showToast, confirmDialog, openStudentDashboard, userPrefs, currentClass } = useApp();
+  const {
+    students,
+    setStudents,
+    attendance,
+    behaviourEvents,
+    showToast,
+    confirmDialog,
+    openStudentDashboard,
+    userPrefs,
+    currentClass,
+  } = useAppPick(
+    "students",
+    "setStudents",
+    "attendance",
+    "behaviourEvents",
+    "showToast",
+    "confirmDialog",
+    "openStudentDashboard",
+    "userPrefs",
+    "currentClass",
+  );
   // The dashboard shortcut is there only while the dashboards plugin is switched on.
   const dashboardsOn = userPrefs.enabledPlugins.includes(DASHBOARDS_ID);
   const [showImport, setShowImport] = useState(false);

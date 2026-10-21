@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useApp, useLessonRunning } from "../store/appStore";
+import { useLessonRunning, useAppPick } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
 import { AttendanceStatus, BehaviourCode, BehaviourEvent, LessonRecord, SeatAssignment, studentName } from "../lib/types";
 import { eventsOnDate, formatDuration, visitSeconds } from "../lib/stats";
@@ -36,7 +36,28 @@ export function useLessonSession() {
     unlockSeating,
     startLesson: beginLesson,
     stopLesson,
-  } = useApp();
+  } = useAppPick(
+    "currentClass",
+    "students",
+    "desks",
+    "behaviourEvents",
+    "addBehaviourEvent",
+    "removeBehaviourEvent",
+    "addBehaviourEvents",
+    "removeBehaviourEvents",
+    "bathroomVisits",
+    "startBathroomVisit",
+    "endBathroomVisit",
+    "addLessonRecords",
+    "attendance",
+    "setAttendance",
+    "showToast",
+    "userPrefs",
+    "confirmDialog",
+    "unlockSeating",
+    "startLesson",
+    "stopLesson",
+  );
   const running = useLessonRunning();
 
   // "This lesson" is everything logged since the last End-lesson reset (or the

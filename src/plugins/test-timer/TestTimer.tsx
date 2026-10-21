@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useApp } from "../../store/appStore";
+import { useAppPick } from "../../store/appStore";
 import { TimerDisplay, TimerPreset } from "../../lib/types";
 import { currentTimeZone } from "../../lib/time";
 import { FlipDisplay } from "../shared/FlipDigits";
@@ -105,7 +105,12 @@ function fmtClock(d: Date): string {
 }
 
 export default function TestTimer() {
-  const { timerPresets, setTimerPresets, showToast, promptDialog } = useApp();
+  const { timerPresets, setTimerPresets, showToast, promptDialog } = useAppPick(
+    "timerPresets",
+    "setTimerPresets",
+    "showToast",
+    "promptDialog",
+  );
 
   // setup fields
   const [readingMin, setReadingMin] = useState(10);

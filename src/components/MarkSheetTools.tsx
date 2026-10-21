@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useApp, useAppPick } from "../store/appStore";
 import { Assessment } from "../lib/types";
 import { ImportPlan, MARKS_SHEET, applyImport, markTemplate, planImport, templateFileName } from "../lib/markSheet";
 import { buildXlsx } from "../lib/xlsx";
@@ -21,7 +21,14 @@ async function readRows(file: File): Promise<{ rows: string[][]; about: string[]
  * anything is saved.
  */
 export default function MarkSheetTools({ assessment, onImported }: { assessment: Assessment; onImported: () => void }) {
-  const { currentClass, students, marks, questionMarks, assessmentQuestions, showToast } = useApp();
+  const { currentClass, students, marks, questionMarks, assessmentQuestions, showToast } = useAppPick(
+    "currentClass",
+    "students",
+    "marks",
+    "questionMarks",
+    "assessmentQuestions",
+    "showToast",
+  );
   const fileInput = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<{ plan: ImportPlan; fileName: string } | null>(null);
   const questions = assessmentQuestions.filter((q) => q.assessmentId === assessment.id).sort((a, b) => a.number - b.number);

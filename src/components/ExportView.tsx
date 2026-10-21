@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { getFS, isTauri } from "../lib/fs";
 import {
   DEFAULT_SECTIONS,
@@ -35,7 +35,13 @@ function downloadInBrowser(fileName: string, bytes: Uint8Array): void {
  * and be pivoted afterwards.
  */
 export default function ExportView() {
-  const { dataDir, classes, currentClass, showToast, userPrefs } = useApp();
+  const { dataDir, classes, currentClass, showToast, userPrefs } = useAppPick(
+    "dataDir",
+    "classes",
+    "currentClass",
+    "showToast",
+    "userPrefs",
+  );
 
   const [selectedClasses, setSelectedClasses] = useState<string[]>(() => {
     if (currentClass) return [currentClass];

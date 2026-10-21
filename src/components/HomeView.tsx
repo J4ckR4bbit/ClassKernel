@@ -1,5 +1,5 @@
 import { CSSProperties, useState } from "react";
-import { View, useApp } from "../store/appStore";
+import { View, useAppPick } from "../store/appStore";
 import { ClassInfo } from "../lib/types";
 import { PLUGINS, enabledPlugins } from "../plugins/registry";
 import NewClassModal from "./NewClassModal";
@@ -23,7 +23,15 @@ function initials(name: string): string {
  * expanded navigation drawer, never among the class's own pages.
  */
 export default function HomeView() {
-  const { classes, currentClass, openClass, setView, createClass, userPrefs, openPlugin } = useApp();
+  const { classes, currentClass, openClass, setView, createClass, userPrefs, openPlugin } = useAppPick(
+    "classes",
+    "currentClass",
+    "openClass",
+    "setView",
+    "createClass",
+    "userPrefs",
+    "openPlugin",
+  );
   const [showNew, setShowNew] = useState(false);
   const active = classes.filter((c) => !c.archived);
   const tools = enabledPlugins(userPrefs.enabledPlugins);

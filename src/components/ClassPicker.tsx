@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import Icon from "./Icon";
 import NewClassModal from "./NewClassModal";
 
@@ -23,7 +23,12 @@ export default function ClassPicker({
    */
   inPanel?: boolean;
 }) {
-  const { classes, currentClass, openClass, createClass } = useApp();
+  const { classes, currentClass, openClass, createClass } = useAppPick(
+    "classes",
+    "currentClass",
+    "openClass",
+    "createClass",
+  );
   const [open, setOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [showNew, setShowNew] = useState(false);

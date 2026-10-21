@@ -1,4 +1,4 @@
-import { useApp, View } from "../store/appStore";
+import { View, useAppPick } from "../store/appStore";
 import { enabledPlugins } from "../plugins/registry";
 import Icon, { IconName } from "./Icon";
 
@@ -58,7 +58,13 @@ function NavItem({
 }
 
 export default function NavRail({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
-  const { view, setView, activePlugin, openPlugin, userPrefs } = useApp();
+  const { view, setView, activePlugin, openPlugin, userPrefs } = useAppPick(
+    "view",
+    "setView",
+    "activePlugin",
+    "openPlugin",
+    "userPrefs",
+  );
   const tools = enabledPlugins(userPrefs.enabledPlugins);
   const item = (d: Destination) => (
     <NavItem
