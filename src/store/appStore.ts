@@ -307,20 +307,20 @@ export const useApp = create<AppState>((set, get) => {
     await repo.ensureDataDir(path);
     if (isTauri()) {
       localStorage.setItem(DATA_DIR_KEY, path);
-      try {
-        await fs.snapshot(path, backupStamp(), repo.BACKUPS_TO_KEEP);
-      } catch (e) {
-        console.warn("Backup snapshot failed", e);
-      }
+      // Copied in the background while the classes load; saves made meanwhile
+      // wait for it (see QueuedFS), so it is the folder as it was at launch.
+      fs.snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP).catch((e) => console.warn("Backup snapshot failed", e));
     }
-    const classes = await repo.listClasses(path);
-    const behaviourCodes = await repo.loadBehaviourCodes(path);
-    const layoutTemplates = await repo.listLayoutTemplates(path);
-    const topics = await repo.loadTopics(path);
-    const cognitiveLevels = await repo.loadCognitiveLevels(path);
-    const userPrefs = await repo.loadUserPrefs(path);
+    const [classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets] = await Promise.all([
+      repo.listClasses(path),
+      repo.loadBehaviourCodes(path),
+      repo.listLayoutTemplates(path),
+      repo.loadTopics(path),
+      repo.loadCognitiveLevels(path),
+      repo.loadUserPrefs(path),
+      repo.loadTimerPresets(path),
+    ]);
     setTimeZone(userPrefs.timeZone);
-    const timerPresets = await repo.loadTimerPresets(path);
     set({ dataDir: path, classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, currentClass: null });
     const active = classes.filter((c) => !c.archived);
     if (active.length > 0) await get().openClass(active[0].name);

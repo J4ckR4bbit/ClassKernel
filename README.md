@@ -42,7 +42,8 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 ## Your data
 
 One folder of plain files that open in Excel or Notepad — one sub-folder per class. Saves are atomic, a backup of
-the whole folder is taken at every launch (newest 14 kept), and times are stored in UTC. See
+the whole folder is taken at every launch (today's all kept, plus the last of each of the 14 days before), and
+times are stored in UTC. See
 [Your data and backups](docs/user-guide/11-your-data.md) and the [data file reference](docs/data-files.md).
 
 ## Development

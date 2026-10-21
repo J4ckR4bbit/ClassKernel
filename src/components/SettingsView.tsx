@@ -445,7 +445,8 @@ function GeneralSettings() {
         <p className="muted">
           Everything lives in plain .csv / .md files in that folder — open them in Excel or Notepad any time. Put the
           folder inside OneDrive or Google Drive and the sync client backs it up automatically. A snapshot copy is
-          made into <code>backups/</code> every time the app starts (the newest 14 are kept).
+          made into <code>backups/</code> every time the app starts: all of today's are kept, plus the last one from each of
+          the 14 most recent earlier days the app was used.
         </p>
         <p className="muted">
           Student information (names, flags, notes, marks) is stored in these files as plain, readable text — treat

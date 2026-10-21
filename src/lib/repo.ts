@@ -60,7 +60,8 @@ import {
   UserPrefs,
 } from "./types";
 
-export const BACKUPS_TO_KEEP = 14;
+/** Backups kept: every one from today, plus the newest from each of this many earlier days. */
+export const BACKUP_DAYS_TO_KEEP = 14;
 
 const p = (...parts: string[]) => parts.join("/");
 export const classDir = (dataDir: string, className: string) => p(dataDir, "classes", className);
@@ -138,15 +139,16 @@ export async function listClasses(dataDir: string): Promise<ClassInfo[]> {
   const dir = p(dataDir, "classes");
   if (!(await fs.exists(dir))) return [];
   const entries = await fs.listDir(dir);
-  const classes: ClassInfo[] = [];
-  for (const e of entries.filter((e) => e.isDir)) {
-    const mdPath = p(dir, e.name, "class.md");
-    if (await fs.exists(mdPath)) {
-      classes.push(parseClassMd(e.name, await fs.readText(mdPath)));
-    } else {
-      classes.push({ name: e.name, year: "", subject: "", room: "", notes: "", archived: false, color: "" });
-    }
-  }
+  const classes = await Promise.all(
+    entries
+      .filter((e) => e.isDir)
+      .map(async (e): Promise<ClassInfo> => {
+        const text = await fs.readTextIfExists(p(dir, e.name, "class.md"));
+        return text !== null
+          ? parseClassMd(e.name, text)
+          : { name: e.name, year: "", subject: "", room: "", notes: "", archived: false, color: "" };
+      }),
+  );
   return classes.sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -163,9 +165,8 @@ export async function renameClass(dataDir: string, oldName: string, newName: str
 // ---------- generic CSV helpers ----------
 
 async function loadCsvFile(path: string): Promise<ReturnType<typeof parseCsv>> {
-  const fs = getFS();
-  if (!(await fs.exists(path))) return [];
-  return parseCsv(await fs.readText(path));
+  const text = await getFS().readTextIfExists(path);
+  return text === null ? [] : parseCsv(text);
 }
 
 // ---------- students ----------
