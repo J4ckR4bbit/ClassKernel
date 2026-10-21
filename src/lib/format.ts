@@ -36,3 +36,13 @@ export function parseDecimal(text: string): number {
   const t = text.trim().replace(/[\s ]/g, "").replace(",", ".").replace("−", "-");
   return t === "" || /[,.].*[,.]/.test(t) ? NaN : Number(t);
 }
+
+/** A grade as the school writes it: "10" → "G10", "8" → "G08"; anything else as it is. */
+export function gradeLabel(grade: string): string {
+  return /^\d+$/.test(grade) ? `G${grade.padStart(2, "0")}` : grade;
+}
+
+/** ["G10", "G11", "G12"] → "G10, G11 and G12". */
+export function joinAnd(items: string[]): string {
+  return items.length < 2 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}

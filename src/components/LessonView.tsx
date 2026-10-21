@@ -6,7 +6,8 @@ import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
 import { useLessonSession } from "../hooks/useLessonSession";
 import { useBatchEntry } from "../hooks/useBatchEntry";
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside";
-import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
+import RoomCanvas from "./RoomCanvas";
+import { fitView } from "../lib/room";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
 import BatchPanel from "./BatchPanel";
@@ -98,8 +99,9 @@ export default function LessonView() {
   const popStudent = popover ? byId.get(popover.studentId) : undefined;
 
   // Always render in scaled (viewBox) mode so the room fills the pane on any
-  // screen size — with no crop set, the whole room is the view.
-  const effectiveCrop = roomConfig.crop ?? { x: 0, y: 0, w: ROOM_W, h: ROOM_H };
+  // screen size. With no crop set, the view fits the furniture, so seats and
+  // names come out as large as the screen allows.
+  const effectiveCrop = useMemo(() => roomConfig.crop ?? fitView(desks), [roomConfig.crop, desks]);
 
   // Clamp the popover inside the canvas container once its size is known.
   const canvasBoxRef = useRef<HTMLDivElement | null>(null);

@@ -132,7 +132,7 @@ Click an item to select it (it gets a green outline). A second toolbar appears:
 | Control | What it does |
 | --- | --- |
 | **Front: top / right / bottom / left** | Which edge is the front of the room (the whiteboard). Randomise fills front desks first, and *Sit near the front* rules use this edge. |
-| **Set view crop** | Draws a dashed box around the furniture. Seats and Lesson then zoom to just that part of the room. Drag the box to move it and its corner handle to resize. **Remove view crop** undoes it. |
+| **Set view crop** | Draws a dashed box around the furniture. Seats and Lesson then zoom to just that part of the room. Drag the box to move it and its corner handle to resize. **Remove view crop** undoes it. Without a crop, Seats and Lesson zoom to fit all the furniture anyway; a crop is for showing less than that. |
 | **Clear room** | Removes every item (with Undo). |
 
 ![A view crop around the used part of the room](../images/room-layout-crop.png)

@@ -101,9 +101,9 @@ test("Export saves a spreadsheet", async ({ page }) => {
   expect((await download).suggestedFilename()).toMatch(/\.xlsx$/);
 });
 
-test("a class's grade is called Grade, on Class notes and its Home card", async ({ page }) => {
+test("a class's grade is called Grade on Class notes, and shown as G07 on its Home card", async ({ page }) => {
   await nav(page, "Notes");
   await expect(page.locator("main label", { hasText: /^Grade$/ })).toBeVisible();
   await nav(page, "Home");
-  await expect(page.locator(".class-card").first()).toContainText("Grade 7");
+  await expect(page.locator(".class-card").first()).toContainText("G07");
 });

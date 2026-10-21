@@ -16,7 +16,7 @@ import {
   studentName,
 } from "../lib/types";
 import { GRADE_SCALES } from "../lib/stats";
-import { fmtDecimal, parseDecimal } from "../lib/format";
+import { fmtDecimal, gradeLabel, joinAnd, parseDecimal } from "../lib/format";
 import { PLUGINS, togglePluginId } from "../plugins/registry";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import { BC, BEHAVIOUR_COLOURS } from "../lib/behaviourColours";
@@ -1226,13 +1226,6 @@ function AssessmentSettings() {
     </>
   );
 }
-
-/** "10" → "G10", "8" → "G08"; anything else as it is. */
-const gradeLabel = (g: string) => (/^\d+$/.test(g) ? `G${g.padStart(2, "0")}` : g);
-
-/** ["G10", "G11", "G12"] → "G10, G11 and G12". */
-const joinAnd = (items: string[]) =>
-  items.length < 2 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 
 /**
  * Per grade, how the informal tasks and the examinations make up a student's

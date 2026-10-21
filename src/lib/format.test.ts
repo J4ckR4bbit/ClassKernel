@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fmtDecimal, parseDecimal } from "./format";
+import { fmtDecimal, gradeLabel, joinAnd, parseDecimal } from "./format";
 
 describe("fmtDecimal", () => {
   it("writes a decimal comma and drops trailing zeros", () => {
@@ -31,5 +31,25 @@ describe("parseDecimal", () => {
     expect(parseDecimal("abc")).toBeNaN();
     expect(parseDecimal("1,2,3")).toBeNaN();
     expect(parseDecimal("1.234,5")).toBeNaN();
+  });
+});
+
+describe("gradeLabel", () => {
+  it("writes a numeric grade the school's way", () => {
+    expect(gradeLabel("8")).toBe("G08");
+    expect(gradeLabel("12")).toBe("G12");
+  });
+
+  it("leaves anything else as it is", () => {
+    expect(gradeLabel("")).toBe("");
+    expect(gradeLabel("Matric")).toBe("Matric");
+  });
+});
+
+describe("joinAnd", () => {
+  it("lists with commas and a final and", () => {
+    expect(joinAnd([])).toBe("");
+    expect(joinAnd(["G10"])).toBe("G10");
+    expect(joinAnd(["G10", "G11", "G12"])).toBe("G10, G11 and G12");
   });
 });
