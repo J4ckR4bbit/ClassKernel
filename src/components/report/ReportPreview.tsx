@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { useApp } from "../../store/appStore";
+import { useAppPick } from "../../store/appStore";
 import { dateInZone } from "../../lib/time";
 import {
   ClassData,
@@ -65,7 +65,13 @@ export default function ReportPreview({
    */
   standalone?: boolean;
 }) {
-  const { classes, currentClass, userPrefs, reportComments, setReportComment } = useApp();
+  const { classes, currentClass, userPrefs, reportComments, setReportComment } = useAppPick(
+    "classes",
+    "currentClass",
+    "userPrefs",
+    "reportComments",
+    "setReportComment",
+  );
   const [from, setFrom] = useState(initialFrom);
   const [to, setTo] = useState(today);
   const [sections, setSectionsState] = useState<Set<ReportSection>>(readSections);

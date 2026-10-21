@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useApp } from "../../store/appStore";
+import { useAppPick } from "../../store/appStore";
 import { savePluginFile } from "../host";
 import { canvasToPng } from "../png";
 import { formatNumber } from "../numbers";
@@ -91,7 +91,7 @@ function NumberField({
  * worked out from it, so the three can never disagree with each other.
  */
 export default function MotionGraph() {
-  const { showToast } = useApp();
+  const { showToast } = useAppPick("showToast");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [journey, setJourney] = useState<Journey>(DEFAULT_JOURNEY);
   const [v, setV] = useState<MotionSettings>(DEFAULT_MOTION);

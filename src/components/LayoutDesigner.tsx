@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { newId } from "../lib/id";
 import { DEFAULT_DESK_SIZES, Desk, DeskShape, FrontEdge } from "../lib/types";
 import { PASTEL_PRESETS } from "../lib/tableColours";
@@ -52,7 +52,19 @@ export default function LayoutDesigner() {
     deleteLayoutTemplate,
     confirmDialog,
     promptDialog,
-  } = useApp();
+  } = useAppPick(
+    "desks",
+    "setDesks",
+    "roomConfig",
+    "setRoomConfig",
+    "showToast",
+    "layoutTemplates",
+    "saveLayoutTemplate",
+    "applyLayoutTemplate",
+    "deleteLayoutTemplate",
+    "confirmDialog",
+    "promptDialog",
+  );
   const [selected, setSelected] = useState<string | null>(null);
   const drag = useRef<Drag | null>(null);
   // Local copies during drags so we only hit the disk on drop.

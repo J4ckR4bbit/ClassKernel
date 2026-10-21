@@ -1,4 +1,4 @@
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { pluginById } from "../plugins/registry";
 import Icon from "./Icon";
 import ClassPicker from "./ClassPicker";
@@ -19,7 +19,7 @@ function pageTitle(view: string, activePlugin: string | null): string {
 }
 
 export default function TopAppBar() {
-  const { view, activePlugin, setView } = useApp();
+  const { view, activePlugin, setView } = useAppPick("view", "activePlugin", "setView");
   const back = view === "plugin" || view === "roster" || view === "layout";
   return (
     <header className="top-bar no-print">

@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
 import { marked } from "marked";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { BEHAVIOUR_COLOURS } from "../lib/behaviourColours";
 
 /** Class details + free-form markdown notes (stored as class.md). */
 export default function ClassNotesView() {
-  const { currentClass, classes, updateClassInfo, renameClass, showToast, promptDialog } = useApp();
+  const { currentClass, classes, updateClassInfo, renameClass, showToast, promptDialog } = useAppPick(
+    "currentClass",
+    "classes",
+    "updateClassInfo",
+    "renameClass",
+    "showToast",
+    "promptDialog",
+  );
   const info = classes.find((c) => c.name === currentClass);
   const [notes, setNotes] = useState(info?.notes ?? "");
   const [year, setYear] = useState(info?.year ?? "");

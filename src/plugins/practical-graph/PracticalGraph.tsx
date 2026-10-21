@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useApp } from "../../store/appStore";
+import { useAppPick } from "../../store/appStore";
 import { savePluginFile } from "../host";
 import { canvasToPng } from "../png";
 import { formatFixed, formatNumber, formatSigFigs } from "../numbers";
@@ -78,7 +78,7 @@ function CheckField({ label, checked, onChange }: { label: string; checked: bool
  * squares line and, most of the point of the exercise, its gradient.
  */
 export default function PracticalGraph() {
-  const { showToast } = useApp();
+  const { showToast } = useAppPick("showToast");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [rows, setRows] = useState<Row[]>(BLANK_ROWS);
   const [v, setV] = useState<PlotSettings>(DEFAULT_PLOT);

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useApp, useAppPick } from "../store/appStore";
 import { DASHBOARDS_ID } from "../plugins/registry";
 import { studentName } from "../lib/types";
 import { behaviourByStudent, formatDuration, visitSeconds } from "../lib/stats";
@@ -17,7 +17,16 @@ export default function BehaviourLogView() {
     bathroomVisits,
     setBathroomVisits,
     showToast,
-  } = useApp();
+  } = useAppPick(
+    "students",
+    "behaviourEvents",
+    "behaviourCodes",
+    "removeBehaviourEvent",
+    "addBehaviourEvent",
+    "bathroomVisits",
+    "setBathroomVisits",
+    "showToast",
+  );
   const [studentFilter, setStudentFilter] = useState("");
   const [codeFilter, setCodeFilter] = useState("");
   const [from, setFrom] = useState("");

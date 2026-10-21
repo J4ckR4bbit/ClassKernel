@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { today } from "../lib/id";
 import { AttendanceStatus, studentName } from "../lib/types";
 import { attendanceByStudent, attendanceSummary } from "../lib/stats";
@@ -12,8 +12,15 @@ const STATUSES: Array<{ code: AttendanceStatus; label: string }> = [
 ];
 
 export default function AttendanceView() {
-  const { students, attendance, setAttendance, showToast, userPrefs, sensitiveRevealed, revealSensitive } =
-    useApp();
+  const { students, attendance, setAttendance, showToast, userPrefs, sensitiveRevealed, revealSensitive } = useAppPick(
+    "students",
+    "attendance",
+    "setAttendance",
+    "showToast",
+    "userPrefs",
+    "sensitiveRevealed",
+    "revealSensitive",
+  );
   const [date, setDate] = useState(today());
 
   const todayEntries = useMemo(() => attendance.filter((e) => e.date === date), [attendance, date]);

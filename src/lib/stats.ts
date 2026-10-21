@@ -338,8 +338,12 @@ export function atRiskStudents(students: Student[], assessments: Assessment[], m
 // expect the questions and question-marks for a single assessment (the grid
 // filters them by assessment id before calling in).
 
-/** Build a `studentId|questionNumber -> mark` index for O(1) cell lookups. */
-function markIndex(qmarks: QuestionMark[]): Map<string, number> {
+/**
+ * Build a `studentId|questionNumber -> mark` index for O(1) cell lookups. The
+ * grid builds it once per render and passes it to the helpers below, which
+ * otherwise build their own.
+ */
+export function markIndex(qmarks: QuestionMark[]): Map<string, number> {
   const idx = new Map<string, number>();
   for (const m of qmarks) {
     if (m.mark != null) idx.set(`${m.studentId}|${m.number}`, m.mark);
@@ -356,8 +360,11 @@ export interface QuestionAverage {
 }
 
 /** Per question: mean mark and mean % across students who have a mark for it. */
-export function questionAverages(questions: AssessmentQuestion[], qmarks: QuestionMark[]): QuestionAverage[] {
-  const idx = markIndex(qmarks);
+export function questionAverages(
+  questions: AssessmentQuestion[],
+  qmarks: QuestionMark[],
+  idx: Map<string, number> = markIndex(qmarks),
+): QuestionAverage[] {
   const studentIds = [...new Set(qmarks.map((m) => m.studentId))];
   return questions.map((q) => {
     const vals = studentIds
@@ -390,8 +397,8 @@ export function studentProvisional(
   studentId: string,
   questions: AssessmentQuestion[],
   qmarks: QuestionMark[],
+  idx: Map<string, number> = markIndex(qmarks),
 ): Provisional {
-  const idx = markIndex(qmarks);
   let total = 0;
   let maxSoFar = 0;
   let answered = 0;
@@ -414,8 +421,8 @@ export function rankStudents(
   studentIds: string[],
   questions: AssessmentQuestion[],
   qmarks: QuestionMark[],
+  idx: Map<string, number> = markIndex(qmarks),
 ): Map<string, number> {
-  const idx = markIndex(qmarks);
   const totals = new Map<string, number>();
   for (const id of studentIds) {
     let total = 0;
@@ -451,10 +458,10 @@ export function gridCompletion(
   studentIds: string[],
   questions: AssessmentQuestion[],
   qmarks: QuestionMark[],
+  idx: Map<string, number> = markIndex(qmarks),
 ): number {
   const cells = studentIds.length * questions.length;
   if (cells === 0) return 1;
-  const idx = markIndex(qmarks);
   let filled = 0;
   for (const id of studentIds) {
     for (const q of questions) {

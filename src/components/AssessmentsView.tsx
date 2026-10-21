@@ -1,8 +1,19 @@
 import { type KeyboardEvent as ReactKeyboardEvent, useMemo, useRef, useState } from "react";
-import { useApp, useExamWeight } from "../store/appStore";
+import { useApp, useExamWeight, useAppPick } from "../store/appStore";
 import { newId, today } from "../lib/id";
 import { Assessment, AssessmentKind, AssessmentQuestion, Mark, QuestionMark, defaultKind, studentName } from "../lib/types";
-import { GRADE_SCALES, assessmentStats, gradeForPct, gridCompletion, questionAverages, rankByScore, rankStudents, studentProvisional, taskShares } from "../lib/stats";
+import {
+  GRADE_SCALES,
+  assessmentStats,
+  gradeForPct,
+  gridCompletion,
+  markIndex,
+  questionAverages,
+  rankByScore,
+  rankStudents,
+  studentProvisional,
+  taskShares,
+} from "../lib/stats";
 import { fmtDecimal, parseDecimal } from "../lib/format";
 import { areasForGrade, shortLabel, subtopicsForGrade, topicGrade } from "../lib/topics";
 import { positionTint, rankTints } from "../lib/listTint";
@@ -12,7 +23,37 @@ import MarkSheetTools from "./MarkSheetTools";
 import Icon from "./Icon";
 
 export default function AssessmentsView() {
-  const { currentClass, classes, students, assessments, setAssessments, marks, setMarks, assessmentQuestions, setAssessmentQuestions, questionMarks, setQuestionMarks, showToast, confirmDialog, userPrefs } = useApp();
+  const {
+    currentClass,
+    classes,
+    students,
+    assessments,
+    setAssessments,
+    marks,
+    setMarks,
+    assessmentQuestions,
+    setAssessmentQuestions,
+    questionMarks,
+    setQuestionMarks,
+    showToast,
+    confirmDialog,
+    userPrefs,
+  } = useAppPick(
+    "currentClass",
+    "classes",
+    "students",
+    "assessments",
+    "setAssessments",
+    "marks",
+    "setMarks",
+    "assessmentQuestions",
+    "setAssessmentQuestions",
+    "questionMarks",
+    "setQuestionMarks",
+    "showToast",
+    "confirmDialog",
+    "userPrefs",
+  );
   const [showNew, setShowNew] = useState(false);
   const [markingId, setMarkingId] = useState<string | null>(null);
   const [setupId, setSetupId] = useState<string | null>(null);
@@ -214,7 +255,7 @@ export default function AssessmentsView() {
 }
 
 function NewAssessmentModal({ grade, onClose, onCreate }: { grade: string; onClose: () => void; onCreate: (a: Assessment) => void }) {
-  const { topics } = useApp();
+  const { topics } = useAppPick("topics");
   const areas = useMemo(() => areasForGrade(topics, grade), [topics, grade]);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(today());
@@ -354,7 +395,21 @@ function WeightInput({ value, onChange }: { value: number; onChange: (weight: nu
  * level. Saving writes the question list and sets the test's total to their sum.
  */
 function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Assessment; grade: string; onBack: () => void; onStart: () => void }) {
-  const { topics, cognitiveLevels, assessmentQuestions, setAssessmentQuestions, assessments, setAssessments } = useApp();
+  const {
+    topics,
+    cognitiveLevels,
+    assessmentQuestions,
+    setAssessmentQuestions,
+    assessments,
+    setAssessments,
+  } = useAppPick(
+    "topics",
+    "cognitiveLevels",
+    "assessmentQuestions",
+    "setAssessmentQuestions",
+    "assessments",
+    "setAssessments",
+  );
   const existing = useMemo(
     () => assessmentQuestions.filter((q) => q.assessmentId === assessment.id).sort((a, b) => a.number - b.number),
     [assessmentQuestions, assessment.id],
@@ -507,7 +562,13 @@ function QuestionGrid({
   /** After marks were imported from a spreadsheet. */
   onImported: () => void;
 }) {
-  const { students, questionMarks, topics, userPrefs, assessmentQuestions } = useApp();
+  const { students, questionMarks, topics, userPrefs, assessmentQuestions } = useAppPick(
+    "students",
+    "questionMarks",
+    "topics",
+    "userPrefs",
+    "assessmentQuestions",
+  );
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
   const questions = useMemo(
@@ -520,9 +581,10 @@ function QuestionGrid({
   );
   const cells = useRef<Array<Array<HTMLInputElement | null>>>([]);
 
-  const qm = questionMarks.filter((m) => m.assessmentId === assessment.id);
-  const markOf = (studentId: string, number: number) =>
-    qm.find((m) => m.studentId === studentId && m.number === number)?.mark ?? null;
+  const qm = useMemo(() => questionMarks.filter((m) => m.assessmentId === assessment.id), [questionMarks, assessment.id]);
+  // One lookup for every cell, shared with the live stats below.
+  const qIdx = useMemo(() => markIndex(qm), [qm]);
+  const markOf = (studentId: string, number: number) => qIdx.get(`${studentId}|${number}`) ?? null;
 
   // Write a single cell: update per-question marks and recompute that student's
   // total into marks.csv so the dashboard stays in sync. Reads fresh store state
@@ -587,11 +649,11 @@ function QuestionGrid({
 
   // Live stats from the current store state.
   const studentIds = sorted.map((s) => s.id);
-  const ranks = rankStudents(studentIds, questions, qm);
+  const ranks = rankStudents(studentIds, questions, qm, qIdx);
   const rankTint = rankTints(ranks);
-  const qAvg = questionAverages(questions, qm);
-  const completion = gridCompletion(studentIds, questions, qm);
-  const provisionals = new Map(sorted.map((s) => [s.id, studentProvisional(s.id, questions, qm)]));
+  const qAvg = questionAverages(questions, qm, qIdx);
+  const completion = gridCompletion(studentIds, questions, qm, qIdx);
+  const provisionals = new Map(sorted.map((s) => [s.id, studentProvisional(s.id, questions, qm, qIdx)]));
   const classMean = (() => {
     const pcts = [...provisionals.values()].filter((p) => p.answered > 0 && p.pct !== null).map((p) => p.pct as number);
     return pcts.length ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) : null;
@@ -813,30 +875,35 @@ function QuestionGrid({
  * focused. Built for entering marks while working through a pile of papers.
  */
 function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessment; onDone: () => void; onImported: () => void }) {
-  const { students, marks, setMarks } = useApp();
+  const { students, marks, setMarks } = useAppPick("students", "marks", "setMarks");
   const sorted = useMemo(
     () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
     [students],
   );
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const markOf = (studentId: string): Mark | undefined =>
-    marks.find((m) => m.assessmentId === assessment.id && m.studentId === studentId);
+  const byStudent = useMemo(() => {
+    const m = new Map<string, Mark>();
+    for (const x of marks) if (x.assessmentId === assessment.id && !m.has(x.studentId)) m.set(x.studentId, x);
+    return m;
+  }, [marks, assessment.id]);
+  const markOf = (studentId: string): Mark | undefined => byStudent.get(studentId);
 
-  const setMark = (studentId: string, raw: string, comment?: string) => {
+  // Reads fresh store state (as the per-question grid does), so fast typing
+  // across rows never works from a list one keystroke out of date.
+  const save = (studentId: string, patch: Partial<Pick<Mark, "mark" | "comment">>) => {
+    const current = useApp.getState().marks;
+    const mine = (m: Mark) => m.assessmentId === assessment.id && m.studentId === studentId;
+    const existing = current.find(mine);
+    void setMarks([
+      ...current.filter((m) => !mine(m)),
+      { assessmentId: assessment.id, studentId, mark: existing?.mark ?? null, comment: existing?.comment ?? "", ...patch },
+    ]);
+  };
+  const setMark = (studentId: string, raw: string) => {
     const value = raw.trim() === "" ? null : parseDecimal(raw);
     if (value !== null && !Number.isFinite(value)) return;
-    const rest = marks.filter((m) => !(m.assessmentId === assessment.id && m.studentId === studentId));
-    const existing = markOf(studentId);
-    void setMarks([
-      ...rest,
-      {
-        assessmentId: assessment.id,
-        studentId,
-        mark: value,
-        comment: comment ?? existing?.comment ?? "",
-      },
-    ]);
+    save(studentId, { mark: value });
   };
 
   const focusRow = (i: number) => inputs.current[i]?.focus();
@@ -896,7 +963,7 @@ function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessme
                 className="grow"
                 placeholder="comment (optional)"
                 defaultValue={m?.comment ?? ""}
-                onChange={(e) => setMark(s.id, String(markOf(s.id)?.mark ?? ""), e.target.value)}
+                onChange={(e) => save(s.id, { comment: e.target.value })}
               />
             </div>
           );
@@ -926,7 +993,7 @@ function MarkListView({
   onEnterMarks: () => void;
   onImported: () => void;
 }) {
-  const { students, marks, userPrefs } = useApp();
+  const { students, marks, userPrefs } = useAppPick("students", "marks", "userPrefs");
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
   const sorted = useMemo(

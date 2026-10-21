@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { displayStudentName } from "../lib/privacy";
 import { today } from "../lib/id";
 import { EMPTY_ANSWER_TALLY, answerTallyByStudent } from "../lib/stats";
@@ -29,7 +29,13 @@ interface Props {
  * else is shown unless privacy mode is off, so it stays class-facing safe.
  */
 export default function StudentPicker({ onClose, lessonEvents, showTally, onLogBehaviour }: Props) {
-  const { students, attendance, currentClass, userPrefs, behaviourCodes } = useApp();
+  const { students, attendance, currentClass, userPrefs, behaviourCodes } = useAppPick(
+    "students",
+    "attendance",
+    "currentClass",
+    "userPrefs",
+    "behaviourCodes",
+  );
   const [skipAbsent, setSkipAbsent] = useState(true);
   const [noRepeats, setNoRepeats] = useState(true);
   const [display, setDisplay] = useState("");
@@ -54,7 +60,8 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
     setNote("");
     setChosen(null);
     setShowOthers(false);
-    const attToday = attendance.filter((e) => e.date === today());
+    const day = today();
+    const attToday = attendance.filter((e) => e.date === day);
     const statusOf = (id: string) => attToday.find((e) => e.studentId === id)?.status;
     let pool = students.filter((s) => !skipAbsent || (statusOf(s.id) !== "A" && statusOf(s.id) !== "E"));
     if (noRepeats) {

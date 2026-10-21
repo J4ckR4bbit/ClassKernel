@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useApp, useExamWeight } from "../store/appStore";
+import { useExamWeight, useAppPick } from "../store/appStore";
 import { today } from "../lib/id";
 import { studentName } from "../lib/types";
 import {
@@ -55,7 +55,22 @@ export default function DashboardView() {
     openStudentDashboard,
     userPrefs,
     sensitiveRevealed,
-  } = useApp();
+  } = useAppPick(
+    "currentClass",
+    "students",
+    "attendance",
+    "behaviourEvents",
+    "bathroomVisits",
+    "assessments",
+    "marks",
+    "assessmentQuestions",
+    "questionMarks",
+    "behaviourCodes",
+    "dashboardStudent",
+    "openStudentDashboard",
+    "userPrefs",
+    "sensitiveRevealed",
+  );
   const examWeight = useExamWeight();
   // The students whose parent reports are in the print preview; null = closed.
   const [reportFor, setReportFor] = useState<string[] | null>(null);

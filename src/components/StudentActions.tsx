@@ -1,6 +1,6 @@
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { AttendanceStatus, BathroomVisit, BehaviourCode, Student, studentName } from "../lib/types";
-import { formatDuration, visitSeconds } from "../lib/stats";
+import Elapsed from "./Elapsed";
 import Icon from "./Icon";
 
 interface Props {
@@ -20,7 +20,7 @@ interface Props {
  * popover on the room plan and as a sheet in the teaching strip.
  */
 export default function StudentActions({ student, status, outVisit, onAttendance, onBathroom, onBehaviour, onClose }: Props) {
-  const { behaviourCodes, userPrefs } = useApp();
+  const { behaviourCodes, userPrefs } = useAppPick("behaviourCodes", "userPrefs");
   const positives = behaviourCodes.filter((c) => c.kind === "positive");
   const negatives = behaviourCodes.filter((c) => c.kind === "negative");
   const showFlags = student.flags && (!userPrefs.privacyMode || userPrefs.popoverShowFlags);
@@ -61,7 +61,13 @@ export default function StudentActions({ student, status, outVisit, onAttendance
         onClick={onBathroom}
       >
         <Icon name="wc" size={20} />
-        {outVisit ? `Back from bathroom · ${formatDuration(visitSeconds(outVisit))}` : "Bathroom — start timer"}
+        {outVisit ? (
+          <>
+            Back from bathroom · <Elapsed visit={outVisit} />
+          </>
+        ) : (
+          "Bathroom — start timer"
+        )}
       </button>
       {positives.map((c) => (
         <button

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useApp, useExamWeight } from "../store/appStore";
+import { useExamWeight, useAppPick } from "../store/appStore";
 import { Assessment, studentName } from "../lib/types";
 import { GRADE_SCALES, assessmentStats, gradeForPct, percentage, rankByScore, taskShares, weightedMark } from "../lib/stats";
 import { fmtDecimal } from "../lib/format";
@@ -22,7 +22,7 @@ function shortDate(iso: string): string {
  * level/symbol and their rank on it. A test's heading opens that test's marks.
  */
 export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpen: (a: Assessment) => void }) {
-  const { students, assessments, marks, userPrefs } = useApp();
+  const { students, assessments, marks, userPrefs } = useAppPick("students", "assessments", "marks", "userPrefs");
   const examWeight = useExamWeight();
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];

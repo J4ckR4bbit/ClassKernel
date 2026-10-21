@@ -42,8 +42,10 @@ have the app open on two computers at the same time.
 
 ## Automatic backups
 
-Each time ClassKernel starts, it copies the whole data folder into `backups/` (named by date and time). The newest
-14 are kept.
+Each time ClassKernel starts, it copies the whole data folder into `backups/` (named by date and time). Every
+backup from today is kept, plus the last one from each of the 14 most recent earlier days you used the app, so
+you always have two teaching weeks to go back to, however often you open it (and a holiday doesn't eat into
+them). The copy runs in the background while your classes open.
 
 To go back to one, open **Settings → General → Data → Restore a backup**, choose a backup and press **Restore…**.
 The backup's files replace the current ones (anything created since that backup is kept), and a safety copy of

@@ -1,6 +1,7 @@
 import { CSSProperties, useState } from "react";
-import { View, useApp } from "../store/appStore";
+import { View, useAppPick } from "../store/appStore";
 import { ClassInfo } from "../lib/types";
+import { gradeLabel } from "../lib/format";
 import { PLUGINS, enabledPlugins } from "../plugins/registry";
 import NewClassModal from "./NewClassModal";
 import Icon from "./Icon";
@@ -23,15 +24,24 @@ function initials(name: string): string {
  * expanded navigation drawer, never among the class's own pages.
  */
 export default function HomeView() {
-  const { classes, currentClass, openClass, setView, createClass, userPrefs, openPlugin } = useApp();
+  const { classes, currentClass, openClass, setView, createClass, userPrefs, openPlugin } = useAppPick(
+    "classes",
+    "currentClass",
+    "openClass",
+    "setView",
+    "createClass",
+    "userPrefs",
+    "openPlugin",
+  );
   const [showNew, setShowNew] = useState(false);
   const active = classes.filter((c) => !c.archived);
   const tools = enabledPlugins(userPrefs.enabledPlugins);
 
-  const meta = (c: ClassInfo) => [c.subject, c.year && `Grade ${c.year}`, c.room].filter(Boolean).join(" · ");
+  const meta = (c: ClassInfo) => [c.subject, c.year && gradeLabel(c.year), c.room].filter(Boolean).join(" · ");
 
   const go = async (name: string, view: View) => {
-    await openClass(name);
+    // The open class is already in memory; only a different one is read from disk.
+    if (name !== currentClass) await openClass(name);
     setView(view);
   };
 

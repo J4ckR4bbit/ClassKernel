@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useApp } from "../../store/appStore";
+import { useAppPick } from "../../store/appStore";
 import { savePluginFile } from "../host";
 import { MAX_CANVAS_PX, canvasToPng } from "../png";
 import { formatNumber } from "../numbers";
@@ -111,7 +111,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
  * so the saved PNG prints — and lands in Word — at exactly the size shown.
  */
 export default function GraphPaper() {
-  const { showToast } = useApp();
+  const { showToast } = useAppPick("showToast");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [v, setV] = useState<GraphPaperSettings>(DEFAULT_GRAPH_PAPER);
   const [status, setStatus] = useState("");

@@ -10,6 +10,8 @@ export interface DirEntry {
 
 export interface AppFS {
   readText(path: string): Promise<string>;
+  /** The file's text, or null when it doesn't exist (one call instead of exists + readText). */
+  readTextIfExists(path: string): Promise<string | null>;
   /** Write via temp file + rename so cloud-sync clients never see half a file. */
   writeAtomic(path: string, contents: string): Promise<void>;
   /** Same, for generated binaries (spreadsheet exports). */
@@ -37,6 +39,9 @@ class TauriFS implements AppFS {
   }
   readText(path: string) {
     return this.invoke<string>("read_text", { path });
+  }
+  readTextIfExists(path: string) {
+    return this.invoke<string | null>("read_text_opt", { path });
   }
   writeAtomic(path: string, contents: string) {
     return this.invoke<void>("write_atomic", { path, contents });
@@ -87,6 +92,9 @@ export class MemFS implements AppFS {
     const f = this.files.get(p);
     if (f === undefined) throw new Error(`File not found: ${p}`);
     return f;
+  }
+  async readTextIfExists(path: string): Promise<string | null> {
+    return this.files.get(this.norm(path)) ?? null;
   }
   async writeAtomic(path: string, contents: string): Promise<void> {
     const p = this.norm(path);
@@ -159,13 +167,126 @@ export class MemFS implements AppFS {
   }
 }
 
+/** A write waiting its turn; a newer write to the same file replaces its contents. */
+interface QueuedWrite {
+  run: () => Promise<void>;
+  done: Promise<void>;
+}
+
+/**
+ * Puts writes to the same file in order, one at a time, and collapses a burst.
+ * The Rust commands run off the UI thread, so without this two saves of one
+ * file could overlap or land out of order. While a file is being written, the
+ * next write waits; any newer one replaces the contents of that waiting write,
+ * so typing a row of marks costs at most two disk writes per file, not two per
+ * keystroke. Every caller's promise settles once its contents (or newer) are
+ * on disk, so a failure still reaches the save-error banner.
+ *
+ * Reads wait for the file's pending writes; rename, listing and snapshots wait
+ * for all of them, so nothing ever reads a file older than what's in memory.
+ * A backup snapshot runs in the background at launch; writes and renames made
+ * meanwhile wait for it, so the copy is the folder exactly as it was opened and
+ * no file is replaced mid-copy (which Windows refuses). The edit itself shows
+ * at once; only its disk write waits.
+ */
+export class QueuedFS implements AppFS {
+  private tails = new Map<string, Promise<void>>();
+  private waiting = new Map<string, QueuedWrite>();
+  /** Settles when the running backup snapshot (if any) has finished. */
+  private backup: Promise<void> = Promise.resolve();
+
+  constructor(readonly inner: AppFS) {}
+
+  private key(path: string): string {
+    return path.replace(/\\/g, "/");
+  }
+
+  private enqueue(path: string, run: () => Promise<void>): Promise<void> {
+    const key = this.key(path);
+    const queued = this.waiting.get(key);
+    if (queued) {
+      queued.run = run;
+      return queued.done;
+    }
+    const prev = Promise.all([this.tails.get(key), this.backup]);
+    const write = { run } as QueuedWrite;
+    write.done = prev.then(() => {
+      // Started: anything newer queues behind this write.
+      this.waiting.delete(key);
+      return write.run();
+    });
+    this.waiting.set(key, write);
+    const tail = write.done.catch(() => {});
+    this.tails.set(key, tail);
+    void tail.then(() => {
+      if (this.tails.get(key) === tail) this.tails.delete(key);
+    });
+    return write.done;
+  }
+
+  private async settled(path: string): Promise<void> {
+    await this.tails.get(this.key(path));
+  }
+
+  private async allSettled(): Promise<void> {
+    await Promise.all([...this.tails.values()]);
+  }
+
+  async readText(path: string) {
+    await this.settled(path);
+    return this.inner.readText(path);
+  }
+  async readTextIfExists(path: string) {
+    await this.settled(path);
+    return this.inner.readTextIfExists(path);
+  }
+  writeAtomic(path: string, contents: string) {
+    return this.enqueue(path, () => this.inner.writeAtomic(path, contents));
+  }
+  writeBinary(path: string, bytes: Uint8Array) {
+    return this.enqueue(path, () => this.inner.writeBinary(path, bytes));
+  }
+  async exists(path: string) {
+    await this.settled(path);
+    return this.inner.exists(path);
+  }
+  mkdirs(path: string) {
+    return this.inner.mkdirs(path);
+  }
+  async listDir(path: string) {
+    await this.allSettled();
+    return this.inner.listDir(path);
+  }
+  async rename(from: string, to: string) {
+    await this.allSettled();
+    await this.backup;
+    return this.inner.rename(from, to);
+  }
+  snapshot(dataDir: string, stamp: string, keep: number) {
+    // The gate goes up at once, so even a write queued right after this call waits.
+    const copying = this.allSettled().then(() => this.inner.snapshot(dataDir, stamp, keep));
+    this.backup = copying.then(
+      () => {},
+      () => {},
+    );
+    return copying;
+  }
+  pickFolder() {
+    return this.inner.pickFolder();
+  }
+  pickSaveFile(defaultName: string, extension: string, label: string) {
+    return this.inner.pickSaveFile(defaultName, extension, label);
+  }
+}
+
 let fsInstance: AppFS | null = null;
 
 export function getFS(): AppFS {
-  if (!fsInstance) fsInstance = isTauri() ? new TauriFS() : new MemFS();
+  if (!fsInstance) fsInstance = new QueuedFS(isTauri() ? new TauriFS() : new MemFS());
   return fsInstance;
 }
 
+/** Swap the backend (tests); it is queued the same way as the real one. */
 export function setFS(fs: AppFS): void {
-  fsInstance = fs;
+  fsInstance = new QueuedFS(fs);
 }

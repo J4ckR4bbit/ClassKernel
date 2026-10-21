@@ -30,7 +30,7 @@ and its columns, for anyone who wants to read, check or repair the data outside 
   classes/<class name>/       one folder per class (see below)
   layouts/<template name>/    room templates: desks.csv + room.csv
   exports/                    spreadsheets saved with "Save to data folder"
-  backups/<YYYY-MM-DD_hhmmss>/  automatic snapshots (newest 14 kept)
+  backups/<YYYY-MM-DD_hhmmss>/  automatic snapshots (today's, plus the last of each of 14 earlier days)
 ```
 
 ## App-wide files
@@ -255,5 +255,6 @@ The same `desks.csv` and `room.csv` as a class, saved with **Save as template** 
 
 ## Backups: `backups/<YYYY-MM-DD_hhmmss>/`
 
-A full copy of the data folder (except `backups/` itself), taken each time the app starts; the newest 14 are kept.
-A restore first takes a safety copy named `pre-restore-<stamp>`.
+A full copy of the data folder (except `backups/` itself), taken each time the app starts. Every snapshot from today
+is kept, plus the newest from each of the 14 most recent earlier days that have one; older ones are deleted. A restore
+first takes a safety copy named `pre-restore-<stamp>`, which is never deleted automatically.

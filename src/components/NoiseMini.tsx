@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { useNoiseMeter } from "../plugins/noise-meter/noiseStore";
 import { percentOfLimit, zoneFor } from "../plugins/noise-meter/meter";
 import { NOISE_METER_ID } from "../plugins/registry";
@@ -14,7 +14,15 @@ const ZONE_LABEL = { quiet: "Nice and quiet", warn: "Getting close", loud: "Too 
  * while the alarm is on.
  */
 export default function NoiseMini({ inline = false }: { inline?: boolean }) {
-  const { view, activePlugin, focusMode, focusStyle, setFocusMode, openPlugin, userPrefs } = useApp();
+  const { view, activePlugin, focusMode, focusStyle, setFocusMode, openPlugin, userPrefs } = useAppPick(
+    "view",
+    "activePlugin",
+    "focusMode",
+    "focusStyle",
+    "setFocusMode",
+    "openPlugin",
+    "userPrefs",
+  );
   const { running, level, alarm, settings, stop } = useNoiseMeter();
   const onMeterScreen = view === "plugin" && activePlugin === NOISE_METER_ID && !focusMode;
   const enabled = userPrefs.enabledPlugins.includes(NOISE_METER_ID);

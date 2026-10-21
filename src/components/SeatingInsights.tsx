@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { studentName } from "../lib/types";
 import { disruptivePairs, studentDeskStats, studentOverallAverages } from "../lib/lessons";
 import { fmtNum } from "../lib/format";
@@ -12,7 +12,13 @@ const fmt = (n: number) => (n > 0 ? `+${fmtNum(n, 1)}` : fmtNum(n, 1));
  * pairings turn disruptive (candidates for the keep-apart list).
  */
 export default function SeatingInsights() {
-  const { students, lessons, seatingPrefs, setSeatingPrefs, showToast } = useApp();
+  const { students, lessons, seatingPrefs, setSeatingPrefs, showToast } = useAppPick(
+    "students",
+    "lessons",
+    "seatingPrefs",
+    "setSeatingPrefs",
+    "showToast",
+  );
   const byId = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
   const nameOf = (id: string) => {
     const s = byId.get(id);

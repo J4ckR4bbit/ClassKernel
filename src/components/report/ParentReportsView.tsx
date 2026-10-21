@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useApp, useExamWeight } from "../../store/appStore";
+import { useExamWeight, useAppPick } from "../../store/appStore";
 import { today } from "../../lib/id";
 import { ClassData } from "../../lib/insights";
 import PrivacyGate from "../PrivacyGate";
@@ -24,7 +24,21 @@ export default function ParentReportsView() {
     userPrefs,
     sensitiveRevealed,
     setView,
-  } = useApp();
+  } = useAppPick(
+    "currentClass",
+    "students",
+    "attendance",
+    "behaviourEvents",
+    "bathroomVisits",
+    "assessments",
+    "marks",
+    "assessmentQuestions",
+    "questionMarks",
+    "behaviourCodes",
+    "userPrefs",
+    "sensitiveRevealed",
+    "setView",
+  );
   const examWeight = useExamWeight();
   const data: ClassData = useMemo(
     () => ({ students, attendance, behaviourEvents, bathroomVisits, assessments, marks, assessmentQuestions, questionMarks, behaviourCodes, examWeight }),

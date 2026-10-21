@@ -1,5 +1,5 @@
 import { CSSProperties, useEffect, useState } from "react";
-import { useApp } from "./store/appStore";
+import { useApp, useAppPick } from "./store/appStore";
 import Onboarding from "./components/Onboarding";
 import NavRail from "./components/NavRail";
 import TopAppBar from "./components/TopAppBar";
@@ -22,7 +22,7 @@ import NoiseMini from "./components/NoiseMini";
 
 /** Toast + dialog + save-error UI shared by both shells. */
 function Overlays() {
-  const { toast, saveError, retrySave } = useApp();
+  const { toast, saveError, retrySave } = useAppPick("toast", "saveError", "retrySave");
   return (
     <>
       {saveError && (
@@ -68,11 +68,22 @@ function readNavExpanded(): boolean {
 }
 
 export default function App() {
-  const { booted, dataDir, currentClass, classes, view, demoMode, focusMode, focusStyle, setFocusMode, boot, userPrefs } = useApp();
+  const { booted, dataDir, currentClass, view, demoMode, focusMode, focusStyle, setFocusMode, boot } = useAppPick(
+    "booted",
+    "dataDir",
+    "currentClass",
+    "view",
+    "demoMode",
+    "focusMode",
+    "focusStyle",
+    "setFocusMode",
+    "boot",
+  );
   // The open class's colour underlines the top app bar on its own pages (not
   // Home, Settings or the plugins, which aren't about one class).
   const classPage = view !== "home" && view !== "settings" && view !== "plugin";
-  const classColour = classPage ? classes.find((c) => c.name === currentClass)?.color ?? "" : "";
+  const openClassColour = useApp((s) => s.classes.find((c) => c.name === s.currentClass)?.color ?? "");
+  const classColour = classPage ? openClassColour : "";
 
   useEffect(() => {
     void boot();
@@ -105,7 +116,7 @@ export default function App() {
   // Whole-app display scale for large touch panels. `zoom` scales layout,
   // inline px styles and SVG coherently, which a root font-size change can't
   // do with this all-px stylesheet.
-  const scale = userPrefs.uiScale;
+  const scale = useApp((s) => s.userPrefs.uiScale);
   useEffect(() => {
     const root = document.documentElement;
     if (scale && scale !== 1) root.style.setProperty("zoom", String(scale));

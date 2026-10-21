@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import Icon from "./Icon";
 
 /**
@@ -10,7 +10,11 @@ import Icon from "./Icon";
  * privacy mode off in Settings removes the gate entirely.
  */
 export default function PrivacyGate({ label, children }: { label: string; children: ReactNode }) {
-  const { userPrefs, sensitiveRevealed, revealSensitive } = useApp();
+  const { userPrefs, sensitiveRevealed, revealSensitive } = useAppPick(
+    "userPrefs",
+    "sensitiveRevealed",
+    "revealSensitive",
+  );
   if (!userPrefs.privacyMode || sensitiveRevealed) return <>{children}</>;
   return (
     <div className="privacy-gate">

@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { useApp, useLessonRunning } from "../store/appStore";
+import { useLessonRunning, useAppPick } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
-import { AttendanceStatus, BehaviourCode, BehaviourEvent, LessonRecord, SeatAssignment, studentName } from "../lib/types";
+import {
+  AttendanceStatus,
+  BathroomVisit,
+  BehaviourCode,
+  BehaviourEvent,
+  LessonRecord,
+  SeatAssignment,
+  studentName,
+} from "../lib/types";
 import { eventsOnDate, formatDuration, visitSeconds } from "../lib/stats";
 import { lessonStartKey, lessonStartedMessage } from "../lib/lessonState";
 import { deskDisplayLabels } from "../lib/tables";
@@ -36,7 +44,28 @@ export function useLessonSession() {
     unlockSeating,
     startLesson: beginLesson,
     stopLesson,
-  } = useApp();
+  } = useAppPick(
+    "currentClass",
+    "students",
+    "desks",
+    "behaviourEvents",
+    "addBehaviourEvent",
+    "removeBehaviourEvent",
+    "addBehaviourEvents",
+    "removeBehaviourEvents",
+    "bathroomVisits",
+    "startBathroomVisit",
+    "endBathroomVisit",
+    "addLessonRecords",
+    "attendance",
+    "setAttendance",
+    "showToast",
+    "userPrefs",
+    "confirmDialog",
+    "unlockSeating",
+    "startLesson",
+    "stopLesson",
+  );
   const running = useLessonRunning();
 
   // "This lesson" is everything logged since the last End-lesson reset (or the
@@ -60,19 +89,24 @@ export function useLessonSession() {
   // Whether the class-facing screen shows the running points scoreboard.
   const pointsVisible = userPrefs.privacyMode ? userPrefs.showSeatPoints : true;
 
-  const attendanceToday = attendance.filter((e) => e.date === today());
-  const statusOf = (id: string) => attendanceToday.find((e) => e.studentId === id)?.status;
+  // Today's register as a lookup: the room plan asks it once per seat.
+  const day = today();
+  const statusToday = useMemo(() => {
+    const m = new Map<string, AttendanceStatus>();
+    for (const e of attendance) if (e.date === day && !m.has(e.studentId)) m.set(e.studentId, e.status);
+    return m;
+  }, [attendance, day]);
+  const statusOf = (id: string) => statusToday.get(id);
 
   // Bathroom timers: a visit without an end time is a student who is out now.
-  const outNow = bathroomVisits.filter((v) => !v.end);
-  const outVisitOf = (id: string) => outNow.find((v) => v.studentId === id);
-  // Re-render every second while somebody is out so the timers count up live.
-  const [, setClock] = useState(0);
-  useEffect(() => {
-    if (outNow.length === 0) return;
-    const t = setInterval(() => setClock((n) => n + 1), 1000);
-    return () => clearInterval(t);
-  }, [outNow.length]);
+  // The running times tick in <Elapsed>, so the room plan doesn't redraw every second.
+  const outNow = useMemo(() => bathroomVisits.filter((v) => !v.end), [bathroomVisits]);
+  const outById = useMemo(() => {
+    const m = new Map<string, BathroomVisit>();
+    for (const v of outNow) if (!m.has(v.studentId)) m.set(v.studentId, v);
+    return m;
+  }, [outNow]);
+  const outVisitOf = (id: string) => outById.get(id);
 
   // In privacy mode toasts stay nameless — the teacher just tapped that
   // student, so the name adds nothing the class should see.
@@ -121,8 +155,9 @@ export function useLessonSession() {
   };
 
   const markAttendance = (studentId: string, status: AttendanceStatus) => {
-    const rest = attendance.filter((e) => !(e.date === today() && e.studentId === studentId));
-    void setAttendance([...rest, { date: today(), studentId, status, note: "" }]);
+    const date = today();
+    const rest = attendance.filter((e) => !(e.date === date && e.studentId === studentId));
+    void setAttendance([...rest, { date, studentId, status, note: "" }]);
   };
 
   /** Start the lesson: everyone not yet marked today is marked present. */

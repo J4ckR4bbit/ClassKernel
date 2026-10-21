@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { SeatAssignment, studentName } from "../lib/types";
 import { displayStudentName, seatSurname } from "../lib/privacy";
 import { allSeatSlots } from "../lib/seating";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
-import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
+import RoomCanvas from "./RoomCanvas";
+import { fitView } from "../lib/room";
 import Icon from "./Icon";
 
 export default function SeatingView() {
@@ -19,7 +20,18 @@ export default function SeatingView() {
     userPrefs,
     confirmDialog,
     promptDialog,
-  } = useApp();
+  } = useAppPick(
+    "students",
+    "desks",
+    "seating",
+    "setSeating",
+    "showToast",
+    "setView",
+    "roomConfig",
+    "userPrefs",
+    "confirmDialog",
+    "promptDialog",
+  );
   // Plans exist in seating.csv once they have a row; freshly created empty
   // plans are tracked locally until their first seat is placed.
   const [extraPlans, setExtraPlans] = useState<string[]>([]);
@@ -37,6 +49,8 @@ export default function SeatingView() {
 
   const planSeats = seating.filter((s) => s.planName === activePlan && s.studentId);
   const byId = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
+  // With no view crop set, zoom to the furniture (as the Lesson page does).
+  const view = useMemo(() => roomConfig.crop ?? fitView(desks), [roomConfig.crop, desks]);
   const seatedIds = new Set(planSeats.map((s) => s.studentId));
   const unseated = students.filter((s) => !seatedIds.has(s.id));
   const capacity = allSeatSlots(desks).length;
@@ -185,7 +199,7 @@ export default function SeatingView() {
             <RoomCanvas
               desks={desks}
               frontEdge={roomConfig.frontEdge}
-              crop={roomConfig.crop ?? { x: 0, y: 0, w: ROOM_W, h: ROOM_H }}
+              crop={view}
               seatFontScale={roomConfig.seatFontScale}
               deskFontScale={roomConfig.deskFontScale}
               labelFontScale={roomConfig.labelFontScale}

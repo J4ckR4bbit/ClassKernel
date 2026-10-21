@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { isTauri } from "../lib/fs";
 
 export default function Onboarding() {
-  const { chooseDataDir, pickAndSetDataDir } = useApp();
+  const { chooseDataDir, pickAndSetDataDir } = useAppPick("chooseDataDir", "pickAndSetDataDir");
   const [manualPath, setManualPath] = useState("");
   const [busy, setBusy] = useState(false);
 

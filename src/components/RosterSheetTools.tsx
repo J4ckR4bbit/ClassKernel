@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useApp } from "../store/appStore";
+import { useAppPick } from "../store/appStore";
 import { RosterPlan, applyRosterImport, planRosterImport, rosterFileName, rosterWorkbook } from "../lib/rosterSheet";
 import { readSpreadsheetFile } from "../lib/spreadsheetFile";
 import { buildXlsx } from "../lib/xlsx";
@@ -13,7 +13,12 @@ import Icon from "./Icon";
  * it will add and change, and what it skipped and why, before saving anything.
  */
 export default function RosterSheetTools({ oneClass }: { oneClass?: string }) {
-  const { classes, showToast, loadAllStudents, importRoster } = useApp();
+  const { classes, showToast, loadAllStudents, importRoster } = useAppPick(
+    "classes",
+    "showToast",
+    "loadAllStudents",
+    "importRoster",
+  );
   const fileInput = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<{ plan: RosterPlan; fileName: string; studentsByClass: Map<string, Student[]> } | null>(null);
   const label = oneClass ? "Import spreadsheet" : "Import classes and students";
