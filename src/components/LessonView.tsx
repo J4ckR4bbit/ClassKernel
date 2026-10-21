@@ -1,7 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useAppPick } from "../store/appStore";
-import { AttendanceStatus, BehaviourCode } from "../lib/types";
-import { formatDuration, visitSeconds } from "../lib/stats";
+import { AttendanceStatus, BehaviourCode, SeatAssignment } from "../lib/types";
 import { displayStudentName, seatSurname } from "../lib/privacy";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
 import { useLessonSession } from "../hooks/useLessonSession";
@@ -11,7 +10,18 @@ import RoomCanvas, { ROOM_H, ROOM_W } from "./RoomCanvas";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
 import BatchPanel from "./BatchPanel";
+import Elapsed from "./Elapsed";
 import Icon from "./Icon";
+
+/** Seats keyed "deskId|seatIndex" (the first assignment wins, as a search would). */
+function seatLookup(seats: SeatAssignment[]): Map<string, SeatAssignment> {
+  const m = new Map<string, SeatAssignment>();
+  for (const s of seats) {
+    const key = `${s.deskId}|${s.seatIndex}`;
+    if (!m.has(key)) m.set(key, s);
+  }
+  return m;
+}
 
 interface Popover {
   studentId: string;
@@ -48,9 +58,15 @@ export default function LessonView() {
   const { byId, lessonEvents, pointsToday, pointsVisible, statusOf, outNow, outVisitOf } = lesson;
   const batch = useBatchEntry(lesson.logBatch);
 
-  const planSeats = seating.filter((s) => s.planName === activePlan && s.studentId);
+  const planSeats = useMemo(
+    () => seating.filter((s) => s.planName === activePlan && s.studentId),
+    [seating, activePlan],
+  );
   // While rerolling, draw the live shuffle frame instead of the saved seats.
   const shownSeats = shuffleFrame ?? planSeats;
+  // Who sits where, as lookups: the room plan asks once per seat.
+  const planSeatAt = useMemo(() => seatLookup(planSeats), [planSeats]);
+  const shownSeatAt = useMemo(() => seatLookup(shownSeats), [shownSeats]);
 
   // In teaching mode the lesson buttons sit on whichever edge Settings says,
   // so they land under the hand of whoever is standing at the board.
@@ -282,7 +298,7 @@ export default function LessonView() {
                 title="Tap when the student is back"
                 onClick={() => toggleBathroom(v.studentId)}
               >
-                {s ? displayStudentName(s, userPrefs.seatNameStyle) : v.studentId} · {formatDuration(visitSeconds(v))} ✓
+                {s ? displayStudentName(s, userPrefs.seatNameStyle) : v.studentId} · <Elapsed visit={v} /> ✓
               </button>
             );
           })}
@@ -307,7 +323,7 @@ export default function LessonView() {
           deskFontScale={roomConfig.deskFontScale}
           labelFontScale={roomConfig.labelFontScale}
           seatContent={(deskId, seatIndex) => {
-            const occ = shownSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
+            const occ = shownSeatAt.get(`${deskId}|${seatIndex}`);
             const s = occ ? byId.get(occ.studentId) : undefined;
             const status = s ? statusOf(s.id) : undefined;
             return {
@@ -322,7 +338,7 @@ export default function LessonView() {
           }}
           onSeatClick={(deskId, seatIndex, x, y) => {
             if (isShuffling) return;
-            const occ = planSeats.find((s) => s.deskId === deskId && s.seatIndex === seatIndex);
+            const occ = planSeatAt.get(`${deskId}|${seatIndex}`);
             if (!occ) return;
             // In batch entry a tap selects/deselects; nothing is saved until Save.
             if (batch.active) {

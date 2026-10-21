@@ -1,6 +1,6 @@
 import { useAppPick } from "../store/appStore";
 import { AttendanceStatus, BathroomVisit, BehaviourCode, Student, studentName } from "../lib/types";
-import { formatDuration, visitSeconds } from "../lib/stats";
+import Elapsed from "./Elapsed";
 import Icon from "./Icon";
 
 interface Props {
@@ -61,7 +61,13 @@ export default function StudentActions({ student, status, outVisit, onAttendance
         onClick={onBathroom}
       >
         <Icon name="wc" size={20} />
-        {outVisit ? `Back from bathroom · ${formatDuration(visitSeconds(outVisit))}` : "Bathroom — start timer"}
+        {outVisit ? (
+          <>
+            Back from bathroom · <Elapsed visit={outVisit} />
+          </>
+        ) : (
+          "Bathroom — start timer"
+        )}
       </button>
       {positives.map((c) => (
         <button

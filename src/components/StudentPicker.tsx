@@ -60,7 +60,8 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
     setNote("");
     setChosen(null);
     setShowOthers(false);
-    const attToday = attendance.filter((e) => e.date === today());
+    const day = today();
+    const attToday = attendance.filter((e) => e.date === day);
     const statusOf = (id: string) => attToday.find((e) => e.studentId === id)?.status;
     let pool = students.filter((s) => !skipAbsent || (statusOf(s.id) !== "A" && statusOf(s.id) !== "E"));
     if (noRepeats) {

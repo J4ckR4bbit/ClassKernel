@@ -39,7 +39,8 @@ export default function HomeView() {
   const meta = (c: ClassInfo) => [c.subject, c.year && `Grade ${c.year}`, c.room].filter(Boolean).join(" · ");
 
   const go = async (name: string, view: View) => {
-    await openClass(name);
+    // The open class is already in memory; only a different one is read from disk.
+    if (name !== currentClass) await openClass(name);
     setView(view);
   };
 

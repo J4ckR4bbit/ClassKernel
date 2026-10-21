@@ -54,12 +54,13 @@ export default function TeachingStrip() {
   const { byId, lessonEvents, pointsToday, pointsVisible, statusOf, outVisitOf } = lesson;
   const batch = useBatchEntry(lesson.logBatch);
 
-  const planSeats = seating.filter((s) => s.planName === activePlan && s.studentId);
+  const planSeats = useMemo(
+    () => seating.filter((s) => s.planName === activePlan && s.studentId),
+    [seating, activePlan],
+  );
   const tables = useMemo(
     () => groupSeatsByTable(desks, planSeats, roomConfig.frontEdge),
-    // planSeats is rebuilt every render; seating is what it derives from.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [desks, seating, activePlan, roomConfig.frontEdge],
+    [desks, planSeats, roomConfig.frontEdge],
   );
   // Seating is assigned from the other screens; the strip is for recording.
   const busy = batch.active;
