@@ -449,11 +449,19 @@ export async function loadReportComments(dataDir: string, className: string): Pr
 }
 
 export async function saveReportComments(dataDir: string, className: string, comments: Record<string, string>): Promise<void> {
-  const updated = new Date().toISOString();
+  // A comment keeps its 'updated' time until it changes, so the file says
+  // which comments were edited when (and joining two computers' copies can
+  // tell an edited comment from an untouched one).
+  const path = p(classDir(dataDir, className), "report_comments.csv");
+  const before = new Map((await loadCsvFile(path)).map((r) => [r.student_id, r]));
+  const now = new Date().toISOString();
   const rows = Object.entries(comments)
     .filter(([, comment]) => comment.trim())
-    .map(([student_id, comment]) => ({ student_id, comment, updated }));
-  await getFS().writeAtomic(p(classDir(dataDir, className), "report_comments.csv"), stringifyCsv(rows, REPORT_COMMENT_COLS));
+    .map(([student_id, comment]) => {
+      const old = before.get(student_id);
+      return { student_id, comment, updated: old && old.comment === comment && old.updated ? old.updated : now };
+    });
+  await getFS().writeAtomic(path, stringifyCsv(rows, REPORT_COMMENT_COLS));
 }
 
 // ---------- lesson history (per class) ----------
@@ -933,4 +941,77 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     },
   ];
   await getFS().writeAtomic(p(dataDir, "settings.csv"), stringifyCsv(rows, SETTINGS_COLS));
+}
+
+// ---------- joining two copies of a file (see merge.ts) ----------
+// How each file in the data folder is combined when this computer's copy and
+// the data folder both changed it while Google Drive was away.
+//   keyed:   row by row; a row is identified by its key columns
+//   grouped: the rows sharing the group columns move as one unit (a seating
+//            plan, an assessment's questions), so two edits never interleave
+//   whole:   the file is one unit (a room layout, the ordered button list)
+//   classMd: class.md, front-matter field by field, the notes as one field
+
+export type MergeRule =
+  | { kind: "keyed"; columns: string[]; key: string[]; ignore?: string[] }
+  | { kind: "grouped"; columns: string[]; group: string[] }
+  | { kind: "whole" }
+  | { kind: "classMd" };
+
+const CLASS = "classes/[^/]+/";
+
+export const FILE_RULES: Array<{ pattern: RegExp; rule: MergeRule }> = [
+  { pattern: /^behaviours\.csv$/, rule: { kind: "whole" } },
+  { pattern: /^cognitive_levels\.csv$/, rule: { kind: "whole" } },
+  { pattern: /^timer_presets\.csv$/, rule: { kind: "whole" } },
+  { pattern: /^topics\.csv$/, rule: { kind: "keyed", columns: TOPIC_COLS, key: ["grade", "area", "subtopic"] } },
+  { pattern: /^settings\.csv$/, rule: { kind: "keyed", columns: SETTINGS_COLS, key: ["key"] } },
+  { pattern: /^layouts\/[^/]+\/(desks|room)\.csv$/, rule: { kind: "whole" } },
+  { pattern: new RegExp(`^${CLASS}class\\.md$`), rule: { kind: "classMd" } },
+  { pattern: new RegExp(`^${CLASS}students\\.csv$`), rule: { kind: "keyed", columns: STUDENT_COLS, key: ["id"] } },
+  {
+    pattern: new RegExp(`^${CLASS}attendance\\.csv$`),
+    rule: { kind: "keyed", columns: ATTENDANCE_COLS, key: ["date", "student_id"] },
+  },
+  {
+    pattern: new RegExp(`^${CLASS}behaviour\\.csv$`),
+    rule: { kind: "keyed", columns: BEHAVIOUR_EVENT_COLS, key: ["timestamp", "student_id", "code"] },
+  },
+  {
+    pattern: new RegExp(`^${CLASS}bathroom\\.csv$`),
+    rule: { kind: "keyed", columns: BATHROOM_COLS, key: ["student_id", "start"] },
+  },
+  { pattern: new RegExp(`^${CLASS}desks\\.csv$`), rule: { kind: "whole" } },
+  { pattern: new RegExp(`^${CLASS}room\\.csv$`), rule: { kind: "whole" } },
+  { pattern: new RegExp(`^${CLASS}seating\\.csv$`), rule: { kind: "grouped", columns: SEATING_COLS, group: ["plan_name"] } },
+  { pattern: new RegExp(`^${CLASS}seating_prefs\\.csv$`), rule: { kind: "whole" } },
+  {
+    pattern: new RegExp(`^${CLASS}lessons\\.csv$`),
+    rule: { kind: "keyed", columns: LESSON_COLS, key: ["session_id", "student_id"] },
+  },
+  {
+    pattern: new RegExp(`^${CLASS}assessments\\.csv$`),
+    rule: { kind: "keyed", columns: ASSESSMENT_COLS, key: ["assessment_id"] },
+  },
+  {
+    pattern: new RegExp(`^${CLASS}assessment_questions\\.csv$`),
+    rule: { kind: "grouped", columns: QUESTION_COLS, group: ["assessment_id"] },
+  },
+  {
+    pattern: new RegExp(`^${CLASS}question_marks\\.csv$`),
+    rule: { kind: "keyed", columns: QUESTION_MARK_COLS, key: ["assessment_id", "student_id", "q_number"] },
+  },
+  {
+    pattern: new RegExp(`^${CLASS}marks\\.csv$`),
+    rule: { kind: "keyed", columns: MARK_COLS, key: ["assessment_id", "student_id"] },
+  },
+  {
+    pattern: new RegExp(`^${CLASS}report_comments\\.csv$`),
+    rule: { kind: "keyed", columns: REPORT_COMMENT_COLS, key: ["student_id"], ignore: ["updated"] },
+  },
+];
+
+/** How a file (path relative to the data folder, with forward slashes) is joined; unknown files are one unit. */
+export function mergeRuleFor(rel: string): MergeRule {
+  return FILE_RULES.find((r) => r.pattern.test(rel))?.rule ?? { kind: "whole" };
 }

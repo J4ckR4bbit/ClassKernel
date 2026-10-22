@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { MemFS, getFS, setFS } from "./fs";
 import * as repo from "./repo";
-import { AttendanceEntry, BathroomVisit, DEFAULT_USER_PREFS, Mark, Student } from "./types";
+import {
+  AttendanceEntry,
+  BathroomVisit,
+  DEFAULT_ROOM_CONFIG,
+  DEFAULT_SEATING_PREFS,
+  DEFAULT_USER_PREFS,
+  Mark,
+  Student,
+} from "./types";
 import { BC, BEHAVIOUR_COLOURS } from "./behaviourColours";
 
 const DIR = "/data";
@@ -520,5 +528,46 @@ describe("rename", () => {
     await repo.saveClassInfo(DIR, { name: "8A-Science", year: "8", subject: "Science", room: "", notes: "", archived: false, color: "" });
     const students = await repo.loadStudents(DIR, "8A-Science");
     expect(students).toHaveLength(1);
+  });
+});
+
+describe("joining rules", () => {
+  it("has a rule for every file the app saves, and only one", async () => {
+    await repo.saveStudents(DIR, CLS, []);
+    await repo.saveAttendance(DIR, CLS, []);
+    await repo.saveBehaviourEvents(DIR, CLS, []);
+    await repo.saveBathroomVisits(DIR, CLS, []);
+    await repo.saveDesks(DIR, CLS, []);
+    await repo.saveRoomConfig(DIR, CLS, DEFAULT_ROOM_CONFIG);
+    await repo.saveSeating(DIR, CLS, []);
+    await repo.saveSeatingPrefs(DIR, CLS, DEFAULT_SEATING_PREFS);
+    await repo.saveReportComments(DIR, CLS, {});
+    await repo.saveLessons(DIR, CLS, []);
+    await repo.saveAssessments(DIR, CLS, []);
+    await repo.saveAssessmentQuestions(DIR, CLS, []);
+    await repo.saveQuestionMarks(DIR, CLS, []);
+    await repo.saveMarks(DIR, CLS, []);
+    await repo.saveTopics(DIR, []);
+    await repo.saveCognitiveLevels(DIR, []);
+    await repo.saveTimerPresets(DIR, []);
+    await repo.saveUserPrefs(DIR, DEFAULT_USER_PREFS);
+    await repo.saveLayoutTemplate(DIR, "Lab", [], DEFAULT_ROOM_CONFIG);
+    const saved = [...fs.files.keys()].map((k) => k.slice(DIR.length + 1)).filter((k) => !k.startsWith("backups/"));
+    expect(saved.length).toBeGreaterThan(20);
+    for (const rel of saved) {
+      const matches = repo.FILE_RULES.filter((r) => r.pattern.test(rel));
+      expect(matches.length, rel).toBe(1);
+    }
+  });
+
+  it("keeps a report comment's 'updated' time until the comment changes", async () => {
+    await repo.saveReportComments(DIR, CLS, { s1: "Good term", s2: "Keep going" });
+    const first = await fs.readText(`${DIR}/classes/${CLS}/report_comments.csv`);
+    const stamp = (text: string, id: string) => text.split("\r\n").find((l) => l.startsWith(id))?.split(",").pop();
+    await new Promise((r) => setTimeout(r, 5));
+    await repo.saveReportComments(DIR, CLS, { s1: "Good term", s2: "Keep going — much better" });
+    const second = await fs.readText(`${DIR}/classes/${CLS}/report_comments.csv`);
+    expect(stamp(second, "s1")).toBe(stamp(first, "s1"));
+    expect(stamp(second, "s2")).not.toBe(stamp(first, "s2"));
   });
 });
