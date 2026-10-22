@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAppPick } from "../store/appStore";
+import { NEEDS_DATA_FOLDER, useAppPick, useWorkingFromCopy } from "../store/appStore";
 import { getFS, isTauri } from "../lib/fs";
 import {
   DEFAULT_SECTIONS,
@@ -35,6 +35,7 @@ function downloadInBrowser(fileName: string, bytes: Uint8Array): void {
  * and be pivoted afterwards.
  */
 export default function ExportView() {
+  const fromCopy = useWorkingFromCopy();
   const { dataDir, classes, currentClass, showToast, userPrefs } = useAppPick(
     "dataDir",
     "classes",
@@ -256,7 +257,11 @@ export default function ExportView() {
             {busy ? "Working…" : "Export spreadsheet (.xlsx)"}
           </button>
           {isTauri() && (
-            <button disabled={!canExport} onClick={() => void exportToDataFolder()}>
+            <button
+              disabled={!canExport || fromCopy}
+              title={fromCopy ? `${NEEDS_DATA_FOLDER} — “Export” can still save it anywhere` : undefined}
+              onClick={() => void exportToDataFolder()}
+            >
               Save to data folder
             </button>
           )}

@@ -1,8 +1,23 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { backupStamp, nowIso, today } from "../lib/id";
-import { getFS, isTauri } from "../lib/fs";
+import { getFS, isTauri, useFolder } from "../lib/fs";
 import * as repo from "../lib/repo";
+import {
+  LocalPaths,
+  SettleTracker,
+  SyncReport,
+  decideBoot,
+  isReady,
+  localPaths,
+  readSession,
+  readSource,
+  readState,
+  sameFolder,
+  startOfflineSession,
+  syncBack,
+  writeState,
+} from "../lib/offline";
 import { seedDemoData } from "../lib/demo";
 import {
   isLessonRunning,
@@ -59,6 +74,31 @@ export type View =
   | "settings";
 
 const DATA_DIR_KEY = "classkernel.dataDir";
+const KEEP_COPY_KEY = "classkernel.keepLocalCopy";
+
+/** How long the launch waits for a missing data folder before opening this computer's copy. */
+export const WAIT_FOR_FOLDER_MS = 30_000;
+
+/** Whether this computer keeps its own copy of the data folder (Settings → Data; on unless switched off). */
+export function keepLocalCopy(): boolean {
+  try {
+    return localStorage.getItem(KEEP_COPY_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Where the data comes from when it isn't simply the data folder:
+ * - waiting: the saved folder isn't there yet (Google Drive still starting);
+ * - copy: working from this computer's copy; `back` once the folder has
+ *   returned and settled, while the copy-back waits for a safe moment;
+ * - syncing: copying this computer's changes back into the folder.
+ */
+export type FolderStatus =
+  | { kind: "waiting"; realDir: string; since: number; copyAvailable: boolean }
+  | { kind: "copy"; realDir: string; since: string; copyRefreshedAt: string; back: boolean }
+  | { kind: "syncing"; realDir: string };
 
 /** A toast message, optionally with a single action (usually Undo). */
 export interface Toast {
@@ -118,6 +158,10 @@ export interface AppState {
   sensitiveRevealed: boolean;
   /** Set when a file write failed; the teacher's edits are still in memory. */
   saveError: { label: string } | null;
+  /** Null while the data folder itself is open (see FolderStatus). */
+  folderStatus: FolderStatus | null;
+  /** What the last copy-back did, until the teacher dismisses it. */
+  syncReport: SyncReport | null;
 
   behaviourCodes: BehaviourCode[];
   students: Student[];
@@ -143,8 +187,22 @@ export interface AppState {
   timerPresets: TimerPreset[];
 
   boot(): Promise<void>;
+  /**
+   * Open a folder the teacher chose. While this computer has changes not yet
+   * copied back, the chosen folder is taken as where the data folder is now:
+   * the changes are copied into it first (after a confirm).
+   */
   chooseDataDir(path: string): Promise<void>;
   pickAndSetDataDir(): Promise<void>;
+  /** Load a folder into the app: the data folder ("data") or this computer's copy ("copy"). */
+  openFolder(path: string, opts: { kind: "data" | "copy"; realDir?: string; create?: boolean; keepClass?: boolean }): Promise<void>;
+  /** Stop waiting for the data folder and work from this computer's copy. */
+  openLocalCopy(): Promise<void>;
+  /** Copy this computer's changes back into the data folder now (it must be ready). */
+  syncNow(): Promise<void>;
+  dismissSyncReport(): void;
+  /** Switch this computer's copy on or off (Settings → Data); off also removes it. */
+  setKeepLocalCopy(on: boolean): Promise<void>;
   setView(view: View): void;
   /** Open one of the enabled plugins full-pane. */
   openPlugin(id: string): void;
@@ -228,6 +286,19 @@ export interface AppState {
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
+// One poll at a time: for the missing folder at launch, or for its return.
+let pollTimer: ReturnType<typeof setTimeout> | undefined;
+const stopPolling = () => {
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = undefined;
+};
+/** The waits involved (the browser demo's ?simulate=folder-missing shortens them). */
+export const folderTiming = { waitMs: WAIT_FOR_FOLDER_MS, pollMs: 2000, returnPollMs: 10_000, settleMs: 30_000 };
+/** Set in the browser demo with ?simulate=folder-missing: hides the demo folder after seeding. */
+let simulateMissingFolder: ((dataDir: string) => Promise<void>) | null = null;
+export function setSimulateMissingFolder(fn: ((dataDir: string) => Promise<void>) | null): void {
+  simulateMissingFolder = fn;
+}
 let dialogResolve: ((result: boolean | string | null) => void) | null = null;
 let lastFailedSave: (() => Promise<void>) | null = null;
 
@@ -265,6 +336,8 @@ export const useApp = create<AppState>((set, get) => {
   dialog: null,
   sensitiveRevealed: false,
   saveError: null,
+  folderStatus: null,
+  syncReport: null,
 
   behaviourCodes: [],
   students: [],
@@ -288,29 +361,124 @@ export const useApp = create<AppState>((set, get) => {
   timerPresets: [],
 
   async boot() {
-    if (!isTauri()) {
-      // Browser demo mode: seed an in-memory dataset so every view works.
-      const dataDir = await seedDemoData();
-      set({ demoMode: true });
-      await get().chooseDataDir(dataDir);
+    try {
+      if (!isTauri()) {
+        // Browser demo mode: seed an in-memory dataset so every view works.
+        const dataDir = await seedDemoData();
+        set({ demoMode: true });
+        if (simulateMissingFolder) {
+          await simulateMissingFolder(dataDir);
+        } else {
+          await get().openFolder(dataDir, { kind: "data" });
+          return;
+        }
+      }
+      const paths = await localPaths();
+      let saved: string | null = null;
+      try {
+        saved = localStorage.getItem(DATA_DIR_KEY);
+      } catch {
+        // Fall back to the copy's own record below.
+      }
+      saved ??= (await readState(paths))?.dataDir ?? null;
+      const session = await readSession(paths);
+      const target = session?.realDir ?? saved;
+      const plan = decideBoot({
+        savedDir: saved,
+        session,
+        ready: target ? await isReady(target) : false,
+        source: await readSource(paths),
+      });
+      if (plan.kind === "open") {
+        try {
+          await get().openFolder(plan.dir, { kind: "data" });
+        } catch (e) {
+          // The folder went away (or turned unreadable) while loading.
+          console.warn("Couldn't open the data folder", e);
+          waitForFolder(plan.dir, !!(await readSource(paths)));
+        }
+      } else if (plan.kind === "copy") {
+        await openCopy(paths, plan.realDir);
+      } else if (plan.kind === "wait") {
+        waitForFolder(plan.realDir, plan.copyAvailable);
+      }
+    } catch (e) {
+      console.warn("Start-up failed", e);
+    } finally {
       set({ booted: true });
-      return;
     }
-    const saved = localStorage.getItem(DATA_DIR_KEY);
-    if (saved && (await getFS().exists(saved))) {
-      await get().chooseDataDir(saved);
-    }
-    set({ booted: true });
   },
 
   async chooseDataDir(path: string) {
+    const paths = await localPaths();
+    if (await readSession(paths)) {
+      const ok = await get().confirmDialog({
+        title: "Copy this computer's changes there?",
+        body: `This computer has changes made while your data folder wasn't available. They'll be copied into ${path} (joined with anything changed there meanwhile) before it opens.`,
+        confirmLabel: "Copy and open",
+      });
+      if (!ok) return;
+      stopPolling();
+      set({ folderStatus: { kind: "syncing", realDir: path } });
+      try {
+        await getFS().flush();
+        set({ syncReport: await syncBack(paths, path, backupStamp()) });
+      } catch (e) {
+        console.warn("Copying back failed", e);
+        const session = await readSession(paths);
+        if (session) await openCopy(paths, session.realDir);
+        get().showToast("Couldn't copy your changes there — still working from this computer's copy");
+        return;
+      }
+    }
+    stopPolling();
+    await get().openFolder(path, { kind: "data", create: true });
+  },
+
+  async pickAndSetDataDir() {
+    const picked = await getFS().pickFolder();
+    if (picked) await get().chooseDataDir(picked);
+  },
+
+  async openFolder(path, { kind, realDir, create = false, keepClass = false }) {
     const fs = getFS();
-    await repo.ensureDataDir(path);
-    if (isTauri()) {
-      localStorage.setItem(DATA_DIR_KEY, path);
-      // Copied in the background while the classes load; saves made meanwhile
-      // wait for it (see QueuedFS), so it is the folder as it was at launch.
-      fs.snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP).catch((e) => console.warn("Backup snapshot failed", e));
+    const paths = await localPaths();
+    const copying = (isTauri() || !!simulateMissingFolder) && kind === "data";
+    if (kind === "data") {
+      await repo.ensureDataDir(path, create);
+      if (isTauri()) {
+        try {
+          localStorage.setItem(DATA_DIR_KEY, path);
+        } catch {
+          // state.json below still remembers it.
+        }
+      }
+      if (copying) {
+        const keep = keepLocalCopy();
+        const source = await readSource(paths);
+        if (keep && source && !sameFolder(source.realDir, path) && !(await readSession(paths))) {
+          // A copy of another folder: start this one's afresh.
+          await fs.removeLocal(paths.copy).catch((e) => console.warn("Couldn't clear the old copy", e));
+        }
+        void writeState(paths, path).catch((e) => console.warn("Couldn't record the data folder", e));
+        // Saves made from now on wait for the snapshot (QueuedFS), so they are
+        // mirrored on top of the refreshed copy, never under it.
+        useFolder(path, keep ? paths.copy : null);
+        // Copied in the background while the classes load, refreshing this
+        // computer's copy in the same pass; it is the folder as it was opened.
+        fs.snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, keep ? { to: paths.copy, guard: paths.session } : undefined)
+          .then(async () => {
+            if (keep && !(await readSession(paths))) {
+              await fs.writeAtomic(paths.source, JSON.stringify({ realDir: path, refreshedAt: nowIso() }));
+            }
+          })
+          .catch((e) => console.warn("Backup snapshot failed", e));
+      } else {
+        useFolder(path, null);
+      }
+    } else {
+      // The copy is its own root and is never mirrored, snapshotted or remembered as the data folder.
+      useFolder(path, null);
     }
     const [classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets] = await Promise.all([
       repo.listClasses(path),
@@ -322,14 +490,51 @@ export const useApp = create<AppState>((set, get) => {
       repo.loadTimerPresets(path),
     ]);
     setTimeZone(userPrefs.timeZone);
+    const previous = get().currentClass;
     set({ dataDir: path, classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, currentClass: null });
+    if (kind === "data") set({ folderStatus: null });
+    else if (realDir) set({ folderStatus: { kind: "copy", realDir, since: nowIso(), copyRefreshedAt: "", back: false } });
     const active = classes.filter((c) => !c.archived);
-    if (active.length > 0) await get().openClass(active[0].name);
+    const reopen = keepClass && previous && classes.some((c) => c.name === previous) ? previous : active[0]?.name;
+    if (reopen) await get().openClass(reopen);
   },
 
-  async pickAndSetDataDir() {
-    const picked = await getFS().pickFolder();
-    if (picked) await get().chooseDataDir(picked);
+  async openLocalCopy() {
+    const status = get().folderStatus;
+    if (status?.kind !== "waiting") return;
+    stopPolling();
+    await openCopy(await localPaths(), status.realDir);
+  },
+
+  async syncNow() {
+    const status = get().folderStatus;
+    if (status?.kind !== "copy") return;
+    if (!(await isReady(status.realDir))) {
+      get().showToast("Your data folder still isn't available");
+      return;
+    }
+    await copyBack(status.realDir);
+  },
+
+  dismissSyncReport() {
+    set({ syncReport: null });
+  },
+
+  async setKeepLocalCopy(on) {
+    try {
+      localStorage.setItem(KEEP_COPY_KEY, on ? "1" : "0");
+    } catch {
+      // Applies for this session only.
+    }
+    const { dataDir, folderStatus } = get();
+    if (folderStatus) return;
+    const paths = await localPaths();
+    if (on) {
+      if (dataDir) await get().openFolder(dataDir, { kind: "data", keepClass: true });
+    } else {
+      useFolder(dataDir, null);
+      if (!(await readSession(paths))) await getFS().removeLocal(paths.copy);
+    }
   },
 
   setView(view) {
@@ -612,8 +817,8 @@ export const useApp = create<AppState>((set, get) => {
   },
 
   async renameClass(oldName, newName) {
-    const { dataDir, classes } = get();
-    if (!dataDir || !newName || oldName === newName) return;
+    const { dataDir, classes, folderStatus } = get();
+    if (!dataDir || !newName || oldName === newName || folderStatus) return;
     const info = classes.find((c) => c.name === oldName);
     if (!info) return;
     await repo.renameClass(dataDir, oldName, newName);
@@ -765,8 +970,8 @@ export const useApp = create<AppState>((set, get) => {
   },
 
   async deleteLayoutTemplate(name) {
-    const { dataDir } = get();
-    if (!dataDir) return;
+    const { dataDir, folderStatus } = get();
+    if (!dataDir || folderStatus) return;
     await repo.deleteLayoutTemplate(dataDir, name);
     await get().refreshLayoutTemplates();
   },
@@ -838,6 +1043,114 @@ export function useAppPick<K extends keyof AppState>(...keys: K[]): Pick<AppStat
     }),
   );
 }
+
+/** Work from this computer's copy, keeping its starting point for the copy-back, and watch for the folder. */
+async function openCopy(paths: LocalPaths, realDir: string): Promise<void> {
+  const session = await startOfflineSession(paths, realDir);
+  await useApp.getState().openFolder(paths.copy, { kind: "copy", realDir });
+  useApp.setState({
+    folderStatus: { kind: "copy", realDir, since: session.since, copyRefreshedAt: session.copyRefreshedAt, back: false },
+  });
+  watchForReturn(realDir);
+}
+
+/** At launch: poll for the saved folder; after the wait, open this computer's copy if there is one. */
+function waitForFolder(realDir: string, copyAvailable: boolean): void {
+  const since = Date.now();
+  useApp.setState({ dataDir: null, folderStatus: { kind: "waiting", realDir, since, copyAvailable } });
+  const stillWaiting = () => {
+    const st = useApp.getState().folderStatus;
+    return st?.kind === "waiting" && st.since === since;
+  };
+  const tick = async () => {
+    pollTimer = undefined;
+    if (!stillWaiting()) return;
+    if ((await isReady(realDir, 1500)) && stillWaiting()) {
+      try {
+        await useApp.getState().openFolder(realDir, { kind: "data" });
+        return;
+      } catch (e) {
+        console.warn("Couldn't open the data folder yet", e);
+      }
+    }
+    if (!stillWaiting()) return;
+    if (copyAvailable && Date.now() - since >= folderTiming.waitMs) {
+      await openCopy(await localPaths(), realDir);
+      return;
+    }
+    pollTimer = setTimeout(() => void tick(), folderTiming.pollMs);
+  };
+  stopPolling();
+  pollTimer = setTimeout(() => void tick(), folderTiming.pollMs);
+}
+
+/**
+ * While working from the copy: watch for the data folder to come back. Once
+ * it has stayed ready for a while (a cloud drive shows its cached files first
+ * and catches up after), copy the changes back, but only at a safe moment:
+ * not mid-lesson in teaching mode, and with no dialog open. Until then the
+ * banner says the folder is back and offers to do it now.
+ */
+function watchForReturn(realDir: string): void {
+  stopPolling();
+  const settle = new SettleTracker(folderTiming.settleMs);
+  const tick = async () => {
+    pollTimer = undefined;
+    if (useApp.getState().folderStatus?.kind !== "copy") return;
+    const settled = settle.poll(await isReady(realDir), Date.now());
+    const st = useApp.getState();
+    if (st.folderStatus?.kind !== "copy") return;
+    if (settled) {
+      if (!st.focusMode && !st.dialog) {
+        await copyBack(realDir);
+        return;
+      }
+      if (!st.folderStatus.back) useApp.setState({ folderStatus: { ...st.folderStatus, back: true } });
+    } else if (st.folderStatus.back) {
+      useApp.setState({ folderStatus: { ...st.folderStatus, back: false } });
+    }
+    pollTimer = setTimeout(() => void tick(), folderTiming.returnPollMs);
+  };
+  pollTimer = setTimeout(() => void tick(), folderTiming.returnPollMs);
+}
+
+/** Copy this computer's changes into the data folder, then reopen it on the same class and screen. */
+async function copyBack(realDir: string): Promise<void> {
+  stopPolling();
+  const before = useApp.getState().folderStatus;
+  // An Undo still on screen holds the data from before the join; it must not write over it.
+  useApp.setState({ folderStatus: { kind: "syncing", realDir }, toast: null });
+  const paths = await localPaths();
+  try {
+    await getFS().flush();
+    const report = await syncBack(paths, realDir, backupStamp());
+    await useApp.getState().openFolder(realDir, { kind: "data", keepClass: true });
+    useApp.setState({ syncReport: report });
+  } catch (e) {
+    console.warn("Copying back failed", e);
+    if (await readSession(paths)) {
+      // Nothing lost: still working from the copy; the next poll tries again.
+      if (before?.kind === "copy") useApp.setState({ folderStatus: { ...before, back: false } });
+      watchForReturn(realDir);
+      useApp.getState().showToast("Couldn't copy your changes back yet — still working from this computer's copy");
+    } else {
+      // Copied back, but the folder couldn't be opened after all: wait for it.
+      waitForFolder(realDir, false);
+    }
+  }
+}
+
+/**
+ * Whether the app is working from this computer's copy. A few actions wait
+ * for the data folder: a class rename or template deletion can't be copied
+ * back safely, and "Save to data folder" would land in the copy.
+ */
+export function useWorkingFromCopy(): boolean {
+  return useApp((s) => s.folderStatus?.kind === "copy" || s.folderStatus?.kind === "syncing");
+}
+
+/** Why an action waits for the data folder (a tooltip for its disabled button). */
+export const NEEDS_DATA_FOLDER = "Available again once your data folder is back";
 
 /** Whether the open class has a lesson running; re-renders when it starts or ends. */
 export function useLessonRunning(): boolean {

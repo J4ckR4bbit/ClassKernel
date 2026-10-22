@@ -19,6 +19,8 @@ import SettingsView from "./components/SettingsView";
 import AppDialog from "./components/AppDialog";
 import TimerMini from "./components/TimerMini";
 import NoiseMini from "./components/NoiseMini";
+import WaitingForFolder from "./components/WaitingForFolder";
+import { CopyChip, FolderBanner, SyncOverlay } from "./components/FolderBanner";
 
 /** Toast + dialog + save-error UI shared by both shells. */
 function Overlays() {
@@ -52,6 +54,7 @@ function Overlays() {
         <NoiseMini />
         <TimerMini />
       </div>
+      <SyncOverlay />
       <AppDialog />
     </>
   );
@@ -68,7 +71,7 @@ function readNavExpanded(): boolean {
 }
 
 export default function App() {
-  const { booted, dataDir, currentClass, view, demoMode, focusMode, focusStyle, setFocusMode, boot } = useAppPick(
+  const { booted, dataDir, currentClass, view, demoMode, focusMode, focusStyle, setFocusMode, boot, folderStatus } = useAppPick(
     "booted",
     "dataDir",
     "currentClass",
@@ -78,6 +81,7 @@ export default function App() {
     "focusStyle",
     "setFocusMode",
     "boot",
+    "folderStatus",
   );
   // The open class's colour underlines the top app bar on its own pages (not
   // Home, Settings or the plugins, which aren't about one class).
@@ -127,7 +131,7 @@ export default function App() {
   }, [scale]);
 
   if (!booted) return <div className="boot-screen">Loading…</div>;
-  if (!dataDir) return <Onboarding />;
+  if (!dataDir) return folderStatus?.kind === "waiting" ? <WaitingForFolder /> : <Onboarding />;
 
   // Teaching mode: just the live-lesson seating view, no sidebar or chrome, so
   // it can sit beside notes/slides. LessonView renders its own compact bar;
@@ -136,6 +140,7 @@ export default function App() {
     return (
       <div className={`focus-shell ${focusStyle === "strip" ? "strip-mode" : ""}`}>
         {focusStyle === "strip" ? <TeachingStrip /> : <LessonView />}
+        <CopyChip />
         <Overlays />
       </div>
     );
@@ -152,6 +157,7 @@ export default function App() {
               Demo mode — running in a browser without the desktop backend; data lives in memory only.
             </div>
           )}
+          <FolderBanner />
           {!currentClass && view !== "settings" && view !== "home" && view !== "plugin" ? (
             <div className="empty-state">
               <Icon name="group" size={48} />

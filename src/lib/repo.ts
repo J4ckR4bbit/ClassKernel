@@ -68,12 +68,20 @@ export const classDir = (dataDir: string, className: string) => p(dataDir, "clas
 
 // ---------- data folder ----------
 
-export async function ensureDataDir(dataDir: string): Promise<void> {
+/**
+ * Set up a data folder. `create` is for a folder the teacher has just chosen:
+ * the defaults are written into it. For the saved folder at launch it is
+ * false: a cloud drive still filling in can look half-empty, and writing
+ * defaults there would collide with the teacher's own files arriving.
+ */
+export async function ensureDataDir(dataDir: string, create = true): Promise<void> {
   const fs = getFS();
-  await fs.mkdirs(p(dataDir, "classes"));
-  await fs.mkdirs(p(dataDir, "backups"));
+  if (create) {
+    await fs.mkdirs(p(dataDir, "classes"));
+    await fs.mkdirs(p(dataDir, "backups"));
+  }
   if (!(await fs.exists(p(dataDir, "behaviours.csv")))) {
-    await saveBehaviourCodes(dataDir, DEFAULT_BEHAVIOURS);
+    if (create) await saveBehaviourCodes(dataDir, DEFAULT_BEHAVIOURS);
   } else {
     // A folder created before the picker recorded answers has no Q+/Q- rows.
     // Add them so its buttons are labelled and editable like every other one.
@@ -81,7 +89,7 @@ export async function ensureDataDir(dataDir: string): Promise<void> {
     const missing = ANSWER_BEHAVIOURS.filter((a) => !codes.some((c) => c.code === a.code));
     if (missing.length > 0) await saveBehaviourCodes(dataDir, [...codes, ...missing]);
   }
-  if (!(await fs.exists(p(dataDir, "cognitive_levels.csv")))) {
+  if (create && !(await fs.exists(p(dataDir, "cognitive_levels.csv")))) {
     await saveCognitiveLevels(dataDir, DEFAULT_COGNITIVE_LEVELS);
   }
 }

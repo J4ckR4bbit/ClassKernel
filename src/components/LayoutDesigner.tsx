@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useAppPick } from "../store/appStore";
+import { NEEDS_DATA_FOLDER, useAppPick, useWorkingFromCopy } from "../store/appStore";
 import { newId } from "../lib/id";
 import { DEFAULT_DESK_SIZES, Desk, DeskShape, FrontEdge } from "../lib/types";
 import { PASTEL_PRESETS } from "../lib/tableColours";
@@ -40,6 +40,7 @@ type Drag =
   | { kind: "crop-resize" };
 
 export default function LayoutDesigner() {
+  const fromCopy = useWorkingFromCopy();
   const {
     desks,
     setDesks,
@@ -403,7 +404,13 @@ export default function LayoutDesigner() {
             <button className="small" title="Apply this layout" onClick={() => void loadTemplate(name)}>
               {name}
             </button>
-            <button className="icon-only small danger" title="Delete template" onClick={() => void removeTemplate(name)}>
+            <button
+              className="icon-only small danger"
+              title={fromCopy ? NEEDS_DATA_FOLDER : "Delete template"}
+              aria-label="Delete template"
+              disabled={fromCopy}
+              onClick={() => void removeTemplate(name)}
+            >
               <Icon name="close" size={18} />
             </button>
           </span>
