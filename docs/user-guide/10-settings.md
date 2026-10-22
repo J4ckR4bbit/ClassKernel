@@ -97,6 +97,10 @@ the buttons [Pick a student](05-lesson.md#pick-a-student) uses; you can rename o
 
 - **Data folder** shows where everything is saved. **Change data folder…** switches to another folder (for example,
   a colleague's shared folder, or a fresh one).
+- **Keep a copy on this computer** (on unless you switch it off) keeps this computer's own copy of the data, used
+  when the data folder isn't there at launch. See [If Google Drive isn't ready](11-your-data.md#if-google-drive-isnt-ready).
+  While the app works from that copy, the panel shows the real folder as not available, and **My data folder is
+  somewhere else…** takes the place of **Change data folder…**.
 - **Restore a backup** lists the newest backups, taken every time the app starts. **Restore…** puts a backup's
   files back (a safety copy of today's data is taken first). See [Your data and backups](11-your-data.md).
 - The number of active and archived classes.

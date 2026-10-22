@@ -501,3 +501,31 @@ test("settings", async ({ page }) => {
   await settingsTab(page, "Export");
   await shot(page, "settings-export");
 });
+
+test("your data: when the data folder isn't ready", async ({ page }) => {
+  const realDir = "G:\\My Drive\\ClassroomData";
+  // The demo's in-memory folder, shown as a teacher's Google Drive one would be.
+  const asDrive = async () =>
+    page.locator(".waiting-panel code, .folder-banner code").evaluateAll((els, dir) => els.forEach((e) => (e.textContent = dir)), realDir);
+  await page.goto("/?simulate=folder-missing&wait=30");
+  await prep(page);
+  await expect(page.getByRole("heading", { name: "Waiting for your data folder…" })).toBeVisible();
+  await asDrive();
+  await shotOf(page, page.locator(".waiting-panel"), "folder-waiting", 0);
+
+  await page.getByRole("button", { name: "Open this computer's copy now" }).click();
+  await nav(page, "Attendance");
+  await page.locator(".att-seg").first().locator(".att-btn.A").click();
+  await asDrive();
+  await shotOf(page, page.locator(".folder-banner"), "folder-working-from-copy", 0);
+
+  // Another computer recorded a register meanwhile, so the two are joined.
+  await page.evaluate(async () => {
+    const rel = "classes/7B-Science/attendance.csv";
+    const drive = (await window.__ckDemo!.readOnDrive(rel)) ?? "date,student_id,status,note\r\n";
+    await window.__ckDemo!.editOnDrive(rel, `${drive}2001-01-01,elsewhere,L,\r\n`);
+    await window.__ckDemo!.folderBack();
+  });
+  await expect(page.locator(".folder-banner")).toContainText("back in your data folder", { timeout: 15_000 });
+  await shotOf(page, page.locator(".folder-banner"), "folder-copied-back", 0);
+});
