@@ -109,13 +109,15 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      // Escape backs out of the behaviour list first, then closes the picker.
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      // Taken first and marked handled, so Escape closes the picker without
+      // also leaving teaching mode. It backs out of the behaviour list first.
+      e.preventDefault();
       if (showOthers) setShowOthers(false);
       else onClose();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [onClose, showOthers]);
 
   // The answer buttons use the teacher's own catalogue entries where they

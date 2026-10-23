@@ -566,7 +566,7 @@ export const useApp = create<AppState>((set, get) => {
     // The room plan owns the whole panel; the strip docks to one edge so
     // slides keep the rest. Both are best-effort (see teachingWindow.ts).
     if (!on) void restoreWindow();
-    else if (nextStyle === "strip") void enterDock(userPrefs.dockSide);
+    else if (nextStyle === "strip") void enterDock(userPrefs.dockSide, userPrefs.uiScale);
     else void enterFullscreen();
   },
 

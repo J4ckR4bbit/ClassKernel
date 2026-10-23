@@ -262,8 +262,11 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
   border-radius: var(--md-shape-xs); box-shadow: var(--md-elev-3); z-index: 100;
   animation: toast-in 0.2s ease-out;
 }
-.toast-action { border: none; color: var(--md-inverse-primary); min-height: 36px; padding: 0 12px; }
+.toast-action { border: none; color: var(--md-inverse-primary); min-height: 44px; padding: 0 16px; font-weight: 700; }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+/* In the docked strip the lesson buttons are at the foot: the toast goes on top. */
+.strip-mode .toast { top: 8px; bottom: auto; left: 6px; right: 6px; transform: none; max-width: none; animation-name: toast-in-top; }
+@keyframes toast-in-top { from { opacity: 0; transform: translateY(-8px); } }
 
 /* ---------- common ---------- */
 /* A page's own toolbar: its controls, under the app bar's title. */
@@ -380,7 +383,9 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 
 /* ---------- layout designer / seating ---------- */
 .canvas-wrap { background: var(--panel); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); overflow: auto; position: relative; }
-.room-canvas { display: block; touch-action: none; user-select: none; }
+/* A swipe over the plan scrolls the page; only the room designer, where desks are dragged, takes it. */
+.room-canvas { display: block; touch-action: manipulation; user-select: none; }
+.room-canvas.editable { touch-action: none; }
 .room-canvas .desk { cursor: grab; }
 .room-canvas .desk.selected .desk-body { stroke: var(--accent); stroke-width: 2.5; }
 .desk-body { fill: var(--md-surface-container-high); stroke: var(--md-outline); stroke-width: 1.5; rx: 6px; }
@@ -394,7 +399,15 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .seat-name { font-size: 13px; text-anchor: middle; fill: #16202b; pointer-events: none; font-weight: 700; }
 .seat-surname { font-size: 10px; text-anchor: middle; fill: #3a4652; pointer-events: none; font-weight: 500; }
 .seat-points { font-size: 11px; text-anchor: middle; font-weight: 700; pointer-events: none; }
-.seat-badge { font-size: 12px; text-anchor: middle; fill: var(--danger); font-weight: 700; pointer-events: none; }
+/* Dark enough to read on the seat's green (about 5:1, WCAG AA). */
+.seat-points.pos { fill: var(--md-primary); }
+.seat-points.neg { fill: var(--md-error); }
+.seat-points.zero { fill: var(--md-on-surface-variant); }
+.seat-badge { font-size: 12px; text-anchor: middle; font-weight: 700; pointer-events: none; }
+.seat-badge.absent { fill: var(--md-error); }
+.seat-badge.late { fill: #7a5208; }
+.seat-badge.excused { fill: var(--md-on-surface-variant); }
+.seat-badge.out { fill: #7a5208; }
 /* Batch entry: a picked seat is filled highlighter-yellow with a heavy border
    and a tick, so it can't be mistaken for an ordinary seat at a glance. */
 .seat-square.batch-selected { fill: #ffd84d; stroke: var(--accent); stroke-width: 4; }
@@ -475,6 +488,11 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .focus-layout.bar-left .room-canvas,
 .focus-layout.bar-right .room-canvas { max-height: calc(100vh - 20px); }
 .seating-canvas .room-canvas { max-height: calc(100vh - 230px); margin: 0 auto; }
+/* Teaching mode: the plan fills whatever the bars, the batch panel and the
+   bathroom list leave, however tall they grow; the SVG letterboxes inside. */
+.focus-canvas-wrap { display: flex; flex-direction: column; }
+.focus-canvas-wrap > .canvas-wrap.fill { flex: 1; min-height: 0; overflow: hidden; }
+.canvas-wrap.fill > .room-canvas { max-height: none; }
 
 /* ---------- lesson view ---------- */
 /* Big, touch-sized lesson actions. On the Live lesson page they run in a row
@@ -515,8 +533,15 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .behaviour-popover {
   position: absolute; background: var(--md-surface-container); border-radius: var(--md-shape-m);
   box-shadow: var(--md-elev-2); padding: 12px; z-index: 30; width: 300px;
+  /* Never taller than the room plan it sits on: a long button list scrolls. */
+  max-height: calc(100% - 8px); overflow-y: auto; overscroll-behavior: contain;
 }
-.behaviour-popover h4 { margin: 0 0 8px; }
+.sa-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.sa-head h4 { flex: 1; margin: 4px 0 0; font-size: 20px; line-height: 28px; font-weight: 500; }
+.sa-head .icon-only { flex: none; }
+.bh-group { display: flex; flex-direction: column; margin-top: 10px; }
+.bh-group + .bh-group { border-top: 1px solid var(--border); padding-top: 10px; }
+.bh-group-label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
 .behaviour-popover .att-legend { margin: 4px 0 8px; }
 .bh-btn { display: flex; justify-content: flex-start; width: 100%; text-align: left; margin-bottom: 6px; border-radius: var(--md-shape-s); color: #fff; border: none; padding: 9px 12px; }
 
@@ -529,6 +554,11 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .bathroom-btn:hover { border-color: #b9821b; }
 .bathroom-btn.out { background: #7a5208; border-color: #7a5208; color: #fff; }
 .bathroom-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.bathroom-bar-label { display: inline-flex; align-items: center; gap: 4px; }
+.focus-bar .bathroom-bar { margin: 0; }
+.strip-out { display: flex; flex-direction: column; gap: 6px; }
+.strip-out .bathroom-chip { justify-content: flex-start; min-height: 44px; width: 100%; }
+.bathroom-chip { display: inline-flex; align-items: center; gap: 4px; }
 .bathroom-chip {
   background: #fdf0dd; border-color: #d9b36a; color: #7a5208;
   font-weight: 600; font-variant-numeric: tabular-nums;
@@ -1073,6 +1103,13 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
   display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none;
 }
 .mini-stack > * { pointer-events: auto; }
+/* Teaching mode: End lesson is at the bottom of a right-hand bar, or the right
+   end of a bottom bar, so the pop-ups move out of its way. */
+.mini-stack.bar-right { right: auto; left: 16px; align-items: flex-start; }
+.mini-stack.bar-bottom { bottom: 96px; }
+/* Tall enough that each of the two action buttons is a 44 px target. */
+.timer-mini, .noise-mini { min-height: 104px; }
+.timer-mini-body.static, .noise-mini-body.static { cursor: default; }
 .timer-mini {
   --tm-colour: #1F497D;
   display: flex; align-items: stretch; gap: 6px; padding: 6px;
@@ -1133,7 +1170,9 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
   background: var(--md-surface-container-high); border-radius: var(--md-shape-xl); padding: 40px 56px; text-align: center;
   display: flex; flex-direction: column; gap: 20px; align-items: center; max-width: 92vw;
 }
-.picker-name { font-size: clamp(40px, 8vw, 110px); font-weight: 800; line-height: 1.1; min-height: 1.2em; color: var(--text-dim); }
+.picker-name { font-size: clamp(40px, 8vw, 110px); font-weight: 800; line-height: 1.1; min-height: 1.2em; color: var(--text-dim); overflow-wrap: anywhere; }
+/* In the narrow docked strip a long name still fits, big enough to read across the room. */
+.strip-mode .picker-name { font-size: clamp(30px, 13vw, 72px); }
 .picker-name.settled { color: var(--accent); }
 .picker-tally { display: flex; align-items: baseline; gap: 18px; font-size: 22px; font-weight: 700; }
 .picker-tally .yes { color: var(--accent); }
@@ -1148,7 +1187,8 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .picker-actions { display: flex; gap: 12px; }
 .picker-actions .primary { font-size: 16px; padding: 12px 26px; }
 .picker-options { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; color: var(--text-dim); }
-.picker-options label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.picker-options label { display: flex; align-items: center; gap: 10px; cursor: pointer; min-height: 44px; padding: 0 10px; }
+.picker-options input[type="checkbox"] { width: 24px; height: 24px; }
 
 /* ---------- misc ---------- */
 .field-label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-dim); font-size: 13px; }
@@ -1201,7 +1241,11 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .strip-class { font-size: 16px; line-height: 1.25; overflow-wrap: anywhere; }
 .strip-head-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .strip-count { font-size: 12px; }
-.strip-head-actions { display: flex; gap: 4px; }
+.strip-head-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.strip-head-actions button.small.icon-only { width: 44px; min-height: 44px; }
+/* Exit stands apart from the other buttons, so it isn't hit instead of Full screen. */
+.strip-head-actions .strip-exit { margin-left: auto; }
+.strip-head-row { flex-wrap: wrap; }
 .strip-plan { width: 100%; }
 .strip-tables { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 2px; }
 /* Each table is a card tinted in its own colour, with a stronger stripe and
@@ -1223,7 +1267,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .strip-table .strip-student { background: #fff; border-color: rgba(29, 39, 51, 0.1); }
 .strip-table .strip-check { color: var(--tbl-accent); }
 .strip-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 0 0 7px; }
-.strip-swatches .swatch { width: 26px; height: 26px; min-height: 26px; }
+.strip-swatches .swatch { width: 36px; height: 36px; min-height: 36px; }
 .strip-swatches input[type="color"] { width: 34px; height: 28px; padding: 1px; }
 .strip-swatches button.small { min-height: 28px; padding: 2px 8px; }
 .strip-colour-hint {
@@ -1238,16 +1282,21 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .strip-check { width: 1.1em; text-align: center; color: var(--text-dim); font-weight: 800; }
 .strip-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .strip-student.absent .strip-name { color: var(--text-dim); text-decoration: line-through; }
-.strip-absent { color: var(--danger); font-weight: 700; }
+.strip-badge { display: inline-flex; align-items: center; font-weight: 700; font-size: 13px; }
+.strip-badge.absent { color: var(--md-error); }
+.strip-badge.late, .strip-badge.out { color: #7a5208; }
+.strip-badge.excused { color: var(--md-on-surface-variant); }
 .strip-points { font-weight: 700; font-size: 13px; }
-.strip-points.pos { color: #2e9e5b; }
-.strip-points.neg { color: #d65c5c; }
+.strip-points.pos { color: var(--md-primary); }
+.strip-points.neg { color: var(--md-error); }
 .strip-tables.batching .strip-student { border-style: dashed; border-left-style: solid; }
 .strip-student.selected, .strip-table .strip-student.selected {
   background: #ffd84d; border-color: var(--accent); border-left-color: var(--accent); border-style: solid;
 }
 .strip-student.selected .strip-check, .strip-table .strip-student.selected .strip-check { color: var(--accent); font-size: 18px; }
 .strip-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
+.strip-foot button { min-height: 48px; justify-content: flex-start; }
+.strip-foot .lesson-btn { padding: 8px 14px; font-size: 15px; }
 .strip-sheet {
   position: absolute; left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 80%; overflow-y: auto; z-index: 30;
 }

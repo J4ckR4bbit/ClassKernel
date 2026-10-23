@@ -1,5 +1,6 @@
 import { useAppPick } from "../store/appStore";
 import { AttendanceStatus, BathroomVisit, BehaviourCode, Student, studentName } from "../lib/types";
+import { displayStudentName } from "../lib/privacy";
 import Elapsed from "./Elapsed";
 import Icon from "./Icon";
 
@@ -26,20 +27,28 @@ export default function StudentActions({ student, status, outVisit, onAttendance
   const showFlags = student.flags && (!userPrefs.privacyMode || userPrefs.popoverShowFlags);
   const showNotes = student.notes && (!userPrefs.privacyMode || userPrefs.popoverShowNotes);
 
+  // The class can see this pop-up: in privacy mode it names the student as the seats do.
+  const name = userPrefs.privacyMode ? displayStudentName(student, userPrefs.seatNameStyle) : studentName(student);
+
   return (
     <>
-      <h4>
-        {studentName(student)}
-        {showFlags &&
-          student.flags
-            .split(";")
-            .filter(Boolean)
-            .map((f) => (
-              <span key={f} className="tag warn" style={{ marginLeft: 6 }}>
-                {f}
-              </span>
-            ))}
-      </h4>
+      <div className="sa-head">
+        <h4>
+          {name}
+          {showFlags &&
+            student.flags
+              .split(";")
+              .filter(Boolean)
+              .map((f) => (
+                <span key={f} className="tag warn" style={{ marginLeft: 6 }}>
+                  {f}
+                </span>
+              ))}
+        </h4>
+        <button className="icon-only small" onClick={onClose} title="Close (Esc)" aria-label="Close">
+          <Icon name="close" size={20} />
+        </button>
+      </div>
       {showNotes && <p className="muted" style={{ marginTop: 0 }}>{student.notes}</p>}
       <div className="att-seg" role="radiogroup" aria-label="Attendance" style={{ marginBottom: 2 }}>
         {(["P", "A", "L", "E"] as AttendanceStatus[]).map((code) => (
@@ -69,29 +78,27 @@ export default function StudentActions({ student, status, outVisit, onAttendance
           "Bathroom — start timer"
         )}
       </button>
-      {positives.map((c) => (
-        <button
-          key={c.code}
-          className="bh-btn"
-          style={{ background: c.color }}
-          onClick={() => onBehaviour(c)}
-        >
-          +{c.points} {c.label}
-        </button>
-      ))}
-      {negatives.map((c) => (
-        <button
-          key={c.code}
-          className="bh-btn"
-          style={{ background: c.color }}
-          onClick={() => onBehaviour(c)}
-        >
-          {c.points} {c.label}
-        </button>
-      ))}
-      <button style={{ width: "100%", marginTop: 6 }} onClick={onClose}>
-        Close
-      </button>
+      {/* Two labelled groups, apart, so a hurried tap doesn't land on the wrong kind. */}
+      {positives.length > 0 && (
+        <div className="bh-group" role="group" aria-label="Positive">
+          <span className="bh-group-label">Positive</span>
+          {positives.map((c) => (
+            <button key={c.code} className="bh-btn" style={{ background: c.color }} onClick={() => onBehaviour(c)}>
+              +{c.points} {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {negatives.length > 0 && (
+        <div className="bh-group" role="group" aria-label="Negative">
+          <span className="bh-group-label">Negative</span>
+          {negatives.map((c) => (
+            <button key={c.code} className="bh-btn" style={{ background: c.color }} onClick={() => onBehaviour(c)}>
+              {c.points} {c.label}
+            </button>
+          ))}
+        </div>
+      )}
     </>
   );
 }

@@ -5,6 +5,7 @@ import { COLOR_STOPS, formatCountdown, phaseColor } from "../plugins/test-timer/
 import { TEST_TIMER_ID } from "../plugins/registry";
 import { currentTimeZone } from "../lib/time";
 import Icon from "./Icon";
+import Body from "./MiniBody";
 
 /**
  * The test timer in miniature: a small card in the bottom-right corner while
@@ -60,7 +61,9 @@ export default function TimerMini({ inline = false }: { inline?: boolean }) {
       style={{ ["--tm-colour" as string]: colour }}
       role={timer.finished ? "alert" : "status"}
     >
-      <button className="timer-mini-body" onClick={open} title="Open the test timer">
+      {/* In teaching mode a brush against the card mustn't leave the lesson:
+          only the open button does that there. */}
+      <Body className="timer-mini-body" onClick={focusMode ? undefined : open} title="Open the test timer">
         <span className="timer-mini-label">
           {timer.finished ? (
             <>
@@ -72,9 +75,9 @@ export default function TimerMini({ inline = false }: { inline?: boolean }) {
         </span>
         {!timer.finished && <span className="timer-mini-time">{formatCountdown(timer.remaining)}</span>}
         <span className="timer-mini-sub">
-          {timer.finished ? "Tap to open the timer" : endsAt ? `ends at ${endsAt}` : "paused"}
+          {timer.finished ? (focusMode ? "Tap ✕ to close" : "Tap to open the timer") : endsAt ? `ends at ${endsAt}` : "paused"}
         </span>
-      </button>
+      </Body>
       <div className="timer-mini-actions">
         {timer.finished ? (
           <button onClick={dismiss} title="Close" aria-label="Close">

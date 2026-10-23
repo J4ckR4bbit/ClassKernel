@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLessonRunning, useAppPick } from "../store/appStore";
+import { useApp, useLessonRunning, useAppPick } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
 import {
   AttendanceStatus,
@@ -14,8 +14,20 @@ import { eventsOnDate, formatDuration, visitSeconds } from "../lib/stats";
 import { lessonStartKey, lessonStartedMessage } from "../lib/lessonState";
 import { deskDisplayLabels } from "../lib/tables";
 import { pickedKey } from "../components/StudentPicker";
+import type { SeatBadge } from "../components/RoomCanvas";
 
 const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
+
+const STATUS_LABEL: Record<AttendanceStatus, string> = { P: "present", A: "absent", L: "late", E: "excused" };
+
+/** How a student's seat (or strip row) is marked: out at the bathroom first, then absent, late or excused. */
+export function seatBadge(status: AttendanceStatus | undefined, out: boolean): SeatBadge | undefined {
+  if (out) return { icon: "wc", tone: "out", label: "Out at the bathroom" };
+  if (status === "A") return { icon: "close", tone: "absent", label: "Absent" };
+  if (status === "L") return { text: "L", tone: "late", label: "Late" };
+  if (status === "E") return { text: "E", tone: "excused", label: "Excused" };
+  return undefined;
+}
 
 /**
  * The running lesson, shared by the room-plan Live lesson and the teaching
@@ -119,10 +131,10 @@ export function useLessonSession() {
     const open = outVisitOf(studentId);
     if (open) {
       void endBathroomVisit(studentId);
-      showToast(`🚻 Back after ${formatDuration(visitSeconds(open))} — ${toastName(studentId)}`);
+      showToast(`Back from the bathroom after ${formatDuration(visitSeconds(open))} — ${toastName(studentId)}`);
     } else {
       void startBathroomVisit(studentId);
-      showToast(`🚻 Bathroom timer started — ${toastName(studentId)}`);
+      showToast(`Bathroom timer started — ${toastName(studentId)}`);
     }
   };
 
@@ -156,14 +168,34 @@ export function useLessonSession() {
 
   const markAttendance = (studentId: string, status: AttendanceStatus) => {
     const date = today();
-    const rest = attendance.filter((e) => !(e.date === date && e.studentId === studentId));
+    const before = attendance.find((e) => e.date === date && e.studentId === studentId);
+    const rest = attendance.filter((e) => e !== before);
     void setAttendance([...rest, { date, studentId, status, note: "" }]);
+    // The pop-up closes on the tap, so say what was recorded, with a way back.
+    showToast(`Marked ${STATUS_LABEL[status]} — ${toastName(studentId)}`, {
+      label: "Undo",
+      run: () => {
+        const now = useApp.getState().attendance.filter((e) => !(e.date === date && e.studentId === studentId));
+        void setAttendance(before ? [...now, before] : now);
+      },
+    });
   };
 
   /** Start the lesson: everyone not yet marked today is marked present. */
   const startLesson = async () => {
+    const day = today();
+    const registerBefore = useApp.getState().attendance.filter((e) => e.date === day);
     const added = await beginLesson();
-    if (added !== null) showToast(lessonStartedMessage("Lesson started", added));
+    if (added === null) return;
+    showToast(lessonStartedMessage("Lesson started", added), {
+      label: "Undo",
+      run: () => {
+        // Back to before the tap: no lesson running, and today's register as it was.
+        stopLesson();
+        const now = useApp.getState().attendance.filter((e) => e.date !== day);
+        void setAttendance([...now, ...registerBefore]);
+      },
+    });
   };
 
   /** Save each student's seat and behaviour to history, then start a fresh lesson. Resolves true if ended. */

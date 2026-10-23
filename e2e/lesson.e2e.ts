@@ -156,3 +156,41 @@ test("end lesson, then the behaviour log lists events and bathroom trips", async
   expect(await page.locator("main table.data tbody tr").count()).toBeGreaterThan(3);
   await expect(page.locator("main h2", { hasText: "Bathroom log" })).toBeVisible();
 });
+
+test("teaching mode: Escape closes a seat's pop-up first, then leaves", async ({ page }) => {
+  await nav(page, "Lesson");
+  await page.getByRole("button", { name: "Teaching mode" }).click();
+  await seats(page).first().click({ force: true });
+  const popover = page.locator(".behaviour-popover");
+  await expect(popover).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(popover).toHaveCount(0);
+  await expect(page.locator(".nav-rail")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".nav-rail")).toBeVisible();
+});
+
+test("lesson: an attendance tap says what it recorded, marks the seat, and can be undone", async ({ page }) => {
+  await nav(page, "Lesson");
+  // The demo class may already have someone late today.
+  const late = page.locator(".seat-badge.late");
+  const before = await late.count();
+  await seats(page).first().click({ force: true });
+  await page.locator(".behaviour-popover .att-btn.L").click();
+  await expect(toast(page)).toContainText("Marked late");
+  await expect(late).toHaveCount(before + 1);
+  await toast(page).getByRole("button", { name: "Undo" }).click();
+  await expect(late).toHaveCount(before);
+});
+
+test("Randomise can be undone, without lifting the seat lock", async ({ page }) => {
+  await nav(page, "Lesson");
+  const names = async () => (await page.locator(".seat-name").allTextContents()).join("|");
+  const before = await names();
+  await page.getByRole("button", { name: "Randomise" }).click();
+  await expect(toast(page)).toContainText("lesson started", { timeout: 10_000 });
+  await toast(page).getByRole("button", { name: "Undo" }).click();
+  await expect.poll(names).toBe(before);
+  await expect(page.getByRole("button", { name: "Start lesson" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reseat…" })).toBeVisible();
+});

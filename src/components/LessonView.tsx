@@ -3,7 +3,7 @@ import { useAppPick } from "../store/appStore";
 import { AttendanceStatus, BehaviourCode, SeatAssignment } from "../lib/types";
 import { displayStudentName, seatSurname } from "../lib/privacy";
 import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
-import { useLessonSession } from "../hooks/useLessonSession";
+import { seatBadge, useLessonSession } from "../hooks/useLessonSession";
 import { useBatchEntry } from "../hooks/useBatchEntry";
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside";
 import RoomCanvas from "./RoomCanvas";
@@ -194,6 +194,27 @@ export default function LessonView() {
     </button>
   );
   const batchPanel = <BatchPanel entry={batch} behaviourCodes={behaviourCodes} layout={sideBar ? "strip" : "bar"} />;
+  const bathroomBar = outNow.length > 0 && (
+    <div className={`bathroom-bar no-print ${sideBar ? "bar-group" : ""}`}>
+      <span className="muted bathroom-bar-label">
+        <Icon name="wc" size={18} /> Out now:
+      </span>
+      {outNow.map((v) => {
+        const s = byId.get(v.studentId);
+        return (
+          <button
+            key={`${v.studentId}-${v.start}`}
+            className="bathroom-chip"
+            title="Tap when the student is back"
+            onClick={() => toggleBathroom(v.studentId)}
+          >
+            {s ? displayStudentName(s, userPrefs.seatNameStyle) : v.studentId} · <Elapsed visit={v} />
+            <Icon name="check" size={16} />
+          </button>
+        );
+      })}
+    </div>
+  );
   const eventCount = `${lessonEvents.length} event${lessonEvents.length === 1 ? "" : "s"} this lesson`;
   const otherStyle = userPrefs.teachingStyle === "strip" ? "room" : "strip";
 
@@ -215,6 +236,9 @@ export default function LessonView() {
             <span className="muted bar-count">{eventCount}</span>
           </div>
           {sideBar && batchPanel}
+          {/* In a side column the trips sit in the bar, rather than in a
+              second column that squeezes the room plan. */}
+          {sideBar && bathroomBar}
           {/* While a batch is open these can't be used, so in a side column
               they make way for it rather than pushing it into a scroll. */}
           {!(sideBar && batch.active) && (
@@ -288,24 +312,7 @@ export default function LessonView() {
 
       {!sideBar && batchPanel}
 
-      {outNow.length > 0 && (
-        <div className="bathroom-bar no-print">
-          <span className="muted">🚻 Out now:</span>
-          {outNow.map((v) => {
-            const s = byId.get(v.studentId);
-            return (
-              <button
-                key={`${v.studentId}-${v.start}`}
-                className="bathroom-chip"
-                title="Tap when the student is back"
-                onClick={() => toggleBathroom(v.studentId)}
-              >
-                {s ? displayStudentName(s, userPrefs.seatNameStyle) : v.studentId} · <Elapsed visit={v} /> ✓
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {!sideBar && bathroomBar}
 
       <div
         ref={canvasBoxRef}
@@ -321,6 +328,7 @@ export default function LessonView() {
           desks={desks}
           frontEdge={roomConfig.frontEdge}
           crop={effectiveCrop}
+          fill={focusMode}
           seatFontScale={roomConfig.seatFontScale}
           deskFontScale={roomConfig.deskFontScale}
           labelFontScale={roomConfig.labelFontScale}
@@ -332,7 +340,7 @@ export default function LessonView() {
               label: s ? displayStudentName(s, userPrefs.seatNameStyle) : "",
               firstName: s?.firstName,
               lastName: s ? seatSurname(s, userPrefs.seatNameStyle) : undefined,
-              badge: !isShuffling && s && outVisitOf(s.id) ? "🚻" : status === "A" && !isShuffling ? "✗" : undefined,
+              badge: s && !isShuffling ? seatBadge(status, !!outVisitOf(s.id)) : undefined,
               occupied: !!s,
               points: s && !isShuffling && pointsVisible ? pointsToday.get(s.id) ?? 0 : null,
               selected: !!s && batch.isSelected(s.id),

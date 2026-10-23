@@ -140,3 +140,26 @@ export default function Icon({
     </svg>
   );
 }
+
+/**
+ * The same icon drawn inside an SVG (a seat's corner badge on the room plan),
+ * centred on x, y. Unlike an emoji it takes the fill colour and looks the same
+ * on every computer.
+ */
+export function IconGlyph({ name, x, y, size, className }: { name: IconName; x: number; y: number; size: number; className?: string }) {
+  return (
+    <svg
+      className={className}
+      x={x - size / 2}
+      y={y - size / 2}
+      width={size}
+      height={size}
+      viewBox="0 -960 960 960"
+      aria-hidden
+      focusable="false"
+      pointerEvents="none"
+    >
+      <path d={PATHS[name]} />
+    </svg>
+  );
+}

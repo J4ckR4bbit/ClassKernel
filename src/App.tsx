@@ -25,6 +25,9 @@ import { CopyChip, FolderBanner, SyncOverlay } from "./components/FolderBanner";
 /** Toast + dialog + save-error UI shared by both shells. */
 function Overlays() {
   const { toast, saveError, retrySave } = useAppPick("toast", "saveError", "retrySave");
+  // On the teaching room plan, keep the pop-ups clear of End lesson, which
+  // sits at the end of the lesson bar on whichever edge Settings puts it.
+  const barSide = useApp((s) => (s.focusMode && s.focusStyle === "room" ? s.userPrefs.lessonBarSide : null));
   return (
     <>
       {saveError && (
@@ -50,7 +53,7 @@ function Overlays() {
         </div>
       )}
       {/* The running tools' pop-ups, stacked in the bottom-right corner. */}
-      <div className="mini-stack no-print">
+      <div className={`mini-stack no-print ${barSide ? `bar-${barSide}` : ""}`}>
         <NoiseMini />
         <TimerMini />
       </div>
@@ -106,12 +109,12 @@ export default function App() {
     }
   };
 
-  // Escape always leaves the distraction-free teaching layout (unless a
-  // dialog is open — then it just closes the dialog).
+  // Escape leaves the distraction-free teaching layout, unless something on
+  // top took it first: a dialog, a seat's pop-up or the student picker.
   useEffect(() => {
     if (!focusMode) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !useApp.getState().dialog) setFocusMode(false);
+      if (e.key === "Escape" && !e.defaultPrevented && !useApp.getState().dialog) setFocusMode(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

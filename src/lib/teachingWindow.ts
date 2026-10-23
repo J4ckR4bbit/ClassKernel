@@ -7,9 +7,14 @@
 import { isTauri } from "./fs";
 import { DockSide } from "./types";
 
-/** Strip width in logical pixels: a fifth-ish of the screen, within limits. */
-export function stripWidth(screenLogicalWidth: number): number {
-  return Math.round(Math.min(340, Math.max(240, screenLogicalWidth * 0.18)));
+/**
+ * Strip width in logical pixels: a fifth-ish of the screen, within limits,
+ * grown with the app's display size (Settings → Display size zooms the whole
+ * page, so the strip needs the room to match), but never over 30% of the screen.
+ */
+export function stripWidth(screenLogicalWidth: number, uiScale = 1): number {
+  const base = Math.min(340, Math.max(240, screenLogicalWidth * 0.18));
+  return Math.round(Math.min(base * Math.max(1, uiScale), screenLogicalWidth * 0.3));
 }
 
 interface SavedGeometry {
@@ -42,7 +47,7 @@ export async function enterFullscreen(): Promise<void> {
   }
 }
 
-export async function enterDock(side: DockSide): Promise<void> {
+export async function enterDock(side: DockSide, uiScale = 1): Promise<void> {
   try {
     if (!isTauri()) {
       // The browser can't move its own window: the strip is drawn as a column
@@ -62,7 +67,7 @@ export async function enterDock(side: DockSide): Promise<void> {
     const monitor = await currentMonitor();
     if (!monitor) return;
     const area = monitor.workArea ?? { position: monitor.position, size: monitor.size };
-    const width = Math.round(stripWidth(area.size.width / monitor.scaleFactor) * monitor.scaleFactor);
+    const width = Math.round(stripWidth(area.size.width / monitor.scaleFactor, uiScale) * monitor.scaleFactor);
     const x = side === "left" ? area.position.x : area.position.x + area.size.width - width;
     await win.setDecorations(false);
     await win.setSize(new PhysicalSize(width, area.size.height));
