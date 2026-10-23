@@ -383,12 +383,8 @@ export const useApp = create<AppState>((set, get) => {
       saved ??= (await readState(paths))?.dataDir ?? null;
       const session = await readSession(paths);
       const target = session?.realDir ?? saved;
-      const plan = decideBoot({
-        savedDir: saved,
-        session,
-        ready: target ? await isReady(target) : false,
-        source: await readSource(paths),
-      });
+      const ready = target ? await isReady(target) : false;
+      const plan = decideBoot({ savedDir: saved, session, ready, source: await readSource(paths) });
       if (plan.kind === "open") {
         try {
           await get().openFolder(plan.dir, { kind: "data" });
@@ -398,7 +394,9 @@ export const useApp = create<AppState>((set, get) => {
           waitForFolder(plan.dir, !!(await readSource(paths)));
         }
       } else if (plan.kind === "copy") {
-        await openCopy(paths, plan.realDir);
+        // Changes from last time are still waiting: the copy opens, and if the
+        // folder is already there the banner says so (and offers to copy back).
+        await openCopy(paths, plan.realDir, ready);
       } else if (plan.kind === "wait") {
         waitForFolder(plan.realDir, plan.copyAvailable);
       }
@@ -412,6 +410,12 @@ export const useApp = create<AppState>((set, get) => {
   async chooseDataDir(path: string) {
     const paths = await localPaths();
     if (await readSession(paths)) {
+      // Only the data folder itself (wherever it is now) can take these
+      // changes; an empty or unrelated folder would just set them aside.
+      if (!(await isReady(path))) {
+        get().showToast("That folder doesn't hold your ClassKernel data — choose the folder with behaviours.csv and classes/ in it");
+        return;
+      }
       const ok = await get().confirmDialog({
         title: "Copy this computer's changes there?",
         body: `This computer has changes made while your data folder wasn't available. They'll be copied into ${path} (joined with anything changed there meanwhile) before it opens.`,
@@ -1045,11 +1049,11 @@ export function useAppPick<K extends keyof AppState>(...keys: K[]): Pick<AppStat
 }
 
 /** Work from this computer's copy, keeping its starting point for the copy-back, and watch for the folder. */
-async function openCopy(paths: LocalPaths, realDir: string): Promise<void> {
+async function openCopy(paths: LocalPaths, realDir: string, back = false): Promise<void> {
   const session = await startOfflineSession(paths, realDir);
   await useApp.getState().openFolder(paths.copy, { kind: "copy", realDir });
   useApp.setState({
-    folderStatus: { kind: "copy", realDir, since: session.since, copyRefreshedAt: session.copyRefreshedAt, back: false },
+    folderStatus: { kind: "copy", realDir, since: session.since, copyRefreshedAt: session.copyRefreshedAt, back },
   });
   watchForReturn(realDir);
 }
@@ -1065,7 +1069,8 @@ function waitForFolder(realDir: string, copyAvailable: boolean): void {
   const tick = async () => {
     pollTimer = undefined;
     if (!stillWaiting()) return;
-    if ((await isReady(realDir, 1500)) && stillWaiting()) {
+    // Long enough for a cloud drive to fetch a file it hasn't cached yet.
+    if ((await isReady(realDir, 4000)) && stillWaiting()) {
       try {
         await useApp.getState().openFolder(realDir, { kind: "data" });
         return;
@@ -1088,8 +1093,9 @@ function waitForFolder(realDir: string, copyAvailable: boolean): void {
  * While working from the copy: watch for the data folder to come back. Once
  * it has stayed ready for a while (a cloud drive shows its cached files first
  * and catches up after), copy the changes back, but only at a safe moment:
- * not mid-lesson in teaching mode, and with no dialog open. Until then the
- * banner says the folder is back and offers to do it now.
+ * not mid-lesson in teaching mode, and with no dialog open. Meanwhile the
+ * banner says whether the folder can be read now, and offers to copy back
+ * straight away once it can.
  */
 function watchForReturn(realDir: string): void {
   stopPolling();
@@ -1097,18 +1103,15 @@ function watchForReturn(realDir: string): void {
   const tick = async () => {
     pollTimer = undefined;
     if (useApp.getState().folderStatus?.kind !== "copy") return;
-    const settled = settle.poll(await isReady(realDir), Date.now());
+    const ready = await isReady(realDir);
+    const settled = settle.poll(ready, Date.now());
     const st = useApp.getState();
     if (st.folderStatus?.kind !== "copy") return;
-    if (settled) {
-      if (!st.focusMode && !st.dialog) {
-        await copyBack(realDir);
-        return;
-      }
-      if (!st.folderStatus.back) useApp.setState({ folderStatus: { ...st.folderStatus, back: true } });
-    } else if (st.folderStatus.back) {
-      useApp.setState({ folderStatus: { ...st.folderStatus, back: false } });
+    if (settled && !st.focusMode && !st.dialog) {
+      await copyBack(realDir);
+      return;
     }
+    if (st.folderStatus.back !== ready) useApp.setState({ folderStatus: { ...st.folderStatus, back: ready } });
     pollTimer = setTimeout(() => void tick(), folderTiming.returnPollMs);
   };
   pollTimer = setTimeout(() => void tick(), folderTiming.returnPollMs);

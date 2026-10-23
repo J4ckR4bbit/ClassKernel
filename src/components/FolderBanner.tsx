@@ -24,8 +24,8 @@ export function FolderBanner() {
         <div className="grow">
           {folderStatus.back ? (
             <>
-              <b>Your data folder is back.</b> This computer's changes are copied into it when you leave teaching mode
-              — or now.
+              <b>Your data folder is back.</b> This computer's changes are copied into it in a moment (once it has
+              settled, and never during teaching mode) — or now.
             </>
           ) : (
             <>
