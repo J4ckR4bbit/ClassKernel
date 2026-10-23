@@ -136,10 +136,10 @@ export default function RoomCanvas({
         {editable && (
           <g>
             {Array.from({ length: Math.floor(ROOM_W / GRID) + 1 }, (_, i) => (
-              <line key={`v${i}`} x1={i * GRID} y1={0} x2={i * GRID} y2={ROOM_H} stroke="#eef1f4" />
+              <line key={`v${i}`} x1={i * GRID} y1={0} x2={i * GRID} y2={ROOM_H} className="room-grid-line" />
             ))}
             {Array.from({ length: Math.floor(ROOM_H / GRID) + 1 }, (_, i) => (
-              <line key={`h${i}`} x1={0} y1={i * GRID} x2={ROOM_W} y2={i * GRID} stroke="#eef1f4" />
+              <line key={`h${i}`} x1={0} y1={i * GRID} x2={ROOM_W} y2={i * GRID} className="room-grid-line" />
             ))}
           </g>
         )}

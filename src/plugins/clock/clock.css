@@ -19,7 +19,7 @@
 .analog-clock .face { fill: var(--panel); stroke: var(--text); stroke-width: 3; }
 .analog-clock .tick { stroke: var(--text-dim); stroke-width: 1; }
 .analog-clock .tick.major { stroke: var(--text); stroke-width: 2.6; }
-.analog-clock .numeral { font-size: 15px; font-weight: 600; fill: var(--text); font-variant-numeric: tabular-nums; }
+.analog-clock .numeral { font-size: 15px; font-weight: 700; fill: var(--text); font-variant-numeric: tabular-nums; }
 .analog-clock .hand { stroke-linecap: round; }
 .analog-clock .hand.hour { stroke: var(--text); stroke-width: 6; }
 .analog-clock .hand.minute { stroke: var(--text); stroke-width: 4; }
@@ -31,6 +31,6 @@
 .clock-suffix { font-size: 22px; font-weight: 700; color: var(--text-dim); letter-spacing: 1px; }
 
 .clock-caption { text-align: center; }
-.clock-date { font-size: 26px; font-weight: 600; }
+.clock-date { font-size: 26px; font-weight: 700; }
 .clock-zone-line { font-size: 15px; margin-top: 4px; }
 .clock-plugin:fullscreen .clock-date { font-size: 34px; }
