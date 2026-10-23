@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fmtDecimal, gradeLabel, joinAnd, parseDecimal, shortDate } from "./format";
+import { fmtDecimal, gradeLabel, joinAnd, longDate, parseDecimal, shortDate } from "./format";
 
 describe("fmtDecimal", () => {
   it("writes a decimal comma and drops trailing zeros", () => {
@@ -62,5 +62,12 @@ describe("shortDate", () => {
   it("leaves anything that isn't a date as it is", () => {
     expect(shortDate("")).toBe("");
     expect(shortDate("next week")).toBe("next week");
+  });
+});
+
+describe("longDate", () => {
+  it("writes the date out in full for a printout", () => {
+    expect(longDate("2026-10-07")).toBe("7 October 2026");
+    expect(longDate("not a date")).toBe("not a date");
   });
 });

@@ -18,7 +18,7 @@ Open **Seats** in the navigation rail. The seating plan is drawn on the room you
 | **Delete plan** | Deletes the plan shown (asks first). |
 | **Clear seats** | Empties every seat in the plan (with Undo). |
 | **Randomise** | Rerolls the seating, honouring your [seating rules](02-setting-up-a-class.md#seating-rules). Once per lesson — see below. |
-| **Print** | Prints the plan, e.g. for a cover teacher. |
+| **Print** | Prints the plan on one landscape A4 page, headed with the class, room, plan and date — e.g. for a cover teacher. |
 
 The panel under the toolbar lists **Unseated** students and the room's **capacity** (seats for students).
 

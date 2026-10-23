@@ -752,12 +752,19 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .mark-grid thead .sticky-left, .mark-grid thead .sticky-right, .mark-grid tfoot .sticky-left, .mark-grid tfoot .sticky-right { z-index: 3; }
 
 /* ---------- print ---------- */
+.print-only { display: none; }
 @media print {
-  .nav-rail, .top-bar, .md-tabs, .view-header button, .palette, .demo-banner, .no-print, .toast, .save-error-banner { display: none !important; }
+  .nav-rail, .top-bar, .md-tabs, .view-header button, .view-header select, .palette, .demo-banner, .no-print, .toast, .save-error-banner { display: none !important; }
+  .print-only { display: block; }
   body { background: #fff; }
   .main-pane { padding: 0; background: #fff; border-radius: 0; }
   .canvas-wrap { border: none; overflow: visible; }
+  /* The seating plan fills a landscape A4 page under its heading. */
+  .seating-page { page: seating; }
+  .seating-page h2.print-only { margin: 0 0 6mm; font-size: 18px; font-weight: 500; }
+  .seating-page .room-canvas { max-height: 170mm; width: 100%; }
 }
+@page seating { size: A4 landscape; margin: 10mm; }
 
 /* ---------- plugins (Tools on Home, the frame, the settings list) ---------- */
 .tool-card {
