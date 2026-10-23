@@ -1,0 +1,42 @@
+/* The layout the drawing tools share (graph paper, practical graph, motion
+   graph; the noise meter uses the controls column): controls on the left, the
+   sheet on the right, one above the other in a narrow window. Each tool's own
+   .css sets --tool-controls, the width of its controls column (a property,
+   not grid-template-columns, so it can't outrank the narrow-window rule
+   below). Imported by each of them; Vite loads it once. */
+.graph-paper, .practical-graph, .motion-graph, .noise-meter {
+  display: grid; grid-template-columns: var(--tool-controls) 1fr; gap: 16px; height: 100%;
+}
+.gp-controls, .pg-controls, .mg-controls, .nm-controls { overflow-y: auto; padding-right: 4px; }
+.gp-controls .panel, .pg-controls .panel, .mg-controls .panel, .nm-controls .panel { padding: 14px; }
+.gp-controls h3, .pg-controls h3, .mg-controls h3 { font-size: 14px; margin-bottom: 10px; }
+.gp-note, .pg-note, .mg-note { font-size: 12px; margin: 6px 0 10px; }
+
+.gp-field, .pg-field, .mg-field { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.gp-field-label, .pg-field-label, .mg-field-label { flex: 1; font-size: 13px; }
+.gp-check, .pg-check, .mg-check { display: flex; align-items: center; gap: 9px; font-size: 13px; margin-bottom: 8px; cursor: pointer; }
+.gp-number, .mg-number { display: flex; align-items: center; gap: 4px; }
+.gp-number input, .mg-number input { width: 74px; text-align: center; font-variant-numeric: tabular-nums; }
+.gp-number button, .mg-number button { font-size: 16px; line-height: 1; padding: 4px 8px; }
+
+/* Tinted, so the white sheet reads as paper laid on a desk. */
+.gp-preview, .pg-preview, .mg-preview {
+  /* Flex, not grid: a percentage max-height on the canvas needs a definite
+     container height to resolve against, which an auto grid row is not — a
+     portrait drawing would otherwise run off the bottom of the pane. */
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; min-height: 0; padding: 16px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+}
+/* The canvas is drawn at full size and scaled down to fit the pane — the saved
+   file always uses the real pixels, never this on-screen size. */
+.gp-canvas, .pg-canvas, .mg-canvas {
+  max-width: 100%; max-height: 100%; width: auto; height: auto;
+  background: var(--field); border: 1px solid var(--border); box-shadow: 0 2px 10px rgba(29, 39, 51, 0.12);
+}
+
+@media (max-width: 900px) {
+  .graph-paper, .practical-graph, .motion-graph, .noise-meter { grid-template-columns: 1fr; overflow-y: auto; }
+  .gp-controls, .pg-controls, .mg-controls, .nm-controls { overflow: visible; }
+  .gp-preview, .pg-preview, .mg-preview { min-height: 320px; }
+}

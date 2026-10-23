@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
+import "./flip-digits.css";
 
 // Split-flap digits, shared by the test timer's countdown and the clock: the
-// top half of a card folds down to reveal the next value. The styles live in
-// the app stylesheet (.flip-clock, .flip-digit) because the timer's pop-up and
-// both plugins use them.
+// top half of a card folds down to reveal the next value. Styled in
+// flip-digits.css beside it.
 
 /** One split-flap card. */
 export function FlipDigit({ d, color }: { d: string; color: string }) {

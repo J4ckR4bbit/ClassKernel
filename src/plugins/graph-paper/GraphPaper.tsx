@@ -12,6 +12,8 @@ import {
   drawOnCanvas,
   fileNameFor,
 } from "./drawing";
+import "../shared/tool-layout.css";
+import "./graph-paper.css";
 
 /**
  * Number entry with big +/− buttons either side. The app is built for a touch

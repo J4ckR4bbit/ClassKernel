@@ -1,0 +1,10 @@
+/* Graph paper. The shared two-pane layout is in ../shared/tool-layout.css. */
+.graph-paper { --tool-controls: minmax(300px, 340px); }
+.gp-size { font-size: 13px; font-weight: 700; margin-top: 10px; }
+.gp-status { font-size: 13px; margin-top: 4px; word-break: break-all; }
+.gp-field.disabled .gp-field-label { color: var(--text-dim); }
+.gp-field select { max-width: 190px; }
+.gp-number input:disabled { opacity: 0.45; }
+.gp-check.indent { margin-left: 26px; }
+.gp-check.disabled { color: var(--text-dim); cursor: default; }
+.gp-too-large { max-width: 380px; text-align: center; }

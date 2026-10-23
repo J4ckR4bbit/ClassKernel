@@ -19,6 +19,8 @@ import {
 } from "./motion";
 import Icon from "../../components/Icon";
 import Segmented from "../../components/Segmented";
+import "../shared/tool-layout.css";
+import "./motion-graph.css";
 
 const QUANTITIES: Array<{ key: Quantity; label: string }> = [
   { key: "position", label: "Position x–t" },
@@ -161,7 +163,7 @@ export default function MotionGraph() {
             <button onClick={() => setJourney(DEFAULT_JOURNEY)}>Reset</button>
           </div>
           {status && <div className="mg-status muted">{status}</div>}
-          <p className="muted mg-note" style={{ marginBottom: 0 }}>
+          <p className="muted mg-note tail">
             {layout.empty ? "Add a stage below to start the journey." : summarise(states)}
           </p>
         </div>
@@ -293,7 +295,7 @@ export default function MotionGraph() {
             <span className="mg-field-label">Curve colour</span>
             <input type="color" value={v.curveColor} onChange={(e) => set("curveColor", e.target.value)} />
           </label>
-          <p className="muted mg-note" style={{ marginBottom: 0 }}>
+          <p className="muted mg-note tail">
             Saved at 300 dpi, {formatNumber(v.widthMm)} mm wide on the page.
           </p>
         </div>

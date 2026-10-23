@@ -1,0 +1,13 @@
+/* Motion graph. The shared two-pane layout is in ../shared/tool-layout.css. */
+.motion-graph { --tool-controls: minmax(300px, 360px); }
+.mg-status { font-size: 13px; margin-top: 8px; word-break: break-all; }
+.mg-field input:not([type="color"]) { width: 150px; }
+
+.mg-table { margin-top: 10px; }
+.mg-table td { padding: 3px 6px; }
+.mg-table td input { text-align: right; font-variant-numeric: tabular-nums; }
+/* The journey read back in words, so a wrong number is obvious before printing. */
+.mg-stages { margin: 12px 0 0; padding-left: 20px; font-size: 13px; color: var(--text-dim); }
+.mg-stages li { margin-bottom: 3px; }
+
+.mg-empty { max-width: 320px; text-align: center; }

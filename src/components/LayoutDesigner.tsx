@@ -394,7 +394,7 @@ export default function LayoutDesigner() {
         <FontStepper label="Seats" value={roomConfig.seatFontScale} onBump={(d) => bumpFont("seatFontScale", d)} />
         <FontStepper label="Desks" value={roomConfig.deskFontScale} onBump={(d) => bumpFont("deskFontScale", d)} />
         <FontStepper label="Labels" value={roomConfig.labelFontScale} onBump={(d) => bumpFont("labelFontScale", d)} />
-        <span className="spacer" style={{ flex: 1 }} />
+        <span className="spacer" />
         <span className="muted">Layouts:</span>
         <button onClick={() => void saveTemplate()} disabled={desks.length === 0} title="Save this room to reuse in another class">
           <Icon name="save" size={20} /> Save as template

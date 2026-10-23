@@ -1,0 +1,15 @@
+/* Practical graph. The shared two-pane layout is in ../shared/tool-layout.css. */
+.practical-graph { --tool-controls: minmax(300px, 350px); }
+.pg-status { font-size: 13px; margin-top: 8px; word-break: break-all; }
+.pg-field input:not([type="color"]) { width: 170px; }
+
+.pg-table td { padding: 3px 6px; }
+.pg-table td input { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* The numbers the practical is actually after. */
+.pg-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 10px 0 0; }
+.pg-stats > div { display: flex; flex-direction: column; }
+.pg-stats dt { font-size: 12px; color: var(--text-dim); }
+.pg-stats dd { margin: 0; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.pg-empty { max-width: 320px; text-align: center; }

@@ -13,6 +13,8 @@ import {
   parseReadings,
 } from "./plot";
 import Icon from "../../components/Icon";
+import "../shared/tool-layout.css";
+import "./practical-graph.css";
 
 /** A row of the readings table, kept as text so half-typed numbers survive. */
 interface Row {
@@ -242,7 +244,7 @@ export default function PracticalGraph() {
               </div>
             </dl>
           ) : (
-            <p className="muted pg-note" style={{ marginBottom: 0 }}>
+            <p className="muted pg-note tail">
               {v.showFit ? "Two readings at different x values will give a line." : "The line is switched off."}
             </p>
           )}
