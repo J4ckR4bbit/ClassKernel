@@ -103,7 +103,7 @@ hand it in.
 | Control | What it does |
 | --- | --- |
 | **Change** | Pick a different behaviour for the same students. |
-| **Cancel** | Leave without recording anything. |
+| **Cancel** / **Discard (*n*)** | Leave without recording anything. If students were selected, **Restore** on the message brings the selection back. |
 | **Done** | After saving, the panel is ready for the next batch; **Done** closes it. |
 
 ## Teaching mode

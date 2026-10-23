@@ -106,6 +106,19 @@ test("lesson: batch entry records one behaviour for several students", async ({ 
   await expect(page.locator(".batch-panel")).toHaveCount(0);
 });
 
+test("lesson: discarding a batch selection can be undone", async ({ page }) => {
+  await nav(page, "Lesson");
+  await page.getByRole("button", { name: "Batch entry" }).click();
+  await page.locator(".batch-panel .bh-btn").first().click();
+  await seats(page).nth(3).click({ force: true });
+  await seats(page).nth(4).click({ force: true });
+  await page.locator(".batch-panel").getByRole("button", { name: "Discard (2)" }).click();
+  await expect(page.locator(".batch-panel")).toHaveCount(0);
+  await expect(toast(page)).toContainText("Discarded 2 selected students");
+  await toast(page).getByRole("button", { name: "Restore" }).click();
+  await expect(page.locator(".batch-panel button.primary", { hasText: "Save (2)" })).toBeVisible();
+});
+
 test("teaching mode: the room plan and the side panel, and back", async ({ page }) => {
   await nav(page, "Lesson");
   await page.getByRole("button", { name: "Teaching mode" }).click();
