@@ -4,6 +4,7 @@ import { useNoiseMeter } from "../plugins/noise-meter/noiseStore";
 import { percentOfLimit, zoneFor } from "../plugins/noise-meter/meter";
 import { NOISE_METER_ID } from "../plugins/registry";
 import Icon from "./Icon";
+import Body from "./MiniBody";
 
 const ZONE_LABEL = { quiet: "Nice and quiet", warn: "Getting close", loud: "Too loud" } as const;
 
@@ -49,7 +50,9 @@ export default function NoiseMini({ inline = false }: { inline?: boolean }) {
       className={`noise-mini no-print zone-${zone} ${alarm.active ? "alarm" : ""} ${inline ? "inline" : ""}`}
       role={alarm.active ? "alert" : "status"}
     >
-      <button className="noise-mini-body" onClick={open} title="Open the noise meter">
+      {/* In teaching mode a brush against the card mustn't leave the lesson:
+          only the open button does that there. */}
+      <Body className="noise-mini-body" onClick={focusMode ? undefined : open} title="Open the noise meter">
         <span className="noise-mini-label">
           <Icon name="graphic_eq" size={18} /> {alarm.active ? "Too loud!" : ZONE_LABEL[zone]}
         </span>
@@ -60,7 +63,7 @@ export default function NoiseMini({ inline = false }: { inline?: boolean }) {
         <span className="noise-mini-sub">
           {level === null ? "—" : Math.round(level)} dB(A) · limit {settings.limit}
         </span>
-      </button>
+      </Body>
       <div className="noise-mini-actions">
         <button onClick={stop} title="Stop listening" aria-label="Stop listening">
           <Icon name="mic_off" size={20} />

@@ -258,3 +258,21 @@ The same `desks.csv` and `room.csv` as a class, saved with **Save as template** 
 A full copy of the data folder (except `backups/` itself), taken each time the app starts. Every snapshot from today
 is kept, plus the newest from each of the 14 most recent earlier days that have one; older ones are deleted. A restore
 first takes a safety copy named `pre-restore-<stamp>`, which is never deleted automatically.
+
+`backups/.sync/<YYYY-MM-DD_hhmmss>/` holds both originals of every file changed when this computer's copy was copied
+back after the data folder had been unavailable: `drive/` (the data folder's version) and `this-computer/`, with the
+real file names. These aren't listed under Restore a backup and are never deleted automatically.
+
+## This computer's copy (not in the data folder)
+
+Kept in the app's own folder on each computer (`%LOCALAPPDATA%\com.classkernel.app\`), never synced:
+
+| Path | |
+| --- | --- |
+| `local-copy/` | The data folder without `backups/` and `exports/`, refreshed at each launch and updated by every save. `.source.json` records which folder and when. |
+| `offline-base/` | While working from the copy: the copy as it was when the data folder went missing, what the changes are compared against when copying back. |
+| `offline-session.json` | Present while this computer has changes not yet copied back. |
+| `state.json` | The data folder in use. |
+
+How each file is joined when both copies changed it (row by row, by plan or assessment, or as a whole file) is set in
+`FILE_RULES` in `src/lib/repo.ts`.

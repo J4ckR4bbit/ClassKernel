@@ -8,7 +8,7 @@
 // (the preview lists them). Nothing is saved until the teacher has seen it.
 
 import { newId } from "./id";
-import { ClassInfo, Student, adamKey } from "./types";
+import { ClassInfo, Student, adamKey, byName } from "./types";
 import { SheetSpec } from "./xlsx";
 import { ReadSheet } from "./xlsxRead";
 
@@ -18,7 +18,6 @@ export const STUDENTS_SHEET = "Students";
 const CLASS_COLUMNS = ["Class", "Grade", "Subject", "Room"];
 const STUDENT_COLUMNS = ["Class", "Surname", "Name", "Adam number", "Gender", "Flags", "Notes", "Student ID"];
 
-const byName = (a: Student, b: Student) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName);
 const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
 
 /** A class name as a folder can hold it (the same rule as the New class dialog). */

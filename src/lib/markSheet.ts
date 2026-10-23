@@ -7,7 +7,7 @@
 // as it is; nothing is saved until the teacher has seen what will change.
 
 import { fmtDecimal, parseDecimal } from "./format";
-import { Assessment, AssessmentQuestion, Mark, QuestionMark, Student, adamKey } from "./types";
+import { Assessment, AssessmentQuestion, Mark, QuestionMark, Student, adamKey, byName } from "./types";
 import { SheetSpec } from "./xlsx";
 
 /** The template's main sheet; the second, About, says which assessment it is for. */
@@ -15,7 +15,6 @@ export const MARKS_SHEET = "Marks";
 const ABOUT_SHEET = "About";
 const ID_LABEL = "Assessment ID";
 
-const byName = (a: Student, b: Student) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName);
 
 /** The column heading for a question: "Q3 (/7,5)". */
 const questionHeading = (q: AssessmentQuestion) => `Q${q.number} (/${fmtDecimal(q.marks)})`;

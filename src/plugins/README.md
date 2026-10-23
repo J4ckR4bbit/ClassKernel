@@ -124,7 +124,8 @@ const outcome = await savePluginFile({
 | `png.ts` | Canvas → 300 dpi PNG, and the millimetre conversion. |
 | `numbers.ts` | Classroom number formatting. |
 | `scale.ts` | Axis scales on round values, and their tick labels. |
-| `shared/FlipDigits.tsx` | The split-flap digits (styles in `src/styles.css`, since the timer's pop-up uses them too). |
+| `shared/FlipDigits.tsx` | The split-flap digits the timer and the clock share (styles in `shared/flip-digits.css`). |
+| `shared/tool-layout.css` | The two-pane layout the graph tools and the noise meter share: controls left, sheet right. |
 | `src/components/TimerMini.tsx` | The test timer's corner pop-up — the one plugin with a piece outside the plugin pane. |
 | `src/components/PluginView.tsx` | Lazy loading, the error boundary, the chrome. |
 | `src/components/SettingsView.tsx` | The Tools tab where they are switched on. |

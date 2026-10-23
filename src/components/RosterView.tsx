@@ -6,7 +6,9 @@ import { attendanceByStudent, behaviourByStudent } from "../lib/stats";
 import PrivacyGate from "./PrivacyGate";
 import { DASHBOARDS_ID } from "../plugins/registry";
 import Icon from "./Icon";
+import Modal from "./Modal";
 import RosterSheetTools from "./RosterSheetTools";
+import { fmtSigned } from "../lib/format";
 
 export default function RosterView() {
   const {
@@ -127,10 +129,7 @@ export default function RosterView() {
                 <td>{att?.rate != null ? `${Math.round(att.rate * 100)}%` : <span className="muted">—</span>}</td>
                 <td>
                   {bh ? (
-                    <span title={`${bh.positive} positive, ${bh.negative} negative`}>
-                      {bh.points >= 0 ? "+" : ""}
-                      {bh.points}
-                    </span>
+                    <span title={`${bh.positive} positive, ${bh.negative} negative`}>{fmtSigned(bh.points)}</span>
                   ) : (
                     <span className="muted">—</span>
                   )}
@@ -157,7 +156,7 @@ export default function RosterView() {
           })}
           {students.length === 0 && (
             <tr>
-              <td colSpan={9} className="muted" style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={9} className="empty-row">
                 No students yet — add them one by one or paste a whole list with “Import list…”.
               </td>
             </tr>
@@ -208,29 +207,26 @@ function ImportModal({ onClose, onImport }: { onClose: () => void; onImport: (st
   const preview = parse();
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Import students</h2>
-        <p className="muted">
-          Paste one student per line — either <b>First Last</b> or <b>Last, First</b> (as copied from a school report or
-          spreadsheet column).
-        </p>
-        <textarea
-          autoFocus
-          rows={10}
-          style={{ width: "100%" }}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={"Amelia Adams\nBen Baker\nClark, Chloe"}
-        />
-        <div className="actions">
-          <span className="muted grow">{preview.length} students detected</span>
-          <button onClick={onClose}>Cancel</button>
-          <button className="primary" disabled={preview.length === 0} onClick={() => onImport(preview)}>
-            Import {preview.length || ""}
-          </button>
-        </div>
+    <Modal title="Import students" onClose={onClose}>
+      <p className="muted">
+        Paste one student per line — either <b>First Last</b> or <b>Last, First</b> (as copied from a school report or
+        spreadsheet column).
+      </p>
+      <textarea
+        autoFocus
+        rows={10}
+        style={{ width: "100%" }}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={"Amelia Adams\nBen Baker\nClark, Chloe"}
+      />
+      <div className="actions">
+        <span className="muted grow">{preview.length} students detected</span>
+        <button onClick={onClose}>Cancel</button>
+        <button className="primary" disabled={preview.length === 0} onClick={() => onImport(preview)}>
+          Import {preview.length || ""}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }

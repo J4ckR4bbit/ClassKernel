@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { useApp, useAppPick } from "../store/appStore";
+import { WAIT_FOR_FOLDER_MS, keepLocalCopy, useApp, useAppPick } from "../store/appStore";
 import {
   BehaviourCode,
   CognitiveLevel,
@@ -131,6 +131,7 @@ function GeneralSettings() {
     confirmDialog,
     promptDialog,
     chooseDataDir,
+    folderStatus,
   } = useAppPick(
     "behaviourCodes",
     "setBehaviourCodes",
@@ -146,7 +147,10 @@ function GeneralSettings() {
     "confirmDialog",
     "promptDialog",
     "chooseDataDir",
+    "folderStatus",
   );
+  // While the data folder is away, dataDir is this computer's copy.
+  const awayFrom = folderStatus?.kind === "copy" || folderStatus?.kind === "syncing" ? folderStatus.realDir : null;
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   // Row elements, kept so a pointer drag can hit-test which row it is over.
@@ -242,7 +246,7 @@ function GeneralSettings() {
     <>
       <div className="panel">
         <h3>Privacy on the big screen</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           ClassKernel assumes the screen is visible to your class. With privacy mode on, screens that show individual
           marks, behaviour or notes stay covered until you tap <b>Show student details</b> — and cover themselves again
           when you leave. Each detail below can also be shown independently if you need it.
@@ -304,7 +308,7 @@ function GeneralSettings() {
 
       <div className="panel">
         <h3>Display size</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           Make everything bigger for a large touch panel. Applies to the whole app immediately.
         </p>
         <Segmented
@@ -317,7 +321,7 @@ function GeneralSettings() {
 
       <div className="panel">
         <h3>Classes and students from a spreadsheet</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           <b>Template</b> saves a workbook of every class (grade, subject, room) and its students (gender, flags, notes). Fill it in, for
           example from the school's class lists at the start of the year, then import it: new classes and students are added and changed
           details updated. Nobody is removed. For one class, use Template and Import spreadsheet on its Students page.
@@ -436,7 +440,7 @@ function GeneralSettings() {
             ))}
           </tbody>
         </table>
-        <div className="row" style={{ marginTop: 10 }}>
+        <div className="row button-row">
           <button onClick={() => void add("positive")}>
             <Icon name="add" size={20} /> Positive behaviour
           </button>
@@ -444,7 +448,7 @@ function GeneralSettings() {
             <Icon name="add" size={20} /> Negative behaviour
           </button>
         </div>
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           Renaming a Code updates this class's logged history; other classes keep the old code in their behaviour log.
         </p>
       </div>
@@ -453,9 +457,15 @@ function GeneralSettings() {
         <h3>Data</h3>
         <div className="row">
           <span>
-            Data folder: <code>{dataDir}</code>
+            Data folder: <code>{awayFrom ?? dataDir}</code>
+            {awayFrom && <span className="muted"> — not available; working from this computer's copy</span>}
           </span>
-          <button onClick={() => void pickAndSetDataDir()}>Change data folder…</button>
+          <button
+            onClick={() => void pickAndSetDataDir()}
+            title={awayFrom ? "If your data folder has moved (say, to another drive letter), choose it: this computer's changes are copied into it" : undefined}
+          >
+            {awayFrom ? "My data folder is somewhere else…" : "Change data folder…"}
+          </button>
         </div>
         <p className="muted">
           Everything lives in plain .csv / .md files in that folder — open them in Excel or Notepad any time. Put the
@@ -471,8 +481,50 @@ function GeneralSettings() {
           Classes: {classes.filter((c) => !c.archived).length} active, {classes.filter((c) => c.archived).length}{" "}
           archived. Archived classes stay on disk in <code>classes/</code>; restore them from Class notes.
         </p>
-        <BackupRestore dataDir={dataDir} onRestore={chooseDataDir} confirmDialog={confirmDialog} showToast={showToast} />
+        <LocalCopySettings away={!!awayFrom} />
+        {awayFrom ? (
+          <p className="muted">Restoring a backup is available again once your data folder is back.</p>
+        ) : (
+          <BackupRestore dataDir={dataDir} onRestore={chooseDataDir} confirmDialog={confirmDialog} showToast={showToast} />
+        )}
       </div>
+    </>
+  );
+}
+
+/**
+ * This computer's own copy of the data folder, used when the folder isn't
+ * there at launch (see lib/offline.ts). On by default; it holds the same
+ * student information, so a shared computer can switch it off.
+ */
+function LocalCopySettings({ away }: { away: boolean }) {
+  const { setKeepLocalCopy, confirmDialog, showToast } = useAppPick("setKeepLocalCopy", "confirmDialog", "showToast");
+  const [keep, setKeep] = useState(keepLocalCopy);
+  const toggle = async (on: boolean) => {
+    if (!on) {
+      const ok = await confirmDialog({
+        title: "Remove this computer's copy?",
+        body: "If your data folder isn't there when ClassKernel starts, you'll be asked to choose it again instead of carrying on from the copy.",
+        confirmLabel: "Remove",
+        danger: true,
+      });
+      if (!ok) return;
+    }
+    setKeep(on);
+    await setKeepLocalCopy(on);
+    showToast(on ? "This computer now keeps a copy of your data" : "This computer's copy removed");
+  };
+  return (
+    <>
+      <label className="pref-row">
+        <input type="checkbox" className="switch" checked={keep} disabled={away} onChange={(e) => void toggle(e.target.checked)} />
+        <span>
+          <b>Keep a copy on this computer</b> — if your data folder isn't there when ClassKernel starts (Google Drive or
+          OneDrive still starting), it waits {Math.round(WAIT_FOR_FOLDER_MS / 1000)} seconds, then carries on from this
+          copy and copies your changes back when the folder returns. The copy holds the same student information as the
+          folder: on a computer other people sign in to, switch it off.
+        </span>
+      </label>
     </>
   );
 }
@@ -493,7 +545,7 @@ function TimeZoneSettings() {
   return (
     <div className="panel">
       <h3>Time zone</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Dates and times in the behaviour and bathroom logs, the lesson count, attendance and spreadsheet exports are
         shown in this zone. Times are always saved in UTC, so changing this never alters your records — only how
         they're displayed.
@@ -530,7 +582,7 @@ function ReportSettings() {
   return (
     <div className="panel">
       <h3>Parent reports</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Printed at the top of each parent report (Dashboard → Print report). Leave either blank to leave it off.
       </p>
       <div className="form-grid report-settings">
@@ -597,7 +649,7 @@ function TeachingModeSettings() {
   return (
     <div className="panel">
       <h3>Teaching mode</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Which view the <b>Teaching mode</b> button opens. The side panel docks a narrow list of tables to the edge of
         the screen, always on top, so your slides and annotations keep the rest. You can switch between them during a
         lesson.
@@ -618,7 +670,7 @@ function TeachingModeSettings() {
       />
 
       <h4>Room plan buttons</h4>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Which edge of the room-plan screen the lesson buttons (Pick a student, Randomise, End lesson) sit on. Put them
         within reach of where you stand.
       </p>
@@ -630,7 +682,7 @@ function TeachingModeSettings() {
       />
 
       <h4>Reseat PIN</h4>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Seats can be assigned (<b>Randomise</b>) once per lesson. After that the button shows a lock (<b>Reseat…</b>) and
         needs this PIN to assign them again, so nobody reshuffles the class by accident. Ending the lesson, or a new day, unlocks it.{" "}
         {hasPin ? "A PIN is set." : "No PIN yet — set one now, or you'll be asked the first time you unlock."}
@@ -717,14 +769,14 @@ function PluginSettings() {
   return (
     <div className="panel">
       <h3>Tools</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Extra tools that come with ClassKernel. Everything ships switched off, so the app stays exactly as it is until
         you turn something on — then it appears under <b>Tools</b> on the Home page. They are part of the app, so they
         work offline and save files through the same dialog as an export.
       </p>
 
       {PLUGINS.length === 0 ? (
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           This version of the app doesn't ship any tools yet.
         </p>
       ) : (
@@ -816,7 +868,7 @@ function SeatingPrefsEditor({
   return (
     <div className="panel">
       <h3>Random seating rules</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         These rules are applied every time you press <b>Randomise</b> on the seating plan. They are saved per class and
         stay here in Settings, so the class never sees who is being kept apart or moved to the front.
       </p>
@@ -1074,7 +1126,7 @@ function AssessmentSettings() {
     <>
       <div className="panel">
         <h3>Assessable topics by grade</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           Shared across all classes and used to tag each question. Each class's grade is set on its Class notes page. Stored in{" "}
           <code>topics.csv</code>.
         </p>
@@ -1120,7 +1172,7 @@ function AssessmentSettings() {
                 <Icon name="groups" size={18} /> One list for {groupLabel}: a change here changes it for all of them.
               </p>
             )}
-            <p className="muted" style={{ marginTop: 0 }}>
+            <p className="muted lead">
               Type subtopics into a table, or paste a column straight from a spreadsheet. Paste two tab-separated
               columns to fill Subtopic and Short at once.
             </p>
@@ -1150,7 +1202,7 @@ function AssessmentSettings() {
 
       <div className="panel">
         <h3>Cognitive levels</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           Offered when tagging each question. Stored in <code>cognitive_levels.csv</code>.
         </p>
         <table className="data">
@@ -1179,7 +1231,7 @@ function AssessmentSettings() {
             ))}
           </tbody>
         </table>
-        <div className="row" style={{ marginTop: 10 }}>
+        <div className="row button-row">
           <button onClick={addLevel}>
             <Icon name="add" size={20} /> Level
           </button>
@@ -1195,7 +1247,7 @@ function AssessmentSettings() {
             <option value="down">down (to the next student)</option>
           </select>
         </label>
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           Tab always moves the other way. Arrow keys move one cell.
         </p>
       </div>
@@ -1217,7 +1269,7 @@ function AssessmentSettings() {
             </label>
           ))}
         </div>
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           Used in the marking grid, the dashboards, parent reports and spreadsheet exports.
         </p>
       </div>
@@ -1241,13 +1293,13 @@ function WeightingSettings({ grades }: { grades: string[] }) {
   return (
     <div className="panel">
       <h3>Weighting: informal tasks and examinations</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         A student's mark blends their informal tasks with their examinations in these shares. Until a student has written an
         examination, their informal tasks make up the whole mark. Set each task's own weight, and whether it is informal or an
         examination, on the Marks page.
       </p>
       {grades.length === 0 ? (
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           Give a class its grade on its Class notes page to set the weighting for that grade.
         </p>
       ) : (

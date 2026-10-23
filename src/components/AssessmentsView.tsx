@@ -1,7 +1,7 @@
 import { type KeyboardEvent as ReactKeyboardEvent, useMemo, useRef, useState } from "react";
 import { useApp, useExamWeight, useAppPick } from "../store/appStore";
 import { newId, today } from "../lib/id";
-import { Assessment, AssessmentKind, AssessmentQuestion, Mark, QuestionMark, defaultKind, studentName } from "../lib/types";
+import { Assessment, AssessmentKind, AssessmentQuestion, Mark, QuestionMark, defaultKind, studentName, sortByName } from "../lib/types";
 import {
   GRADE_SCALES,
   assessmentStats,
@@ -14,13 +14,16 @@ import {
   studentProvisional,
   taskShares,
 } from "../lib/stats";
-import { fmtDecimal, parseDecimal } from "../lib/format";
+import { fmtDecimal, parseDecimal, shortDate } from "../lib/format";
 import { areasForGrade, shortLabel, subtopicsForGrade, topicGrade } from "../lib/topics";
 import { positionTint, rankTints } from "../lib/listTint";
 import PrivacyGate from "./PrivacyGate";
 import Markbook from "./Markbook";
 import MarkSheetTools from "./MarkSheetTools";
 import Icon from "./Icon";
+import StatTile from "./StatTile";
+import Modal from "./Modal";
+import { useSubPage } from "../store/subPage";
 
 export default function AssessmentsView() {
   const {
@@ -98,12 +101,26 @@ export default function AssessmentsView() {
     else setMarkingId(a.id);
   };
 
+  const done = () => { setMarkingId(null); showToast("Marks saved"); };
+
+  // Whichever screen is open within Marks is named in the top bar, with its Back.
+  const outOf = (a: Assessment) => `out of ${fmtDecimal(a.totalMarks, 1)}`;
+  const [subTitle, subDetail, subBack]: [string | null, string | undefined, () => void] = setup
+    ? [setup.title, "questions", () => setSetupId(null)]
+    : marking
+      ? [`Marking: ${marking.title}`, outOf(marking), done]
+      : viewing
+        ? [viewing.title, outOf(viewing), () => setViewingId(null)]
+        : showMarkbook
+          ? ["Markbook", undefined, () => setShowMarkbook(false)]
+          : [null, undefined, () => {}];
+  useSubPage(subTitle, subBack, subDetail);
+
   if (setup) {
-    return <QuestionSetup assessment={setup} grade={grade} onBack={() => setSetupId(null)} onStart={() => { setSetupId(null); setMarkingId(setup.id); }} />;
+    return <QuestionSetup assessment={setup} grade={grade} onStart={() => { setSetupId(null); setMarkingId(setup.id); }} />;
   }
 
   if (marking) {
-    const done = () => { setMarkingId(null); showToast("Marks saved"); };
     return (
       <PrivacyGate label="marks and rankings">
         {marking.questionCount > 1 ? (
@@ -132,13 +149,12 @@ export default function AssessmentsView() {
             assessment={viewing}
             grade={grade}
             readOnly
-            onDone={() => setViewingId(null)}
             onEditQuestions={() => setSetupId(viewing.id)}
             onEnterMarks={() => enterMarks(viewing)}
             onImported={imported}
           />
         ) : (
-          <MarkListView assessment={viewing} onBack={() => setViewingId(null)} onEnterMarks={() => enterMarks(viewing)} onImported={imported} />
+          <MarkListView assessment={viewing} onEnterMarks={() => enterMarks(viewing)} onImported={imported} />
         )}
       </PrivacyGate>
     );
@@ -147,7 +163,7 @@ export default function AssessmentsView() {
   if (showMarkbook) {
     return (
       <PrivacyGate label="marks and rankings">
-        <Markbook onBack={() => setShowMarkbook(false)} onOpen={(a) => setViewingId(a.id)} />
+        <Markbook onOpen={(a) => setViewingId(a.id)} />
       </PrivacyGate>
     );
   }
@@ -164,79 +180,89 @@ export default function AssessmentsView() {
         </button>
       </div>
 
-      <table className="data">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th style={{ width: 100 }}>Date</th>
-            <th style={{ width: 100 }}>Content area</th>
-            <th style={{ width: 64 }}>Out of</th>
-            <th style={{ width: 80 }}>Questions</th>
-            <th style={{ width: 140 }}>Counts as</th>
-            <th style={{ width: 120 }} title="Its weight among tasks of the same kind (1 = normal, 2 = counts double, 0 = doesn't count), and the share of the final mark that gives it">
-              Weight · share
-            </th>
-            <th style={{ width: 80 }}>Marked</th>
-            <th style={{ width: 90 }}>Class mean</th>
-            <th style={{ width: 320 }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {ordered.map((a) => {
-            const stats = assessmentStats(a, marks);
-            return (
-              <tr key={a.id}>
-                <td>{a.title}</td>
-                <td>{a.date}</td>
-                <td>{a.contentArea || <span className="muted">—</span>}</td>
-                <td>{a.totalMarks}</td>
-                <td>{a.questionCount > 1 ? a.questionCount : <span className="muted">1</span>}</td>
-                <td>
-                  <select value={a.kind} onChange={(e) => update(a, { kind: e.target.value as AssessmentKind })} aria-label="Counts as">
-                    <option value="informal">Informal</option>
-                    <option value="exam">Examination</option>
-                  </select>
-                </td>
-                <td>
-                  <div className="row nowrap">
-                    <WeightInput value={a.weight} onChange={(weight) => update(a, { weight })} />
-                    <span className="muted">{fmtDecimal(shares.get(a.id) ?? 0, 1)}%</span>
-                  </div>
-                </td>
-                <td>
-                  {stats.entered}/{students.length}
-                </td>
-                <td>{stats.mean !== null ? `${Math.round(stats.mean)}%` : <span className="muted">—</span>}</td>
-                <td>
-                  <div className="row nowrap">
-                    <button className="small" onClick={() => setViewingId(a.id)} title="See the marks without changing them">
-                      <Icon name="visibility" size={18} /> View
-                    </button>
-                    <button className="small primary" onClick={() => enterMarks(a)}>
-                      <Icon name="edit" size={18} /> Enter marks
-                    </button>
-                    {a.questionCount > 1 && (
-                      <button className="small" onClick={() => setSetupId(a.id)}>
-                        Questions
+      <div className="table-scroll">
+        <table className="data marks-list">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th style={{ width: 100 }}>Date</th>
+              <th style={{ width: 100 }}>Content area</th>
+              <th style={{ width: 64 }}>Out of</th>
+              <th style={{ width: 80 }}>Questions</th>
+              <th style={{ width: 140 }}>Counts as</th>
+              <th style={{ width: 120 }} title="Its weight among tasks of the same kind (1 = normal, 2 = counts double, 0 = doesn't count), and the share of the final mark that gives it">
+                Weight · share
+              </th>
+              <th style={{ width: 80 }}>Marked</th>
+              <th style={{ width: 90 }}>Class mean</th>
+              <th></th>
+              <th style={{ width: 52 }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {ordered.map((a) => {
+              const stats = assessmentStats(a, marks);
+              return (
+                <tr key={a.id}>
+                  <td>{a.title}</td>
+                  <td className="nowrap" title={a.date}>
+                    {shortDate(a.date)}
+                  </td>
+                  <td>{a.contentArea || <span className="muted">—</span>}</td>
+                  <td className="nowrap">{a.totalMarks}</td>
+                  <td>
+                    {a.questionCount > 1 ? (
+                      <button className="small" onClick={() => setSetupId(a.id)} title="Set up the questions: topics and marks">
+                        {a.questionCount} <Icon name="edit" size={16} />
                       </button>
+                    ) : (
+                      <span className="muted">1</span>
                     )}
+                  </td>
+                  <td>
+                    <select value={a.kind} onChange={(e) => update(a, { kind: e.target.value as AssessmentKind })} aria-label="Counts as">
+                      <option value="informal">Informal</option>
+                      <option value="exam">Examination</option>
+                    </select>
+                  </td>
+                  <td>
+                    <div className="row nowrap">
+                      <WeightInput value={a.weight} onChange={(weight) => update(a, { weight })} />
+                      <span className="muted">{fmtDecimal(shares.get(a.id) ?? 0, 1)}%</span>
+                    </div>
+                  </td>
+                  <td className="nowrap">
+                    {stats.entered}/{students.length}
+                  </td>
+                  <td className="nowrap">{stats.mean !== null ? `${Math.round(stats.mean)}%` : <span className="muted">—</span>}</td>
+                  <td>
+                    <div className="row nowrap">
+                      <button className="small" onClick={() => setViewingId(a.id)} title="See the marks without changing them">
+                        <Icon name="visibility" size={18} /> View
+                      </button>
+                      <button className="small primary" onClick={() => enterMarks(a)}>
+                        <Icon name="edit" size={18} /> Enter marks
+                      </button>
+                    </div>
+                  </td>
+                  <td>
                     <button className="icon-only small danger" onClick={() => void deleteAssessment(a)} title="Delete assessment">
                       <Icon name="close" size={18} />
                     </button>
-                  </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {assessments.length === 0 && (
+              <tr>
+                <td colSpan={11} className="empty-row">
+                  No assessments yet — create one, then use the quick-marking tool while you mark.
                 </td>
               </tr>
-            );
-          })}
-          {assessments.length === 0 && (
-            <tr>
-              <td colSpan={10} className="muted" style={{ textAlign: "center", padding: 24 }}>
-                No assessments yet — create one, then use the quick-marking tool while you mark.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {showNew && (
         <NewAssessmentModal
@@ -274,75 +300,72 @@ function NewAssessmentModal({ grade, onClose, onCreate }: { grade: string; onClo
   const valid = title.trim() && (!single || parseDecimal(totalMarks) > 0) && weightValue >= 0;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>New assessment</h2>
-        <div className="form-grid">
-          <label>Title</label>
-          <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Phys Test 1" />
-          <label>Date</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          <label>Content area</label>
-          <select value={contentArea} onChange={(e) => setContentArea(e.target.value)}>
-            <option value="">— none / mixed —</option>
-            {areas.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-          <label>Number of questions</label>
-          <input type="number" min={1} value={questions} onChange={(e) => setQuestions(e.target.value)} />
-          {single && (
-            <>
-              <label>Out of</label>
-              <input inputMode="decimal" value={totalMarks} onChange={(e) => setTotalMarks(e.target.value)} />
-            </>
-          )}
-          <label>Category</label>
-          <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Test / Quiz / Homework / Exam" />
-          <label>Counts as</label>
-          <select value={kind} onChange={(e) => setKindChoice(e.target.value as AssessmentKind)}>
-            <option value="informal">Informal task</option>
-            <option value="exam">Examination</option>
-          </select>
-          <label>Weight</label>
-          <input
-            inputMode="decimal"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            title="Among tasks of the same kind: 1 = normal, 2 = counts double, 0 = doesn't count"
-          />
-        </div>
-        {!single && (
-          <p className="muted" style={{ margin: "0 0 4px" }}>
-            You'll set each question's topic and marks next; the total is added up from those.
-          </p>
+    <Modal title="New assessment" onClose={onClose}>
+      <div className="form-grid">
+        <label>Title</label>
+        <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Phys Test 1" />
+        <label>Date</label>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <label>Content area</label>
+        <select value={contentArea} onChange={(e) => setContentArea(e.target.value)}>
+          <option value="">— none / mixed —</option>
+          {areas.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+        <label>Number of questions</label>
+        <input type="number" min={1} value={questions} onChange={(e) => setQuestions(e.target.value)} />
+        {single && (
+          <>
+            <label>Out of</label>
+            <input inputMode="decimal" value={totalMarks} onChange={(e) => setTotalMarks(e.target.value)} />
+          </>
         )}
-        <div className="actions">
-          <button onClick={onClose}>Cancel</button>
-          <button
-            className="primary"
-            disabled={!valid}
-            onClick={() =>
-              onCreate({
-                id: newId("a"),
-                title: title.trim(),
-                date,
-                totalMarks: single ? parseDecimal(totalMarks) : 0,
-                category: category.trim(),
-                questionCount: qCount,
-                contentArea,
-                kind,
-                weight: weightValue,
-              })
-            }
-          >
-            {single ? "Create & mark" : "Set up questions"}
-          </button>
-        </div>
+        <label>Category</label>
+        <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Test / Quiz / Homework / Exam" />
+        <label>Counts as</label>
+        <select value={kind} onChange={(e) => setKindChoice(e.target.value as AssessmentKind)}>
+          <option value="informal">Informal task</option>
+          <option value="exam">Examination</option>
+        </select>
+        <label>Weight</label>
+        <input
+          inputMode="decimal"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+          title="Among tasks of the same kind: 1 = normal, 2 = counts double, 0 = doesn't count"
+        />
       </div>
-    </div>
+      {!single && (
+        <p className="muted" style={{ margin: "0 0 4px" }}>
+          You'll set each question's topic and marks next; the total is added up from those.
+        </p>
+      )}
+      <div className="actions">
+        <button onClick={onClose}>Cancel</button>
+        <button
+          className="primary"
+          disabled={!valid}
+          onClick={() =>
+            onCreate({
+              id: newId("a"),
+              title: title.trim(),
+              date,
+              totalMarks: single ? parseDecimal(totalMarks) : 0,
+              category: category.trim(),
+              questionCount: qCount,
+              contentArea,
+              kind,
+              weight: weightValue,
+            })
+          }
+        >
+          {single ? "Create & mark" : "Set up questions"}
+        </button>
+      </div>
+    </Modal>
   );
 }
 
@@ -394,7 +417,7 @@ function WeightInput({ value, onChange }: { value: number; onChange: (weight: nu
  * grade's topic bank, filtered to the test's content area), marks and cognitive
  * level. Saving writes the question list and sets the test's total to their sum.
  */
-function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Assessment; grade: string; onBack: () => void; onStart: () => void }) {
+function QuestionSetup({ assessment, grade, onStart }: { assessment: Assessment; grade: string; onStart: () => void }) {
   const {
     topics,
     cognitiveLevels,
@@ -448,12 +471,6 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
   return (
     <div>
       <div className="view-header">
-        <button className="small" onClick={onBack}>
-          <Icon name="arrow_back" size={18} /> Back
-        </button>
-        <h1>
-          {assessment.title} <span className="muted">— questions</span>
-        </h1>
         <div className="spacer" />
         <span className="muted">Total: {total} marks</span>
       </div>
@@ -524,7 +541,7 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
         ))}
       </datalist>
 
-      <div className="row" style={{ marginTop: 10 }}>
+      <div className="row button-row">
         <button onClick={addRow}>
           <Icon name="add" size={20} /> Add question
         </button>
@@ -542,7 +559,7 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
  * columns on the left and total/percentage/rank on the right; a Marks (out-of)
  * row and a topic row in the header; live per-question and per-student stats.
  * `readOnly` shows the same grid with the marks as plain text, to look at the
- * results without the risk of changing one (Back is then `onDone`).
+ * results without the risk of changing one (its Back is in the top bar).
  */
 function QuestionGrid({
   assessment,
@@ -556,7 +573,8 @@ function QuestionGrid({
   assessment: Assessment;
   grade: string;
   readOnly?: boolean;
-  onDone: () => void;
+  /** Marking only: back to the list. */
+  onDone?: () => void;
   onEditQuestions: () => void;
   onEnterMarks?: () => void;
   /** After marks were imported from a spreadsheet. */
@@ -576,7 +594,7 @@ function QuestionGrid({
     [assessmentQuestions, assessment.id],
   );
   const sorted = useMemo(
-    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
+    () => sortByName(students),
     [students],
   );
   const cells = useRef<Array<Array<HTMLInputElement | null>>>([]);
@@ -673,12 +691,6 @@ function QuestionGrid({
     return (
       <div>
         <div className="view-header">
-          {readOnly && (
-            <button className="small" onClick={onDone}>
-              <Icon name="arrow_back" size={18} /> Back
-            </button>
-          )}
-          <h1>{assessment.title}</h1>
           <div className="spacer" />
           <button className="primary" onClick={onEditQuestions}>
             Set up questions
@@ -693,12 +705,6 @@ function QuestionGrid({
     <div className="marking-view">
       {readOnly ? (
         <div className="view-header">
-          <button className="small" onClick={onDone}>
-            <Icon name="arrow_back" size={18} /> Back
-          </button>
-          <h1>
-            {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
-          </h1>
           <div className="spacer" />
           <MarkSheetTools assessment={assessment} onImported={onImported} />
           <button className="small" onClick={onEnterMarks}>
@@ -707,9 +713,6 @@ function QuestionGrid({
         </div>
       ) : (
         <div className="view-header">
-          <h1>
-            Marking: {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
-          </h1>
           <div className="spacer" />
           <MarkSheetTools assessment={assessment} onImported={onImported} />
           <button className="small" onClick={onEditQuestions}>
@@ -722,18 +725,9 @@ function QuestionGrid({
       )}
 
       <div className="stat-tiles compact">
-        <div className="stat-tile">
-          <div className="value">{Math.round((1 - completion) * 100)}%</div>
-          <div className="label">left to enter</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{classMean !== null ? `${classMean}%` : "—"}</div>
-          <div className="label">class mean (entered)</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{topStudent ? `${topStudent.pct}%` : "—"}</div>
-          <div className="label">{topStudent ? `top: ${topStudent.name}` : "top of class"}</div>
-        </div>
+        <StatTile value={`${Math.round((1 - completion) * 100)}%`} label="left to enter" />
+        <StatTile value={classMean !== null ? `${classMean}%` : "—"} label="class mean (entered)" />
+        <StatTile value={topStudent ? `${topStudent.pct}%` : "—"} label={topStudent ? `top: ${topStudent.name}` : "top of class"} />
       </div>
 
       <div className="mark-grid-wrap">
@@ -828,7 +822,7 @@ function QuestionGrid({
             })}
             {nRows === 0 && (
               <tr>
-                <td colSpan={nCols + 7} className="muted" style={{ padding: 16 }}>
+                <td colSpan={nCols + 7} className="empty-row start">
                   Add students to the class first.
                 </td>
               </tr>
@@ -877,7 +871,7 @@ function QuestionGrid({
 function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessment; onDone: () => void; onImported: () => void }) {
   const { students, marks, setMarks } = useAppPick("students", "marks", "setMarks");
   const sorted = useMemo(
-    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
+    () => sortByName(students),
     [students],
   );
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
@@ -913,9 +907,6 @@ function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessme
   return (
     <div className="marking-view">
       <div className="view-header">
-        <h1>
-          Marking: {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
-        </h1>
         <div className="spacer" />
         <span className="muted">
           {entered}/{sorted.length} entered
@@ -969,9 +960,7 @@ function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessme
           );
         })}
         {sorted.length === 0 && (
-          <p className="muted" style={{ padding: 16 }}>
-            Add students to the class first.
-          </p>
+          <p className="empty-row start">Add students to the class first.</p>
         )}
       </div>
     </div>
@@ -984,12 +973,10 @@ function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessme
  */
 function MarkListView({
   assessment,
-  onBack,
   onEnterMarks,
   onImported,
 }: {
   assessment: Assessment;
-  onBack: () => void;
   onEnterMarks: () => void;
   onImported: () => void;
 }) {
@@ -997,7 +984,7 @@ function MarkListView({
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
   const sorted = useMemo(
-    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
+    () => sortByName(students),
     [students],
   );
 
@@ -1020,12 +1007,6 @@ function MarkListView({
   return (
     <div className="marking-view">
       <div className="view-header">
-        <button className="small" onClick={onBack}>
-          <Icon name="arrow_back" size={18} /> Back
-        </button>
-        <h1>
-          {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
-        </h1>
         <div className="spacer" />
         <MarkSheetTools assessment={assessment} onImported={onImported} />
         <button className="small" onClick={onEnterMarks}>
@@ -1034,18 +1015,9 @@ function MarkListView({
       </div>
 
       <div className="stat-tiles compact">
-        <div className="stat-tile">
-          <div className="value">{sorted.length ? Math.round((1 - entered.size / sorted.length) * 100) : 0}%</div>
-          <div className="label">left to enter</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{classMean !== null ? `${Math.round(classMean)}%` : "—"}</div>
-          <div className="label">class mean (entered)</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{topPct !== null ? `${Math.round(topPct)}%` : "—"}</div>
-          <div className="label">{top ? `top: ${studentName(top)}` : "top of class"}</div>
-        </div>
+        <StatTile value={`${sorted.length ? Math.round((1 - entered.size / sorted.length) * 100) : 0}%`} label="left to enter" />
+        <StatTile value={classMean !== null ? `${Math.round(classMean)}%` : "—"} label="class mean (entered)" />
+        <StatTile value={topPct !== null ? `${Math.round(topPct)}%` : "—"} label={top ? `top: ${studentName(top)}` : "top of class"} />
       </div>
 
       <div className="mark-grid-wrap">
@@ -1092,7 +1064,7 @@ function MarkListView({
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={8} className="muted" style={{ padding: 16 }}>
+                <td colSpan={8} className="empty-row start">
                   Add students to the class first.
                 </td>
               </tr>

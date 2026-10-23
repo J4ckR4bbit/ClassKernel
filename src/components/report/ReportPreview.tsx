@@ -11,7 +11,8 @@ import {
   parentSummary,
   studentProfile,
 } from "../../lib/insights";
-import ParentReport, { longDate } from "./ParentReport";
+import ParentReport from "./ParentReport";
+import { longDate } from "../../lib/format";
 import ClassPicker from "../ClassPicker";
 import Icon from "../Icon";
 

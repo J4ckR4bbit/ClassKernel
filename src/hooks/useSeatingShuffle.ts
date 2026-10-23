@@ -3,6 +3,8 @@ import { useApp } from "../store/appStore";
 import { SeatAssignment } from "../lib/types";
 import { assignRandomSeats } from "../lib/seating";
 import { lessonStartedMessage } from "../lib/lessonState";
+import { today } from "../lib/id";
+import { flashTiming } from "../lib/motion";
 
 const SHUFFLE_FRAMES = 12;
 const SHUFFLE_INTERVAL = 90;
@@ -57,6 +59,7 @@ export function useSeatingShuffle() {
     const targetSeats = result.assignments.map((a) => ({ deskId: a.deskId, seatIndex: a.seatIndex }));
     const ids = result.assignments.map((a) => a.studentId);
     let frame = 0;
+    const { frames, intervalMs } = flashTiming(SHUFFLE_FRAMES, SHUFFLE_INTERVAL);
     timer.current = setInterval(() => {
       frame++;
       const shuffled = [...ids];
@@ -67,11 +70,16 @@ export function useSeatingShuffle() {
       setShuffleFrame(
         targetSeats.map((s, i) => ({ planName: activePlan, deskId: s.deskId, seatIndex: s.seatIndex, studentId: shuffled[i] })),
       );
-      if (frame >= SHUFFLE_FRAMES) {
+      if (frame >= frames) {
         if (timer.current) clearInterval(timer.current);
         timer.current = null;
         setShuffleFrame(null);
         const cur = useApp.getState();
+        // What Undo puts back: this plan's seats and, if Randomise started the
+        // lesson, today's register as it was.
+        const previousPlan = cur.seating.filter((s) => s.planName === activePlan);
+        const day = today();
+        const registerBefore = cur.attendance.filter((e) => e.date === day);
         cur.markSeated();
         void cur.setSeating([
           ...cur.seating.filter((s) => s.planName !== activePlan),
@@ -81,10 +89,22 @@ export function useSeatingShuffle() {
           ? `Seated with ${result.violations.length} unmet constraint${result.violations.length > 1 ? "s" : ""}`
           : "Seating randomised";
         void cur.startLesson().then((added) =>
-          useApp.getState().showToast(added === null ? seated : lessonStartedMessage(`${seated}, lesson started`, added)),
+          useApp.getState().showToast(added === null ? seated : lessonStartedMessage(`${seated}, lesson started`, added), {
+            label: "Undo",
+            run: () => {
+              // The seat lock stays on: Undo puts back a mistaken tap, it isn't
+              // a way to reroll without the PIN.
+              const st = useApp.getState();
+              void st.setSeating([...st.seating.filter((s) => s.planName !== activePlan), ...previousPlan]);
+              if (added !== null) {
+                st.stopLesson();
+                void st.setAttendance([...st.attendance.filter((e) => e.date !== day), ...registerBefore]);
+              }
+            },
+          }),
         );
       }
-    }, SHUFFLE_INTERVAL);
+    }, intervalMs);
   };
 
   const requestUnlock = () => void useApp.getState().requestSeatingUnlock();

@@ -3,20 +3,8 @@ import { ClassInfo, GradeScale } from "../../lib/types";
 import { ReportSection, StudentProfile, TopicScore, fmtNum, fmtPct } from "../../lib/insights";
 import { GRADE_SCALES, formatDuration, gradeForPct } from "../../lib/stats";
 import { C_GRID, C_INK, C_PRIMARY, C_SECONDARY } from "../dashboard/shared";
+import { shortDate } from "../../lib/format";
 
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-/** "2026-10-07" → "7 October 2026". */
-export function longDate(date: string): string {
-  const [y, m, d] = date.split("-").map(Number);
-  return y && m && d ? `${d} ${MONTHS[m - 1]} ${y}` : date;
-}
-
-/** "2026-10-07" → "7 Oct". */
-const shortDate = (date: string) => {
-  const [, m, d] = date.split("-").map(Number);
-  return m && d ? `${d} ${MONTHS[m - 1].slice(0, 3)}` : date;
-};
 
 /**
  * One student's parent-evening report, laid out for a single A4 page. It only

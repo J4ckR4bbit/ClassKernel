@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Desk, FrontEdge } from "../lib/types";
 import { seatSlots, SeatSlot } from "../lib/seating";
 import { GRID, ROOM_H, ROOM_W } from "../lib/room";
+import { IconGlyph, IconName } from "./Icon";
 
 export { GRID, ROOM_H, ROOM_W };
 
@@ -9,12 +10,22 @@ export interface SeatContent {
   label: string; // short name to show on the seat (fallback when no name parts)
   firstName?: string; // first name shown on the top line
   lastName?: string; // surname shown smaller on the line below
-  badge?: string; // small marker in the seat corner (e.g. "✗" for absent)
+  /** A small marker in the seat's corner: an icon (bathroom, absent) or a letter (L late, E excused). */
+  badge?: SeatBadge;
   occupied: boolean;
   points?: number | null; // running behaviour points (lesson view)
   highlight?: boolean;
   /** Picked in batch entry: drawn solid with a tick, unmistakable from the rest. */
   selected?: boolean;
+}
+
+export interface SeatBadge {
+  icon?: IconName;
+  text?: string;
+  /** Colour: out at the bathroom, absent, late or excused. */
+  tone: "out" | "absent" | "late" | "excused";
+  /** Said aloud and shown on hover, since the badge is only a mark. */
+  label: string;
 }
 
 interface Props {
@@ -28,6 +39,11 @@ interface Props {
   labelFontScale?: number;
   /** Show only this region of the room, scaled up to the container width. */
   crop?: { x: number; y: number; w: number; h: number } | null;
+  /**
+   * Fill the containing box (teaching mode), drawing the room as large as it
+   * fits without distortion, instead of sizing to the container's width.
+   */
+  fill?: boolean;
   seatContent?: (deskId: string, seatIndex: number) => SeatContent;
   /** x/y are pixel coordinates relative to the .canvas-wrap element (popover anchoring). */
   onSeatClick?: (deskId: string, seatIndex: number, x: number, y: number) => void;
@@ -90,6 +106,7 @@ export default function RoomCanvas({
   deskFontScale = 1,
   labelFontScale = 1,
   crop,
+  fill = false,
   seatContent,
   onSeatClick,
   onDeskPointerDown,
@@ -100,12 +117,16 @@ export default function RoomCanvas({
 }: Props) {
   const view = crop ?? { x: 0, y: 0, w: ROOM_W, h: ROOM_H };
   const scaled = !!crop;
+  const filling = scaled && fill;
   return (
-    <div className="canvas-wrap">
+    <div className={`canvas-wrap ${filling ? "fill" : ""}`}>
       <svg
-        className="room-canvas"
+        className={`room-canvas ${editable ? "editable" : ""}`}
         {...(scaled
-          ? { viewBox: `${view.x} ${view.y} ${view.w} ${view.h}`, style: { width: "100%", height: "auto", aspectRatio: `${view.w} / ${view.h}` } }
+          ? {
+              viewBox: `${view.x} ${view.y} ${view.w} ${view.h}`,
+              style: filling ? { width: "100%", height: "100%" } : { width: "100%", height: "auto", aspectRatio: `${view.w} / ${view.h}` },
+            }
           : { width: ROOM_W, height: ROOM_H })}
         onPointerDown={onCanvasPointerDown}
         onPointerMove={onCanvasPointerMove}
@@ -115,10 +136,10 @@ export default function RoomCanvas({
         {editable && (
           <g>
             {Array.from({ length: Math.floor(ROOM_W / GRID) + 1 }, (_, i) => (
-              <line key={`v${i}`} x1={i * GRID} y1={0} x2={i * GRID} y2={ROOM_H} stroke="#eef1f4" />
+              <line key={`v${i}`} x1={i * GRID} y1={0} x2={i * GRID} y2={ROOM_H} className="room-grid-line" />
             ))}
             {Array.from({ length: Math.floor(ROOM_H / GRID) + 1 }, (_, i) => (
-              <line key={`h${i}`} x1={0} y1={i * GRID} x2={ROOM_W} y2={i * GRID} stroke="#eef1f4" />
+              <line key={`h${i}`} x1={0} y1={i * GRID} x2={ROOM_W} y2={i * GRID} className="room-grid-line" />
             ))}
           </g>
         )}
@@ -251,7 +272,7 @@ function SeatView({
   const last = content?.lastName ?? "";
 
   // Stack the text lines and centre the block vertically in the seat.
-  const lines: Array<{ text: string; size: number; className: string; fill?: string }> = [];
+  const lines: Array<{ text: string; size: number; className: string }> = [];
   if (content?.occupied) {
     if (first) lines.push({ text: first, size: 13 * fontScale, className: "seat-name" });
     if (last) lines.push({ text: last, size: 10 * fontScale, className: "seat-surname" });
@@ -260,8 +281,7 @@ function SeatView({
       lines.push({
         text: pts > 0 ? `+${pts}` : `${pts}`,
         size: 11 * fontScale,
-        className: "seat-points",
-        fill: pts > 0 ? "#2e9e5b" : pts < 0 ? "#d65c5c" : "#7c8b99",
+        className: `seat-points ${pts > 0 ? "pos" : pts < 0 ? "neg" : "zero"}`,
       });
     }
   }
@@ -269,21 +289,39 @@ function SeatView({
   const totalH = lineHeights.reduce((a, b) => a + b, 0);
   let cursor = slot.y - totalH / 2;
 
+  // Report a position relative to the canvas wrapper so popovers anchor
+  // correctly even when the view is crop-scaled. Divide out the app zoom
+  // (rect is in zoomed pixels, CSS left/top are not).
+  const report = (target: Element, clientX: number, clientY: number) => {
+    const wrap = target.closest(".canvas-wrap");
+    const rect = wrap?.getBoundingClientRect();
+    const zoom = wrap instanceof HTMLElement && wrap.offsetWidth > 0 && rect ? rect.width / wrap.offsetWidth : 1;
+    onSeatClick?.(rect ? (clientX - rect.left) / zoom : slot.x, rect ? (clientY - rect.top) / zoom : slot.y);
+  };
+  const name = content?.occupied ? [content.firstName ?? content.label, content.lastName].filter(Boolean).join(" ") : "Empty seat";
+
   return (
     <g
       onClick={(e) => {
         e.stopPropagation();
-        // Report the click position relative to the canvas wrapper so popovers
-        // anchor correctly even when the view is crop-scaled. Divide out the
-        // app zoom (rect is in zoomed pixels, CSS left/top are not).
-        const wrap = (e.target as Element).closest(".canvas-wrap");
-        const rect = wrap?.getBoundingClientRect();
-        const zoom = wrap instanceof HTMLElement && wrap.offsetWidth > 0 && rect ? rect.width / wrap.offsetWidth : 1;
-        onSeatClick?.(
-          rect ? (e.clientX - rect.left) / zoom : slot.x,
-          rect ? (e.clientY - rect.top) / zoom : slot.y,
-        );
+        report(e.target as Element, e.clientX, e.clientY);
       }}
+      // A seat that does something can be reached with Tab and opened with
+      // Enter or Space, like any button.
+      {...(onSeatClick
+        ? {
+            role: "button",
+            tabIndex: 0,
+            "aria-label": [name, content?.badge?.label.toLowerCase(), content?.selected ? "selected" : ""].filter(Boolean).join(", "),
+            onKeyDown: (e: React.KeyboardEvent<SVGGElement>) => {
+              if (e.key !== "Enter" && e.key !== " ") return;
+              e.preventDefault();
+              const box = e.currentTarget.getBoundingClientRect();
+              report(e.currentTarget, box.left + box.width / 2, box.top + box.height / 2);
+            },
+          }
+        : {})}
+      className={onSeatClick ? "seat" : undefined}
       style={{ cursor: onSeatClick ? "pointer" : undefined }}
     >
       <rect
@@ -306,21 +344,25 @@ function SeatView({
             y={y}
             dominantBaseline="central"
             style={{ fontSize: l.size }}
-            fill={l.fill}
           >
             {l.text}
           </text>
         );
       })}
       {content?.occupied && content.selected && (
-        <text className="seat-check" x={slot.x - rw / 2 + 9} y={slot.y - rh / 2 + 10} dominantBaseline="central">
-          ✓
-        </text>
+        <IconGlyph name="check" className="seat-check" x={slot.x - rw / 2 + 10} y={slot.y - rh / 2 + 10} size={16} />
       )}
       {content?.occupied && content.badge && (
-        <text className="seat-badge" x={slot.x + rw / 2 - 7} y={slot.y - rh / 2 + 8} dominantBaseline="central">
-          {content.badge}
-        </text>
+        <g className={`seat-badge ${content.badge.tone}`}>
+          <title>{content.badge.label}</title>
+          {content.badge.icon ? (
+            <IconGlyph name={content.badge.icon} x={slot.x + rw / 2 - 9} y={slot.y - rh / 2 + 9} size={14} />
+          ) : (
+            <text x={slot.x + rw / 2 - 8} y={slot.y - rh / 2 + 9} dominantBaseline="central">
+              {content.badge.text}
+            </text>
+          )}
+        </g>
       )}
     </g>
   );

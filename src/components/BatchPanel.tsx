@@ -1,7 +1,6 @@
 import { BehaviourCode } from "../lib/types";
 import { BatchEntry } from "../hooks/useBatchEntry";
-
-const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
+import BehaviourButton, { behaviourText } from "./BehaviourButton";
 
 interface Props {
   entry: BatchEntry;
@@ -35,20 +34,13 @@ export default function BatchPanel({ entry, behaviourCodes, layout }: Props) {
         </div>
         <div className="batch-items">
           {ordered.map((c) => (
-            <button
-              key={c.code}
-              className="bh-btn"
-              style={{ background: c.color }}
-              onClick={() => entry.chooseItem(c)}
-            >
-              {signed(c.points)} {c.label}
-            </button>
+            <BehaviourButton key={c.code} code={c} onClick={() => entry.chooseItem(c)} />
           ))}
         </div>
         <div className="batch-actions">
           {n > 0 && <span className="muted">{countText}</span>}
           <div className="spacer" />
-          <button onClick={entry.cancel}>{n > 0 ? "Cancel" : "Done"}</button>
+          <button onClick={entry.cancel}>{n > 0 ? `Discard (${n})` : "Done"}</button>
         </div>
       </div>
     );
@@ -60,7 +52,7 @@ export default function BatchPanel({ entry, behaviourCodes, layout }: Props) {
       <div className="batch-banner">
         <span className="batch-tag">BATCH</span>
         <span className="batch-item" style={{ background: c.color }}>
-          {signed(c.points)} {c.label}
+          {behaviourText(c)}
         </span>
         <button className="small" onClick={entry.changeItem} title="Record something else for the same students">
           Change
@@ -70,7 +62,7 @@ export default function BatchPanel({ entry, behaviourCodes, layout }: Props) {
         <span className={`batch-count ${n > 0 ? "on" : ""}`}>{n > 0 ? countText : "Tap students to select them"}</span>
         <div className="spacer" />
         <button onClick={entry.cancel} title="Leave batch entry without recording anything">
-          Cancel
+          {n > 0 ? `Discard (${n})` : "Cancel"}
         </button>
         <button className="primary" disabled={n === 0} onClick={entry.save}>
           Save{n > 0 ? ` (${n})` : ""}

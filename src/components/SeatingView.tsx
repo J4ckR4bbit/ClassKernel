@@ -7,6 +7,8 @@ import { useSeatingShuffle } from "../hooks/useSeatingShuffle";
 import RoomCanvas from "./RoomCanvas";
 import { fitView } from "../lib/room";
 import Icon from "./Icon";
+import { longDate } from "../lib/format";
+import { today } from "../lib/id";
 
 export default function SeatingView() {
   const {
@@ -20,6 +22,8 @@ export default function SeatingView() {
     userPrefs,
     confirmDialog,
     promptDialog,
+    currentClass,
+    classes,
   } = useAppPick(
     "students",
     "desks",
@@ -31,6 +35,8 @@ export default function SeatingView() {
     "userPrefs",
     "confirmDialog",
     "promptDialog",
+    "currentClass",
+    "classes",
   );
   // Plans exist in seating.csv once they have a row; freshly created empty
   // plans are tracked locally until their first seat is placed.
@@ -122,8 +128,15 @@ export default function SeatingView() {
     randomise(activePlan);
   };
 
+  const room = classes.find((c) => c.name === currentClass)?.room;
+
   return (
-    <div>
+    <div className="seating-page">
+      {/* On paper the top bar is gone: say whose plan this is, for a cover teacher. */}
+      <h2 className="print-only">
+        {currentClass}
+        {room ? ` · ${room}` : ""} — {activePlan} seating plan · {longDate(today())}
+      </h2>
       <div className="view-header">
         <select value={activePlan} onChange={(e) => setPlan(e.target.value)} disabled={isShuffling}>
           {planNames.map((n) => (

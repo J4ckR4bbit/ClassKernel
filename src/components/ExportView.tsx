@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAppPick } from "../store/appStore";
+import { NEEDS_DATA_FOLDER, useAppPick, useWorkingFromCopy } from "../store/appStore";
 import { getFS, isTauri } from "../lib/fs";
 import {
   DEFAULT_SECTIONS,
@@ -35,6 +35,7 @@ function downloadInBrowser(fileName: string, bytes: Uint8Array): void {
  * and be pivoted afterwards.
  */
 export default function ExportView() {
+  const fromCopy = useWorkingFromCopy();
   const { dataDir, classes, currentClass, showToast, userPrefs } = useAppPick(
     "dataDir",
     "classes",
@@ -144,7 +145,7 @@ export default function ExportView() {
     <>
       <div className="panel">
         <h3>Classes to include</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           Every sheet carries a <b>Class</b> column, so you can tick several classes and still get one workbook.
         </p>
         <div className="roster-chips">
@@ -159,7 +160,7 @@ export default function ExportView() {
             </span>
           ))}
         </div>
-        <div className="row" style={{ marginTop: 10 }}>
+        <div className="row button-row">
           <button className="small" onClick={() => setSelectedClasses(classes.filter((c) => !c.archived).map((c) => c.name))}>
             All active classes
           </button>
@@ -172,7 +173,7 @@ export default function ExportView() {
 
       <div className="panel">
         <h3>Date range</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           Optional. Limits the register, behaviour log, lesson history and assessments to a term or a half-term. Leave
           both blank for everything on record.
         </p>
@@ -201,7 +202,7 @@ export default function ExportView() {
 
       <div className="panel">
         <h3>Sheets</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           Each ticked dataset becomes its own sheet in the workbook. Row counts update as you change the selection.
         </p>
         <table className="data">
@@ -231,7 +232,7 @@ export default function ExportView() {
             })}
           </tbody>
         </table>
-        <div className="row" style={{ marginTop: 10 }}>
+        <div className="row button-row">
           <button className="small" onClick={() => setSections(EXPORT_SECTIONS.map((s) => s.id))}>
             Select all
           </button>
@@ -246,7 +247,7 @@ export default function ExportView() {
 
       <div className="panel">
         <h3>Export</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           {data
             ? `${sheets.length} sheets · ${fmtDecimal(totalRows)} rows · opens in Excel, LibreOffice or Google Sheets.`
             : "Pick at least one class above."}
@@ -256,12 +257,16 @@ export default function ExportView() {
             {busy ? "Working…" : "Export spreadsheet (.xlsx)"}
           </button>
           {isTauri() && (
-            <button disabled={!canExport} onClick={() => void exportToDataFolder()}>
+            <button
+              disabled={!canExport || fromCopy}
+              title={fromCopy ? `${NEEDS_DATA_FOLDER} — “Export” can still save it anywhere` : undefined}
+              onClick={() => void exportToDataFolder()}
+            >
               Save to data folder
             </button>
           )}
         </div>
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           {isTauri()
             ? "“Export” asks where to save; “Save to data folder” drops the file into exports/ next to your class files. Exports are snapshots — editing the spreadsheet never changes the app's data."
             : "In the browser demo the workbook is downloaded straight away. Exports are snapshots — editing the spreadsheet never changes the app's data."}

@@ -3,6 +3,7 @@ import { elapsed, formatStopwatch, lapRows } from "./stopwatch";
 import { useStopwatch } from "./stopwatchStore";
 import "./stopwatch.css";
 import Icon from "../../components/Icon";
+import { modalOpen } from "../../components/Modal";
 
 // A lab stopwatch with a seven-segment display: start, pause, lap and restart.
 // The time lives in a store, so it keeps running if the teacher leaves this
@@ -162,14 +163,14 @@ export default function StopwatchView() {
   const startLabel = sw.running ? "Pause" : total > 0 ? "Resume" : "Start";
 
   // Space starts and pauses, L marks a lap, R restarts — anywhere on this
-  // screen except while the teacher is typing. A button clicked a moment ago
-  // still has focus, and Space would press it too, so that press is cancelled:
-  // Space always means start / pause.
+  // screen except while the teacher is typing or a dialog is open. A button
+  // clicked a moment ago still has focus, and Space would press it too, so that
+  // press is cancelled: Space always means start / pause.
   useEffect(() => {
     const typing = (e: KeyboardEvent) =>
       !!(e.target as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable='true']");
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey || typing(e)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || typing(e) || modalOpen()) return;
       const key = e.key.toLowerCase();
       if (key !== " " && key !== "l" && key !== "r") return;
       e.preventDefault();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MemFS, QueuedFS } from "./fs";
+import { MemFS, MirrorFS, QueuedFS } from "./fs";
 
 /** A MemFS whose writes take a while and can be told to fail, logging what reached "disk". */
 class SlowFS extends MemFS {
@@ -117,5 +117,90 @@ describe("QueuedFS", () => {
   it("returns null for a missing file", async () => {
     const fs = new QueuedFS(new MemFS());
     expect(await fs.readTextIfExists("nowhere.csv")).toBeNull();
+  });
+});
+
+describe("MirrorFS", () => {
+  const setup = () => {
+    const disk = new MemFS();
+    void disk.mkdirs("G:/Drive/CK");
+    const mirror = new MirrorFS(disk);
+    mirror.useFolder("G:\\Drive\\CK", "/this-computer/local-copy");
+    return { disk, fs: new QueuedFS(mirror), mirror };
+  };
+
+  it("repeats each save inside the data folder in this computer's copy", async () => {
+    const { disk, fs } = setup();
+    await fs.writeAtomic("G:\\Drive\\CK/classes/10A/marks.csv", "m");
+    expect(await disk.readText("/this-computer/local-copy/classes/10A/marks.csv")).toBe("m");
+  });
+
+  it("leaves backups, exports and files outside the folder alone", async () => {
+    const { disk, fs } = setup();
+    await fs.writeAtomic("G:/Drive/CK/backups/x/a.csv", "b");
+    await fs.writeAtomic("G:/Drive/CK/exports/a.csv", "e");
+    await fs.writeAtomic("C:/elsewhere/a.csv", "o");
+    expect([...disk.files.keys()].some((k) => k.startsWith("/this-computer"))).toBe(false);
+  });
+
+  it("follows a renamed class into the copy", async () => {
+    const { disk, fs } = setup();
+    await fs.writeAtomic("G:/Drive/CK/classes/9C/class.md", "c");
+    await fs.rename("G:/Drive/CK/classes/9C", "G:/Drive/CK/classes/9C Science");
+    expect(await disk.readTextIfExists("/this-computer/local-copy/classes/9C Science/class.md")).toBe("c");
+    expect(await disk.readTextIfExists("/this-computer/local-copy/classes/9C/class.md")).toBeNull();
+  });
+
+  it("refuses to save into a data folder that has gone, instead of re-creating it", async () => {
+    const disk = new MemFS();
+    const mirror = new MirrorFS(disk);
+    mirror.useFolder("G:/Drive/CK", "/this-computer/local-copy");
+    const fs = new QueuedFS(mirror);
+    await expect(fs.writeAtomic("G:/Drive/CK/classes/10A/marks.csv", "m")).rejects.toThrow(/isn't available/);
+    expect(await disk.exists("G:/Drive/CK")).toBe(false);
+  });
+
+  it("stops copying once mirroring is switched off", async () => {
+    const { disk, fs, mirror } = setup();
+    mirror.useFolder("G:/Drive/CK", null);
+    await fs.writeAtomic("G:/Drive/CK/a.csv", "x");
+    expect(await disk.readTextIfExists("/this-computer/local-copy/a.csv")).toBeNull();
+  });
+});
+
+describe("MemFS copies", () => {
+  it("refreshes the copy in the same pass as the backup, without exports, and drops what's gone", async () => {
+    const disk = new MemFS();
+    await disk.writeAtomic("D/behaviours.csv", "b");
+    await disk.writeAtomic("D/exports/r.xlsx", "x");
+    await disk.writeAtomic("/this-computer/local-copy/classes/old/class.md", "gone");
+    await disk.writeAtomic("/this-computer/local-copy/.source.json", "{}");
+    await disk.snapshot("D", "2026-01-01_080000", 14, { to: "/this-computer/local-copy", guard: "/this-computer/offline-session.json" });
+    expect(await disk.readText("D/backups/2026-01-01_080000/behaviours.csv")).toBe("b");
+    expect(await disk.readText("/this-computer/local-copy/behaviours.csv")).toBe("b");
+    expect(await disk.readTextIfExists("/this-computer/local-copy/exports/r.xlsx")).toBeNull();
+    expect(await disk.readTextIfExists("/this-computer/local-copy/classes/old/class.md")).toBeNull();
+    expect(await disk.readTextIfExists("/this-computer/local-copy/.source.json")).toBe("{}");
+  });
+
+  it("doesn't refresh the copy while its guard file exists", async () => {
+    const disk = new MemFS();
+    await disk.writeAtomic("D/behaviours.csv", "drive");
+    await disk.writeAtomic("/this-computer/local-copy/behaviours.csv", "offline edit");
+    await disk.writeAtomic("/this-computer/offline-session.json", "{}");
+    await disk.snapshot("D", "s", 14, { to: "/this-computer/local-copy", guard: "/this-computer/offline-session.json" });
+    expect(await disk.readText("/this-computer/local-copy/behaviours.csv")).toBe("offline edit");
+  });
+
+  it("only copies and removes inside the app's local folder", async () => {
+    const disk = new MemFS();
+    await disk.writeAtomic("D/a.csv", "a");
+    await expect(disk.copyFolder("/this-computer/x", "D", [])).rejects.toThrow(/local folder/);
+    await expect(disk.removeLocal("D")).rejects.toThrow(/local folder/);
+    await disk.writeAtomic("/this-computer/local-copy/a.csv", "a");
+    await disk.copyFolder("/this-computer/local-copy", "/this-computer/offline-base", []);
+    expect(await disk.readText("/this-computer/offline-base/a.csv")).toBe("a");
+    await disk.removeLocal("/this-computer/offline-base");
+    expect(await disk.exists("/this-computer/offline-base")).toBe(false);
   });
 });

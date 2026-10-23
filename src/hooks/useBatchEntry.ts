@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BehaviourCode } from "../lib/types";
 import { useApp } from "../store/appStore";
+import { modalOpen } from "../components/Modal";
 
 export interface BatchState {
   /** The behaviour being recorded; null while the teacher is choosing it. */
@@ -18,8 +19,20 @@ export function useBatchEntry(onSave: (code: BehaviourCode, studentIds: string[]
   const [batch, setBatch] = useState<BatchState | null>(null);
   const active = batch !== null;
 
+  // The batch as it is now, for Cancel from the keyboard listener below.
+  const latest = useRef(batch);
+  latest.current = batch;
+
   const start = () => setBatch({ code: null, selected: [] });
-  const cancel = () => setBatch(null);
+  /** Leave batch entry. A selection thrown away (Cancel sits beside Save) can be brought back from the toast. */
+  const cancel = () => {
+    const was = latest.current;
+    setBatch(null);
+    const n = was?.selected.length ?? 0;
+    if (was && n > 0) {
+      useApp.getState().showToast(`Discarded ${n} selected student${n === 1 ? "" : "s"}`, { label: "Restore", run: () => setBatch(was) });
+    }
+  };
   const chooseItem = (code: BehaviourCode) => setBatch((b) => ({ code, selected: b?.selected ?? [] }));
   /** Back to the item list, keeping who is already selected. */
   const changeItem = () => setBatch((b) => (b ? { ...b, code: null } : b));
@@ -41,15 +54,17 @@ export function useBatchEntry(onSave: (code: BehaviourCode, studentIds: string[]
     setBatch({ code: null, selected: [] });
   };
 
+  const cancelRef = useRef(cancel);
+  cancelRef.current = cancel;
   // Escape backs out of the batch before anything else sees it (in teaching
   // mode Escape would otherwise leave the mode entirely).
   useEffect(() => {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
       // An open dialog gets its own Escape.
-      if (e.key !== "Escape" || useApp.getState().dialog) return;
+      if (e.key !== "Escape" || modalOpen()) return;
       e.stopImmediatePropagation();
-      setBatch(null);
+      cancelRef.current();
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);

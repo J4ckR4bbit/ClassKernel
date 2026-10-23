@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useExamWeight, useAppPick } from "../store/appStore";
 import { today } from "../lib/id";
-import { studentName } from "../lib/types";
+import { studentName, sortByName } from "../lib/types";
 import {
   ClassData,
   PERIODS,
@@ -21,6 +21,7 @@ import ReportPreview from "./report/ReportPreview";
 import Icon from "./Icon";
 import Segmented from "./Segmented";
 import { PARENT_REPORTS_ID } from "../plugins/registry";
+import EmptyState from "./EmptyState";
 
 const PERIOD_KEY = "classkernel.dashboardPeriod";
 
@@ -115,7 +116,7 @@ export default function DashboardView() {
 
   // The Student tab shows the chosen student, or the first by surname.
   const firstStudent = useMemo(
-    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName))[0],
+    () => sortByName(students)[0],
     [students],
   );
   const student = (dashboardStudent && byId.get(dashboardStudent)) || null;
@@ -127,7 +128,11 @@ export default function DashboardView() {
   const profile = useMemo(() => (student ? studentProfile(student, data, cls, period, day) : null), [student, data, cls, period, day]);
 
   if (!currentClass) {
-    return <div className="panel muted">Pick a class from the menu at the top right to see its dashboards.</div>;
+    return (
+      <EmptyState icon="bar_chart" title="No class selected">
+        Pick a class from the menu at the top right to see its dashboards.
+      </EmptyState>
+    );
   }
 
   return (
@@ -158,7 +163,7 @@ export default function DashboardView() {
           <button
             className="tonal"
             onClick={() =>
-              setReportFor(tab === "student" && student ? [student.id] : [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)).map((s) => s.id))
+              setReportFor(tab === "student" && student ? [student.id] : sortByName(students).map((s) => s.id))
             }
             title="Printable report for parent evenings"
           >

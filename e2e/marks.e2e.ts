@@ -23,6 +23,23 @@ test("create an assessment and enter marks; it joins the list", async ({ page })
   await expect(page.locator("main td", { hasText: "E2E quiz" })).toBeVisible();
 });
 
+test("the New assessment dialog keeps the keyboard inside it and hands focus back", async ({ page }) => {
+  await nav(page, "Marks");
+  const opener = page.getByRole("button", { name: "New assessment" });
+  await opener.click();
+  const dialog = page.getByRole("dialog", { name: "New assessment" });
+  const title = dialog.locator("input").first();
+  await expect(title).toBeFocused();
+  // Shift+Tab from the first field wraps round to the last button, not the page behind.
+  await page.keyboard.press("Shift+Tab");
+  await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(title).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(opener).toBeFocused();
+});
+
 test("one mark per student: yellow while typing, grey once entered", async ({ page }) => {
   await nav(page, "Marks");
   await page.locator("tr", { hasText: "Mid-term exam" }).getByRole("button", { name: "Enter marks" }).click();

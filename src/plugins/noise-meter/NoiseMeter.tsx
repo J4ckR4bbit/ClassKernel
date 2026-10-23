@@ -6,6 +6,8 @@ import { LIMIT_MAX, LIMIT_MIN, WARN_BAND, percentOfLimit, zoneFor } from "./mete
 import { useNoiseMeter } from "./noiseStore";
 import Icon from "../../components/Icon";
 import LevelGraph from "./LevelGraph";
+import "../shared/tool-layout.css";
+import "./noise-meter.css";
 
 /** The graph's span in dB(A): a silent room to a shouting one. */
 const GRAPH_MIN = 30;

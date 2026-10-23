@@ -6,6 +6,8 @@ import { buildXlsx } from "../lib/xlsx";
 import { Student } from "../lib/types";
 import { savePluginFile } from "../plugins/host";
 import Icon from "./Icon";
+import StatTile from "./StatTile";
+import Modal from "./Modal";
 
 /**
  * Template and Import buttons for classes and students: for one class (its
@@ -88,96 +90,84 @@ export default function RosterSheetTools({ oneClass }: { oneClass?: string }) {
       />
 
       {pending && plan && (
-        <div className="modal-backdrop" onClick={() => setPending(null)}>
-          <div className="modal import-preview" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={label}>
-            <h2>{label}</h2>
-            <p className="muted" style={{ marginTop: 0 }}>
-              From <b>{pending.fileName}</b>
-              {oneClass ? (
-                <>
-                  {" "}
-                  into <b>{oneClass}</b>
-                </>
-              ) : null}
-              .
-            </p>
-            <div className="stat-tiles compact">
-              {!oneClass && (
-                <div className="stat-tile">
-                  <div className="value">{newClasses.length}</div>
-                  <div className="label">new classes</div>
-                </div>
-              )}
-              <div className="stat-tile">
-                <div className="value">{newStudents.length}</div>
-                <div className="label">new students</div>
-              </div>
-              <div className="stat-tile">
-                <div className="value">{changedStudents.length + changedClasses.length}</div>
-                <div className="label">updated</div>
-              </div>
-            </div>
-            <ul className="import-changes">
-              {newClasses.map((c) => (
-                <li key={`c:${c.info.name}`}>
-                  New class <b>{c.info.name}</b>
-                  {c.info.year ? `, grade ${c.info.year}` : ""}
-                </li>
-              ))}
-              {changedClasses.map((c) => (
-                <li key={`cc:${c.info.name}`}>
-                  <b>{c.info.name}</b>: {c.changed.join(", ").toLowerCase()}
-                </li>
-              ))}
-              {newStudents.map((s) => (
-                <li key={`s:${s.student.id}`}>
-                  New: <b>{s.student.firstName} {s.student.lastName}</b>
-                  {oneClass ? "" : ` in ${s.className}`}
-                </li>
-              ))}
-              {changedStudents.map((s) => (
-                <li key={`u:${s.student.id}`}>
-                  <b>
-                    {s.student.firstName} {s.student.lastName}
-                  </b>
-                  : {s.changed.join(", ").toLowerCase()}
-                </li>
-              ))}
-            </ul>
-            <p className="muted">Blank cells leave details as they are. Nobody is removed.</p>
-            {plan.notInFile.length > 0 && (
-              <details className="import-absent">
-                <summary>
-                  {plan.notInFile.length} student{plan.notInFile.length === 1 ? " isn't" : "s aren't"} in the file and stay as they are
-                </summary>
-                <ul className="import-problems">
-                  {plan.notInFile.map((s, i) => (
-                    <li key={i}>
-                      {s.name}
-                      {oneClass ? "" : ` (${s.className})`}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            )}
-            {plan.problems.length > 0 && (
+        <Modal title={label} className="import-preview" onClose={() => setPending(null)}>
+          <p className="muted lead">
+            From <b>{pending.fileName}</b>
+            {oneClass ? (
               <>
-                <h3>Skipped ({plan.problems.length})</h3>
-                <ul className="import-problems">
-                  {plan.problems.map((p, i) => (
-                    <li key={i}>{p}</li>
-                  ))}
-                </ul>
+                {" "}
+                into <b>{oneClass}</b>
               </>
+            ) : null}
+            .
+          </p>
+          <div className="stat-tiles compact">
+            {!oneClass && (
+              <StatTile value={newClasses.length} label="new classes" />
             )}
-            <div className="actions">
-              <button onClick={() => setPending(null)}>Cancel</button>
-              <button className="primary" disabled={!anything} onClick={() => void confirm()}>
-                Import
-              </button>
-            </div>
+            <StatTile value={newStudents.length} label="new students" />
+            <StatTile value={changedStudents.length + changedClasses.length} label="updated" />
           </div>
-        </div>
+          <ul className="import-changes">
+            {newClasses.map((c) => (
+              <li key={`c:${c.info.name}`}>
+                New class <b>{c.info.name}</b>
+                {c.info.year ? `, grade ${c.info.year}` : ""}
+              </li>
+            ))}
+            {changedClasses.map((c) => (
+              <li key={`cc:${c.info.name}`}>
+                <b>{c.info.name}</b>: {c.changed.join(", ").toLowerCase()}
+              </li>
+            ))}
+            {newStudents.map((s) => (
+              <li key={`s:${s.student.id}`}>
+                New: <b>{s.student.firstName} {s.student.lastName}</b>
+                {oneClass ? "" : ` in ${s.className}`}
+              </li>
+            ))}
+            {changedStudents.map((s) => (
+              <li key={`u:${s.student.id}`}>
+                <b>
+                  {s.student.firstName} {s.student.lastName}
+                </b>
+                : {s.changed.join(", ").toLowerCase()}
+              </li>
+            ))}
+          </ul>
+          <p className="muted">Blank cells leave details as they are. Nobody is removed.</p>
+          {plan.notInFile.length > 0 && (
+            <details className="import-absent">
+              <summary>
+                {plan.notInFile.length} student{plan.notInFile.length === 1 ? " isn't" : "s aren't"} in the file and stay as they are
+              </summary>
+              <ul className="import-problems">
+                {plan.notInFile.map((s, i) => (
+                  <li key={i}>
+                    {s.name}
+                    {oneClass ? "" : ` (${s.className})`}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+          {plan.problems.length > 0 && (
+            <>
+              <h3>Skipped ({plan.problems.length})</h3>
+              <ul className="import-problems">
+                {plan.problems.map((p, i) => (
+                  <li key={i}>{p}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          <div className="actions">
+            <button onClick={() => setPending(null)}>Cancel</button>
+            <button className="primary" disabled={!anything} onClick={() => void confirm()}>
+              Import
+            </button>
+          </div>
+        </Modal>
       )}
     </>
   );

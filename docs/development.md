@@ -31,17 +31,23 @@ starts in **demo mode**: `src/lib/demo.ts` seeds an in-memory data folder with o
 a room of double desks, four weeks of attendance, behaviour, bathroom trips and ended lessons, a topic bank, and four
 assessments including one marked per question. A banner says so; nothing is saved.
 
+Open it with `?simulate=folder-missing` (and optionally `&wait=<seconds>`) to try what happens when the data folder
+isn't there at launch: the demo folder is copied to "this computer's copy" and hidden. In the browser console,
+`__ckDemo.folderBack()` brings it back, and `__ckDemo.editOnDrive(path, text)` changes a file in it meanwhile, as
+another computer would (`src/lib/demoMissingFolder.ts`, used by `e2e/offline.e2e.ts`).
+
 ## How it fits together
 
 | Layer | Where | Notes |
 | --- | --- | --- |
-| UI | `src/components/` | React + TypeScript, built with Vite. Material Design 3 styling in `src/styles.css`; icons in `components/Icon.tsx`. Charts with Recharts, Markdown with marked. |
+| UI | `src/components/` | React + TypeScript, built with Vite. Material Design 3 styling in `src/styles.css` (colours named by meaning in its `:root`; each tool's own styles beside it in `src/plugins/`); dialogs share `components/Modal.tsx`; icons in `components/Icon.tsx`. Charts with Recharts, Markdown with marked. |
 | State | `src/store/appStore.ts` | One Zustand store: the open class's data, preferences, navigation, dialogs and toasts. Every setter saves to disk straight away. |
 | Hooks | `src/hooks/` | The live lesson (`useLessonSession`), batch entry and the animated seat shuffle, shared by the room plan and the side panel. |
 | Domain logic | `src/lib/` | Pure, unit-tested modules: `seating.ts` (seat assigner), `stats.ts` (marks, weighting, ranks) and `insights.ts` (dashboards, reports, written summaries), `lessons.ts` (seating insights), `exporter.ts` + `xlsx.ts` (spreadsheet export, with a small built-in `.xlsx` writer instead of a dependency), `markSheet.ts` and `rosterSheet.ts` (marks and class-list templates and their import, read by the built-in `xlsxRead.ts`), `format.ts` (SA number formatting), `time.ts` (UTC storage, zone display), `pin.ts`, `privacy.ts`. |
-| Storage | `src/lib/repo.ts`, `src/lib/csv.ts`, `src/lib/fs.ts` | `repo.ts` maps everything onto the `.csv` / `.md` files (see [Data file reference](data-files.md)). `fs.ts` is either the Tauri backend or an in-memory file system for demo mode. |
+| Storage | `src/lib/repo.ts`, `src/lib/csv.ts`, `src/lib/fs.ts` | `repo.ts` maps everything onto the `.csv` / `.md` files (see [Data file reference](data-files.md)). `fs.ts` is either the Tauri backend or an in-memory file system for demo mode, wrapped in `MirrorFS` (repeats each save in this computer's copy) and `QueuedFS` (writes to one file in order, a burst collapsed, behind the launch backup). |
+| This computer's copy | `src/lib/offline.ts`, `src/lib/merge.ts` | When the data folder isn't there at launch: the boot decision, working from the copy, and copying the changes back with a 3-way, row-by-row join (`FILE_RULES` in `repo.ts` says how each file joins). |
 | Tools | `src/plugins/` | Optional tools, compiled in and lazily loaded, switched on in Settings → Tools. See [`src/plugins/README.md`](../src/plugins/README.md) to add one. |
-| Desktop shell | `src-tauri/` | Minimal Rust (Tauri 2): `read_text`, `write_atomic`, `write_binary`, `path_exists`, `mkdirs`, `list_dir`, `rename_path`, `snapshot_backup`, plus the dialog plugin for folder and save-as pickers. A strict CSP (`default-src 'self'`); the app makes no network requests. |
+| Desktop shell | `src-tauri/` | Minimal Rust (Tauri 2): `read_text`, `read_text_opt`, `write_atomic`, `write_binary`, `path_exists`, `mkdirs`, `list_dir`, `rename_path`, `snapshot_backup` (which also refreshes this computer's copy), and `copy_folder` / `remove_local` (only inside the app's own local folder), all on the blocking pool; the file operations are in `fsops.rs` with tests (`rustc --edition 2021 --test src-tauri/src/fsops.rs`). Plus the dialog plugin for folder and save-as pickers, and the single-instance plugin so a second launch focuses the open window. A strict CSP (`default-src 'self'`); the app makes no network requests. |
 
 Design points worth keeping:
 

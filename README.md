@@ -43,7 +43,8 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 
 One folder of plain files that open in Excel or Notepad — one sub-folder per class. Saves are atomic, a backup of
 the whole folder is taken at every launch (today's all kept, plus the last of each of the 14 days before), and
-times are stored in UTC. See
+times are stored in UTC. If Google Drive or OneDrive hasn't started when the app does, it waits, then carries on from
+its own copy on this computer and joins the changes back when the folder returns. See
 [Your data and backups](docs/user-guide/11-your-data.md) and the [data file reference](docs/data-files.md).
 
 ## Development

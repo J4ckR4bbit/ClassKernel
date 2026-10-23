@@ -1,16 +1,17 @@
-import { CSSProperties, useMemo, useRef, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useAppPick } from "../store/appStore";
 import { AttendanceStatus, BehaviourCode, SEAT_COUNTS } from "../lib/types";
 import { displayStudentName } from "../lib/privacy";
 import { groupSeatsByTable } from "../lib/tables";
 import { PASTEL_PRESETS, autoTableColour, tableTint } from "../lib/tableColours";
 import { enterDock } from "../lib/teachingWindow";
-import { useLessonSession } from "../hooks/useLessonSession";
+import { seatBadge, useLessonSession } from "../hooks/useLessonSession";
 import { useBatchEntry } from "../hooks/useBatchEntry";
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
 import BatchPanel from "./BatchPanel";
+import Elapsed from "./Elapsed";
 import TimerMini from "./TimerMini";
 import NoiseMini from "./NoiseMini";
 import Icon from "./Icon";
@@ -51,7 +52,7 @@ export default function TeachingStrip() {
   const [actionsFor, setActionsFor] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const lesson = useLessonSession();
-  const { byId, lessonEvents, pointsToday, pointsVisible, statusOf, outVisitOf } = lesson;
+  const { byId, lessonEvents, pointsToday, pointsVisible, statusOf, outNow, outVisitOf } = lesson;
   const batch = useBatchEntry(lesson.logBatch);
 
   const planSeats = useMemo(
@@ -82,8 +83,17 @@ export default function TeachingStrip() {
   const flipSide = () => {
     const next = side === "left" ? "right" : "left";
     void setUserPrefs({ ...userPrefs, dockSide: next });
-    void enterDock(next);
+    void enterDock(next, userPrefs.uiScale);
   };
+  // A new display size while docked resizes the strip to match.
+  const uiScale = userPrefs.uiScale;
+  const docked = useRef(false);
+  useEffect(() => {
+    if (docked.current) void enterDock(side, uiScale);
+    docked.current = true;
+    // Only a change of size re-docks; flipping sides docks by itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uiScale]);
 
   const closeActions = () => setActionsFor(null);
   // Tapping anywhere off the student's sheet closes it without recording anything.
@@ -120,28 +130,44 @@ export default function TeachingStrip() {
             <span className="muted strip-count">
               {lessonEvents.length} event{lessonEvents.length === 1 ? "" : "s"}
             </span>
+            {/* Full screen first and Exit last, with the other two between, so
+                a hurried tap for one never lands on the other. */}
             <div className="strip-head-actions">
+              <button
+                className="icon-only small"
+                onClick={() => setFocusMode(true, "room")}
+                disabled={busy}
+                title="Teach from the full room plan"
+                aria-label="Teach from the full room plan"
+              >
+                <Icon name="fullscreen" size={20} />
+              </button>
               <button
                 className={`icon-only small ${colouring ? "primary" : ""}`}
                 onClick={() => setColouring((c) => !c)}
                 disabled={batch.active}
                 aria-pressed={colouring}
                 title={colouring ? "Done colouring tables" : "Colour the tables"}
+                aria-label="Colour the tables"
               >
-                <Icon name="palette" size={18} />
+                <Icon name="palette" size={20} />
               </button>
               <button
                 className="icon-only small"
                 onClick={flipSide}
                 title={`Dock to the ${side === "left" ? "right" : "left"} edge of the screen`}
+                aria-label={`Dock to the ${side === "left" ? "right" : "left"} edge`}
               >
-                <Icon name={side === "left" ? "dock_to_right" : "dock_to_left"} size={18} />
+                <Icon name={side === "left" ? "dock_to_right" : "dock_to_left"} size={20} />
               </button>
-              <button className="icon-only small" onClick={() => setFocusMode(true, "room")} disabled={busy} title="Teach from the full room plan">
-                <Icon name="fullscreen" size={18} />
-              </button>
-              <button className="icon-only small" onClick={() => setFocusMode(false)} disabled={batch.active} title="Exit teaching mode (Esc)">
-                <Icon name="close" size={18} />
+              <button
+                className="icon-only small strip-exit"
+                onClick={() => setFocusMode(false)}
+                disabled={batch.active}
+                title="Exit teaching mode (Esc)"
+                aria-label="Exit teaching mode"
+              >
+                <Icon name="close" size={20} />
               </button>
             </div>
           </div>
@@ -152,6 +178,26 @@ export default function TeachingStrip() {
               <option key={n}>{n}</option>
             ))}
           </select>
+        )}
+
+        {/* Who's out, at the top, so a trip ends with one tap whoever's row is out of sight. */}
+        {outNow.length > 0 && !batch.active && (
+          <div className="strip-out no-print" role="group" aria-label="Out at the bathroom">
+            {outNow.map((v) => {
+              const s = byId.get(v.studentId);
+              return (
+                <button
+                  key={`${v.studentId}-${v.start}`}
+                  className="bathroom-chip"
+                  title="Tap when the student is back"
+                  onClick={() => lesson.toggleBathroom(v.studentId)}
+                >
+                  <Icon name="wc" size={16} />
+                  {s ? displayStudentName(s, userPrefs.seatNameStyle) : v.studentId} · <Elapsed visit={v} />
+                </button>
+              );
+            })}
+          </div>
         )}
 
         <BatchPanel entry={batch} behaviourCodes={behaviourCodes} layout="strip" />
@@ -214,6 +260,7 @@ export default function TeachingStrip() {
                     if (!s) return null;
                     const selected = batch.isSelected(id);
                     const status = statusOf(id);
+                    const badge = seatBadge(status, !!outVisitOf(id));
                     const pts = pointsToday.get(id) ?? 0;
                     return (
                       <button
@@ -223,15 +270,19 @@ export default function TeachingStrip() {
                         aria-pressed={batch.active ? selected : undefined}
                       >
                         <span className="strip-check" aria-hidden>
-                          {batch.active ? (selected ? "✓" : "") : "•"}
+                          {batch.active ? selected ? <Icon name="check" size={16} /> : "" : "•"}
                         </span>
                         <span className="strip-name">{displayStudentName(s, userPrefs.seatNameStyle)}</span>
-                        {outVisitOf(id) && <span title="Out at the bathroom">🚻</span>}
-                        {status === "A" && (
-                          <span className="strip-absent" title="Absent">
-                            ✗
-                          </span>
-                        )}
+                        {badge &&
+                          (badge.icon ? (
+                            <span className={`strip-badge ${badge.tone}`} title={badge.label}>
+                              <Icon name={badge.icon} size={16} label={badge.label} />
+                            </span>
+                          ) : (
+                            <span className={`strip-badge ${badge.tone}`} title={badge.label} aria-label={badge.label}>
+                              {badge.text}
+                            </span>
+                          ))}
                         {pointsVisible && pts !== 0 && (
                           <span className={`strip-points ${pts > 0 ? "pos" : "neg"}`}>{signed(pts)}</span>
                         )}
@@ -254,12 +305,17 @@ export default function TeachingStrip() {
             <button onClick={() => setPickerOpen(true)} disabled={busy}>
               <Icon name="person_raised_hand" size={20} /> Pick a student
             </button>
+            {/* Styled as on the room plan, so the two teaching modes read the same. */}
             {lesson.running ? (
-              <button className="danger" onClick={() => void lesson.endLesson(planSeats).then((ok) => ok && closeActions())} disabled={busy}>
+              <button
+                className="lesson-btn danger"
+                onClick={() => void lesson.endLesson(planSeats).then((ok) => ok && closeActions())}
+                disabled={busy}
+              >
                 <Icon name="stop_circle" size={20} /> End lesson
               </button>
             ) : (
-              <button className="tonal" onClick={() => void lesson.startLesson()} disabled={busy}>
+              <button className="lesson-btn start" onClick={() => void lesson.startLesson()} disabled={busy}>
                 <Icon name="play_arrow" size={20} /> Start lesson
               </button>
             )}

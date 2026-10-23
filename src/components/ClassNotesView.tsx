@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { marked } from "marked";
-import { useAppPick } from "../store/appStore";
+import { NEEDS_DATA_FOLDER, useAppPick, useWorkingFromCopy } from "../store/appStore";
 import { BEHAVIOUR_COLOURS } from "../lib/behaviourColours";
 
 /** Class details + free-form markdown notes (stored as class.md). */
 export default function ClassNotesView() {
+  const fromCopy = useWorkingFromCopy();
   const { currentClass, classes, updateClassInfo, renameClass, showToast, promptDialog } = useAppPick(
     "currentClass",
     "classes",
@@ -58,7 +59,9 @@ export default function ClassNotesView() {
     <div>
       <div className="view-header">
         <div className="spacer" />
-        <button onClick={() => void rename()}>Rename class</button>
+        <button onClick={() => void rename()} disabled={fromCopy} title={fromCopy ? NEEDS_DATA_FOLDER : undefined}>
+          Rename class
+        </button>
         <button onClick={() => void toggleArchive()}>{info.archived ? "Restore" : "Archive class"}</button>
         <button className="primary" onClick={() => void save()}>
           Save

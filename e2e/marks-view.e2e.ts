@@ -24,14 +24,14 @@ test("View on a per-question test shows the grid's numbers with nothing to type 
 
   await page.locator("tr", { hasText: "Forces & energy test" }).getByRole("button", { name: "View" }).click();
   await reveal(page);
-  await expect(page.locator(".view-header h1")).toHaveText(/^Forces & energy test/);
+  await expect(page.locator(".top-bar-title")).toContainText("Forces & energy test");
   await expect(page.locator(".mark-grid input")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Edit questions" })).toHaveCount(0);
   expect(await pct.allTextContents()).toEqual(marking);
   // No yellow/grey marking highlight on a read-only page.
   await expect(page.locator(".mark-grid tbody tr.done")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "Back to Marks" }).click();
   await expect(page.getByRole("button", { name: "New assessment" })).toBeVisible();
 });
 
@@ -56,7 +56,7 @@ test("Enter marks from a View goes back to the View when done", async ({ page })
   await page.getByRole("button", { name: "Enter marks" }).click();
   await expect(page.locator("input.mark-input").first()).toBeVisible();
   await page.getByRole("button", { name: "Done" }).click();
-  await expect(page.locator(".view-header h1")).toHaveText(/^Mid-term exam/);
+  await expect(page.locator(".top-bar-title")).toContainText("Mid-term exam");
   await expect(page.locator(".mark-grid input")).toHaveCount(0);
 });
 
@@ -90,10 +90,10 @@ test("the markbook shows every test, each student's average and rank, and opens 
 
   // A test's heading opens its marks; Back returns to the markbook, then the list.
   await page.locator(".mark-grid thead .test-link", { hasText: "Forces & energy test" }).click();
-  await expect(page.locator(".view-header h1")).toHaveText(/^Forces & energy test/);
-  await page.getByRole("button", { name: "Back" }).click();
-  await expect(page.locator(".view-header h1")).toHaveText("Markbook");
-  await page.getByRole("button", { name: "Back" }).click();
+  await expect(page.locator(".top-bar-title")).toContainText("Forces & energy test");
+  await page.getByRole("button", { name: "Back to Marks" }).click();
+  await expect(page.locator(".top-bar-title")).toContainText("Markbook");
+  await page.getByRole("button", { name: "Back to Marks" }).click();
   await expect(page.getByRole("button", { name: "New assessment" })).toBeVisible();
 });
 
@@ -178,4 +178,14 @@ test("students tied for first both rank 1, and the next is 3rd", async ({ page }
   expect(ranks.slice(0, 2)).toEqual(["1", "1"]);
   expect(ranks).toContain("3");
   expect(ranks).not.toContain("2");
+});
+
+test("a screen within Marks is named in the top bar, with its Back, even under the privacy cover", async ({ page }) => {
+  await nav(page, "Marks");
+  await page.getByRole("button", { name: "Markbook" }).click();
+  await expect(page.locator(".top-bar-title")).toHaveText("Marks›Markbook");
+  // Back works whether or not the marks have been shown.
+  await page.getByRole("button", { name: "Back to Marks" }).click();
+  await expect(page.getByRole("button", { name: "New assessment" })).toBeVisible();
+  await expect(page.locator(".top-bar-title")).toHaveText("Marks");
 });

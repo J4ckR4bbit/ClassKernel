@@ -18,7 +18,7 @@ Open **Seats** in the navigation rail. The seating plan is drawn on the room you
 | **Delete plan** | Deletes the plan shown (asks first). |
 | **Clear seats** | Empties every seat in the plan (with Undo). |
 | **Randomise** | Rerolls the seating, honouring your [seating rules](02-setting-up-a-class.md#seating-rules). Once per lesson — see below. |
-| **Print** | Prints the plan, e.g. for a cover teacher. |
+| **Print** | Prints the plan on one landscape A4 page, headed with the class, room, plan and date — e.g. for a cover teacher. |
 
 The panel under the toolbar lists **Unseated** students and the room's **capacity** (seats for students).
 
@@ -37,7 +37,8 @@ Moving students by hand is never locked.
 ## Randomise
 
 Press **Randomise** (**Seating** on the class's Home card brings you here). Names flash across the seats for about a
-second so the class can see it really is a shuffle, then settle. If the lesson hasn't been started yet, Randomise
+second so the class can see it really is a shuffle, then settle (slowly, and only a few times, if Windows is set to
+show fewer animations). If the lesson hasn't been started yet, Randomise
 starts it and marks the class present (see [Start lesson](05-lesson.md#start-lesson)).
 
 ![Randomise in progress](../images/seats-randomising.png)

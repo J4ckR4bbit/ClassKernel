@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ClassInfo } from "../lib/types";
+import Modal from "./Modal";
 
 export default function NewClassModal({
   onClose,
@@ -23,26 +24,23 @@ export default function NewClassModal({
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>New class</h2>
-        <div className="form-grid">
-          <label>Name</label>
-          <input autoFocus placeholder="e.g. 7B-Science" value={name} onChange={(e) => setName(e.target.value)} />
-          <label>Grade</label>
-          <input value={year} onChange={(e) => setYear(e.target.value)} />
-          <label>Subject</label>
-          <input value={subject} onChange={(e) => setSubject(e.target.value)} />
-          <label>Room</label>
-          <input value={room} onChange={(e) => setRoom(e.target.value)} />
-        </div>
-        <div className="actions">
-          <button onClick={onClose}>Cancel</button>
-          <button className="primary" disabled={!safeName} onClick={() => void submit()}>
-            Create class
-          </button>
-        </div>
+    <Modal title="New class" onClose={onClose}>
+      <div className="form-grid">
+        <label>Name</label>
+        <input autoFocus placeholder="e.g. 7B-Science" value={name} onChange={(e) => setName(e.target.value)} />
+        <label>Grade</label>
+        <input value={year} onChange={(e) => setYear(e.target.value)} />
+        <label>Subject</label>
+        <input value={subject} onChange={(e) => setSubject(e.target.value)} />
+        <label>Room</label>
+        <input value={room} onChange={(e) => setRoom(e.target.value)} />
       </div>
-    </div>
+      <div className="actions">
+        <button onClick={onClose}>Cancel</button>
+        <button className="primary" disabled={!safeName} onClick={() => void submit()}>
+          Create class
+        </button>
+      </div>
+    </Modal>
   );
 }

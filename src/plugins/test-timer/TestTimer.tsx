@@ -5,6 +5,7 @@ import { currentTimeZone } from "../../lib/time";
 import { FlipDisplay } from "../shared/FlipDigits";
 import { COLOR_STOPS, TimerPhase, phaseColor } from "./timer";
 import { useTimer } from "./timerStore";
+import "./test-timer.css";
 import Icon from "../../components/Icon";
 
 // The test timer, as a plugin: a big countdown for exams and timed tasks with

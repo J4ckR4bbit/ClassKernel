@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useAppPick } from "../store/appStore";
 import { today } from "../lib/id";
-import { AttendanceStatus, studentName } from "../lib/types";
+import { AttendanceStatus, studentName, sortByName } from "../lib/types";
 import { attendanceByStudent, attendanceSummary } from "../lib/stats";
 
 const STATUSES: Array<{ code: AttendanceStatus; label: string }> = [
@@ -47,7 +47,7 @@ export default function AttendanceView() {
     });
   };
 
-  const sorted = [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
+  const sorted = sortByName(students);
 
   return (
     <div>
@@ -67,7 +67,7 @@ export default function AttendanceView() {
       </div>
       <p className="muted att-legend">P present · A absent · L late · E excused</p>
 
-      <table className="data">
+      <table className="data fit">
         <thead>
           <tr>
             <th>Student</th>
@@ -128,7 +128,7 @@ export default function AttendanceView() {
           })}
           {students.length === 0 && (
             <tr>
-              <td colSpan={showDetails ? 5 : 2} className="muted" style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={showDetails ? 5 : 2} className="empty-row">
                 Add students in Settings → Students first.
               </td>
             </tr>

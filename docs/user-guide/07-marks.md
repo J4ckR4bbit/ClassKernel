@@ -10,14 +10,13 @@ Open **Marks** in the navigation rail. It lists the class's assessments, newest 
 | --- | --- |
 | **Content area** | The area the test covers (e.g. *Physics*), or — for mixed. |
 | **Out of** | The total. For a test marked per question, the sum of its questions. |
-| **Questions** | 1 for a single mark; otherwise the number of questions. |
+| **Questions** | 1 for a single mark; otherwise the number of questions, as a button that opens them to edit. |
 | **Counts as** | **Informal** or **Examination** — which side of the weighted mark it counts towards (see [Weighting](#weighting)). Change it here at any time. |
 | **Weight · share** | Its weight among tasks of the same kind (1 = normal, 2 = counts double, 0 = doesn't count), and the share of the final mark that gives it. |
 | **Marked** | How many students have a mark. |
 | **Class mean** | The average percentage of the marks entered. |
 | **View** | Shows the marks read-only (see [Viewing results](#viewing-results)). |
 | **Enter marks** | Opens mark entry. |
-| **Questions** | (Per-question tests only) edit the questions. |
 | **✕** | Deletes the assessment and every mark entered for it (asks first). |
 | **Markbook** (top right) | Every assessment for the class on one page (see [The markbook](#the-markbook)). |
 
@@ -55,8 +54,8 @@ For each question, give:
   *Evaluation / Synthesis*).
 
 **Add question** adds a row; **✕** removes one. The total at the top right updates as you go. Press
-**Start marking** when done. You can come back with **Questions** on the list (or **Edit questions** while
-marking).
+**Start marking** when done. You can come back with the number in the **Questions** column of the list (or
+**Edit questions** while marking).
 
 The topic and level tags are what let the dashboards and parent reports show strengths by topic and by cognitive
 level.
@@ -126,8 +125,9 @@ colleague — without any risk of changing a mark.
 
 ![The buttons on a results page](../images/marks-view-toolbar.png)
 
-**Enter marks** switches to marking, and **Back** returns to the list. **Template** and **Import marks** are here
-too.
+**Enter marks** switches to marking. **Template** and **Import marks** are here too. The top bar names the page you
+are on (for example **Marks › Mid-term exam**), and its **←** takes you back to the list. It's in the same place on
+every page opened from within Marks: the markbook, a test's questions and marking.
 
 ## The markbook
 
