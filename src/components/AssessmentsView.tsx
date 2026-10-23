@@ -23,6 +23,7 @@ import MarkSheetTools from "./MarkSheetTools";
 import Icon from "./Icon";
 import StatTile from "./StatTile";
 import Modal from "./Modal";
+import { useSubPage } from "../store/subPage";
 
 export default function AssessmentsView() {
   const {
@@ -100,12 +101,26 @@ export default function AssessmentsView() {
     else setMarkingId(a.id);
   };
 
+  const done = () => { setMarkingId(null); showToast("Marks saved"); };
+
+  // Whichever screen is open within Marks is named in the top bar, with its Back.
+  const outOf = (a: Assessment) => `out of ${fmtDecimal(a.totalMarks, 1)}`;
+  const [subTitle, subDetail, subBack]: [string | null, string | undefined, () => void] = setup
+    ? [setup.title, "questions", () => setSetupId(null)]
+    : marking
+      ? [`Marking: ${marking.title}`, outOf(marking), done]
+      : viewing
+        ? [viewing.title, outOf(viewing), () => setViewingId(null)]
+        : showMarkbook
+          ? ["Markbook", undefined, () => setShowMarkbook(false)]
+          : [null, undefined, () => {}];
+  useSubPage(subTitle, subBack, subDetail);
+
   if (setup) {
-    return <QuestionSetup assessment={setup} grade={grade} onBack={() => setSetupId(null)} onStart={() => { setSetupId(null); setMarkingId(setup.id); }} />;
+    return <QuestionSetup assessment={setup} grade={grade} onStart={() => { setSetupId(null); setMarkingId(setup.id); }} />;
   }
 
   if (marking) {
-    const done = () => { setMarkingId(null); showToast("Marks saved"); };
     return (
       <PrivacyGate label="marks and rankings">
         {marking.questionCount > 1 ? (
@@ -134,13 +149,12 @@ export default function AssessmentsView() {
             assessment={viewing}
             grade={grade}
             readOnly
-            onDone={() => setViewingId(null)}
             onEditQuestions={() => setSetupId(viewing.id)}
             onEnterMarks={() => enterMarks(viewing)}
             onImported={imported}
           />
         ) : (
-          <MarkListView assessment={viewing} onBack={() => setViewingId(null)} onEnterMarks={() => enterMarks(viewing)} onImported={imported} />
+          <MarkListView assessment={viewing} onEnterMarks={() => enterMarks(viewing)} onImported={imported} />
         )}
       </PrivacyGate>
     );
@@ -149,7 +163,7 @@ export default function AssessmentsView() {
   if (showMarkbook) {
     return (
       <PrivacyGate label="marks and rankings">
-        <Markbook onBack={() => setShowMarkbook(false)} onOpen={(a) => setViewingId(a.id)} />
+        <Markbook onOpen={(a) => setViewingId(a.id)} />
       </PrivacyGate>
     );
   }
@@ -403,7 +417,7 @@ function WeightInput({ value, onChange }: { value: number; onChange: (weight: nu
  * grade's topic bank, filtered to the test's content area), marks and cognitive
  * level. Saving writes the question list and sets the test's total to their sum.
  */
-function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Assessment; grade: string; onBack: () => void; onStart: () => void }) {
+function QuestionSetup({ assessment, grade, onStart }: { assessment: Assessment; grade: string; onStart: () => void }) {
   const {
     topics,
     cognitiveLevels,
@@ -457,12 +471,6 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
   return (
     <div>
       <div className="view-header">
-        <button className="small" onClick={onBack}>
-          <Icon name="arrow_back" size={18} /> Back
-        </button>
-        <h1>
-          {assessment.title} <span className="muted">— questions</span>
-        </h1>
         <div className="spacer" />
         <span className="muted">Total: {total} marks</span>
       </div>
@@ -551,7 +559,7 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
  * columns on the left and total/percentage/rank on the right; a Marks (out-of)
  * row and a topic row in the header; live per-question and per-student stats.
  * `readOnly` shows the same grid with the marks as plain text, to look at the
- * results without the risk of changing one (Back is then `onDone`).
+ * results without the risk of changing one (its Back is in the top bar).
  */
 function QuestionGrid({
   assessment,
@@ -565,7 +573,8 @@ function QuestionGrid({
   assessment: Assessment;
   grade: string;
   readOnly?: boolean;
-  onDone: () => void;
+  /** Marking only: back to the list. */
+  onDone?: () => void;
   onEditQuestions: () => void;
   onEnterMarks?: () => void;
   /** After marks were imported from a spreadsheet. */
@@ -682,12 +691,6 @@ function QuestionGrid({
     return (
       <div>
         <div className="view-header">
-          {readOnly && (
-            <button className="small" onClick={onDone}>
-              <Icon name="arrow_back" size={18} /> Back
-            </button>
-          )}
-          <h1>{assessment.title}</h1>
           <div className="spacer" />
           <button className="primary" onClick={onEditQuestions}>
             Set up questions
@@ -702,12 +705,6 @@ function QuestionGrid({
     <div className="marking-view">
       {readOnly ? (
         <div className="view-header">
-          <button className="small" onClick={onDone}>
-            <Icon name="arrow_back" size={18} /> Back
-          </button>
-          <h1>
-            {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
-          </h1>
           <div className="spacer" />
           <MarkSheetTools assessment={assessment} onImported={onImported} />
           <button className="small" onClick={onEnterMarks}>
@@ -716,9 +713,6 @@ function QuestionGrid({
         </div>
       ) : (
         <div className="view-header">
-          <h1>
-            Marking: {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
-          </h1>
           <div className="spacer" />
           <MarkSheetTools assessment={assessment} onImported={onImported} />
           <button className="small" onClick={onEditQuestions}>
@@ -913,9 +907,6 @@ function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessme
   return (
     <div className="marking-view">
       <div className="view-header">
-        <h1>
-          Marking: {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
-        </h1>
         <div className="spacer" />
         <span className="muted">
           {entered}/{sorted.length} entered
@@ -982,12 +973,10 @@ function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessme
  */
 function MarkListView({
   assessment,
-  onBack,
   onEnterMarks,
   onImported,
 }: {
   assessment: Assessment;
-  onBack: () => void;
   onEnterMarks: () => void;
   onImported: () => void;
 }) {
@@ -1018,12 +1007,6 @@ function MarkListView({
   return (
     <div className="marking-view">
       <div className="view-header">
-        <button className="small" onClick={onBack}>
-          <Icon name="arrow_back" size={18} /> Back
-        </button>
-        <h1>
-          {assessment.title} <span className="muted">(out of {assessment.totalMarks})</span>
-        </h1>
         <div className="spacer" />
         <MarkSheetTools assessment={assessment} onImported={onImported} />
         <button className="small" onClick={onEnterMarks}>

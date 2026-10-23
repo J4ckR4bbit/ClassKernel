@@ -1,4 +1,5 @@
 import { useAppPick } from "../store/appStore";
+import { useSubPageStore } from "../store/subPage";
 import { pluginById } from "../plugins/registry";
 import Icon from "./Icon";
 import ClassPicker from "./ClassPicker";
@@ -20,20 +21,37 @@ function pageTitle(view: string, activePlugin: string | null): string {
 
 export default function TopAppBar() {
   const { view, activePlugin, setView } = useAppPick("view", "activePlugin", "setView");
-  const back = view === "plugin" || view === "roster" || view === "layout";
+  // A screen opened within the page (the markbook, one test's marks): "← Marks › Markbook".
+  const sub = useSubPageStore((st) => st.page);
+  const title = pageTitle(view, activePlugin);
+  const back = sub
+    ? { label: `Back to ${title}`, go: sub.onBack }
+    : view === "plugin"
+      ? { label: "Back to Home", go: () => setView("home") }
+      : view === "roster" || view === "layout"
+        ? { label: "Back to Settings", go: () => setView("settings") }
+        : null;
   return (
     <header className="top-bar no-print">
       {back && (
-        <button
-          className="icon-btn"
-          onClick={() => setView(view === "plugin" ? "home" : "settings")}
-          aria-label={view === "plugin" ? "Back to Home" : "Back to Settings"}
-          title={view === "plugin" ? "Back to Home" : "Back to Settings"}
-        >
+        <button className="icon-btn" onClick={back.go} aria-label={back.label} title={back.label}>
           <Icon name="arrow_back" />
         </button>
       )}
-      <h1 className="top-bar-title">{pageTitle(view, activePlugin)}</h1>
+      <h1 className="top-bar-title">
+        {sub ? (
+          <>
+            <span className="top-bar-parent">{title}</span>
+            <span className="top-bar-sep" aria-hidden>
+              ›
+            </span>
+            {sub.title}
+            {sub.detail && <span className="top-bar-detail"> ({sub.detail})</span>}
+          </>
+        ) : (
+          title
+        )}
+      </h1>
       <div className="spacer" />
       <ClassPicker />
     </header>

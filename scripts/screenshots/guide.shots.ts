@@ -306,7 +306,7 @@ test("marks", async ({ page }) => {
     await rows.nth(i).locator("select").selectOption(level);
   }
   await shot(page, "question-setup");
-  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "Back to Marks" }).click();
 
   // The per-question grid of the demo test, mid-way through a row.
   await page.locator("tr", { hasText: "Forces & energy test" }).getByRole("button", { name: "Enter marks" }).click();
@@ -340,7 +340,7 @@ test("marks", async ({ page }) => {
   await page.getByTestId("mark-import-file").first().setInputFiles({ name: "Marks - Mid-term exam.xlsx", mimeType: "application/octet-stream", buffer: Buffer.from(rebuild(sheets)) });
   await shotOf(page, modal(page), "mark-import-preview", 2);
   await modal(page).getByRole("button", { name: "Cancel" }).click();
-  await page.locator("main .view-header").getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: "Back to Marks" }).click();
 
   // The markbook: every test at once, with the weighted mark.
   await page.getByRole("button", { name: "Markbook" }).click();

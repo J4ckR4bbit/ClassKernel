@@ -125,8 +125,9 @@ colleague — without any risk of changing a mark.
 
 ![The buttons on a results page](../images/marks-view-toolbar.png)
 
-**Enter marks** switches to marking, and **Back** returns to the list. **Template** and **Import marks** are here
-too.
+**Enter marks** switches to marking. **Template** and **Import marks** are here too. The top bar names the page you
+are on (for example **Marks › Mid-term exam**), and its **←** takes you back to the list. It's in the same place on
+every page opened from within Marks: the markbook, a test's questions and marking.
 
 ## The markbook
 

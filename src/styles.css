@@ -240,6 +240,9 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
 /* Top app bar: page title, then the class picker on the right. */
 .top-bar { display: flex; align-items: center; gap: 8px; min-height: 64px; padding: 8px 16px 8px 20px; }
 .top-bar-title { margin: 0; font-size: 22px; font-weight: 400; line-height: 28px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-bar-parent, .top-bar-sep, .top-bar-detail { color: var(--text-dim); }
+.top-bar-sep { margin: 0 8px; }
+.top-bar-detail { font-size: 16px; }
 .top-bar .spacer { flex: 1; }
 .class-picker { position: relative; }
 .class-picker-btn {
@@ -292,7 +295,6 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
 /* ---------- common ---------- */
 /* A page's own toolbar: its controls, under the app bar's title. */
 .view-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; min-height: 40px; }
-.view-header h1 { font-size: 22px; font-weight: 400; line-height: 28px; margin: 0; }
 .view-header .spacer { flex: 1; }
 .spacer { flex: 1; }
 /* Cards: outlined and flat, as Material's outlined card. */

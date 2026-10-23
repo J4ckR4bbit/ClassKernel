@@ -4,7 +4,6 @@ import { Assessment, studentName, sortByName } from "../lib/types";
 import { GRADE_SCALES, assessmentStats, gradeForPct, percentage, rankByScore, taskShares, weightedMark } from "../lib/stats";
 import { fmtDecimal, shortDate } from "../lib/format";
 import { positionTint, rankTints } from "../lib/listTint";
-import Icon from "./Icon";
 import StatTile from "./StatTile";
 
 /**
@@ -14,7 +13,7 @@ import StatTile from "./StatTile";
  * averages, their weighted mark (the grade's split, Settings › Assessments), its
  * level/symbol and their rank on it. A test's heading opens that test's marks.
  */
-export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpen: (a: Assessment) => void }) {
+export default function Markbook({ onOpen }: { onOpen: (a: Assessment) => void }) {
   const { students, assessments, marks, userPrefs } = useAppPick("students", "assessments", "marks", "userPrefs");
   const examWeight = useExamWeight();
   const scale = userPrefs.gradeScale;
@@ -49,13 +48,6 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
 
   return (
     <div className="marking-view">
-      <div className="view-header">
-        <button className="small" onClick={onBack}>
-          <Icon name="arrow_back" size={18} /> Back
-        </button>
-        <h1>Markbook</h1>
-      </div>
-
       <div className="stat-tiles compact">
         <StatTile value={tests.length} label={tests.length === 1 ? "assessment" : "assessments"} />
         <StatTile
