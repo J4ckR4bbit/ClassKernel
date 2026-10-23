@@ -6,6 +6,7 @@ import { buildXlsx } from "../lib/xlsx";
 import { readSpreadsheetFile } from "../lib/spreadsheetFile";
 import { savePluginFile } from "../plugins/host";
 import Icon from "./Icon";
+import Modal from "./Modal";
 
 /** The rows of a chosen file: the template's Marks sheet (else the first sheet), or a .csv. */
 async function readRows(file: File): Promise<{ rows: string[][]; about: string[][] | null }> {
@@ -84,50 +85,47 @@ export default function MarkSheetTools({ assessment, onImported }: { assessment:
       />
 
       {pending && plan && (
-        <div className="modal-backdrop" onClick={() => setPending(null)}>
-          <div className="modal import-preview" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Import marks">
-            <h2>Import marks</h2>
-            <p className="muted" style={{ marginTop: 0 }}>
-              From <b>{pending.fileName}</b> into <b>{assessment.title}</b>.
+        <Modal title="Import marks" className="import-preview" onClose={() => setPending(null)}>
+          <p className="muted" style={{ marginTop: 0 }}>
+            From <b>{pending.fileName}</b> into <b>{assessment.title}</b>.
+          </p>
+          {plan.otherAssessment && (
+            <p className="import-warning">
+              <Icon name="warning" size={18} /> This file was made for <b>{plan.otherAssessment}</b>. Check that it's the right file before you import.
             </p>
-            {plan.otherAssessment && (
-              <p className="import-warning">
-                <Icon name="warning" size={18} /> This file was made for <b>{plan.otherAssessment}</b>. Check that it's the right file before you import.
-              </p>
-            )}
-            <div className="stat-tiles compact">
-              <div className="stat-tile">
-                <div className="value">{plan.added}</div>
-                <div className="label">new</div>
-              </div>
-              <div className="stat-tile">
-                <div className="value">{plan.changed}</div>
-                <div className="label">changed</div>
-              </div>
-              <div className="stat-tile">
-                <div className="value">{plan.same}</div>
-                <div className="label">already the same</div>
-              </div>
+          )}
+          <div className="stat-tiles compact">
+            <div className="stat-tile">
+              <div className="value">{plan.added}</div>
+              <div className="label">new</div>
             </div>
-            <p className="muted">Blank cells leave the marks in ClassKernel as they are.</p>
-            {plan.problems.length > 0 && (
-              <>
-                <h3>Skipped ({plan.problems.length})</h3>
-                <ul className="import-problems">
-                  {plan.problems.map((p, i) => (
-                    <li key={i}>{p}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-            <div className="actions">
-              <button onClick={() => setPending(null)}>Cancel</button>
-              <button className="primary" disabled={plan.rows.length === 0} onClick={confirm}>
-                Import
-              </button>
+            <div className="stat-tile">
+              <div className="value">{plan.changed}</div>
+              <div className="label">changed</div>
+            </div>
+            <div className="stat-tile">
+              <div className="value">{plan.same}</div>
+              <div className="label">already the same</div>
             </div>
           </div>
-        </div>
+          <p className="muted">Blank cells leave the marks in ClassKernel as they are.</p>
+          {plan.problems.length > 0 && (
+            <>
+              <h3>Skipped ({plan.problems.length})</h3>
+              <ul className="import-problems">
+                {plan.problems.map((p, i) => (
+                  <li key={i}>{p}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          <div className="actions">
+            <button onClick={() => setPending(null)}>Cancel</button>
+            <button className="primary" disabled={plan.rows.length === 0} onClick={confirm}>
+              Import
+            </button>
+          </div>
+        </Modal>
       )}
     </>
   );

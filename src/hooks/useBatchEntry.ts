@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BehaviourCode } from "../lib/types";
-import { useApp } from "../store/appStore";
+import { modalOpen } from "../components/Modal";
 
 export interface BatchState {
   /** The behaviour being recorded; null while the teacher is choosing it. */
@@ -47,7 +47,7 @@ export function useBatchEntry(onSave: (code: BehaviourCode, studentIds: string[]
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
       // An open dialog gets its own Escape.
-      if (e.key !== "Escape" || useApp.getState().dialog) return;
+      if (e.key !== "Escape" || modalOpen()) return;
       e.stopImmediatePropagation();
       setBatch(null);
     };

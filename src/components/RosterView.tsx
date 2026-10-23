@@ -6,6 +6,7 @@ import { attendanceByStudent, behaviourByStudent } from "../lib/stats";
 import PrivacyGate from "./PrivacyGate";
 import { DASHBOARDS_ID } from "../plugins/registry";
 import Icon from "./Icon";
+import Modal from "./Modal";
 import RosterSheetTools from "./RosterSheetTools";
 
 export default function RosterView() {
@@ -208,29 +209,26 @@ function ImportModal({ onClose, onImport }: { onClose: () => void; onImport: (st
   const preview = parse();
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Import students</h2>
-        <p className="muted">
-          Paste one student per line — either <b>First Last</b> or <b>Last, First</b> (as copied from a school report or
-          spreadsheet column).
-        </p>
-        <textarea
-          autoFocus
-          rows={10}
-          style={{ width: "100%" }}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={"Amelia Adams\nBen Baker\nClark, Chloe"}
-        />
-        <div className="actions">
-          <span className="muted grow">{preview.length} students detected</span>
-          <button onClick={onClose}>Cancel</button>
-          <button className="primary" disabled={preview.length === 0} onClick={() => onImport(preview)}>
-            Import {preview.length || ""}
-          </button>
-        </div>
+    <Modal title="Import students" onClose={onClose}>
+      <p className="muted">
+        Paste one student per line — either <b>First Last</b> or <b>Last, First</b> (as copied from a school report or
+        spreadsheet column).
+      </p>
+      <textarea
+        autoFocus
+        rows={10}
+        style={{ width: "100%" }}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={"Amelia Adams\nBen Baker\nClark, Chloe"}
+      />
+      <div className="actions">
+        <span className="muted grow">{preview.length} students detected</span>
+        <button onClick={onClose}>Cancel</button>
+        <button className="primary" disabled={preview.length === 0} onClick={() => onImport(preview)}>
+          Import {preview.length || ""}
+        </button>
       </div>
-    </div>
+    </Modal>
   );
 }

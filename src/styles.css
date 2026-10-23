@@ -44,6 +44,21 @@
   --md-elev-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
   --md-elev-3: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 8px 3px rgba(0, 0, 0, 0.15);
 
+  /* Stacking order, lowest first: pop-ups on a page, the full-screen views
+     over it, the running tools' cards, then dialogs (above all of those), then
+     the messages that must show even over a dialog. */
+  --z-popover: 30;
+  --z-class-view: 45;
+  --z-picker: 60;
+  --z-menu: 70;
+  --z-chip: 80;
+  --z-mini: 90;
+  --z-modal: 100;
+  --z-banner: 110;
+  --z-toast: 120;
+  --z-blocking: 200;
+  --z-report: 2000;
+
   /* The app's original names, now pointing at the roles above, so every view
      and plugin takes on the scheme without being rewritten. */
   --bg: var(--md-surface);
@@ -236,7 +251,7 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
 
 /* Menus (the class picker) */
 .menu {
-  position: absolute; right: 0; top: calc(100% + 4px); z-index: 70;
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: var(--z-menu);
   min-width: 260px; max-width: 360px; max-height: min(70vh, 520px); overflow-y: auto; padding: 8px 0;
   background: var(--md-surface-container); border-radius: var(--md-shape-xs); box-shadow: var(--md-elev-2);
 }
@@ -254,12 +269,14 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
 .menu-divider { height: 1px; margin: 8px 0; background: var(--md-outline-variant); }
 
 /* Snackbar */
+/* Fixed makes its own stack, so it carries the toast's place in the order. */
+.live-region { position: fixed; z-index: var(--z-toast); }
 .toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
   min-height: 48px; padding: 6px 8px 6px 16px; max-width: min(90vw, 640px);
   display: flex; align-items: center; gap: 12px;
   background: var(--md-inverse-surface); color: var(--md-inverse-on-surface);
-  border-radius: var(--md-shape-xs); box-shadow: var(--md-elev-3); z-index: 100;
+  border-radius: var(--md-shape-xs); box-shadow: var(--md-elev-3); z-index: var(--z-toast);
   animation: toast-in 0.2s ease-out;
 }
 .toast-action { border: none; color: var(--md-inverse-primary); min-height: 44px; padding: 0 16px; font-weight: 700; }
@@ -321,12 +338,13 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .topic-table .topic-add-row input::placeholder { color: var(--text-dim); }
 
 /* Dialogs */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.32); display: grid; place-items: center; z-index: 50; animation: fade-in 0.15s ease-out; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.32); display: grid; place-items: center; z-index: var(--z-modal); animation: fade-in 0.15s ease-out; }
 .modal {
   background: var(--md-surface-container-high); border-radius: var(--md-shape-xl); padding: 24px;
   min-width: 380px; max-width: min(90vw, 640px); max-height: 85vh; overflow: auto; box-shadow: var(--md-elev-3);
   animation: dialog-in 0.2s ease-out;
 }
+.modal:focus { outline: none; }
 .modal h2 { margin: 0 0 16px; font-size: 24px; font-weight: 400; line-height: 32px; }
 .modal input, .modal select, .modal textarea { background: var(--md-surface-container-high); }
 .form-grid { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; margin: 12px 0; }
@@ -411,6 +429,9 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 /* Batch entry: a picked seat is filled highlighter-yellow with a heavy border
    and a tick, so it can't be mistaken for an ordinary seat at a glance. */
 .seat-square.batch-selected { fill: #ffd84d; stroke: var(--accent); stroke-width: 4; }
+/* A seat reached with the keyboard shows a thick ring, like a focused button. */
+.room-canvas .seat:focus { outline: none; }
+.room-canvas .seat:focus-visible .seat-square { stroke: var(--md-primary); stroke-width: 4; }
 .seat-check { font-size: 16px; text-anchor: middle; fill: var(--accent); font-weight: 800; pointer-events: none; }
 .desk-body.label-block { fill: #fdf3cf; stroke: #d9c470; }
 .label-block-text { font-size: 14px; font-weight: 600; fill: #4c4018; text-anchor: middle; pointer-events: none; }
@@ -440,6 +461,9 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .seating-canvas.shuffling .seat-square { transition: none; }
 .seating-canvas.shuffling .seat-name, .seating-canvas.shuffling .seat-surname { animation: seat-flicker 0.18s linear infinite; }
 @keyframes seat-flicker { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .seating-canvas.shuffling .seat-name, .seating-canvas.shuffling .seat-surname { animation: none; }
+}
 .shuffle-overlay {
   position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
   background: var(--md-inverse-surface); color: var(--md-inverse-on-surface); border-radius: var(--md-shape-s); padding: 8px 18px;
@@ -532,7 +556,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .focus-layout.bar-right > .focus-bar select { min-height: 44px; }
 .behaviour-popover {
   position: absolute; background: var(--md-surface-container); border-radius: var(--md-shape-m);
-  box-shadow: var(--md-elev-2); padding: 12px; z-index: 30; width: 300px;
+  box-shadow: var(--md-elev-2); padding: 12px; z-index: var(--z-popover); width: 300px;
   /* Never taller than the room plan it sits on: a long button list scrolls. */
   max-height: calc(100% - 8px); overflow-y: auto; overscroll-behavior: contain;
 }
@@ -893,7 +917,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 }
 
 /* Shown to the class: the meter takes the whole screen. */
-.nm-display.class-view { position: fixed; inset: 0; z-index: 45; border-radius: 0; border-width: 14px; }
+.nm-display.class-view { position: fixed; inset: 0; z-index: var(--z-class-view); border-radius: 0; border-width: 14px; }
 .nm-close { position: absolute; top: 14px; right: 14px; }
 
 @media (max-width: 900px) {
@@ -1062,7 +1086,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .save-error-banner {
   position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
   background: var(--md-error-container); color: var(--md-on-error-container); border-radius: var(--md-shape-s);
-  padding: 8px 8px 8px 16px; z-index: 90; display: flex; align-items: center; gap: 14px; box-shadow: var(--md-elev-2);
+  padding: 8px 8px 8px 16px; z-index: var(--z-banner); display: flex; align-items: center; gap: 14px; box-shadow: var(--md-elev-2);
   max-width: 90vw;
 }
 .save-error-banner button { min-height: 34px; }
@@ -1082,13 +1106,13 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .sync-notes { margin: 6px 0 0; padding-left: 20px; }
 .sync-notes li { margin: 2px 0; }
 .copy-chip {
-  position: fixed; top: 10px; right: 12px; z-index: 80; display: flex; align-items: center; gap: 6px;
+  position: fixed; top: 10px; right: 12px; z-index: var(--z-chip); display: flex; align-items: center; gap: 6px;
   padding: 4px 12px 4px 8px; border-radius: 999px; font-size: 12px;
   background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); box-shadow: var(--md-elev-1);
 }
 .strip-mode .copy-chip { top: auto; bottom: 8px; left: 8px; right: 8px; justify-content: center; }
 .sync-overlay {
-  position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: rgba(24, 29, 25, 0.45);
+  position: fixed; inset: 0; z-index: var(--z-blocking); display: grid; place-items: center; background: rgba(24, 29, 25, 0.45);
 }
 .sync-overlay .panel { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px 32px; text-align: center; }
 .sync-overlay .panel p { margin: 0; font-size: 16px; }
@@ -1099,7 +1123,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 /* ---------- tool pop-ups (bottom right, on any screen) ---------- */
 /* The test timer and the noise meter, stacked when both are running. */
 .mini-stack {
-  position: fixed; right: 16px; bottom: 16px; z-index: 90;
+  position: fixed; right: 16px; bottom: 16px; z-index: var(--z-mini);
   display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none;
 }
 .mini-stack > * { pointer-events: auto; }
@@ -1163,7 +1187,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 
 /* ---------- random-student picker ---------- */
 .picker-overlay {
-  position: fixed; inset: 0; background: rgba(10, 20, 30, 0.78); z-index: 60;
+  position: fixed; inset: 0; background: rgba(10, 20, 30, 0.78); z-index: var(--z-picker);
   display: grid; place-items: center;
 }
 .picker-card {
@@ -1298,7 +1322,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .strip-foot button { min-height: 48px; justify-content: flex-start; }
 .strip-foot .lesson-btn { padding: 8px 14px; font-size: 15px; }
 .strip-sheet {
-  position: absolute; left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 80%; overflow-y: auto; z-index: 30;
+  position: absolute; left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 80%; overflow-y: auto; z-index: var(--z-popover);
 }
 .strip-mode .batch-panel { margin-bottom: 0; }
 
@@ -1362,7 +1386,7 @@ table.data td.neg, .event-points.neg { color: var(--danger); font-weight: 600; }
 .answer-bar .missed { background: #4a5868; }
 
 /* ---------- parent reports (preview on screen, A4 pages in print) ---------- */
-.report-portal { position: fixed; inset: 0; z-index: 2000; display: flex; background: var(--md-surface-container-highest); }
+.report-portal { position: fixed; inset: 0; z-index: var(--z-report); display: flex; background: var(--md-surface-container-highest); }
 .report-options { width: 290px; flex: none; background: var(--md-surface-container-low); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
 .report-options h2 { margin: 0 0 4px; font-size: 22px; font-weight: 400; line-height: 28px; }
 .report-options h3 { margin: 16px 0 4px; font-size: 14px; font-weight: 500; letter-spacing: 0.1px; color: var(--text-dim); }

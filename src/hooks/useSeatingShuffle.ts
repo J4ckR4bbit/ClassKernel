@@ -4,6 +4,7 @@ import { SeatAssignment } from "../lib/types";
 import { assignRandomSeats } from "../lib/seating";
 import { lessonStartedMessage } from "../lib/lessonState";
 import { today } from "../lib/id";
+import { flashTiming } from "../lib/motion";
 
 const SHUFFLE_FRAMES = 12;
 const SHUFFLE_INTERVAL = 90;
@@ -58,6 +59,7 @@ export function useSeatingShuffle() {
     const targetSeats = result.assignments.map((a) => ({ deskId: a.deskId, seatIndex: a.seatIndex }));
     const ids = result.assignments.map((a) => a.studentId);
     let frame = 0;
+    const { frames, intervalMs } = flashTiming(SHUFFLE_FRAMES, SHUFFLE_INTERVAL);
     timer.current = setInterval(() => {
       frame++;
       const shuffled = [...ids];
@@ -68,7 +70,7 @@ export function useSeatingShuffle() {
       setShuffleFrame(
         targetSeats.map((s, i) => ({ planName: activePlan, deskId: s.deskId, seatIndex: s.seatIndex, studentId: shuffled[i] })),
       );
-      if (frame >= SHUFFLE_FRAMES) {
+      if (frame >= frames) {
         if (timer.current) clearInterval(timer.current);
         timer.current = null;
         setShuffleFrame(null);
@@ -102,7 +104,7 @@ export function useSeatingShuffle() {
           }),
         );
       }
-    }, SHUFFLE_INTERVAL);
+    }, intervalMs);
   };
 
   const requestUnlock = () => void useApp.getState().requestSeatingUnlock();

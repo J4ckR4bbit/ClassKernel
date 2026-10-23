@@ -21,6 +21,7 @@ import PrivacyGate from "./PrivacyGate";
 import Markbook from "./Markbook";
 import MarkSheetTools from "./MarkSheetTools";
 import Icon from "./Icon";
+import Modal from "./Modal";
 
 export default function AssessmentsView() {
   const {
@@ -274,75 +275,72 @@ function NewAssessmentModal({ grade, onClose, onCreate }: { grade: string; onClo
   const valid = title.trim() && (!single || parseDecimal(totalMarks) > 0) && weightValue >= 0;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>New assessment</h2>
-        <div className="form-grid">
-          <label>Title</label>
-          <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Phys Test 1" />
-          <label>Date</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          <label>Content area</label>
-          <select value={contentArea} onChange={(e) => setContentArea(e.target.value)}>
-            <option value="">— none / mixed —</option>
-            {areas.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-          <label>Number of questions</label>
-          <input type="number" min={1} value={questions} onChange={(e) => setQuestions(e.target.value)} />
-          {single && (
-            <>
-              <label>Out of</label>
-              <input inputMode="decimal" value={totalMarks} onChange={(e) => setTotalMarks(e.target.value)} />
-            </>
-          )}
-          <label>Category</label>
-          <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Test / Quiz / Homework / Exam" />
-          <label>Counts as</label>
-          <select value={kind} onChange={(e) => setKindChoice(e.target.value as AssessmentKind)}>
-            <option value="informal">Informal task</option>
-            <option value="exam">Examination</option>
-          </select>
-          <label>Weight</label>
-          <input
-            inputMode="decimal"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            title="Among tasks of the same kind: 1 = normal, 2 = counts double, 0 = doesn't count"
-          />
-        </div>
-        {!single && (
-          <p className="muted" style={{ margin: "0 0 4px" }}>
-            You'll set each question's topic and marks next; the total is added up from those.
-          </p>
+    <Modal title="New assessment" onClose={onClose}>
+      <div className="form-grid">
+        <label>Title</label>
+        <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Phys Test 1" />
+        <label>Date</label>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <label>Content area</label>
+        <select value={contentArea} onChange={(e) => setContentArea(e.target.value)}>
+          <option value="">— none / mixed —</option>
+          {areas.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+        <label>Number of questions</label>
+        <input type="number" min={1} value={questions} onChange={(e) => setQuestions(e.target.value)} />
+        {single && (
+          <>
+            <label>Out of</label>
+            <input inputMode="decimal" value={totalMarks} onChange={(e) => setTotalMarks(e.target.value)} />
+          </>
         )}
-        <div className="actions">
-          <button onClick={onClose}>Cancel</button>
-          <button
-            className="primary"
-            disabled={!valid}
-            onClick={() =>
-              onCreate({
-                id: newId("a"),
-                title: title.trim(),
-                date,
-                totalMarks: single ? parseDecimal(totalMarks) : 0,
-                category: category.trim(),
-                questionCount: qCount,
-                contentArea,
-                kind,
-                weight: weightValue,
-              })
-            }
-          >
-            {single ? "Create & mark" : "Set up questions"}
-          </button>
-        </div>
+        <label>Category</label>
+        <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Test / Quiz / Homework / Exam" />
+        <label>Counts as</label>
+        <select value={kind} onChange={(e) => setKindChoice(e.target.value as AssessmentKind)}>
+          <option value="informal">Informal task</option>
+          <option value="exam">Examination</option>
+        </select>
+        <label>Weight</label>
+        <input
+          inputMode="decimal"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+          title="Among tasks of the same kind: 1 = normal, 2 = counts double, 0 = doesn't count"
+        />
       </div>
-    </div>
+      {!single && (
+        <p className="muted" style={{ margin: "0 0 4px" }}>
+          You'll set each question's topic and marks next; the total is added up from those.
+        </p>
+      )}
+      <div className="actions">
+        <button onClick={onClose}>Cancel</button>
+        <button
+          className="primary"
+          disabled={!valid}
+          onClick={() =>
+            onCreate({
+              id: newId("a"),
+              title: title.trim(),
+              date,
+              totalMarks: single ? parseDecimal(totalMarks) : 0,
+              category: category.trim(),
+              questionCount: qCount,
+              contentArea,
+              kind,
+              weight: weightValue,
+            })
+          }
+        >
+          {single ? "Create & mark" : "Set up questions"}
+        </button>
+      </div>
+    </Modal>
   );
 }
 

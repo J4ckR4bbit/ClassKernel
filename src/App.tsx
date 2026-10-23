@@ -31,27 +31,30 @@ function Overlays() {
   return (
     <>
       {saveError && (
-        <div className="save-error-banner">
+        <div className="save-error-banner" role="alert">
           Couldn't save {saveError.label} to disk — your changes are only in memory.
           <button onClick={() => void retrySave()}>Try again</button>
         </div>
       )}
-      {toast && (
-        <div className="toast">
-          {toast.message}
-          {toast.actionLabel && (
-            <button
-              className="toast-action"
-              onClick={() => {
-                toast.onAction?.();
-                useApp.setState({ toast: null });
-              }}
-            >
-              {toast.actionLabel}
-            </button>
-          )}
-        </div>
-      )}
+      {/* Always there, so a screen reader reads each message as it appears. */}
+      <div className="live-region" role="status">
+        {toast && (
+          <div className="toast">
+            {toast.message}
+            {toast.actionLabel && (
+              <button
+                className="toast-action"
+                onClick={() => {
+                  toast.onAction?.();
+                  useApp.setState({ toast: null });
+                }}
+              >
+                {toast.actionLabel}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
       {/* The running tools' pop-ups, stacked in the bottom-right corner. */}
       <div className={`mini-stack no-print ${barSide ? `bar-${barSide}` : ""}`}>
         <NoiseMini />

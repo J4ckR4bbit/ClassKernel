@@ -289,21 +289,39 @@ function SeatView({
   const totalH = lineHeights.reduce((a, b) => a + b, 0);
   let cursor = slot.y - totalH / 2;
 
+  // Report a position relative to the canvas wrapper so popovers anchor
+  // correctly even when the view is crop-scaled. Divide out the app zoom
+  // (rect is in zoomed pixels, CSS left/top are not).
+  const report = (target: Element, clientX: number, clientY: number) => {
+    const wrap = target.closest(".canvas-wrap");
+    const rect = wrap?.getBoundingClientRect();
+    const zoom = wrap instanceof HTMLElement && wrap.offsetWidth > 0 && rect ? rect.width / wrap.offsetWidth : 1;
+    onSeatClick?.(rect ? (clientX - rect.left) / zoom : slot.x, rect ? (clientY - rect.top) / zoom : slot.y);
+  };
+  const name = content?.occupied ? [content.firstName ?? content.label, content.lastName].filter(Boolean).join(" ") : "Empty seat";
+
   return (
     <g
       onClick={(e) => {
         e.stopPropagation();
-        // Report the click position relative to the canvas wrapper so popovers
-        // anchor correctly even when the view is crop-scaled. Divide out the
-        // app zoom (rect is in zoomed pixels, CSS left/top are not).
-        const wrap = (e.target as Element).closest(".canvas-wrap");
-        const rect = wrap?.getBoundingClientRect();
-        const zoom = wrap instanceof HTMLElement && wrap.offsetWidth > 0 && rect ? rect.width / wrap.offsetWidth : 1;
-        onSeatClick?.(
-          rect ? (e.clientX - rect.left) / zoom : slot.x,
-          rect ? (e.clientY - rect.top) / zoom : slot.y,
-        );
+        report(e.target as Element, e.clientX, e.clientY);
       }}
+      // A seat that does something can be reached with Tab and opened with
+      // Enter or Space, like any button.
+      {...(onSeatClick
+        ? {
+            role: "button",
+            tabIndex: 0,
+            "aria-label": [name, content?.badge?.label.toLowerCase(), content?.selected ? "selected" : ""].filter(Boolean).join(", "),
+            onKeyDown: (e: React.KeyboardEvent<SVGGElement>) => {
+              if (e.key !== "Enter" && e.key !== " ") return;
+              e.preventDefault();
+              const box = e.currentTarget.getBoundingClientRect();
+              report(e.currentTarget, box.left + box.width / 2, box.top + box.height / 2);
+            },
+          }
+        : {})}
+      className={onSeatClick ? "seat" : undefined}
       style={{ cursor: onSeatClick ? "pointer" : undefined }}
     >
       <rect

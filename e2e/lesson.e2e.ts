@@ -34,6 +34,19 @@ test("lesson: tap a seat and log a behaviour", async ({ page }) => {
   await expect(toast(page)).toBeVisible();
 });
 
+test("lesson: a seat opens from the keyboard, and Escape closes it again", async ({ page }) => {
+  await nav(page, "Lesson");
+  const seat = page.getByRole("button", { name: /^(?!Empty seat)/ }).and(page.locator(".room-canvas .seat")).first();
+  await seat.focus();
+  await page.keyboard.press("Enter");
+  const popover = page.locator(".behaviour-popover");
+  await expect(popover).toBeVisible();
+  const label = (await seat.getAttribute("aria-label")) ?? "";
+  await expect(popover.locator("h4")).toHaveText(label.split(",")[0]);
+  await page.keyboard.press("Escape");
+  await expect(popover).toHaveCount(0);
+});
+
 test("lesson: tapping off a seat's pop-up closes it, and another seat opens that student's", async ({ page }) => {
   await nav(page, "Lesson");
   const popover = page.locator(".behaviour-popover");
