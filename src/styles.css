@@ -328,6 +328,17 @@ table.data th {
 }
 table.data tbody tr:hover td { background: rgba(43, 106, 70, 0.04); }
 table.data tr:last-child td { border-bottom: none; }
+/* Shrinks to its columns, so a name and the buttons for it stay close
+   together on a wide screen instead of 800 px apart. */
+table.data.fit { width: auto; min-width: min(100%, 560px); }
+/* A wide table scrolls sideways rather than being cut off at the frame. */
+.table-scroll { overflow-x: auto; }
+/* Inside a card, the card is the frame. */
+.panel > table.data { border: none; border-radius: 0; }
+/* The Marks list: titles get room, dates, numbers and headings never break. */
+.marks-list th, .marks-list td.nowrap { white-space: nowrap; }
+table.data.marks-list th, table.data.marks-list td { padding-left: 8px; padding-right: 8px; }
+.marks-list td:first-child { min-width: 180px; }
 /* Editable cells look editable without needing a hover (touch has none). */
 table.data td input { width: 100%; border-color: var(--md-outline-variant); background: var(--md-surface-container-lowest); padding: 5px 8px; min-height: 36px; }
 table.data td input:hover { border-color: var(--md-outline); }
@@ -666,7 +677,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .weight-input, table.data td input.weight-input { width: 60px; min-height: 32px; padding: 3px 8px; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ---------- multi-question marking grid ---------- */
-.mark-grid-wrap { overflow-x: auto; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); background: var(--panel); }
+.mark-grid-wrap { overflow-x: auto; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); background: var(--panel); width: fit-content; max-width: 100%; }
 .mark-grid { border-collapse: separate; border-spacing: 0; font-size: 13px; }
 .mark-grid th, .mark-grid td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); padding: 4px 6px; text-align: center; white-space: nowrap; }
 .mark-grid tbody td { padding-top: 2px; padding-bottom: 2px; }

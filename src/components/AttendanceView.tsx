@@ -67,7 +67,7 @@ export default function AttendanceView() {
       </div>
       <p className="muted att-legend">P present · A absent · L late · E excused</p>
 
-      <table className="data">
+      <table className="data fit">
         <thead>
           <tr>
             <th>Student</th>

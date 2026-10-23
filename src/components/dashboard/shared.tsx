@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CodeCount, StudentCount, WeekPoint, fmtNum, fmtPct } from "../../lib/insights";
 import Icon, { IconName } from "../Icon";
+import { shortDate } from "../../lib/format";
 
 // Chart colours, checked with the dataviz palette validator on the light
 // surface. Green/blue is the existing pair (student vs class). Positive vs
@@ -13,11 +14,6 @@ export const C_NEGATIVE = "#c0322b";
 // on-surface-variant), so the charts sit in the same greys as the rest.
 export const C_GRID = "#e5eae2";
 export const C_INK = "#414942";
-
-const shortDate = (date: string) => {
-  const [, m, d] = date.split("-").map(Number);
-  return `${d} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m - 1]}`;
-};
 
 /** The written analysis at the top of each tab. */
 export function SummaryCard({ title, lines }: { title: string; lines: string[] }) {

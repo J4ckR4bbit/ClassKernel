@@ -14,7 +14,7 @@ import {
   studentProvisional,
   taskShares,
 } from "../lib/stats";
-import { fmtDecimal, parseDecimal } from "../lib/format";
+import { fmtDecimal, parseDecimal, shortDate } from "../lib/format";
 import { areasForGrade, shortLabel, subtopicsForGrade, topicGrade } from "../lib/topics";
 import { positionTint, rankTints } from "../lib/listTint";
 import PrivacyGate from "./PrivacyGate";
@@ -166,79 +166,89 @@ export default function AssessmentsView() {
         </button>
       </div>
 
-      <table className="data">
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th style={{ width: 100 }}>Date</th>
-            <th style={{ width: 100 }}>Content area</th>
-            <th style={{ width: 64 }}>Out of</th>
-            <th style={{ width: 80 }}>Questions</th>
-            <th style={{ width: 140 }}>Counts as</th>
-            <th style={{ width: 120 }} title="Its weight among tasks of the same kind (1 = normal, 2 = counts double, 0 = doesn't count), and the share of the final mark that gives it">
-              Weight · share
-            </th>
-            <th style={{ width: 80 }}>Marked</th>
-            <th style={{ width: 90 }}>Class mean</th>
-            <th style={{ width: 320 }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {ordered.map((a) => {
-            const stats = assessmentStats(a, marks);
-            return (
-              <tr key={a.id}>
-                <td>{a.title}</td>
-                <td>{a.date}</td>
-                <td>{a.contentArea || <span className="muted">—</span>}</td>
-                <td>{a.totalMarks}</td>
-                <td>{a.questionCount > 1 ? a.questionCount : <span className="muted">1</span>}</td>
-                <td>
-                  <select value={a.kind} onChange={(e) => update(a, { kind: e.target.value as AssessmentKind })} aria-label="Counts as">
-                    <option value="informal">Informal</option>
-                    <option value="exam">Examination</option>
-                  </select>
-                </td>
-                <td>
-                  <div className="row nowrap">
-                    <WeightInput value={a.weight} onChange={(weight) => update(a, { weight })} />
-                    <span className="muted">{fmtDecimal(shares.get(a.id) ?? 0, 1)}%</span>
-                  </div>
-                </td>
-                <td>
-                  {stats.entered}/{students.length}
-                </td>
-                <td>{stats.mean !== null ? `${Math.round(stats.mean)}%` : <span className="muted">—</span>}</td>
-                <td>
-                  <div className="row nowrap">
-                    <button className="small" onClick={() => setViewingId(a.id)} title="See the marks without changing them">
-                      <Icon name="visibility" size={18} /> View
-                    </button>
-                    <button className="small primary" onClick={() => enterMarks(a)}>
-                      <Icon name="edit" size={18} /> Enter marks
-                    </button>
-                    {a.questionCount > 1 && (
-                      <button className="small" onClick={() => setSetupId(a.id)}>
-                        Questions
+      <div className="table-scroll">
+        <table className="data marks-list">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th style={{ width: 100 }}>Date</th>
+              <th style={{ width: 100 }}>Content area</th>
+              <th style={{ width: 64 }}>Out of</th>
+              <th style={{ width: 80 }}>Questions</th>
+              <th style={{ width: 140 }}>Counts as</th>
+              <th style={{ width: 120 }} title="Its weight among tasks of the same kind (1 = normal, 2 = counts double, 0 = doesn't count), and the share of the final mark that gives it">
+                Weight · share
+              </th>
+              <th style={{ width: 80 }}>Marked</th>
+              <th style={{ width: 90 }}>Class mean</th>
+              <th></th>
+              <th style={{ width: 52 }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {ordered.map((a) => {
+              const stats = assessmentStats(a, marks);
+              return (
+                <tr key={a.id}>
+                  <td>{a.title}</td>
+                  <td className="nowrap" title={a.date}>
+                    {shortDate(a.date)}
+                  </td>
+                  <td>{a.contentArea || <span className="muted">—</span>}</td>
+                  <td className="nowrap">{a.totalMarks}</td>
+                  <td>
+                    {a.questionCount > 1 ? (
+                      <button className="small" onClick={() => setSetupId(a.id)} title="Set up the questions: topics and marks">
+                        {a.questionCount} <Icon name="edit" size={16} />
                       </button>
+                    ) : (
+                      <span className="muted">1</span>
                     )}
+                  </td>
+                  <td>
+                    <select value={a.kind} onChange={(e) => update(a, { kind: e.target.value as AssessmentKind })} aria-label="Counts as">
+                      <option value="informal">Informal</option>
+                      <option value="exam">Examination</option>
+                    </select>
+                  </td>
+                  <td>
+                    <div className="row nowrap">
+                      <WeightInput value={a.weight} onChange={(weight) => update(a, { weight })} />
+                      <span className="muted">{fmtDecimal(shares.get(a.id) ?? 0, 1)}%</span>
+                    </div>
+                  </td>
+                  <td className="nowrap">
+                    {stats.entered}/{students.length}
+                  </td>
+                  <td className="nowrap">{stats.mean !== null ? `${Math.round(stats.mean)}%` : <span className="muted">—</span>}</td>
+                  <td>
+                    <div className="row nowrap">
+                      <button className="small" onClick={() => setViewingId(a.id)} title="See the marks without changing them">
+                        <Icon name="visibility" size={18} /> View
+                      </button>
+                      <button className="small primary" onClick={() => enterMarks(a)}>
+                        <Icon name="edit" size={18} /> Enter marks
+                      </button>
+                    </div>
+                  </td>
+                  <td>
                     <button className="icon-only small danger" onClick={() => void deleteAssessment(a)} title="Delete assessment">
                       <Icon name="close" size={18} />
                     </button>
-                  </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {assessments.length === 0 && (
+              <tr>
+                <td colSpan={11} className="empty-row">
+                  No assessments yet — create one, then use the quick-marking tool while you mark.
                 </td>
               </tr>
-            );
-          })}
-          {assessments.length === 0 && (
-            <tr>
-              <td colSpan={10} className="empty-row">
-                No assessments yet — create one, then use the quick-marking tool while you mark.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {showNew && (
         <NewAssessmentModal

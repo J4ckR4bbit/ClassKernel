@@ -2,18 +2,10 @@ import { useMemo } from "react";
 import { useExamWeight, useAppPick } from "../store/appStore";
 import { Assessment, studentName, sortByName } from "../lib/types";
 import { GRADE_SCALES, assessmentStats, gradeForPct, percentage, rankByScore, taskShares, weightedMark } from "../lib/stats";
-import { fmtDecimal } from "../lib/format";
+import { fmtDecimal, shortDate } from "../lib/format";
 import { positionTint, rankTints } from "../lib/listTint";
 import Icon from "./Icon";
 import StatTile from "./StatTile";
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-/** "2026-09-12" → "12 Sep". */
-function shortDate(iso: string): string {
-  const [, m, d] = iso.split("-").map(Number);
-  return m >= 1 && m <= 12 && d ? `${d} ${MONTHS[m - 1]}` : iso;
-}
 
 /**
  * Every assessment's marks for the class on one read-only page: students down

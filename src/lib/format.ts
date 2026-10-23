@@ -46,3 +46,11 @@ export function gradeLabel(grade: string): string {
 export function joinAnd(items: string[]): string {
   return items.length < 2 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "2026-09-12" → "12 Sep": a date in a table column or a chart axis. Anything else comes back as it is. */
+export function shortDate(iso: string): string {
+  const [, m, d] = iso.split("-").map(Number);
+  return m >= 1 && m <= 12 && d ? `${d} ${MONTHS[m - 1]}` : iso;
+}

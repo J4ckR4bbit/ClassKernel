@@ -96,7 +96,7 @@ export default function BehaviourLogView() {
         </div>
       )}
 
-      <table className="data">
+      <table className="data fit">
         <thead>
           <tr>
             <th style={{ width: 170 }}>When</th>
@@ -151,7 +151,7 @@ export default function BehaviourLogView() {
       <h2 className="section-heading">
         <Icon name="wc" size={20} /> Bathroom log
       </h2>
-      <table className="data">
+      <table className="data fit">
         <thead>
           <tr>
             <th style={{ width: 110 }}>Date</th>
