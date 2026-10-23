@@ -15,8 +15,8 @@ import { lessonStartKey, lessonStartedMessage } from "../lib/lessonState";
 import { deskDisplayLabels } from "../lib/tables";
 import { pickedKey } from "../components/StudentPicker";
 import type { SeatBadge } from "../components/RoomCanvas";
+import { behaviourText } from "../components/BehaviourButton";
 
-const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
 
 const STATUS_LABEL: Record<AttendanceStatus, string> = { P: "present", A: "absent", L: "late", E: "excused" };
 
@@ -141,7 +141,7 @@ export function useLessonSession() {
   const logBehaviour = (studentId: string, c: BehaviourCode) => {
     const timestamp = nowIso();
     void addBehaviourEvent({ timestamp, studentId, code: c.code, points: c.points, note: "" });
-    showToast(`${signed(c.points)} ${c.label} — ${toastName(studentId)}`, {
+    showToast(`${behaviourText(c)} — ${toastName(studentId)}`, {
       label: "Undo",
       run: () => void removeBehaviourEvent(timestamp, studentId, c.code),
     });
@@ -160,7 +160,7 @@ export function useLessonSession() {
     }));
     void addBehaviourEvents(events);
     const n = studentIds.length;
-    showToast(`${signed(c.points)} ${c.label} — ${n} student${n === 1 ? "" : "s"}`, {
+    showToast(`${behaviourText(c)} — ${n} student${n === 1 ? "" : "s"}`, {
       label: "Undo",
       run: () => void removeBehaviourEvents(timestamp, c.code, studentIds),
     });

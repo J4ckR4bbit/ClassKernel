@@ -420,6 +420,13 @@ export function studentName(s: Student): string {
   return `${s.firstName} ${s.lastName}`.trim();
 }
 
+/** Register order: by surname, then first name. For `.sort(byName)`. */
+export const byName = (a: Student, b: Student): number =>
+  a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName);
+
+/** A copy of the students in register order. */
+export const sortByName = (students: readonly Student[]): Student[] => [...students].sort(byName);
+
 /**
  * The two behaviours the random-student picker records: whether a student who
  * was cold-called could answer or not. They are ordinary catalogue entries, so

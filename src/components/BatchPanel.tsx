@@ -1,7 +1,7 @@
 import { BehaviourCode } from "../lib/types";
 import { BatchEntry } from "../hooks/useBatchEntry";
+import BehaviourButton, { behaviourText } from "./BehaviourButton";
 
-const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
 
 interface Props {
   entry: BatchEntry;
@@ -35,14 +35,7 @@ export default function BatchPanel({ entry, behaviourCodes, layout }: Props) {
         </div>
         <div className="batch-items">
           {ordered.map((c) => (
-            <button
-              key={c.code}
-              className="bh-btn"
-              style={{ background: c.color }}
-              onClick={() => entry.chooseItem(c)}
-            >
-              {signed(c.points)} {c.label}
-            </button>
+            <BehaviourButton key={c.code} code={c} onClick={() => entry.chooseItem(c)} />
           ))}
         </div>
         <div className="batch-actions">
@@ -60,7 +53,7 @@ export default function BatchPanel({ entry, behaviourCodes, layout }: Props) {
       <div className="batch-banner">
         <span className="batch-tag">BATCH</span>
         <span className="batch-item" style={{ background: c.color }}>
-          {signed(c.points)} {c.label}
+          {behaviourText(c)}
         </span>
         <button className="small" onClick={entry.changeItem} title="Record something else for the same students">
           Change

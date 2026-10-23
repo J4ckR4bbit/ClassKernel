@@ -3,6 +3,7 @@ import { AttendanceStatus, BathroomVisit, BehaviourCode, Student, studentName } 
 import { displayStudentName } from "../lib/privacy";
 import Elapsed from "./Elapsed";
 import Icon from "./Icon";
+import BehaviourButton from "./BehaviourButton";
 
 interface Props {
   student: Student;
@@ -49,7 +50,7 @@ export default function StudentActions({ student, status, outVisit, onAttendance
           <Icon name="close" size={20} />
         </button>
       </div>
-      {showNotes && <p className="muted" style={{ marginTop: 0 }}>{student.notes}</p>}
+      {showNotes && <p className="muted lead">{student.notes}</p>}
       <div className="att-seg" role="radiogroup" aria-label="Attendance" style={{ marginBottom: 2 }}>
         {(["P", "A", "L", "E"] as AttendanceStatus[]).map((code) => (
           <button
@@ -83,9 +84,7 @@ export default function StudentActions({ student, status, outVisit, onAttendance
         <div className="bh-group" role="group" aria-label="Positive">
           <span className="bh-group-label">Positive</span>
           {positives.map((c) => (
-            <button key={c.code} className="bh-btn" style={{ background: c.color }} onClick={() => onBehaviour(c)}>
-              +{c.points} {c.label}
-            </button>
+            <BehaviourButton key={c.code} code={c} onClick={() => onBehaviour(c)} />
           ))}
         </div>
       )}
@@ -93,9 +92,7 @@ export default function StudentActions({ student, status, outVisit, onAttendance
         <div className="bh-group" role="group" aria-label="Negative">
           <span className="bh-group-label">Negative</span>
           {negatives.map((c) => (
-            <button key={c.code} className="bh-btn" style={{ background: c.color }} onClick={() => onBehaviour(c)}>
-              {c.points} {c.label}
-            </button>
+            <BehaviourButton key={c.code} code={c} onClick={() => onBehaviour(c)} />
           ))}
         </div>
       )}

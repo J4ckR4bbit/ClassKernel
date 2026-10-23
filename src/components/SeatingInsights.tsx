@@ -3,6 +3,7 @@ import { useAppPick } from "../store/appStore";
 import { studentName } from "../lib/types";
 import { disruptivePairs, studentDeskStats, studentOverallAverages } from "../lib/lessons";
 import { fmtNum } from "../lib/format";
+import StatTile from "./StatTile";
 
 const fmt = (n: number) => (n > 0 ? `+${fmtNum(n, 1)}` : fmtNum(n, 1));
 
@@ -63,25 +64,14 @@ export default function SeatingInsights() {
   return (
     <>
       <div className="stat-tiles">
-        <div className="stat-tile">
-          <div className="value">{sessions}</div>
-          <div className="label">lessons recorded</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{perStudent.length}</div>
-          <div className="label">students with history</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value" style={{ color: pairs.length ? "var(--danger)" : "var(--accent)" }}>
-            {pairs.length}
-          </div>
-          <div className="label">pairings to review</div>
-        </div>
+        <StatTile value={sessions} label="lessons recorded" />
+        <StatTile value={perStudent.length} label="students with history" />
+        <StatTile value={pairs.length} label="pairings to review" tone={pairs.length ? "bad" : "good"} />
       </div>
 
       <div className="panel">
         <h3>Pairings to review — worse together</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           These pairs earn notably fewer behaviour points when sharing a desk than they do on average. Consider adding
           them to the keep-apart list.
         </p>
@@ -127,7 +117,7 @@ export default function SeatingInsights() {
 
       <div className="panel">
         <h3>Seat history &amp; behaviour by desk</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           How many times each student has sat at each desk, and their average behaviour points there. The desk where a
           student behaves best is highlighted green, worst red.
         </p>

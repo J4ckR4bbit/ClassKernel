@@ -51,7 +51,7 @@ export default function PluginView() {
           {plugin
             ? `"${plugin.name}" is switched off. Turn it back on under Settings → Tools.`
             : "That tool isn't part of this version of the app."}
-          <div className="row" style={{ marginTop: 10 }}>
+          <div className="row button-row">
             <button onClick={() => setView("home")}>
               <Icon name="arrow_back" size={20} /> Home
             </button>

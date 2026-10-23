@@ -6,6 +6,7 @@ import { buildXlsx } from "../lib/xlsx";
 import { readSpreadsheetFile } from "../lib/spreadsheetFile";
 import { savePluginFile } from "../plugins/host";
 import Icon from "./Icon";
+import StatTile from "./StatTile";
 import Modal from "./Modal";
 
 /** The rows of a chosen file: the template's Marks sheet (else the first sheet), or a .csv. */
@@ -86,7 +87,7 @@ export default function MarkSheetTools({ assessment, onImported }: { assessment:
 
       {pending && plan && (
         <Modal title="Import marks" className="import-preview" onClose={() => setPending(null)}>
-          <p className="muted" style={{ marginTop: 0 }}>
+          <p className="muted lead">
             From <b>{pending.fileName}</b> into <b>{assessment.title}</b>.
           </p>
           {plan.otherAssessment && (
@@ -95,18 +96,9 @@ export default function MarkSheetTools({ assessment, onImported }: { assessment:
             </p>
           )}
           <div className="stat-tiles compact">
-            <div className="stat-tile">
-              <div className="value">{plan.added}</div>
-              <div className="label">new</div>
-            </div>
-            <div className="stat-tile">
-              <div className="value">{plan.changed}</div>
-              <div className="label">changed</div>
-            </div>
-            <div className="stat-tile">
-              <div className="value">{plan.same}</div>
-              <div className="label">already the same</div>
-            </div>
+            <StatTile value={plan.added} label="new" />
+            <StatTile value={plan.changed} label="changed" />
+            <StatTile value={plan.same} label="already the same" />
           </div>
           <p className="muted">Blank cells leave the marks in ClassKernel as they are.</p>
           {plan.problems.length > 0 && (

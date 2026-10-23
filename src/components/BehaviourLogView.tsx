@@ -4,8 +4,10 @@ import { DASHBOARDS_ID } from "../plugins/registry";
 import { studentName } from "../lib/types";
 import { behaviourByStudent, formatDuration, visitSeconds } from "../lib/stats";
 import { dateInZone, dateTimeInZone, timeInZone } from "../lib/time";
+import { fmtSigned } from "../lib/format";
 import PrivacyGate from "./PrivacyGate";
 import Icon from "./Icon";
+import StatTile from "./StatTile";
 
 export default function BehaviourLogView() {
   const {
@@ -88,21 +90,9 @@ export default function BehaviourLogView() {
 
       {studentFilter && summaries.get(studentFilter) && (
         <div className="stat-tiles">
-          <div className="stat-tile">
-            <div className="value">{summaries.get(studentFilter)!.positive}</div>
-            <div className="label">positive events</div>
-          </div>
-          <div className="stat-tile">
-            <div className="value">{summaries.get(studentFilter)!.negative}</div>
-            <div className="label">negative events</div>
-          </div>
-          <div className="stat-tile">
-            <div className="value">
-              {summaries.get(studentFilter)!.points > 0 ? "+" : ""}
-              {summaries.get(studentFilter)!.points}
-            </div>
-            <div className="label">net points</div>
-          </div>
+          <StatTile value={summaries.get(studentFilter)!.positive} label="positive events" />
+          <StatTile value={summaries.get(studentFilter)!.negative} label="negative events" />
+          <StatTile value={fmtSigned(summaries.get(studentFilter)!.points)} label="net points" />
         </div>
       )}
 
@@ -130,9 +120,7 @@ export default function BehaviourLogView() {
                   </span>
                   {e.note && <span className="muted"> {e.note}</span>}
                 </td>
-                <td style={{ color: e.points >= 0 ? "var(--accent)" : "var(--danger)", fontWeight: 600 }}>
-                  {e.points > 0 ? `+${e.points}` : e.points}
-                </td>
+                <td className={e.points >= 0 ? "pos" : "neg"}>{fmtSigned(e.points)}</td>
                 <td>
                   <button
                     className="icon-only small danger"
@@ -151,7 +139,7 @@ export default function BehaviourLogView() {
           })}
           {filtered.length === 0 && (
             <tr>
-              <td colSpan={5} className="muted" style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={5} className="empty-row">
                 No behaviour events match — log them from the Lesson screen.
               </td>
             </tr>
@@ -204,7 +192,7 @@ export default function BehaviourLogView() {
           })}
           {bathroomFiltered.length === 0 && (
             <tr>
-              <td colSpan={6} className="muted" style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={6} className="empty-row">
                 No bathroom visits match — start a timer from a seat on the Lesson screen.
               </td>
             </tr>

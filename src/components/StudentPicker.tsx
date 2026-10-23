@@ -6,12 +6,12 @@ import { flashTiming } from "../lib/motion";
 import { EMPTY_ANSWER_TALLY, answerTallyByStudent } from "../lib/stats";
 import { ANSWERED_BEHAVIOUR, BehaviourCode, BehaviourEvent, NO_ANSWER_BEHAVIOUR, Student } from "../lib/types";
 import Icon from "./Icon";
+import BehaviourButton from "./BehaviourButton";
 import { modalOpen } from "./Modal";
 
 /** Ids already picked this lesson, so "no repeats" survives a reload. Cleared by End lesson. */
 export const pickedKey = (className: string) => `classkernel.picked.${className}`;
 
-const signed = (points: number) => (points > 0 ? `+${points}` : `${points}`);
 
 interface Props {
   onClose: () => void;
@@ -166,20 +166,20 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
         {chosen && (
           <>
             <div className="picker-answer">
-              <button
-                style={{ background: answered.color }}
+              <BehaviourButton
+                code={answered}
+                className=""
+                icon={<Icon name="check" size={20} />}
                 onClick={() => logAnswer(answered)}
                 title="Record that they answered"
-              >
-                <Icon name="check" size={20} /> {answered.label} {signed(answered.points)}
-              </button>
-              <button
-                style={{ background: noAnswer.color }}
+              />
+              <BehaviourButton
+                code={noAnswer}
+                className=""
+                icon={<Icon name="close" size={20} />}
                 onClick={() => logAnswer(noAnswer)}
                 title="Record that they could not answer"
-              >
-                <Icon name="close" size={20} /> {noAnswer.label} {signed(noAnswer.points)}
-              </button>
+              />
               {otherCodes.length > 0 && (
                 <button className="picker-other" onClick={() => setShowOthers((v) => !v)} aria-expanded={showOthers}>
                   <Icon name="more_horiz" size={20} /> Other behaviour
@@ -189,14 +189,7 @@ export default function StudentPicker({ onClose, lessonEvents, showTally, onLogB
             {showOthers && (
               <div className="picker-more">
                 {otherCodes.map((c) => (
-                  <button
-                    key={c.code}
-                    className="bh-btn"
-                    style={{ background: c.color }}
-                    onClick={() => log(c)}
-                  >
-                    {signed(c.points)} {c.label}
-                  </button>
+                  <BehaviourButton key={c.code} code={c} onClick={() => log(c)} />
                 ))}
               </div>
             )}

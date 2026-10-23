@@ -123,15 +123,5 @@ export function PeopleList({
   );
 }
 
-export function StatTile({ value, label, tone }: { value: string; label: string; tone?: "good" | "bad" }) {
-  return (
-    <div className="stat-tile">
-      <div className="value" style={tone ? { color: tone === "good" ? "var(--accent)" : "var(--danger)" } : undefined}>
-        {value}
-      </div>
-      <div className="label">{label}</div>
-    </div>
-  );
-}
-
+export { default as StatTile } from "../StatTile";
 export { fmtPct, shortDate };

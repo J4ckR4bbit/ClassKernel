@@ -3,7 +3,6 @@ import { useApp, useAppPick } from "./store/appStore";
 import Onboarding from "./components/Onboarding";
 import NavRail from "./components/NavRail";
 import TopAppBar from "./components/TopAppBar";
-import Icon from "./components/Icon";
 import HomeView from "./components/HomeView";
 import RosterView from "./components/RosterView";
 import AttendanceView from "./components/AttendanceView";
@@ -20,6 +19,7 @@ import AppDialog from "./components/AppDialog";
 import TimerMini from "./components/TimerMini";
 import NoiseMini from "./components/NoiseMini";
 import WaitingForFolder from "./components/WaitingForFolder";
+import EmptyState from "./components/EmptyState";
 import { CopyChip, FolderBanner, SyncOverlay } from "./components/FolderBanner";
 
 /** Toast + dialog + save-error UI shared by both shells. */
@@ -165,11 +165,9 @@ export default function App() {
           )}
           <FolderBanner />
           {!currentClass && view !== "settings" && view !== "home" && view !== "plugin" ? (
-            <div className="empty-state">
-              <Icon name="group" size={48} />
-              <h2>No class selected</h2>
-              <p>Pick a class from the menu at the top right, or create one there.</p>
-            </div>
+            <EmptyState icon="group" title="No class selected">
+              Pick a class from the menu at the top right, or create one there.
+            </EmptyState>
           ) : (
             <>
               {view === "home" && <HomeView />}

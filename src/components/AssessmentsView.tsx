@@ -1,7 +1,7 @@
 import { type KeyboardEvent as ReactKeyboardEvent, useMemo, useRef, useState } from "react";
 import { useApp, useExamWeight, useAppPick } from "../store/appStore";
 import { newId, today } from "../lib/id";
-import { Assessment, AssessmentKind, AssessmentQuestion, Mark, QuestionMark, defaultKind, studentName } from "../lib/types";
+import { Assessment, AssessmentKind, AssessmentQuestion, Mark, QuestionMark, defaultKind, studentName, sortByName } from "../lib/types";
 import {
   GRADE_SCALES,
   assessmentStats,
@@ -21,6 +21,7 @@ import PrivacyGate from "./PrivacyGate";
 import Markbook from "./Markbook";
 import MarkSheetTools from "./MarkSheetTools";
 import Icon from "./Icon";
+import StatTile from "./StatTile";
 import Modal from "./Modal";
 
 export default function AssessmentsView() {
@@ -231,7 +232,7 @@ export default function AssessmentsView() {
           })}
           {assessments.length === 0 && (
             <tr>
-              <td colSpan={10} className="muted" style={{ textAlign: "center", padding: 24 }}>
+              <td colSpan={10} className="empty-row">
                 No assessments yet — create one, then use the quick-marking tool while you mark.
               </td>
             </tr>
@@ -522,7 +523,7 @@ function QuestionSetup({ assessment, grade, onBack, onStart }: { assessment: Ass
         ))}
       </datalist>
 
-      <div className="row" style={{ marginTop: 10 }}>
+      <div className="row button-row">
         <button onClick={addRow}>
           <Icon name="add" size={20} /> Add question
         </button>
@@ -574,7 +575,7 @@ function QuestionGrid({
     [assessmentQuestions, assessment.id],
   );
   const sorted = useMemo(
-    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
+    () => sortByName(students),
     [students],
   );
   const cells = useRef<Array<Array<HTMLInputElement | null>>>([]);
@@ -720,18 +721,9 @@ function QuestionGrid({
       )}
 
       <div className="stat-tiles compact">
-        <div className="stat-tile">
-          <div className="value">{Math.round((1 - completion) * 100)}%</div>
-          <div className="label">left to enter</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{classMean !== null ? `${classMean}%` : "—"}</div>
-          <div className="label">class mean (entered)</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{topStudent ? `${topStudent.pct}%` : "—"}</div>
-          <div className="label">{topStudent ? `top: ${topStudent.name}` : "top of class"}</div>
-        </div>
+        <StatTile value={`${Math.round((1 - completion) * 100)}%`} label="left to enter" />
+        <StatTile value={classMean !== null ? `${classMean}%` : "—"} label="class mean (entered)" />
+        <StatTile value={topStudent ? `${topStudent.pct}%` : "—"} label={topStudent ? `top: ${topStudent.name}` : "top of class"} />
       </div>
 
       <div className="mark-grid-wrap">
@@ -826,7 +818,7 @@ function QuestionGrid({
             })}
             {nRows === 0 && (
               <tr>
-                <td colSpan={nCols + 7} className="muted" style={{ padding: 16 }}>
+                <td colSpan={nCols + 7} className="empty-row start">
                   Add students to the class first.
                 </td>
               </tr>
@@ -875,7 +867,7 @@ function QuestionGrid({
 function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessment; onDone: () => void; onImported: () => void }) {
   const { students, marks, setMarks } = useAppPick("students", "marks", "setMarks");
   const sorted = useMemo(
-    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
+    () => sortByName(students),
     [students],
   );
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
@@ -967,9 +959,7 @@ function QuickMarking({ assessment, onDone, onImported }: { assessment: Assessme
           );
         })}
         {sorted.length === 0 && (
-          <p className="muted" style={{ padding: 16 }}>
-            Add students to the class first.
-          </p>
+          <p className="empty-row start">Add students to the class first.</p>
         )}
       </div>
     </div>
@@ -995,7 +985,7 @@ function MarkListView({
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
   const sorted = useMemo(
-    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
+    () => sortByName(students),
     [students],
   );
 
@@ -1032,18 +1022,9 @@ function MarkListView({
       </div>
 
       <div className="stat-tiles compact">
-        <div className="stat-tile">
-          <div className="value">{sorted.length ? Math.round((1 - entered.size / sorted.length) * 100) : 0}%</div>
-          <div className="label">left to enter</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{classMean !== null ? `${Math.round(classMean)}%` : "—"}</div>
-          <div className="label">class mean (entered)</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{topPct !== null ? `${Math.round(topPct)}%` : "—"}</div>
-          <div className="label">{top ? `top: ${studentName(top)}` : "top of class"}</div>
-        </div>
+        <StatTile value={`${sorted.length ? Math.round((1 - entered.size / sorted.length) * 100) : 0}%`} label="left to enter" />
+        <StatTile value={classMean !== null ? `${Math.round(classMean)}%` : "—"} label="class mean (entered)" />
+        <StatTile value={topPct !== null ? `${Math.round(topPct)}%` : "—"} label={top ? `top: ${studentName(top)}` : "top of class"} />
       </div>
 
       <div className="mark-grid-wrap">
@@ -1090,7 +1071,7 @@ function MarkListView({
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={8} className="muted" style={{ padding: 16 }}>
+                <td colSpan={8} className="empty-row start">
                   Add students to the class first.
                 </td>
               </tr>

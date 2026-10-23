@@ -246,7 +246,7 @@ function GeneralSettings() {
     <>
       <div className="panel">
         <h3>Privacy on the big screen</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           ClassKernel assumes the screen is visible to your class. With privacy mode on, screens that show individual
           marks, behaviour or notes stay covered until you tap <b>Show student details</b> — and cover themselves again
           when you leave. Each detail below can also be shown independently if you need it.
@@ -308,7 +308,7 @@ function GeneralSettings() {
 
       <div className="panel">
         <h3>Display size</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           Make everything bigger for a large touch panel. Applies to the whole app immediately.
         </p>
         <Segmented
@@ -321,7 +321,7 @@ function GeneralSettings() {
 
       <div className="panel">
         <h3>Classes and students from a spreadsheet</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           <b>Template</b> saves a workbook of every class (grade, subject, room) and its students (gender, flags, notes). Fill it in, for
           example from the school's class lists at the start of the year, then import it: new classes and students are added and changed
           details updated. Nobody is removed. For one class, use Template and Import spreadsheet on its Students page.
@@ -440,7 +440,7 @@ function GeneralSettings() {
             ))}
           </tbody>
         </table>
-        <div className="row" style={{ marginTop: 10 }}>
+        <div className="row button-row">
           <button onClick={() => void add("positive")}>
             <Icon name="add" size={20} /> Positive behaviour
           </button>
@@ -448,7 +448,7 @@ function GeneralSettings() {
             <Icon name="add" size={20} /> Negative behaviour
           </button>
         </div>
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           Renaming a Code updates this class's logged history; other classes keep the old code in their behaviour log.
         </p>
       </div>
@@ -545,7 +545,7 @@ function TimeZoneSettings() {
   return (
     <div className="panel">
       <h3>Time zone</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Dates and times in the behaviour and bathroom logs, the lesson count, attendance and spreadsheet exports are
         shown in this zone. Times are always saved in UTC, so changing this never alters your records — only how
         they're displayed.
@@ -582,7 +582,7 @@ function ReportSettings() {
   return (
     <div className="panel">
       <h3>Parent reports</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Printed at the top of each parent report (Dashboard → Print report). Leave either blank to leave it off.
       </p>
       <div className="form-grid report-settings">
@@ -649,7 +649,7 @@ function TeachingModeSettings() {
   return (
     <div className="panel">
       <h3>Teaching mode</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Which view the <b>Teaching mode</b> button opens. The side panel docks a narrow list of tables to the edge of
         the screen, always on top, so your slides and annotations keep the rest. You can switch between them during a
         lesson.
@@ -670,7 +670,7 @@ function TeachingModeSettings() {
       />
 
       <h4>Room plan buttons</h4>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Which edge of the room-plan screen the lesson buttons (Pick a student, Randomise, End lesson) sit on. Put them
         within reach of where you stand.
       </p>
@@ -682,7 +682,7 @@ function TeachingModeSettings() {
       />
 
       <h4>Reseat PIN</h4>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Seats can be assigned (<b>Randomise</b>) once per lesson. After that the button shows a lock (<b>Reseat…</b>) and
         needs this PIN to assign them again, so nobody reshuffles the class by accident. Ending the lesson, or a new day, unlocks it.{" "}
         {hasPin ? "A PIN is set." : "No PIN yet — set one now, or you'll be asked the first time you unlock."}
@@ -769,14 +769,14 @@ function PluginSettings() {
   return (
     <div className="panel">
       <h3>Tools</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         Extra tools that come with ClassKernel. Everything ships switched off, so the app stays exactly as it is until
         you turn something on — then it appears under <b>Tools</b> on the Home page. They are part of the app, so they
         work offline and save files through the same dialog as an export.
       </p>
 
       {PLUGINS.length === 0 ? (
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           This version of the app doesn't ship any tools yet.
         </p>
       ) : (
@@ -868,7 +868,7 @@ function SeatingPrefsEditor({
   return (
     <div className="panel">
       <h3>Random seating rules</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         These rules are applied every time you press <b>Randomise</b> on the seating plan. They are saved per class and
         stay here in Settings, so the class never sees who is being kept apart or moved to the front.
       </p>
@@ -1126,7 +1126,7 @@ function AssessmentSettings() {
     <>
       <div className="panel">
         <h3>Assessable topics by grade</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           Shared across all classes and used to tag each question. Each class's grade is set on its Class notes page. Stored in{" "}
           <code>topics.csv</code>.
         </p>
@@ -1172,7 +1172,7 @@ function AssessmentSettings() {
                 <Icon name="groups" size={18} /> One list for {groupLabel}: a change here changes it for all of them.
               </p>
             )}
-            <p className="muted" style={{ marginTop: 0 }}>
+            <p className="muted lead">
               Type subtopics into a table, or paste a column straight from a spreadsheet. Paste two tab-separated
               columns to fill Subtopic and Short at once.
             </p>
@@ -1202,7 +1202,7 @@ function AssessmentSettings() {
 
       <div className="panel">
         <h3>Cognitive levels</h3>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted lead">
           Offered when tagging each question. Stored in <code>cognitive_levels.csv</code>.
         </p>
         <table className="data">
@@ -1231,7 +1231,7 @@ function AssessmentSettings() {
             ))}
           </tbody>
         </table>
-        <div className="row" style={{ marginTop: 10 }}>
+        <div className="row button-row">
           <button onClick={addLevel}>
             <Icon name="add" size={20} /> Level
           </button>
@@ -1247,7 +1247,7 @@ function AssessmentSettings() {
             <option value="down">down (to the next student)</option>
           </select>
         </label>
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           Tab always moves the other way. Arrow keys move one cell.
         </p>
       </div>
@@ -1269,7 +1269,7 @@ function AssessmentSettings() {
             </label>
           ))}
         </div>
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           Used in the marking grid, the dashboards, parent reports and spreadsheet exports.
         </p>
       </div>
@@ -1293,13 +1293,13 @@ function WeightingSettings({ grades }: { grades: string[] }) {
   return (
     <div className="panel">
       <h3>Weighting: informal tasks and examinations</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted lead">
         A student's mark blends their informal tasks with their examinations in these shares. Until a student has written an
         examination, their informal tasks make up the whole mark. Set each task's own weight, and whether it is informal or an
         examination, on the Marks page.
       </p>
       {grades.length === 0 ? (
-        <p className="muted" style={{ marginBottom: 0 }}>
+        <p className="muted tail">
           Give a class its grade on its Class notes page to set the weighting for that grade.
         </p>
       ) : (

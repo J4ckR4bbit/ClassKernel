@@ -6,6 +6,7 @@ import { buildXlsx } from "../lib/xlsx";
 import { Student } from "../lib/types";
 import { savePluginFile } from "../plugins/host";
 import Icon from "./Icon";
+import StatTile from "./StatTile";
 import Modal from "./Modal";
 
 /**
@@ -90,7 +91,7 @@ export default function RosterSheetTools({ oneClass }: { oneClass?: string }) {
 
       {pending && plan && (
         <Modal title={label} className="import-preview" onClose={() => setPending(null)}>
-          <p className="muted" style={{ marginTop: 0 }}>
+          <p className="muted lead">
             From <b>{pending.fileName}</b>
             {oneClass ? (
               <>
@@ -102,19 +103,10 @@ export default function RosterSheetTools({ oneClass }: { oneClass?: string }) {
           </p>
           <div className="stat-tiles compact">
             {!oneClass && (
-              <div className="stat-tile">
-                <div className="value">{newClasses.length}</div>
-                <div className="label">new classes</div>
-              </div>
+              <StatTile value={newClasses.length} label="new classes" />
             )}
-            <div className="stat-tile">
-              <div className="value">{newStudents.length}</div>
-              <div className="label">new students</div>
-            </div>
-            <div className="stat-tile">
-              <div className="value">{changedStudents.length + changedClasses.length}</div>
-              <div className="label">updated</div>
-            </div>
+            <StatTile value={newStudents.length} label="new students" />
+            <StatTile value={changedStudents.length + changedClasses.length} label="updated" />
           </div>
           <ul className="import-changes">
             {newClasses.map((c) => (

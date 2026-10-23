@@ -1,9 +1,11 @@
 import { useCallback, useMemo } from "react";
+import { sortByName } from "../../lib/types";
 import { useExamWeight, useAppPick } from "../../store/appStore";
 import { today } from "../../lib/id";
 import { ClassData } from "../../lib/insights";
 import PrivacyGate from "../PrivacyGate";
 import ReportPreview from "./ReportPreview";
+import EmptyState from "../EmptyState";
 
 /**
  * The Parent reports tool: once the privacy cover is lifted, the full-screen
@@ -45,7 +47,7 @@ export default function ParentReportsView() {
     [students, attendance, behaviourEvents, bathroomVisits, assessments, marks, assessmentQuestions, questionMarks, behaviourCodes, examWeight],
   );
   const ids = useMemo(
-    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)).map((s) => s.id),
+    () => sortByName(students).map((s) => s.id),
     [students],
   );
   const goHome = useCallback(() => setView("home"), [setView]);
@@ -54,7 +56,9 @@ export default function ParentReportsView() {
   return (
     <div>
       {!currentClass ? (
-        <div className="panel muted">Pick a class from the menu at the top right to print its parent reports.</div>
+        <EmptyState icon="print" title="No class selected">
+          Pick a class from the menu at the top right to print its parent reports.
+        </EmptyState>
       ) : (
         <PrivacyGate label="marks, behaviour and attendance reports">
           {revealed && <ReportPreview standalone studentIds={ids} data={data} initialFrom="" today={today()} onClose={goHome} />}

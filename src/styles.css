@@ -187,6 +187,10 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
   height: 80%; text-align: center; color: var(--text-dim);
 }
 .empty-state h2 { margin: 8px 0 0; font-size: 22px; font-weight: 400; color: var(--text); }
+/* The one row of a table (or list) with nothing in it yet. In the wide mark
+   grids it sits at the start, where it's in view without scrolling. */
+.empty-row { text-align: center; padding: 24px; color: var(--text-dim); }
+.empty-row.start { text-align: left; padding: 16px; }
 
 /* Navigation rail: 80 px of icons with short labels; expanded, a 280 px drawer. */
 .nav-rail {
@@ -298,6 +302,11 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
 }
 .panel h3 { margin-top: 0; font-size: 16px; font-weight: 500; line-height: 24px; }
 .muted { color: var(--text-dim); }
+/* The explanation straight under a heading, and the note that closes a panel. */
+p.lead { margin-top: 0; }
+p.tail { margin-bottom: 0; }
+/* Add buttons under a table. */
+.row.button-row { margin-top: 10px; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .row.nowrap { flex-wrap: nowrap; }
 .row.nowrap > * { flex-shrink: 0; white-space: nowrap; }
@@ -630,6 +639,8 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .stat-tile { background: var(--md-surface-container-low); border-radius: var(--md-shape-m); padding: 14px 20px; min-width: 140px; }
 .stat-tile .value { font-size: 28px; font-weight: 400; line-height: 36px; }
 .stat-tile .label { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; color: var(--text-dim); }
+.stat-tile .value.good { color: var(--accent); }
+.stat-tile .value.bad { color: var(--danger); }
 /* Slim chips on one line (the marking grid), leaving the room for the students. */
 .stat-tiles.compact { gap: 8px; margin-bottom: 8px; }
 .stat-tiles.compact .stat-tile { display: flex; align-items: baseline; gap: 6px; padding: 2px 12px; min-width: 0; border-radius: 14px; }

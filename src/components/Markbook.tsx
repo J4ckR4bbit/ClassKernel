@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { useExamWeight, useAppPick } from "../store/appStore";
-import { Assessment, studentName } from "../lib/types";
+import { Assessment, studentName, sortByName } from "../lib/types";
 import { GRADE_SCALES, assessmentStats, gradeForPct, percentage, rankByScore, taskShares, weightedMark } from "../lib/stats";
 import { fmtDecimal } from "../lib/format";
 import { positionTint, rankTints } from "../lib/listTint";
 import Icon from "./Icon";
+import StatTile from "./StatTile";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -27,7 +28,7 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
   const sorted = useMemo(
-    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
+    () => sortByName(students),
     [students],
   );
   const tests = useMemo(() => [...assessments].sort((a, b) => b.date.localeCompare(a.date)), [assessments]);
@@ -64,24 +65,14 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
       </div>
 
       <div className="stat-tiles compact">
-        <div className="stat-tile">
-          <div className="value">{tests.length}</div>
-          <div className="label">{tests.length === 1 ? "assessment" : "assessments"}</div>
-        </div>
-        <div className="stat-tile" title="The grade's split, set under Settings › Assessments">
-          <div className="value">
-            {fmtDecimal(100 - examWeight, 1)} / {fmtDecimal(examWeight, 1)}
-          </div>
-          <div className="label">informal / exam</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{classAverage !== null ? `${Math.round(classAverage)}%` : "—"}</div>
-          <div className="label">class average</div>
-        </div>
-        <div className="stat-tile">
-          <div className="value">{top ? `${Math.round(finals.get(top.id)!)}%` : "—"}</div>
-          <div className="label">{top ? `top: ${studentName(top)}` : "top of class"}</div>
-        </div>
+        <StatTile value={tests.length} label={tests.length === 1 ? "assessment" : "assessments"} />
+        <StatTile
+          value={`${fmtDecimal(100 - examWeight, 1)} / ${fmtDecimal(examWeight, 1)}`}
+          label="informal / exam"
+          title="The grade's split, set under Settings › Assessments"
+        />
+        <StatTile value={classAverage !== null ? `${Math.round(classAverage)}%` : "—"} label="class average" />
+        <StatTile value={top ? `${Math.round(finals.get(top.id)!)}%` : "—"} label={top ? `top: ${studentName(top)}` : "top of class"} />
       </div>
 
       <div className="mark-grid-wrap">
@@ -163,7 +154,7 @@ export default function Markbook({ onBack, onOpen }: { onBack: () => void; onOpe
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={tests.length + 8} className="muted" style={{ padding: 16 }}>
+                <td colSpan={tests.length + 8} className="empty-row start">
                   Add students to the class first.
                 </td>
               </tr>

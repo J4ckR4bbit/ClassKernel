@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Student, studentName } from "../../lib/types";
+import { Student, studentName, sortByName } from "../../lib/types";
 import { GRADE_SCALES, formatDuration, gradeForPct } from "../../lib/stats";
 import { useApp } from "../../store/appStore";
 import { dateInZone, timeInZone } from "../../lib/time";
@@ -38,7 +38,7 @@ export default function StudentDashboard({
 }) {
   const scale = useApp((s) => s.userPrefs.gradeScale);
   const sorted = useMemo(
-    () => [...students].sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)),
+    () => sortByName(students),
     [students],
   );
   const idx = sorted.findIndex((s) => s.id === p.student.id);
