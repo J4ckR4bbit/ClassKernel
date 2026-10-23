@@ -32,13 +32,16 @@ Tap any student's seat and a pop-up opens beside it:
 
 <img src="../images/seat-popover.png" alt="The pop-up for one student" align="right" height="560">
 
-- **P / A / L / E** marks today's attendance (present, absent, late, excused). An absent student's seat shows ✗.
+- **P / A / L / E** marks today's attendance (present, absent, late, excused). The seat then shows a small mark in
+  its corner (✕ absent, L late, E excused), and the message has **Undo**.
 - **Bathroom — start timer** times a bathroom trip (below).
-- **Behaviour buttons**: positive ones first, then negative, each with its points. Tap one to record it. They are
-  your own buttons, set up under
+- **Behaviour buttons**, in two labelled groups — **Positive**, then **Negative** — each starting with its points
+  (*+1 Great effort*). Tap one to record it. They are your own buttons, set up under
   [Settings → General → Behaviour buttons](10-settings.md#behaviour-buttons).
-- **Close**, or a tap anywhere outside the pop-up, closes it without recording anything. Tapping another
+- **✕**, **Esc**, or a tap anywhere outside the pop-up closes it without recording anything. Tapping another
   student's seat closes this pop-up and opens theirs. The student sheet in the side panel closes the same way.
+
+With a keyboard, **Tab** moves from seat to seat and **Enter** opens the pop-up.
 
 Every recording shows a message with **Undo** for a few seconds. With privacy mode on, the message says
 *"recorded"* rather than the student's name.
@@ -65,14 +68,15 @@ trip — when they left, when they returned and for how long — goes into the
 
 ## Pick a student
 
-Press **Pick a student**. Names flash past, then one lands, large enough for the back row to read.
+Press **Pick a student**. Names flash past, then one lands, large enough for the back row to read. (If Windows is set
+to show fewer animations, three names pass slowly instead.)
 
 ![Pick a student](../images/pick-a-student.png)
 
 | Control | What it does |
 | --- | --- |
-| **Asked and answered +1** | Records that the student answered, then closes the picker. |
-| **Unable to answer −1** | Records that they couldn't, then closes the picker. |
+| **+1 Asked and answered** | Records that the student answered, then closes the picker. |
+| **−1 Unable to answer** | Records that they couldn't, then closes the picker. |
 | **Other behaviour** | Shows all your other behaviour buttons for this student. |
 | **Pick again** | Picks another student. |
 | **Close** (or **Esc**) | Closes the picker. |
