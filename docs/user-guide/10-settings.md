@@ -7,7 +7,7 @@ the tabs to the right belong to the class chosen in the top bar.
 
 | Tab | Covers | Applies to |
 | --- | --- | --- |
-| [General](#general) | Privacy, display size, classes and students from a spreadsheet, time zone, parent-report header, data folder | The whole app |
+| [General](#general) | Privacy, display size and colours, classes and students from a spreadsheet, time zone, parent-report header, data folder | The whole app |
 | [Behaviour](#behaviour) | The behaviour buttons you tap during a lesson | Every class |
 | [Teaching mode](#teaching-mode) | Which teaching mode opens, where its buttons sit, the reseat PIN | The whole app |
 | [Assessments](#assessments) | Topic bank, cognitive levels, mark entry, levels or symbols, weighting | The whole app |
@@ -33,9 +33,20 @@ Every setting saves as soon as you change it.
 | **Show flags in the seat pop-up** | Off | For when safety information (e.g. *Medical*) must be one tap away. |
 | **Show notes in the seat pop-up** | Off | |
 
-### Display size
+### Display
 
-**100% / 125% / 150% / 175%** makes the whole app bigger for a large touch panel. It applies immediately.
+![Display size and colours](../images/settings-display.png)
+
+- **100% / 125% / 150% / 175%** makes the whole app bigger for a large touch panel. It applies immediately.
+- **Colours: Light / Dark / Match Windows.** Dark is easier on the eyes in a dim room; **Match Windows** follows
+  Windows' own light or dark setting (Settings → Personalisation → Colours) and changes when it does. Light is the
+  default.
+  - It's chosen **on each computer separately**, so the classroom board can stay light while your laptop is dark.
+    It isn't saved in your data folder.
+  - Printing is always in the light colours (the seating plan, parent reports), and the graph tools' sheets and
+    saved pictures stay white.
+
+![The room plan in Dark](../images/lesson-dark.png)
 
 ### Classes and students from a spreadsheet
 

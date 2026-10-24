@@ -17,8 +17,8 @@ describe("positionTint", () => {
     for (let i = 1; i < hues.length; i++) expect(hues[i]).toBeLessThanOrEqual(hues[i - 1]);
   });
 
-  it("is very light", () => {
-    expect(positionTint(3, 10)).toMatch(/ 92%\)$/);
+  it("takes its lightness from the theme (very light unless the theme says otherwise)", () => {
+    expect(positionTint(3, 10)).toMatch(/ var\(--tint-s, 85%\) var\(--tint-l, 92%\)\)$/);
   });
 
   it("gives a single row (or none) the first colour, and clamps out-of-range rows", () => {
@@ -52,8 +52,8 @@ describe("rankTint", () => {
     expect(hue(rankTint(3, 3, 3))).toBe(130);
   });
 
-  it("is very light", () => {
-    expect(rankTint(4, 1, 10)).toMatch(/ 92%\)$/);
+  it("takes its lightness from the theme, like the position tints", () => {
+    expect(rankTint(4, 1, 10)).toMatch(/ var\(--tint-l, 92%\)\)$/);
   });
 });
 

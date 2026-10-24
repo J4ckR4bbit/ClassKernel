@@ -33,3 +33,10 @@
 .sw-laps tr.fastest td { color: #1e7b45; }
 .sw-laps tr.slowest td { color: #b3261e; }
 .sw-tag { margin-left: 8px; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Dark theme: the running button and the lap colours in the theme's own red and green. */
+@media screen {
+  :root[data-theme="dark"] .sw-main.running { background: var(--alarm-soft); border-color: var(--alarm); color: var(--zone-loud); }
+  :root[data-theme="dark"] .sw-laps tr.fastest td { color: var(--zone-ok); }
+  :root[data-theme="dark"] .sw-laps tr.slowest td { color: var(--zone-loud); }
+}

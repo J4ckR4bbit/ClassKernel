@@ -19,7 +19,7 @@
   transition: background 0.4s, border-color 0.4s;
 }
 .nm-display.zone-warn { --zone: var(--zone-warn); --zone-soft: var(--zone-warn-soft); }
-.nm-display.zone-loud { --zone: var(--alarm); --zone-soft: var(--alarm-soft); }
+.nm-display.zone-loud { --zone: var(--zone-loud); --zone-soft: var(--alarm-soft); }
 /* The big figure is the level as a % of the limit; the dB(A) sits under it. */
 .nm-display > * { flex-shrink: 0; }
 .nm-reading { font-size: clamp(44px, min(18cqw, 20cqh), 200px); font-weight: 700; line-height: 1; color: var(--zone); font-variant-numeric: tabular-nums; }
@@ -30,13 +30,13 @@
 .nm-gauge { position: relative; width: min(100%, 900px); height: 34px; background: var(--field); border: 2px solid var(--border); border-radius: 17px; overflow: hidden; }
 .nm-gauge-fill { position: absolute; inset: 0 auto 0 0; background: var(--zone); transition: width 0.15s linear; }
 .nm-gauge-warn { position: absolute; top: 0; bottom: 0; background: rgba(217, 144, 26, 0.18); }
-.nm-gauge-limit { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #1d2733; }
+.nm-gauge-limit { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: var(--ink-strong); }
 .nm-scale { position: relative; display: flex; justify-content: space-between; width: min(100%, 900px); margin-top: -10px; font-size: 12px; color: var(--text-dim); }
-.nm-scale-limit { position: absolute; top: 0; transform: translateX(-50%); font-weight: 700; color: #1d2733; white-space: nowrap; }
+.nm-scale-limit { position: absolute; top: 0; transform: translateX(-50%); font-weight: 700; color: var(--ink-strong); white-space: nowrap; }
 .nm-limit { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; }
 .nm-limit button { font-size: 24px; min-width: 52px; min-height: 52px; font-weight: 700; }
 .nm-limit-value { font-size: 34px; min-width: 2.4ch; text-align: center; font-variant-numeric: tabular-nums; }
-.nm-uncal { font-size: 13px; color: var(--text-dim); background: rgba(255, 255, 255, 0.7); padding: 3px 10px; border-radius: 10px; }
+.nm-uncal { font-size: 13px; color: var(--text-dim); background: color-mix(in srgb, var(--md-surface-container-lowest) 70%, transparent); padding: 3px 10px; border-radius: 10px; }
 
 /* The last five minutes, under everything else; it takes the height left over. */
 .nm-display > .nm-graph { flex: 1 1 0; min-height: 80px; max-height: 320px; }
@@ -46,10 +46,10 @@
 .nm-graph-y .nm-graph-unit { top: 50%; left: 0; right: auto; transform: translateY(-50%) rotate(-90deg); transform-origin: center; font-weight: 700; }
 .nm-graph-plot { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .nm-graph-area { position: relative; flex: 1; min-height: 0; }
-.nm-graph-plot svg { display: block; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.75); border: 1px solid var(--border); border-radius: var(--md-shape-s); }
-.nm-graph-grid { stroke: rgba(29, 39, 51, 0.1); stroke-width: 1; }
-.nm-graph-limit { stroke: #1d2733; stroke-width: 2; stroke-dasharray: 8 6; }
-.nm-graph-limit-label { position: absolute; right: 6px; transform: translateY(-120%); font-size: 12px; font-weight: 700; color: #1d2733; background: rgba(255, 255, 255, 0.8); padding: 0 4px; border-radius: var(--md-shape-xs); }
+.nm-graph-plot svg { display: block; width: 100%; height: 100%; background: color-mix(in srgb, var(--md-surface-container-lowest) 75%, transparent); border: 1px solid var(--border); border-radius: var(--md-shape-s); }
+.nm-graph-grid { stroke: color-mix(in srgb, var(--md-on-surface) 10%, transparent); stroke-width: 1; }
+.nm-graph-limit { stroke: var(--ink-strong); stroke-width: 2; stroke-dasharray: 8 6; }
+.nm-graph-limit-label { position: absolute; right: 6px; transform: translateY(-120%); font-size: 12px; font-weight: 700; color: var(--ink-strong); background: color-mix(in srgb, var(--md-surface-container-lowest) 80%, transparent); padding: 0 4px; border-radius: var(--md-shape-xs); }
 .nm-graph-x { height: 20px; display: flex; align-items: flex-end; justify-content: space-between; font-size: 12px; color: var(--text-dim); }
 
 /* The alarm: slow (1 Hz) full-panel flash and a banner nobody can miss. */
@@ -62,9 +62,9 @@
   0% { background: var(--alarm); border-color: var(--alarm-dark); }
   50% { background: var(--zone-soft); border-color: var(--zone); }
 }
-.nm-display.alarm .nm-reading, .nm-display.alarm .nm-db, .nm-display.alarm .nm-status { color: #1d2733; }
+.nm-display.alarm .nm-reading, .nm-display.alarm .nm-db, .nm-display.alarm .nm-status { color: var(--ink-strong); }
 @media (prefers-reduced-motion: reduce) {
-  .nm-display.alarm { animation: none; background: #f6c7c1; }
+  .nm-display.alarm { animation: none; background: var(--alarm-still); }
 }
 
 /* Shown to the class: the meter takes the whole screen. */

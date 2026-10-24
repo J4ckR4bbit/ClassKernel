@@ -2,7 +2,7 @@ import { CartesianGrid, Legend, Line, LineChart, XAxis, YAxis } from "recharts";
 import { ClassInfo, GradeScale } from "../../lib/types";
 import { ReportSection, StudentProfile, TopicScore, fmtNum, fmtPct } from "../../lib/insights";
 import { GRADE_SCALES, formatDuration, gradeForPct } from "../../lib/stats";
-import { C_GRID, C_INK, C_PRIMARY, C_SECONDARY } from "../dashboard/shared";
+import { C_PRIMARY, C_SECONDARY, PAPER_GRID, PAPER_INK } from "../dashboard/shared";
 import { shortDate } from "../../lib/format";
 
 
@@ -231,9 +231,9 @@ function ResultsChart({ profile, name }: { profile: StudentProfile; name: string
   }));
   return (
     <LineChart width={680} height={112} data={rows} margin={{ top: 6, right: 44, left: 0, bottom: 0 }} className="report-chart">
-      <CartesianGrid stroke={C_GRID} vertical={false} />
-      <XAxis dataKey="name" tick={{ fontSize: 10, fill: C_INK }} interval={0} />
-      <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 10, fill: C_INK }} width={40} />
+      <CartesianGrid stroke={PAPER_GRID} vertical={false} />
+      <XAxis dataKey="name" tick={{ fontSize: 10, fill: PAPER_INK }} interval={0} />
+      <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 10, fill: PAPER_INK }} width={40} />
       <Legend wrapperStyle={{ fontSize: 11 }} />
       <Line isAnimationActive={false} dataKey="classAvg" name="Class average" stroke={C_SECONDARY} strokeWidth={2} strokeDasharray="6 4" dot={{ r: 3 }} connectNulls />
       <Line isAnimationActive={false} dataKey="student" name={name} stroke={C_PRIMARY} strokeWidth={2} dot={{ r: 3 }} connectNulls />

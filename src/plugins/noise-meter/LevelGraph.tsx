@@ -6,7 +6,8 @@ import { HISTORY_MS, LevelSample, WARN_BAND } from "./meter";
 // limit, red over it) and the limit is a dashed line, so the class can see how
 // long the room has been loud, not only how loud it is now.
 
-const ZONE = { quiet: "#2e9e5b", warn: "#d9901a", loud: "#c0392b" };
+// The meter's zone colours, from the theme (the same values in Light as before).
+const ZONE = { quiet: "var(--zone-ok)", warn: "var(--zone-warn)", loud: "var(--zone-loud)" };
 /** The SVG's own drawing grid; it is stretched to the box it sits in. */
 const W = 1000;
 const H = 200;

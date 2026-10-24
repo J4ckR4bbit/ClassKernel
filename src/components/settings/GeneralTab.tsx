@@ -5,10 +5,20 @@ import { dateTimeInZone, deviceTimeZone, listTimeZones } from "../../lib/time";
 import RosterSheetTools from "../RosterSheetTools";
 import Segmented from "../Segmented";
 import DataSettings from "./DataSettings";
+import { useTheme } from "../../store/theme";
+import { ThemeChoice } from "../../lib/theme";
 
-/** Settings › General: privacy, display size, the spreadsheet import, time zone, parent reports and data. */
+const THEME_OPTIONS: Array<{ value: ThemeChoice; label: string }> = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "Match Windows" },
+];
+
+/** Settings › General: privacy, display size and colours, the spreadsheet import, time zone, parent reports and data. */
 export default function GeneralTab() {
   const { userPrefs, setUserPrefs } = useAppPick("userPrefs", "setUserPrefs");
+  const themeChoice = useTheme((t) => t.choice);
+  const setThemeChoice = useTheme((t) => t.setChoice);
 
   return (
     <>
@@ -75,7 +85,7 @@ export default function GeneralTab() {
       </div>
 
       <div className="panel">
-        <h3>Display size</h3>
+        <h3>Display</h3>
         <p className="muted lead">
           Make everything bigger for a large touch panel. Applies to the whole app immediately.
         </p>
@@ -84,6 +94,19 @@ export default function GeneralTab() {
           options={[1, 1.25, 1.5, 1.75].map((v) => ({ value: v, label: `${Math.round(v * 100)}%` }))}
           value={userPrefs.uiScale}
           onChange={(v) => void setUserPrefs({ ...userPrefs, uiScale: v })}
+        />
+
+        <h4>Colours</h4>
+        <p className="muted lead">
+          Dark is easier on the eyes in a dim room. <b>Match Windows</b> follows Windows' own light or dark setting.
+          Chosen on each computer separately, so the classroom board and your laptop can differ. Printing is always in
+          the light colours.
+        </p>
+        <Segmented
+          label="Colours"
+          options={THEME_OPTIONS}
+          value={themeChoice}
+          onChange={setThemeChoice}
         />
       </div>
 
