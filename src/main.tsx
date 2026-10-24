@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { installMissingFolderDemo } from "./lib/demoMissingFolder";
-import { initTheme } from "./store/theme";
+import { initTheme, revealWindow } from "./store/theme";
 // Roboto, bundled (the CSP allows no font CDN): the three weights the app uses,
 // Latin and Latin Extended only, so accented names still render in it.
 import "@fontsource/roboto/latin-400.css";
@@ -22,3 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <App />
   </React.StrictMode>,
 );
+
+// After React has drawn the first screen (a timer rather than an animation
+// frame: frames don't run in a window that is still hidden).
+setTimeout(() => void revealWindow(), 0);

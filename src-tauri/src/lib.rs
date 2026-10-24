@@ -190,11 +190,26 @@ pub fn run() {
         // brings the open window forward instead of starting another copy.
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
                 let _ = window.unminimize();
                 let _ = window.set_focus();
             }
         }))
         .plugin(tauri_plugin_dialog::init())
+        // The window opens hidden (tauri.conf.json) and the page shows it once
+        // it has drawn in the right colours, so a dark theme doesn't flash
+        // white. Should the page never get that far, show it anyway.
+        .setup(|app| {
+            if let Some(window) = app.get_webview_window("main") {
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_secs(4));
+                    if !window.is_visible().unwrap_or(true) {
+                        let _ = window.show();
+                    }
+                });
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             read_text,
             read_text_opt,
