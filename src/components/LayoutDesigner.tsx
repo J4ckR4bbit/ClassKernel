@@ -195,7 +195,9 @@ export default function LayoutDesigner() {
       !(await confirmDialog({ title: `Overwrite template "${name}"?`, confirmLabel: "Overwrite" }))
     )
       return;
-    void saveLayoutTemplate(name).then(() => showToast(`Layout saved as template "${name}"`));
+    void saveLayoutTemplate(name).then((saved) => {
+      if (saved) showToast(`Layout saved as template "${name}"`);
+    });
   };
 
   const loadTemplate = async (name: string) => {
@@ -215,7 +217,9 @@ export default function LayoutDesigner() {
   const removeTemplate = async (name: string) => {
     const ok = await confirmDialog({ title: `Delete template "${name}"?`, confirmLabel: "Delete", danger: true });
     if (!ok) return;
-    void deleteLayoutTemplate(name).then(() => showToast(`Template "${name}" deleted`));
+    void deleteLayoutTemplate(name).then((deleted) => {
+      if (deleted) showToast(`Template "${name}" deleted`);
+    });
   };
 
   const deleteSelected = () => {

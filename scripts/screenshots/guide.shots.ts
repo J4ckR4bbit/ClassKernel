@@ -320,6 +320,13 @@ test("marks", async ({ page }) => {
   await reveal(page);
   await page.locator(".quick-mark-row input.mark-input").nth(2).focus();
   await shot(page, "quick-marking");
+
+  // The calculator beside the marks, adding up the paper still to enter.
+  await page.locator(".quick-mark-row input.mark-input").nth(9).focus();
+  await page.getByRole("button", { name: "Calculator", exact: true }).click();
+  await page.getByRole("textbox", { name: "Sum" }).fill("18+15+14,5");
+  await shot(page, "marking-calculator");
+  await page.getByRole("button", { name: "Calculator", exact: true }).click();
   await page.getByRole("button", { name: "Done" }).click();
 
   // View: the same test read-only, with its spreadsheet buttons.
