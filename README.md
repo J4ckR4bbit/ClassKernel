@@ -23,11 +23,12 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 | **Behaviour** | Filterable behaviour log and bathroom log. |
 | **Marks** | Tests as a single mark or per question (tagged by topic and cognitive level), keyboard-first mark entry, a read-only **View** and a class **Markbook** (each named in the top bar, with its Back), informal / examination **weighting**, and spreadsheet **templates** to fill in and import. SA levels or symbols. |
 | **Notes** | Class details, colour and Markdown notes. |
-| **Settings** | **General** (privacy mode, display size, time zone, the parent-report header, classes and students from a spreadsheet, the data folder and backups), **Behaviour** (your behaviour buttons), **Teaching mode**, **Assessments** (topic bank by grade — grades can share one list — cognitive levels, weighting), **Tools** and **.xlsx Export**. For the class chosen in the top bar: **Students** (with Adam numbers), the **room-layout designer** and **seating rules**. |
+| **Settings** | **General** (privacy mode, display size, Light / Dark / Match Windows colours, time zone, the parent-report header, classes and students from a spreadsheet, the data folder and backups), **Behaviour** (your behaviour buttons), **Teaching mode**, **Assessments** (topic bank by grade — grades can share one list — cognitive levels, weighting), **Tools** and **.xlsx Export**. For the class chosen in the top bar: **Students** (with Adam numbers), the **room-layout designer** and **seating rules**. |
 
 Made for a classroom touch panel: large buttons, a **privacy mode** that keeps marks and notes covered on the big
 screen, and seats and dialogs that also work from the keyboard and with a screen reader. When Windows is set
-to show fewer animations, the seat shuffle and the student picker calm down too.
+to show fewer animations, the seat shuffle and the student picker calm down too. A **dark theme** (or Match Windows) is chosen
+on each computer; printing is always in the light colours.
 
 **Optional tools**, off until switched on in Settings → Tools:
 
