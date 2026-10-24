@@ -18,12 +18,16 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 | --- | --- |
 | **Home** | Every class as a card in its own colour, with one-tap **Seating**, **Marks** and **Lesson**, plus your switched-on tools. |
 | **Attendance** | One-tap Present / Absent / Late / Excused register, with rates and history. |
-| **Seats** | Named seating plans. Seat students by hand, or **Randomise** with hidden keep-apart, keep-together and sit-at-the-front rules — once per lesson, then a PIN to reseat. Print for cover teachers. |
-| **Lesson** | The seating plan is the interface: tap a seat to log behaviour, attendance or a bathroom trip. Batch entry, a random student picker, a full-screen or side-panel teaching mode, **Start lesson** (marks the class present; Randomise starts it too) and **End lesson** to save the seat history. |
+| **Seats** | Named seating plans. Seat students by hand, or **Randomise** with hidden keep-apart, keep-together and sit-at-the-front rules — once per lesson, then a PIN to reseat. Prints on one landscape A4 page headed with the class, room, plan and date, for cover teachers. |
+| **Lesson** | The seating plan is the interface: tap a seat to log behaviour, attendance or a bathroom trip; behaviour and attendance taps can be undone from their message. Batch entry, a random student picker, a full-screen or side-panel teaching mode, **Start lesson** (marks the class present; Randomise starts it too) and **End lesson** to save the seat history. |
 | **Behaviour** | Filterable behaviour log and bathroom log. |
-| **Marks** | Tests as a single mark or per question (tagged by topic and cognitive level), keyboard-first mark entry, a read-only **View** and a class **Markbook**, informal / examination **weighting**, and spreadsheet **templates** to fill in and import. SA levels or symbols. |
+| **Marks** | Tests as a single mark or per question (tagged by topic and cognitive level), keyboard-first mark entry, a read-only **View** and a class **Markbook** (each named in the top bar, with its Back), informal / examination **weighting**, and spreadsheet **templates** to fill in and import. SA levels or symbols. |
 | **Notes** | Class details, colour and Markdown notes. |
-| **Settings** | Students (with Adam numbers, and class lists from a spreadsheet), room-layout designer, seating rules, privacy mode, display size, time zone, teaching mode, behaviour buttons, topic bank by grade (grades can share one list), weighting, backups and **.xlsx export**. |
+| **Settings** | **General** (privacy mode, display size, time zone, the parent-report header, classes and students from a spreadsheet, the data folder and backups), **Behaviour** (your behaviour buttons), **Teaching mode**, **Assessments** (topic bank by grade — grades can share one list — cognitive levels, weighting), **Tools** and **.xlsx Export**. For the class chosen in the top bar: **Students** (with Adam numbers), the **room-layout designer** and **seating rules**. |
+
+Made for a classroom touch panel: large buttons, a **privacy mode** that keeps marks and notes covered on the big
+screen, and seats and dialogs that also work from the keyboard and with a screen reader. When Windows is set
+to show fewer animations, the seat shuffle and the student picker calm down too.
 
 **Optional tools**, off until switched on in Settings → Tools:
 
@@ -54,10 +58,12 @@ npm install
 npm run dev            # UI in a browser with an in-memory demo class
 npm test               # unit tests
 npm run test:e2e       # browser tests (first time: npx playwright install chromium)
+npm run docs:screenshots  # retake the user guide's pictures
 npm run tauri dev      # desktop app (needs Rust)
 npm run tauri build    # Windows installer
 ```
 
-React + TypeScript + Vite and Zustand on a minimal Rust (Tauri 2) backend. CI runs the tests and builds the
+React + TypeScript + Vite and Zustand on a minimal Rust (Tauri 2) backend. The screens live in `src/components/`,
+with Settings and Marks each in a folder of their own (one file per tab or screen). CI runs the tests and builds the
 installer on every push; tagging `v*` publishes a release. See [Development](docs/development.md), and
 [`src/plugins/README.md`](src/plugins/README.md) to add a tool.

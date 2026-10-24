@@ -1,10 +1,10 @@
 import { useMemo } from "react";
-import { useExamWeight, useAppPick } from "../store/appStore";
-import { Assessment, studentName, sortByName } from "../lib/types";
-import { GRADE_SCALES, assessmentStats, gradeForPct, percentage, rankByScore, taskShares, weightedMark } from "../lib/stats";
-import { fmtDecimal, shortDate } from "../lib/format";
-import { positionTint, rankTints } from "../lib/listTint";
-import StatTile from "./StatTile";
+import { useExamWeight, useAppPick } from "../../store/appStore";
+import { Assessment, studentName, sortByName } from "../../lib/types";
+import { GRADE_SCALES, assessmentStats, gradeForPct, percentage, rankByScore, taskShares, weightedMark } from "../../lib/stats";
+import { fmtDecimal, shortDate } from "../../lib/format";
+import { positionTint, rankTints } from "../../lib/listTint";
+import StatTile from "../StatTile";
 
 /**
  * Every assessment's marks for the class on one read-only page: students down

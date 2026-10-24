@@ -7,7 +7,9 @@ the tabs to the right belong to the class chosen in the top bar.
 
 | Tab | Covers | Applies to |
 | --- | --- | --- |
-| [General](#general) | Privacy, display size, classes and students from a spreadsheet, time zone, parent-report header, teaching mode, behaviour buttons, data folder | The whole app |
+| [General](#general) | Privacy, display size, classes and students from a spreadsheet, time zone, parent-report header, data folder | The whole app |
+| [Behaviour](#behaviour) | The behaviour buttons you tap during a lesson | Every class |
+| [Teaching mode](#teaching-mode) | Which teaching mode opens, where its buttons sit, the reseat PIN | The whole app |
 | [Assessments](#assessments) | Topic bank, cognitive levels, mark entry, levels or symbols, weighting | The whole app |
 | [Tools](#tools) | Switching tools on and off | The whole app |
 | [Export](#export) | Spreadsheet export | Any classes you tick |
@@ -61,18 +63,21 @@ computer's own. Times are always saved in UTC, so changing it never alters your 
 **School name** and **Your name on reports**, printed at the top of each [parent report](08-dashboards-and-reports.md#parent-reports).
 Leave either blank to leave it off.
 
-### Teaching mode
+### Data
 
-![Teaching mode settings](../images/settings-teaching-mode.png)
+![The Data panel](../images/settings-data.png)
 
-| Setting | What it does |
-| --- | --- |
-| **Room plan (full screen)** / **Side panel of tables** | Which style the **Teaching mode** button opens. You can switch during a lesson. |
-| **Side panel edge** | Left or right. |
-| **Room plan buttons** | Which edge of the full-screen room plan the lesson buttons sit on: top, right, bottom or left. Put them within reach of where you stand. |
-| **Reseat PIN** | **Set PIN**, **Change PIN** or **Remove PIN**. Changing or removing it asks for the current PIN first, so a student at the board can't clear it. See [Seats](04-seats.md#once-per-lesson-and-the-reseat-pin). |
+- **Data folder** shows where everything is saved. **Change data folder…** switches to another folder (for example,
+  a colleague's shared folder, or a fresh one).
+- **Keep a copy on this computer** (on unless you switch it off) keeps this computer's own copy of the data, used
+  when the data folder isn't there at launch. See [If Google Drive isn't ready](11-your-data.md#if-google-drive-isnt-ready).
+  While the app works from that copy, the panel shows the real folder as not available, and **My data folder is
+  somewhere else…** takes the place of **Change data folder…**.
+- **Restore a backup** lists the newest backups, taken every time the app starts. **Restore…** puts a backup's
+  files back (a safety copy of today's data is taken first). See [Your data and backups](11-your-data.md).
+- The number of active and archived classes.
 
-### Behaviour buttons
+## Behaviour
 
 The buttons you tap during a lesson. They are **shared by all your classes** (stored in `behaviours.csv`).
 
@@ -91,19 +96,16 @@ The buttons you tap during a lesson. They are **shared by all your classes** (st
 **+ Positive behaviour** and **+ Negative behaviour** add a button. *Asked and answered* and *Unable to answer* are
 the buttons [Pick a student](05-lesson.md#pick-a-student) uses; you can rename or recolour them like any other.
 
-### Data
+## Teaching mode
 
-![The Data panel](../images/settings-data.png)
+![Teaching mode settings](../images/settings-teaching-mode.png)
 
-- **Data folder** shows where everything is saved. **Change data folder…** switches to another folder (for example,
-  a colleague's shared folder, or a fresh one).
-- **Keep a copy on this computer** (on unless you switch it off) keeps this computer's own copy of the data, used
-  when the data folder isn't there at launch. See [If Google Drive isn't ready](11-your-data.md#if-google-drive-isnt-ready).
-  While the app works from that copy, the panel shows the real folder as not available, and **My data folder is
-  somewhere else…** takes the place of **Change data folder…**.
-- **Restore a backup** lists the newest backups, taken every time the app starts. **Restore…** puts a backup's
-  files back (a safety copy of today's data is taken first). See [Your data and backups](11-your-data.md).
-- The number of active and archived classes.
+| Setting | What it does |
+| --- | --- |
+| **Room plan (full screen)** / **Side panel of tables** | Which style the **Teaching mode** button opens. You can switch during a lesson. |
+| **Side panel edge** | Left or right. |
+| **Room plan buttons** | Which edge of the full-screen room plan the lesson buttons sit on: top, right, bottom or left. Put them within reach of where you stand. |
+| **Reseat PIN** | **Set PIN**, **Change PIN** or **Remove PIN**. Changing or removing it asks for the current PIN first, so a student at the board can't clear it. See [Seats](04-seats.md#once-per-lesson-and-the-reseat-pin). |
 
 ## Assessments
 

@@ -17,8 +17,8 @@ saved as plain files in a folder you choose.
 7. [Marks](user-guide/07-marks.md) — assessments, quick marking, the per-question grid, viewing results, the markbook, weighting, marks from a spreadsheet, levels and symbols
 8. [Dashboards and parent reports](user-guide/08-dashboards-and-reports.md) — class and student dashboards, seating insights, printed reports
 9. [Teaching tools](user-guide/09-teaching-tools.md) — test timer, clock, stopwatch, graph paper, practical graphs, motion graphs, noise meter
-10. [Settings](user-guide/10-settings.md) — every setting, and the spreadsheet export
-11. [Your data and backups](user-guide/11-your-data.md) — where data lives, syncing, backups and restore, troubleshooting
+10. [Settings](user-guide/10-settings.md) — every tab (General, Behaviour, Teaching mode, Assessments, Tools, Export, and the class's Students, Room layout and Seating rules), and the spreadsheet export
+11. [Your data and backups](user-guide/11-your-data.md) — where data lives, syncing, backups and restore, if Google Drive isn't ready, troubleshooting
 
 ## Quick start
 

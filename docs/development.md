@@ -40,7 +40,7 @@ another computer would (`src/lib/demoMissingFolder.ts`, used by `e2e/offline.e2e
 
 | Layer | Where | Notes |
 | --- | --- | --- |
-| UI | `src/components/` | React + TypeScript, built with Vite. Material Design 3 styling in `src/styles.css` (colours named by meaning in its `:root`; each tool's own styles beside it in `src/plugins/`); dialogs share `components/Modal.tsx`; icons in `components/Icon.tsx`. Charts with Recharts, Markdown with marked. |
+| UI | `src/components/` | React + TypeScript, built with Vite. Material Design 3 styling in `src/styles.css` (colours named by meaning in its `:root`; each tool's own styles beside it in `src/plugins/`); dialogs share `components/Modal.tsx`; icons in `components/Icon.tsx`. Settings has a folder of its own (`components/settings/`, one file per tab or panel), as do the Marks screens (`components/marks/`). Charts with Recharts, Markdown with marked. |
 | State | `src/store/appStore.ts` | One Zustand store: the open class's data, preferences, navigation, dialogs and toasts. Every setter saves to disk straight away. |
 | Hooks | `src/hooks/` | The live lesson (`useLessonSession`), batch entry and the animated seat shuffle, shared by the room plan and the side panel. |
 | Domain logic | `src/lib/` | Pure, unit-tested modules: `seating.ts` (seat assigner), `stats.ts` (marks, weighting, ranks) and `insights.ts` (dashboards, reports, written summaries), `lessons.ts` (seating insights), `exporter.ts` + `xlsx.ts` (spreadsheet export, with a small built-in `.xlsx` writer instead of a dependency), `markSheet.ts` and `rosterSheet.ts` (marks and class-list templates and their import, read by the built-in `xlsxRead.ts`), `format.ts` (SA number formatting), `time.ts` (UTC storage, zone display), `pin.ts`, `privacy.ts`. |

@@ -478,14 +478,17 @@ test("settings", async ({ page }) => {
   await shot(page, "settings-general");
   await page.setViewportSize({ width: 1280, height: 1100 });
   await shotOf(page, panel(page, "Classes and students from a spreadsheet"), "settings-classes-spreadsheet", 0);
-  await shotOf(page, panel(page, "Teaching mode"), "settings-teaching-mode", 0);
-  await shotOf(page, panel(page, "Behaviour buttons"), "settings-behaviour-buttons", 0);
   // The demo's in-memory folder, shown as a teacher's real one would be.
   await panel(page, "Data")
     .locator("code")
     .first()
     .evaluate((e) => (e.textContent = "C:\\Users\\teacher\\OneDrive\\ClassroomData"));
   await shotOf(page, panel(page, "Data"), "settings-data", 0);
+
+  await settingsTab(page, "Teaching mode");
+  await shotOf(page, panel(page, "Teaching mode"), "settings-teaching-mode", 0);
+  await settingsTab(page, "Behaviour");
+  await shotOf(page, panel(page, "Behaviour buttons"), "settings-behaviour-buttons", 0);
 
   await settingsTab(page, "Assessments");
   await shotOf(page, [panel(page, "Mark entry"), panel(page, "Show results as")], "settings-mark-entry-and-results", 0);
