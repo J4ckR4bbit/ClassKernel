@@ -48,7 +48,7 @@ test("the class menu lists the classes, closes on Escape, and creates a class", 
 });
 
 test("every Settings tab opens", async ({ page }) => {
-  for (const tab of ["General", "Assessments", "Tools", "Export", "Students", "Room layout", "Seating rules"]) {
+  for (const tab of ["General", "Behaviour", "Teaching mode", "Assessments", "Tools", "Export", "Students", "Room layout", "Seating rules"]) {
     await settingsTab(page, tab);
     await expect(page.locator(".md-tabs .md-tab.active")).toContainText(tab);
   }

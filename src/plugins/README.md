@@ -128,6 +128,6 @@ const outcome = await savePluginFile({
 | `shared/tool-layout.css` | The two-pane layout the graph tools and the noise meter share: controls left, sheet right. |
 | `src/components/TimerMini.tsx` | The test timer's corner pop-up — the one plugin with a piece outside the plugin pane. |
 | `src/components/PluginView.tsx` | Lazy loading, the error boundary, the chrome. |
-| `src/components/SettingsView.tsx` | The Tools tab where they are switched on. |
+| `src/components/settings/PluginSettings.tsx` | The Tools tab in Settings, where they are switched on. |
 | `src/components/HomeView.tsx` | The Tools section listing the enabled ones. |
 | `settings.csv` (`plugins_enabled`) | The teacher's choice, as a `;`-separated list of ids. |

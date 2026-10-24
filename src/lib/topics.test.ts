@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TopicEntry } from "./types";
-import { TopicBank, deleteGrade, shareTopics, subtopicsForGrade, topicGrade, topicGroup, unshareTopics } from "./topics";
+import { TopicBank, deleteGrade, parseTopicPaste, shareTopics, subtopicsForGrade, topicGrade, topicGroup, unshareTopics } from "./topics";
 
 const row = (grade: string, subtopic: string, area = "Physics"): TopicEntry => ({ grade, area, subtopic, short: "" });
 
@@ -80,5 +80,15 @@ describe("grades sharing a topic list", () => {
   it("keeps a hand-edited chain pointing at a list when a grade in the middle is deleted", () => {
     const next = deleteGrade({ topics: [row("10", "Forces")], links: { "12": "11", "11": "10" } }, "11");
     expect(next.links).toEqual({ "12": "10" });
+  });
+});
+
+describe("parseTopicPaste", () => {
+  it("reads one subtopic per line, with an optional short label after a tab, skipping blank lines", () => {
+    expect(parseTopicPaste("Newton's laws\tN1\r\n\n  Momentum  \nImpulse\t Imp ")).toEqual([
+      { subtopic: "Newton's laws", short: "N1" },
+      { subtopic: "Momentum", short: "" },
+      { subtopic: "Impulse", short: "Imp" },
+    ]);
   });
 });

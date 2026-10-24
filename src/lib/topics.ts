@@ -114,3 +114,14 @@ export function deleteGrade({ topics, links }: TopicBank, grade: string): TopicB
   const handedOn = heir ? topics.filter((t) => t.grade === grade).map((t) => ({ ...t, grade: heir })) : [];
   return { topics: [...kept, ...handedOn], links: next };
 }
+
+/** Split pasted spreadsheet text into subtopic rows (line → Subtopic[\tShort]). */
+export function parseTopicPaste(text: string): Array<{ subtopic: string; short: string }> {
+  return text
+    .split(/\r?\n/)
+    .map((line) => {
+      const [subtopic = "", short = ""] = line.split("\t");
+      return { subtopic: subtopic.trim(), short: short.trim() };
+    })
+    .filter((r) => r.subtopic);
+}

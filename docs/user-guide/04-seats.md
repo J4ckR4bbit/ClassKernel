@@ -61,7 +61,7 @@ again within the same lesson, press **Reseat…** and enter your **reseat PIN**.
 
 The first time you unlock, the app asks you to **create** a PIN (4–6 digits, typed twice). From then on that PIN is
 needed every time. Change or remove it under
-[Settings → General → Teaching mode](10-settings.md#teaching-mode).
+[Settings → Teaching mode](10-settings.md#teaching-mode).
 
 ![Creating a reseat PIN](../images/reseat-pin-create.png)
 

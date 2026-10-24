@@ -37,7 +37,7 @@ Tap any student's seat and a pop-up opens beside it:
 - **Bathroom — start timer** times a bathroom trip (below).
 - **Behaviour buttons**, in two labelled groups — **Positive**, then **Negative** — each starting with its points
   (*+1 Great effort*). Tap one to record it. They are your own buttons, set up under
-  [Settings → General → Behaviour buttons](10-settings.md#behaviour-buttons).
+  [Settings → Behaviour](10-settings.md#behaviour).
 - **✕**, **Esc**, or a tap anywhere outside the pop-up closes it without recording anything. Tapping another
   student's seat closes this pop-up and opens theirs. The student sheet in the side panel closes the same way.
 
@@ -113,7 +113,7 @@ hand it in.
 ## Teaching mode
 
 Teaching mode hides the navigation and settings so you can teach from the plan. It comes in two styles; choose the
-default under [Settings → General → Teaching mode](10-settings.md#teaching-mode). Press **Esc** at any time to leave
+default under [Settings → Teaching mode](10-settings.md#teaching-mode). Press **Esc** at any time to leave
 it. Entering teaching mode also re-covers any private screens.
 
 ### Room plan (full screen)
@@ -124,7 +124,7 @@ The app fills the screen with the room plan. Tapping seats works exactly as abov
 
 The buttons are grouped (**Record**, **Seating**, **View**), with **Start lesson** / **End lesson** set apart so it
 isn't hit by accident. Choose which edge they sit on — left, right, top or bottom — under
-[Settings → General → Teaching mode](10-settings.md#teaching-mode), so they're under your hand where you stand.
+[Settings → Teaching mode](10-settings.md#teaching-mode), so they're under your hand where you stand.
 
 ### Side panel
 
