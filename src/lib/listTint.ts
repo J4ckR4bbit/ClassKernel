@@ -3,6 +3,10 @@
 // row, so a glance at the colour shows how far down the list you are. The Rank
 // column runs green for the top rank through yellow and orange to red for the
 // lowest.
+//
+// Only the hue is fixed: saturation and lightness come from the theme
+// (--tint-s, --tint-l), very light in Light and deep in Dark, so the text on
+// them reads in either.
 
 /** Hues of the list stops, evenly spaced down the list: blue, green, yellow, orange, red. */
 const POSITION_HUES = [215, 130, 52, 30, 4];
@@ -14,7 +18,7 @@ function tintAlong(t: number, hues: number[]): string {
   const along = Math.min(1, Math.max(0, t)) * (hues.length - 1);
   const k = Math.min(hues.length - 2, Math.floor(along));
   const hue = hues[k] + (hues[k + 1] - hues[k]) * (along - k);
-  return `hsl(${Math.round(hue)} 85% 92%)`;
+  return `hsl(${Math.round(hue)} var(--tint-s, 85%) var(--tint-l, 92%))`;
 }
 
 /** The tint for row `index` (0-based) of `count` rows, as a CSS colour. */

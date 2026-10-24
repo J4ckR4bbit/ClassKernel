@@ -11,9 +11,13 @@ export const C_PRIMARY = "#2e9455";
 export const C_SECONDARY = "#3b6fd6";
 export const C_NEGATIVE = "#c0322b";
 // Grid and axis ink are the Material neutrals (surface-container-high and
-// on-surface-variant), so the charts sit in the same greys as the rest.
-export const C_GRID = "#e5eae2";
-export const C_INK = "#414942";
+// on-surface-variant), so the charts sit in the same greys as the rest. On
+// screen they follow the theme (CSS variables work in SVG colour attributes).
+export const C_GRID = "var(--chart-grid)";
+export const C_INK = "var(--chart-ink)";
+// A parent report is paper: always the light theme's greys.
+export const PAPER_GRID = "#e5eae2";
+export const PAPER_INK = "#414942";
 
 /** The written analysis at the top of each tab. */
 export function SummaryCard({ title, lines }: { title: string; lines: string[] }) {

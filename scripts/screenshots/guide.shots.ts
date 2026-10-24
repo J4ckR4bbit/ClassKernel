@@ -503,6 +503,13 @@ test("settings", async ({ page }) => {
 
   await settingsTab(page, "Export");
   await shot(page, "settings-export");
+
+  // Colours: the setting, then the teaching room plan in Dark.
+  await settingsTab(page, "General");
+  await shotOf(page, panel(page, "Display"), "settings-display", 0);
+  await page.getByRole("group", { name: "Colours" }).getByRole("button", { name: "Dark" }).click();
+  await nav(page, "Lesson");
+  await shot(page, "lesson-dark");
 });
 
 test("your data: when the data folder isn't ready", async ({ page }) => {

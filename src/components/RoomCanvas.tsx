@@ -227,7 +227,8 @@ function DeskShapeView({
               className="desk-label"
               x={cx}
               y={desk.shape === "door" || desk.shape === "window" ? cy + 3.5 : desk.y + 13}
-              style={{ fontSize: 11 * deskFontScale, fill: desk.textColor || undefined }}
+              // On a colour the teacher chose, dark ink in either theme.
+              style={{ fontSize: 11 * deskFontScale, fill: desk.textColor || (desk.color ? "var(--on-tint)" : undefined) }}
             >
               {caption}
             </text>

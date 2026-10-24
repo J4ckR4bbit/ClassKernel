@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { CSSProperties, useMemo, useState } from "react";
 import { useApp, useAppPick } from "../store/appStore";
 import { DASHBOARDS_ID } from "../plugins/registry";
 import { studentName } from "../lib/types";
@@ -115,7 +115,7 @@ export default function BehaviourLogView() {
                 <td className="muted">{dateTimeInZone(e.timestamp)}</td>
                 <td>{s ? <StudentLink id={s.id} name={studentName(s)} /> : e.studentId}</td>
                 <td>
-                  <span className="tag" style={{ background: (c?.color ?? "#888") + "22", color: c?.color ?? "#555" }}>
+                  <span className="tag behaviour-tag" style={{ "--tag": c?.color ?? "#555" } as CSSProperties}>
                     {c?.label ?? e.code}
                   </span>
                   {e.note && <span className="muted"> {e.note}</span>}

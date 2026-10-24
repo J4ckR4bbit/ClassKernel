@@ -82,7 +82,28 @@
   --zone-warn: #d9901a;
   --zone-warn-soft: #fdf3e1;
   --select-highlight: #ffd84d;       /* a seat picked for batch entry */
+  --select-stroke: var(--accent);
   --grid-line: #eef1f4;              /* the room designer's grid */
+  --on-alarm: #fbe5e2;               /* small text on an alarm-red fill */
+  --zone-loud: #c0392b;              /* the noise meter's "too loud" ink */
+  --alarm-still: #f6c7c1;            /* the alarm without its flash (less motion) */
+  --ink-strong: #1d2733;             /* the noise meter's limit line and its label */
+  --seat-ink: #16202b;               /* names on seats */
+  --seat-ink-2: #3a4652;
+  --on-tint: #414942;                /* text on a colour the teacher chose (desks) */
+  --tint-s: 85%;                     /* the marks tables' rank and position tints */
+  --tint-l: 92%;
+  --row-hover: #f3f7f2;
+  --tag-warn: #ffddb3;
+  --on-tag-warn: #2a1800;
+  --good-container: #e3f0e8;         /* seating insights: pairs that work, and don't */
+  --good-outline: #9cc7ac;
+  --on-good-container: #1f6b3f;
+  --bad-container: #f7e0dd;
+  --bad-outline: #d9a59c;
+  --on-bad-container: #9c2f1f;
+  --chart-grid: #e5eae2;             /* dashboards (parent reports keep their own, for paper) */
+  --chart-ink: #414942;
 
   /* The app's original names, now pointing at the roles above, so every view
      and plugin takes on the scheme without being rewritten. */
@@ -104,12 +125,91 @@
   /* Type: whole-pixel sizes only, and the three bundled Roboto weights (400,
      500, 700; anything heavier draws as 700 anyway). Corners: the --md-shape
      steps, or half the height for a pill. */
+  color-scheme: light;
   font-family: Roboto, "Segoe UI", system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.43;
   letter-spacing: 0.1px;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+}
+
+
+/* Dark: Material 3 roles from the same seed (#2c6e49, tonal spot, dark), and a
+   dark value for each meaning above. Screen only, so anything printed — the
+   seating plan, parent reports — comes out in the light colours on white. */
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --md-primary: #94d5a9;
+    --md-on-primary: #00391f;
+    --md-primary-container: #0c5130;
+    --md-on-primary-container: #aff2c4;
+    --md-secondary: #b5ccba;
+    --md-on-secondary: #213528;
+    --md-secondary-container: #374b3d;
+    --md-on-secondary-container: #d1e8d5;
+    --md-tertiary: #a3cddb;
+    --md-tertiary-container: #214c58;
+    --md-on-tertiary-container: #bfe9f8;
+    --md-error: #ffb4ab;
+    --md-on-error: #690005;
+    --md-error-container: #93000a;
+    --md-on-error-container: #ffdad6;
+    --md-surface: #0f1511;
+    --md-on-surface: #dfe4dd;
+    --md-on-surface-variant: #c0c9c0;
+    --md-surface-container-lowest: #0a0f0c;
+    --md-surface-container-low: #181d19;
+    --md-surface-container: #1c211d;
+    --md-surface-container-high: #262b27;
+    --md-surface-container-highest: #313631;
+    --md-outline: #8a938b;
+    --md-outline-variant: #414942;
+    --md-inverse-surface: #dfe4dd;
+    --md-inverse-on-surface: #2c322d;
+    --md-inverse-primary: #2b6a46;
+
+    /* Cards sit above the page in dark too: one step lighter, not darker. */
+    --panel: var(--md-surface-container-low);
+    --field: var(--md-surface-container);
+    --away: #f0bf6b;
+    --away-container: #3d2e0f;
+    --away-outline: #8a6a2a;
+    --away-outline-strong: #c9963a;
+    --warning-container: #3d2e0f;
+    --on-warning-container: #ffddb3;
+    --warn: #f0bf6b;
+    --alarm-soft: #3a1612;
+    --alarm-still: #5a1d16;
+    --zone-ok: #5fd38f;
+    --zone-ok-soft: #10261a;
+    --zone-warn: #f0b04a;
+    --zone-warn-soft: #2e2410;
+    --zone-loud: #ff8a7a;
+    --select-highlight: #6e5c00;
+    --select-stroke: #ffd84d;
+    --grid-line: #232923;
+    --ink-strong: #e1e5de;
+    --seat-ink: var(--md-on-surface);
+    --seat-ink-2: var(--md-on-surface-variant);
+    --tint-s: 35%;
+    --tint-l: 24%;
+    --row-hover: #1f251f;
+    --mark-current: #4d4515;
+    --mark-done: #2a302b;
+    --tag-warn: #4a3200;
+    --on-tag-warn: #ffddb3;
+    --good-container: #0c5130;
+    --good-outline: #2b6a46;
+    --on-good-container: #aff2c4;
+    --bad-container: #5c1a12;
+    --bad-outline: #93000a;
+    --on-bad-container: #ffdad6;
+    --chart-grid: #313631;
+    --chart-ink: #c0c9c0;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
 }
 
 * { box-sizing: border-box; }
@@ -147,8 +247,8 @@ button.primary.danger { background: var(--md-error); border-color: var(--md-erro
 button.small { white-space: nowrap; padding: 0 12px; font-size: 13px; min-height: 32px; min-width: 32px; border-radius: var(--md-shape-l); gap: 6px; }
 /* A small button holding only an icon (delete ✕ and the like) is a round one. */
 button.small.icon-only { padding: 0; width: 32px; }
-button:disabled { cursor: default; color: rgba(24, 29, 25, 0.38); border-color: rgba(24, 29, 25, 0.12); }
-button.primary:disabled, button.tonal:disabled { background: rgba(24, 29, 25, 0.12); border-color: transparent; }
+button:disabled { cursor: default; color: color-mix(in srgb, var(--md-on-surface) 38%, transparent); border-color: color-mix(in srgb, var(--md-on-surface) 12%, transparent); }
+button.primary:disabled, button.tonal:disabled { background: color-mix(in srgb, var(--md-on-surface) 12%, transparent); border-color: transparent; }
 /* A round button holding just an icon. */
 .icon-btn {
   width: 40px; height: 40px; min-height: 40px; padding: 0; border: none; border-radius: 50%;
@@ -241,7 +341,7 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
   position: relative; display: grid; place-items: center; width: 56px; height: 32px; border-radius: var(--md-shape-l);
   transition: background-color 0.2s;
 }
-.nav-item:hover .nav-indicator { background: rgba(65, 73, 66, 0.08); }
+.nav-item:hover .nav-indicator { background: color-mix(in srgb, var(--md-on-surface-variant) 8%, transparent); }
 .nav-item.active .nav-indicator { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
 .nav-label { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; line-height: 16px; text-align: center; }
 .nav-item.active .nav-label { color: var(--text); font-weight: 700; }
@@ -255,7 +355,7 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
 .nav-rail.expanded .nav-item {
   flex-direction: row; justify-content: flex-start; gap: 12px; width: 100%; height: 56px; padding: 0 16px; border-radius: var(--md-shape-xl);
 }
-.nav-rail.expanded .nav-item:hover { background: rgba(65, 73, 66, 0.08); }
+.nav-rail.expanded .nav-item:hover { background: color-mix(in srgb, var(--md-on-surface-variant) 8%, transparent); }
 .nav-rail.expanded .nav-item.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
 .nav-rail.expanded .nav-indicator { width: 24px; height: 24px; background: none !important; }
 .nav-rail.expanded .nav-label { font-size: 14px; letter-spacing: 0.1px; text-align: left; }
@@ -343,7 +443,12 @@ p.tail { margin-bottom: 0; }
   display: inline-flex; align-items: center; background: var(--md-secondary-container); color: var(--md-on-secondary-container);
   border-radius: var(--md-shape-s); padding: 1px 8px; font-size: 12px; font-weight: 500; margin-right: 4px;
 }
-.tag.warn { background: #ffddb3; color: #2a1800; }
+.tag.warn { background: var(--tag-warn); color: var(--on-tag-warn); }
+/* A behaviour named in its button's colour (the log); lightened to read on dark. */
+.tag.behaviour-tag { background: color-mix(in srgb, var(--tag) 13%, transparent); color: var(--tag); }
+@media screen {
+  :root[data-theme="dark"] .tag.behaviour-tag { background: color-mix(in srgb, var(--tag) 30%, transparent); color: color-mix(in srgb, var(--tag) 35%, white); }
+}
 
 table.data {
   width: 100%; border-collapse: separate; border-spacing: 0; background: var(--panel);
@@ -354,7 +459,7 @@ table.data th {
   background: var(--md-surface-container-low); font-weight: 500; font-size: 13px; color: var(--text-dim);
   letter-spacing: 0.4px; position: sticky; top: 0; z-index: 2;
 }
-table.data tbody tr:hover td { background: rgba(43, 106, 70, 0.04); }
+table.data tbody tr:hover td { background: color-mix(in srgb, var(--md-primary) 4%, transparent); }
 table.data tr:last-child td { border-bottom: none; }
 /* Shrinks to its columns, so a name and the buttons for it stay close
    together on a wide screen instead of 800 px apart. */
@@ -461,12 +566,14 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .desk-body.door { fill: #c9a35c; stroke: #a07f38; }
 .desk-body.window { fill: #cfe4f2; stroke: #7aa7c4; }
 .desk-label { font-size: 11px; fill: var(--text-dim); text-anchor: middle; pointer-events: none; }
+/* The fixed-colour furniture keeps a dark label in either theme. */
+.desk-body.teacher + .desk-label, .desk-body.door + .desk-label, .desk-body.window + .desk-label { fill: var(--on-tint); }
 .room-grid-line { stroke: var(--grid-line); }
 .seat-square { fill: var(--field); stroke: var(--md-outline-variant); stroke-width: 1.5; }
 .seat-square.occupied { fill: var(--accent-soft); stroke: var(--accent); }
 .seat-square.drop-target { stroke: var(--accent); stroke-width: 3; stroke-dasharray: 5 4; }
-.seat-name { font-size: 13px; text-anchor: middle; fill: #16202b; pointer-events: none; font-weight: 700; }
-.seat-surname { font-size: 10px; text-anchor: middle; fill: #3a4652; pointer-events: none; font-weight: 500; }
+.seat-name { font-size: 13px; text-anchor: middle; fill: var(--seat-ink); pointer-events: none; font-weight: 700; }
+.seat-surname { font-size: 10px; text-anchor: middle; fill: var(--seat-ink-2); pointer-events: none; font-weight: 500; }
 .seat-points { font-size: 11px; text-anchor: middle; font-weight: 700; pointer-events: none; }
 /* Dark enough to read on the seat's green (about 5:1, WCAG AA). */
 .seat-points.pos { fill: var(--md-primary); }
@@ -479,7 +586,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .seat-badge.out { fill: var(--away); }
 /* Batch entry: a picked seat is filled highlighter-yellow with a heavy border
    and a tick, so it can't be mistaken for an ordinary seat at a glance. */
-.seat-square.batch-selected { fill: var(--select-highlight); stroke: var(--accent); stroke-width: 4; }
+.seat-square.batch-selected { fill: var(--select-highlight); stroke: var(--select-stroke); stroke-width: 4; }
 /* A seat reached with the keyboard shows a thick ring, like a focused button. */
 .room-canvas .seat:focus { outline: none; }
 .room-canvas .seat:focus-visible .seat-square { stroke: var(--md-primary); stroke-width: 4; }
@@ -493,7 +600,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .front-marker { fill: var(--md-outline); font-size: 11px; letter-spacing: 2px; text-anchor: middle; }
 
 .swatch-row { display: inline-flex; align-items: center; gap: 6px; padding: 0 2px; }
-.swatch { width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 50%; border: 1px solid rgba(29, 39, 51, 0.18); }
+.swatch { width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--md-on-surface) 18%, transparent); }
 .swatch:hover { border-color: var(--accent); transform: scale(1.08); }
 .swatch.on { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--field); }
 .bh-swatches { flex-wrap: wrap; gap: 4px; max-width: 290px; }
@@ -690,8 +797,8 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .section-heading { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 500; margin: 24px 0 12px; }
 .section-heading .icon { color: var(--md-on-surface-variant); }
 .desk-pill { display: inline-block; background: var(--md-surface-container-high); border: 1px solid var(--border); border-radius: var(--md-shape-m); padding: 2px 9px; font-size: 12px; font-variant-numeric: tabular-nums; }
-.desk-pill.good { background: #e3f0e8; border-color: #9cc7ac; color: #1f6b3f; }
-.desk-pill.bad { background: #f7e0dd; border-color: #d9a59c; color: #9c2f1f; }
+.desk-pill.good { background: var(--good-container); border-color: var(--good-outline); color: var(--on-good-container); }
+.desk-pill.bad { background: var(--bad-container); border-color: var(--bad-outline); color: var(--on-bad-container); }
 
 /* importing marks from a template: what was skipped, and a file made for another test */
 .import-preview { max-width: 640px; }
@@ -719,13 +826,13 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .mark-grid .col-q { width: 48px; min-width: 48px; }
 .mark-grid .col-total { width: 54px; min-width: 54px; font-variant-numeric: tabular-nums; }
 .mark-grid tbody td.col-name { font-size: 13px; }
-.mark-grid tbody tr:hover td { background: #f3f7f2; }
+.mark-grid tbody tr:hover td { background: var(--row-hover); }
 
 /* frozen columns: names on the left, totals on the right */
 .mark-grid .sticky-left, .mark-grid .sticky-right { position: sticky; background: var(--panel); z-index: 1; }
 .mark-grid thead .sticky-left, .mark-grid thead .sticky-right { background: var(--md-surface-container-low); z-index: 3; }
 .mark-grid .topic-row .sticky-left { background: var(--md-surface-container-low); }
-.mark-grid tbody tr:hover .sticky-left, .mark-grid tbody tr:hover .sticky-right { background: #f3f7f2; }
+.mark-grid tbody tr:hover .sticky-left, .mark-grid tbody tr:hover .sticky-right { background: var(--row-hover); }
 /* Grey once every question has a mark; yellow for the student being marked (wins). */
 .mark-grid tbody tr.done td, .mark-grid tbody tr.done:hover td { background: var(--mark-done); }
 .mark-grid tbody tr:focus-within td, .mark-grid tbody tr:focus-within:hover td { background: var(--mark-current); }
@@ -867,7 +974,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .folder-banner > .icon { flex: none; margin-top: 1px; }
 .folder-banner.done { background: var(--md-primary-container); color: var(--md-on-primary-container); }
 .folder-banner.attention { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
-.folder-banner code { background: rgba(0, 0, 0, 0.06); }
+.folder-banner code { background: color-mix(in srgb, var(--md-on-surface) 8%, transparent); }
 .folder-banner .muted { color: inherit; opacity: 0.8; margin-top: 4px; }
 .folder-banner > button { flex: none; }
 .sync-notes { margin: 6px 0 0; padding-left: 20px; }
@@ -920,7 +1027,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 /* Time's up: red, gently pulsing, and it stays until tapped. */
 .timer-mini.done { background: var(--alarm); border-color: var(--alarm-dark); animation: tm-pulse 1.4s ease-in-out infinite; }
 .timer-mini.done .timer-mini-label { font-size: 22px; color: var(--on-fill); }
-.timer-mini.done .timer-mini-sub { color: var(--alarm-soft); }
+.timer-mini.done .timer-mini-sub { color: var(--on-alarm); }
 @keyframes tm-pulse { 50% { box-shadow: 0 0 0 10px rgba(192, 57, 43, 0.25), 0 8px 28px rgba(20, 30, 40, 0.25); } }
 @media (prefers-reduced-motion: reduce) { .timer-mini.done { animation: none; } }
 .timer-mini.inline { position: static; width: auto; flex-shrink: 0; box-shadow: none; }
@@ -935,7 +1042,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
   transition: background 0.4s, border-color 0.4s;
 }
 .noise-mini.zone-warn { --nm-colour: var(--zone-warn); --nm-soft: var(--zone-warn-soft); }
-.noise-mini.zone-loud { --nm-colour: var(--alarm); --nm-soft: var(--alarm-soft); }
+.noise-mini.zone-loud { --nm-colour: var(--zone-loud); --nm-soft: var(--alarm-soft); }
 .noise-mini-body {
   flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0;
   border: none; background: transparent; padding: 4px 8px; text-align: left; min-height: 0; border-radius: 10px; color: var(--text);
@@ -948,7 +1055,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .noise-mini-actions button { min-width: 48px; min-height: 0; flex: 1; padding: 4px 8px; border-radius: 10px; border-color: var(--md-outline-variant); color: var(--text); background: var(--panel); }
 .noise-mini.alarm { background: var(--alarm); border-color: var(--alarm-dark); animation: tm-pulse 1.4s ease-in-out infinite; }
 .noise-mini.alarm .noise-mini-label, .noise-mini.alarm .noise-mini-pct { color: var(--on-fill); }
-.noise-mini.alarm .noise-mini-sub { color: var(--alarm-soft); }
+.noise-mini.alarm .noise-mini-sub { color: var(--on-alarm); }
 @media (prefers-reduced-motion: reduce) { .noise-mini.alarm { animation: none; } }
 .noise-mini.inline { width: auto; flex-shrink: 0; box-shadow: none; }
 
@@ -1054,7 +1161,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
   min-width: 22px; padding: 1px 7px; border-radius: 10px; text-align: center; letter-spacing: 0;
   background: var(--tbl-accent); color: var(--tbl-bg); font-size: 12px;
 }
-.strip-table .strip-student { background: var(--field); border-color: rgba(29, 39, 51, 0.1); }
+.strip-table .strip-student { background: var(--field); border-color: color-mix(in srgb, var(--md-on-surface) 10%, transparent); }
 .strip-table .strip-check { color: var(--tbl-accent); }
 .strip-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 0 0 7px; }
 .strip-swatches .swatch { width: 36px; height: 36px; min-height: 36px; }

@@ -9,7 +9,7 @@ import { DockSide } from "./types";
 
 /**
  * Strip width in logical pixels: a fifth-ish of the screen, within limits,
- * grown with the app's display size (Settings → Display size zooms the whole
+ * grown with the app's display size (Settings → General → Display zooms the whole
  * page, so the strip needs the room to match), but never over 30% of the screen.
  */
 export function stripWidth(screenLogicalWidth: number, uiScale = 1): number {
