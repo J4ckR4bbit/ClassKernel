@@ -205,7 +205,8 @@ export default function LayoutDesigner() {
       confirmLabel: "Apply layout",
     });
     if (!ok) return;
-    void applyLayoutTemplate(name).then(() => {
+    void applyLayoutTemplate(name).then((applied) => {
+      if (!applied) return;
       setSelected(null);
       showToast(`Applied layout "${name}"`);
     });

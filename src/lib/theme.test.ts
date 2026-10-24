@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { THEME_KEY, parseThemeChoice, readThemeChoice, resolveTheme, saveThemeChoice } from "./theme";
+import { PAGE_BACKGROUND, THEME_KEY, parseThemeChoice, readThemeChoice, resolveTheme, saveThemeChoice } from "./theme";
 
 describe("theme choice", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -37,5 +38,15 @@ describe("theme choice", () => {
     });
     expect(readThemeChoice()).toBe("light");
     expect(() => saveThemeChoice("dark")).not.toThrow();
+  });
+});
+
+describe("the desktop window's background", () => {
+  it("is the page's own background in each theme, so the window and the page match", () => {
+    const css = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+    const surface = (from: number) => /--md-surface-container: (#[0-9a-f]{6});/.exec(css.slice(from))?.[1];
+    expect(surface(0)).toBe(PAGE_BACKGROUND.light);
+    expect(surface(css.indexOf(':root[data-theme="dark"]'))).toBe(PAGE_BACKGROUND.dark);
+    expect(css).toMatch(/body \{ background: var\(--md-surface-container\); \}/);
   });
 });

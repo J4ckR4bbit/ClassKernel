@@ -145,7 +145,8 @@ Click an item to select it (it gets a green outline). A second toolbar appears:
   (50%–300%). Make them bigger for a large classroom panel.
 - **Save as template** stores this room under a name. The template then appears as a button here in **every**
   class: press it to apply that layout (it replaces the class's current desks), or its **✕** to delete the
-  template. Useful when several classes are taught in the same lab.
+  template. Useful when several classes are taught in the same lab. If a template can't be read (for example, it
+  was deleted on another computer and the sync hasn't caught up), the room is left as it was and a message says so.
 
 ## Seating rules
 

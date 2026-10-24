@@ -34,6 +34,13 @@ export function saveThemeChoice(choice: ThemeChoice): void {
   }
 }
 
+/**
+ * The page's background in each theme (--md-surface-container in styles.css).
+ * The desktop window is painted this colour too, so the moment before the
+ * page draws matches it instead of flashing white.
+ */
+export const PAGE_BACKGROUND: Record<Theme, string> = { light: "#eaefe8", dark: "#1c211d" };
+
 /** The "dark mode" media query, where the window has one. */
 export function systemDarkQuery(): MediaQueryList | null {
   try {

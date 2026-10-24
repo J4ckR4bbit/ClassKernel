@@ -281,7 +281,8 @@ export interface AppState {
 
   refreshLayoutTemplates(): Promise<void>;
   saveLayoutTemplate(name: string): Promise<void>;
-  applyLayoutTemplate(name: string): Promise<void>;
+  /** False when the template couldn't be read (the room is left as it was). */
+  applyLayoutTemplate(name: string): Promise<boolean>;
   deleteLayoutTemplate(name: string): Promise<void>;
 }
 
@@ -964,13 +965,28 @@ export const useApp = create<AppState>((set, get) => {
 
   async applyLayoutTemplate(name) {
     const { dataDir, currentClass, roomConfig } = get();
-    if (!dataDir || !currentClass) return;
-    const { desks, config } = await repo.loadLayoutTemplate(dataDir, name);
+    if (!dataDir || !currentClass) return false;
+    let template: Awaited<ReturnType<typeof repo.loadLayoutTemplate>> | null = null;
+    try {
+      template = await repo.loadLayoutTemplate(dataDir, name);
+    } catch (e) {
+      console.error(`Couldn't read layout template ${name}`, e);
+    }
+    // No desks means the template's files are missing (deleted on another
+    // computer, say): applying it would clear the room, so leave it alone.
+    if (!template || template.desks.length === 0) {
+      get().showToast(`Couldn't read the layout "${name}" — this room is unchanged`);
+      return false;
+    }
     // Keep this class's own view crop; take everything else from the template.
-    const nextConfig: RoomConfig = { ...config, crop: roomConfig.crop };
-    set({ desks, roomConfig: nextConfig });
-    await repo.saveDesks(dataDir, currentClass, desks);
-    await repo.saveRoomConfig(dataDir, currentClass, nextConfig);
+    const nextConfig: RoomConfig = { ...template.config, crop: roomConfig.crop };
+    set({ desks: template.desks, roomConfig: nextConfig });
+    // Applied either way; if the files can't be written, the banner says so and offers Try again.
+    await guarded("the room layout", async () => {
+      await repo.saveDesks(dataDir, currentClass, template.desks);
+      await repo.saveRoomConfig(dataDir, currentClass, nextConfig);
+    });
+    return true;
   },
 
   async deleteLayoutTemplate(name) {
