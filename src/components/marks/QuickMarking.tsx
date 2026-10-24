@@ -5,6 +5,7 @@ import { fmtDecimal, parseDecimal } from "../../lib/format";
 import { positionTint } from "../../lib/listTint";
 import MarkSheetTools from "../MarkSheetTools";
 import Icon from "../Icon";
+import MarkCalculator, { CalculatorButton, useCalculatorShown } from "./MarkCalculator";
 
 /**
  * Keyboard-first mark entry: type a mark, press Enter, the next student is
@@ -17,6 +18,7 @@ export default function QuickMarking({ assessment, onDone, onImported }: { asses
     [students],
   );
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
+  const [calculator, setCalculator] = useCalculatorShown();
 
   const byStudent = useMemo(() => {
     const m = new Map<string, Mark>();
@@ -53,57 +55,62 @@ export default function QuickMarking({ assessment, onDone, onImported }: { asses
         <span className="muted">
           {entered}/{sorted.length} entered
         </span>
+        <CalculatorButton shown={calculator} onToggle={() => setCalculator(!calculator)} />
         <MarkSheetTools assessment={assessment} onImported={onImported} />
         <button className="primary" onClick={onDone}>
           <Icon name="check" size={18} /> Done
         </button>
       </div>
 
-      <div className="panel quick-mark-list">
-        {sorted.map((s, i) => {
-          const m = markOf(s.id);
-          const pct = m?.mark != null && assessment.totalMarks > 0 ? Math.round((m.mark / assessment.totalMarks) * 100) : null;
-          const over = m?.mark != null && m.mark > assessment.totalMarks;
-          return (
-            <div key={s.id} className={`quick-mark-row ${m?.mark != null ? "done" : ""}`}>
-              <span className="name" style={{ background: positionTint(i, sorted.length) }}>
-                {i + 1}. {studentName(s)}
-              </span>
-              <input
-                ref={(el) => {
-                  inputs.current[i] = el;
-                }}
-                className="mark-input"
-                inputMode="decimal"
-                autoFocus={i === 0}
-                defaultValue={m?.mark != null ? fmtDecimal(m.mark) : ""}
-                onFocus={(e) => e.currentTarget.select()}
-                onChange={(e) => setMark(s.id, e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === "ArrowDown") {
-                    e.preventDefault();
-                    focusRow(Math.min(i + 1, sorted.length - 1));
-                  } else if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    focusRow(Math.max(i - 1, 0));
-                  }
-                }}
-              />
-              <span className="muted" style={{ width: 60, color: over ? "var(--danger)" : undefined }}>
-                {over ? "> max!" : pct !== null ? `${pct}%` : ""}
-              </span>
-              <input
-                className="grow"
-                placeholder="comment (optional)"
-                defaultValue={m?.comment ?? ""}
-                onChange={(e) => save(s.id, { comment: e.target.value })}
-              />
-            </div>
-          );
-        })}
-        {sorted.length === 0 && (
-          <p className="empty-row start">Add students to the class first.</p>
-        )}
+      <div className="marking-body">
+        <div className="panel quick-mark-list">
+          {sorted.map((s, i) => {
+            const m = markOf(s.id);
+            const pct = m?.mark != null && assessment.totalMarks > 0 ? Math.round((m.mark / assessment.totalMarks) * 100) : null;
+            const over = m?.mark != null && m.mark > assessment.totalMarks;
+            return (
+              <div key={s.id} className={`quick-mark-row ${m?.mark != null ? "done" : ""}`}>
+                <span className="name" style={{ background: positionTint(i, sorted.length) }}>
+                  {i + 1}. {studentName(s)}
+                </span>
+                <input
+                  ref={(el) => {
+                    inputs.current[i] = el;
+                  }}
+                  className="mark-input"
+                  aria-label={`Mark for ${studentName(s)}`}
+                  inputMode="decimal"
+                  autoFocus={i === 0}
+                  defaultValue={m?.mark != null ? fmtDecimal(m.mark) : ""}
+                  onFocus={(e) => e.currentTarget.select()}
+                  onChange={(e) => setMark(s.id, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === "ArrowDown") {
+                      e.preventDefault();
+                      focusRow(Math.min(i + 1, sorted.length - 1));
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      focusRow(Math.max(i - 1, 0));
+                    }
+                  }}
+                />
+                <span className="muted" style={{ width: 60, color: over ? "var(--danger)" : undefined }}>
+                  {over ? "> max!" : pct !== null ? `${pct}%` : ""}
+                </span>
+                <input
+                  className="grow"
+                  placeholder="comment (optional)"
+                  defaultValue={m?.comment ?? ""}
+                  onChange={(e) => save(s.id, { comment: e.target.value })}
+                />
+              </div>
+            );
+          })}
+          {sorted.length === 0 && (
+            <p className="empty-row start">Add students to the class first.</p>
+          )}
+        </div>
+        {calculator && <MarkCalculator onClose={() => setCalculator(false)} />}
       </div>
     </div>
   );

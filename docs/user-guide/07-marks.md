@@ -77,6 +77,8 @@ Built for working through a pile of scripts:
   shows how far down the list you are at a glance.
 - **Template** and **Import marks** fill the marks in from a spreadsheet instead (see
   [Marks from a spreadsheet](#marks-from-a-spreadsheet)).
+- **Calculator** shows a small calculator beside the marks, for adding up a script (see
+  [The calculator](#the-calculator)).
 
 Press **Done** to finish. Every mark is saved the moment you type it.
 
@@ -109,8 +111,26 @@ question's maximum (e.g. */6*) and topic short label under its number.
   student.
 - The **Average (mark)** and **Average (%)** rows at the bottom show how each question went.
 - Only the student rows scroll; the title, headings and average rows stay in place.
+- **Calculator** shows a small calculator beside the grid (see [The calculator](#the-calculator)).
 
 Press **Done** to finish.
+
+## The calculator
+
+![The calculator beside the marks](../images/marking-calculator.png)
+
+**Calculator** on the marking toolbar shows a small calculator beside the marks, for adding up a script or working
+out a mark. Press it again, or the calculator's **✕**, to hide it. This computer remembers whether it is showing,
+for both kinds of mark entry.
+
+- Click its keys, or type a sum in its box: **+**, **−**, **×** and **÷** (or `*` and `/`), brackets, and a decimal
+  comma or point — for example `18+15+14,5`. The answer shows under the sum as you go.
+- **=** (or **Enter**) puts the answer in place of the sum, to carry on from it. **C** (or **Esc**) clears the sum;
+  **⌫** takes off the last character.
+- **Put in mark** puts the answer into the mark box you were last in, named under the button (*Goes into: Mark for
+  Priya Jones*), just as if you had typed it there, and clears the calculator for the next script. In the
+  per-question grid an answer above the question's maximum is corrected to the maximum, as a typed mark is. Press
+  **Enter** to move on as usual.
 
 ## Viewing results
 

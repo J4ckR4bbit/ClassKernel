@@ -14,7 +14,7 @@ saved as plain files in a folder you choose.
 4. [Seats](user-guide/04-seats.md) — seating plans, Randomise, the once-per-lesson lock and reseat PIN
 5. [Lesson](user-guide/05-lesson.md) — record behaviour and attendance from the seating plan, bathroom trips, Pick a student, batch entry, teaching mode, Start and End lesson
 6. [Behaviour log](user-guide/06-behaviour-log.md) — filter and correct behaviour entries, the bathroom log
-7. [Marks](user-guide/07-marks.md) — assessments, quick marking, the per-question grid, viewing results, the markbook, weighting, marks from a spreadsheet, levels and symbols
+7. [Marks](user-guide/07-marks.md) — assessments, quick marking, the per-question grid, the calculator, viewing results, the markbook, weighting, marks from a spreadsheet, levels and symbols
 8. [Dashboards and parent reports](user-guide/08-dashboards-and-reports.md) — class and student dashboards, seating insights, printed reports
 9. [Teaching tools](user-guide/09-teaching-tools.md) — test timer, clock, stopwatch, graph paper, practical graphs, motion graphs, noise meter
 10. [Settings](user-guide/10-settings.md) — every tab (General, Behaviour, Teaching mode, Assessments, Tools, Export, and the class's Students, Room layout and Seating rules), and the spreadsheet export
