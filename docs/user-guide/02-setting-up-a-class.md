@@ -147,6 +147,8 @@ Click an item to select it (it gets a green outline). A second toolbar appears:
   class: press it to apply that layout (it replaces the class's current desks), or its **✕** to delete the
   template. Useful when several classes are taught in the same lab. If a template can't be read (for example, it
   was deleted on another computer and the sync hasn't caught up), the room is left as it was and a message says so.
+  If a template can't be saved, the red *Couldn't save* banner appears with **Try again**; if one can't be
+  deleted, it stays in the list and a message says so.
 
 ## Seating rules
 

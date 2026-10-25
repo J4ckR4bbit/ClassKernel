@@ -280,10 +280,12 @@ export interface AppState {
   setTimerPresets(presets: TimerPreset[]): Promise<void>;
 
   refreshLayoutTemplates(): Promise<void>;
-  saveLayoutTemplate(name: string): Promise<void>;
+  /** False when it couldn't be written (the save-error banner says so). */
+  saveLayoutTemplate(name: string): Promise<boolean>;
   /** False when the template couldn't be read (the room is left as it was). */
   applyLayoutTemplate(name: string): Promise<boolean>;
-  deleteLayoutTemplate(name: string): Promise<void>;
+  /** False when it couldn't be deleted (a message says so; it stays in the list). */
+  deleteLayoutTemplate(name: string): Promise<boolean>;
 }
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -306,17 +308,20 @@ let lastFailedSave: (() => Promise<void>) | null = null;
 export const useApp = create<AppState>((set, get) => {
   // Wrap every file write so a failure surfaces as a banner instead of a
   // silent unhandled rejection. The in-memory edit is kept either way.
-  const guarded = async (label: string, fn: () => Promise<void>) => {
+  // Resolves false when the write failed and the banner is showing for it.
+  const guarded = async (label: string, fn: () => Promise<void>): Promise<boolean> => {
     try {
       await fn();
       if (get().saveError) {
         set({ saveError: null });
         lastFailedSave = null;
       }
+      return true;
     } catch (e) {
       console.error(`Save failed: ${label}`, e);
       lastFailedSave = fn;
       set({ saveError: { label } });
+      return false;
     }
   };
 
@@ -958,9 +963,12 @@ export const useApp = create<AppState>((set, get) => {
 
   async saveLayoutTemplate(name) {
     const { dataDir, desks, roomConfig } = get();
-    if (!dataDir) return;
-    await repo.saveLayoutTemplate(dataDir, name, desks, roomConfig);
-    await get().refreshLayoutTemplates();
+    if (!dataDir) return false;
+    // Try again on the banner saves this same layout and then lists it.
+    return guarded(`the layout template "${name}"`, async () => {
+      await repo.saveLayoutTemplate(dataDir, name, desks, roomConfig);
+      await get().refreshLayoutTemplates();
+    });
   },
 
   async applyLayoutTemplate(name) {
@@ -991,9 +999,21 @@ export const useApp = create<AppState>((set, get) => {
 
   async deleteLayoutTemplate(name) {
     const { dataDir, folderStatus } = get();
-    if (!dataDir || folderStatus) return;
-    await repo.deleteLayoutTemplate(dataDir, name);
+    if (!dataDir || folderStatus) return false;
+    try {
+      await repo.deleteLayoutTemplate(dataDir, name);
+    } catch (e) {
+      console.error(`Couldn't delete layout template ${name}`, e);
+      await get().refreshLayoutTemplates().catch(() => {});
+      // Already gone (deleted on another computer, say) is what was wanted.
+      if (get().layoutTemplates.includes(name)) {
+        get().showToast(`Couldn't delete the template "${name}" — it's still there`);
+        return false;
+      }
+      return true;
+    }
     await get().refreshLayoutTemplates();
+    return true;
   },
 
   async setAssessments(assessments) {

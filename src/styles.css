@@ -877,7 +877,21 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .marking-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .marking-view > * { flex-shrink: 0; }
 .marking-view > .mark-grid-wrap, .marking-view > .quick-mark-list { flex: 1 1 auto; min-height: 0; overflow: auto; }
+/* While marking: the list or grid, with the calculator beside it when it's showing. */
+.marking-view > .marking-body { flex: 1 1 auto; min-height: 0; display: flex; gap: 16px; }
+.marking-body > .mark-grid-wrap, .marking-body > .quick-mark-list { min-height: 0; min-width: 0; overflow: auto; }
+.marking-body > .quick-mark-list { flex: 1 1 auto; }
 .quick-mark-list { padding: 0; margin-bottom: 0; }
+
+/* The calculator beside the marks (Calculator in the marking toolbar). */
+.mark-calc { flex: none; align-self: flex-start; width: 232px; max-height: 100%; overflow-y: auto; margin-bottom: 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.mark-calc-head { display: flex; align-items: center; justify-content: space-between; }
+.mark-calc-head h3 { margin: 0; }
+.calc-display { width: 100%; font-size: 20px; text-align: right; font-variant-numeric: tabular-nums; }
+.calc-answer { min-height: 20px; text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
+.calc-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.calc-keys button { padding: 0; font-size: 17px; border-radius: var(--md-shape-m); }
+.calc-target { font-size: 12px; line-height: 16px; overflow-wrap: anywhere; }
 .mark-grid thead th { position: sticky; z-index: 2; }
 .mark-grid thead tr:first-child th { top: 0; height: 44px; }
 .mark-grid thead .topic-row th { top: 44px; }
