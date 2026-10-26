@@ -45,8 +45,17 @@ Every setting saves as soon as you change it.
     It isn't saved in your data folder.
   - Printing is always in the light colours (the seating plan, parent reports), and the graph tools' sheets and
     saved pictures stay white.
+- **Colour scheme: Green / Navy and gold.** Navy and gold are St Benedict's College's colours: navy buttons and
+  links, the school's gold marking where you are in the navigation, and navy seats on the room plan. Green is the
+  default.
+  - It works with Light, Dark and Match Windows, and is also chosen on each computer separately.
+  - A printed parent report takes the scheme too: navy headings with Navy and gold.
+  - Colours that mean something stay the same in both: red for absent, amber for late, green and red for good
+    and bad behaviour, and the dashboards' charts.
 
 ![The room plan in Dark](../images/lesson-dark.png)
+
+![The room plan in navy and gold](../images/lesson-navy.png)
 
 ### Classes and students from a spreadsheet
 

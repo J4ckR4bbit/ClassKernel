@@ -1,6 +1,8 @@
 /* ClassKernel's look follows Material Design 3: a tonal colour scheme grown
    from one seed, pill-shaped buttons, quiet outlined cards, and navigation in a
-   rail at the side with the class chosen from the bar on top. */
+   rail at the side with the class chosen from the bar on top. Two colour
+   schemes, chosen in Settings › General › Display: green (the default, below)
+   and navy and gold (data-palette="navy", after the dark theme). */
 
 :root {
   /* Material 3 colour roles, generated from the ClassKernel green #2c6e49
@@ -104,6 +106,12 @@
   --on-bad-container: #9c2f1f;
   --chart-grid: #e5eae2;             /* dashboards (parent reports keep their own, for paper) */
   --chart-ink: #414942;
+  --nav-indicator: var(--md-secondary-container); /* the navigation's "you are here" */
+  --on-nav-indicator: var(--md-on-secondary-container);
+  --report-accent: #2c6e49;          /* a parent report's headings and rules (paper: light in any theme) */
+  --report-accent-soft: #eef5f0;
+  --teacher-desk: #dcebe2;           /* the teacher's desk on the room plan, a pale tint of the scheme's colour */
+  --teacher-desk-outline: #5d8b70;
 
   /* The app's original names, now pointing at the roles above, so every view
      and plugin takes on the scheme without being rewritten. */
@@ -209,6 +217,92 @@
     --chart-grid: #313631;
     --chart-ink: #c0c9c0;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Navy and gold: St Benedict's College's colours, from the school's website
+   (navy #323276, gold #D1AD53). Tonal-spot roles from material-color-utilities
+   with navy as primary, an antique gold (chroma 24) as secondary, the crest's
+   light blue as tertiary, and cool blue-grey neutrals (hue 255). Primary is
+   the school's own navy, darker than the generated tone 40; text on the gold
+   containers is navy; and the navigation's "you are here" is the school's gold
+   itself. Only the roles and the greys built on them change: the meanings
+   above (absent, late, good, bad, ...) keep their colours. */
+:root[data-palette="navy"] {
+  --md-primary: #323276;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #e2dfff;
+  --md-on-primary-container: #3f3f83;
+  --md-secondary: #6f5c2e;
+  --md-on-secondary: #ffffff;
+  --md-secondary-container: #fae0a6;
+  --md-on-secondary-container: #323276;
+  --md-tertiary: #106681;
+  --md-tertiary-container: #bce9ff;
+  --md-on-tertiary-container: #004d63;
+  --md-surface: #f9f9fe;
+  --md-on-surface: #191c1f;
+  --md-on-surface-variant: #42474f;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f3f3f8;
+  --md-surface-container: #ededf2;
+  --md-surface-container-high: #e7e8ed;
+  --md-surface-container-highest: #e2e2e7;
+  --md-outline: #727780;
+  --md-outline-variant: #c2c7d1;
+  --md-inverse-surface: #2e3034;
+  --md-inverse-on-surface: #f0f0f5;
+  --md-inverse-primary: #c1c1ff;
+
+  --nav-indicator: #d1ad53;
+  --on-nav-indicator: #323276;
+  /* Seats take the navy tint, not the gold, so a seat picked for batch entry
+     (highlighter yellow) still stands out from the rest. */
+  --accent-soft: var(--md-primary-container);
+  --on-tint: #42474f;
+  --row-hover: #f3f3f8;
+  --chart-grid: #e7e8ed;
+  --chart-ink: #42474f;
+  --report-accent: #323276;
+  --report-accent-soft: #f2efff;
+  --teacher-desk: #e8e5ff;
+  --teacher-desk-outline: #6f70b8;
+}
+
+/* Navy and gold in the dark. Sets again everything the block above shares
+   with the green dark theme, which it would otherwise override. */
+@media screen {
+  :root[data-palette="navy"][data-theme="dark"] {
+    --md-primary: #c1c1ff;
+    --md-on-primary: #28276b;
+    --md-primary-container: #3f3f83;
+    --md-on-primary-container: #e2dfff;
+    --md-secondary: #ddc48c;
+    --md-on-secondary: #3d2e04;
+    --md-secondary-container: #564519;
+    --md-on-secondary-container: #fae0a6;
+    --md-tertiary: #8ad0ef;
+    --md-tertiary-container: #004d63;
+    --md-on-tertiary-container: #bce9ff;
+    --md-surface: #111317;
+    --md-on-surface: #e2e2e7;
+    --md-on-surface-variant: #c2c7d1;
+    --md-surface-container-lowest: #0c0e12;
+    --md-surface-container-low: #191c1f;
+    --md-surface-container: #1e2023;
+    --md-surface-container-high: #282a2e;
+    --md-surface-container-highest: #333539;
+    --md-outline: #8c919a;
+    --md-outline-variant: #42474f;
+    --md-inverse-surface: #e2e2e7;
+    --md-inverse-on-surface: #2e3034;
+    --md-inverse-primary: #323276;
+
+    --row-hover: #1e2023;
+    --mark-done: #282a2e;
+    --grid-line: #232529;
+    --chart-grid: #333539;
+    --chart-ink: #c2c7d1;
   }
 }
 
@@ -342,7 +436,7 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
   transition: background-color 0.2s;
 }
 .nav-item:hover .nav-indicator { background: color-mix(in srgb, var(--md-on-surface-variant) 8%, transparent); }
-.nav-item.active .nav-indicator { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+.nav-item.active .nav-indicator { background: var(--nav-indicator); color: var(--on-nav-indicator); }
 .nav-label { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; line-height: 16px; text-align: center; }
 .nav-item.active .nav-label { color: var(--text); font-weight: 700; }
 .nav-item:focus-visible { outline: none; }
@@ -356,7 +450,7 @@ input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primar
   flex-direction: row; justify-content: flex-start; gap: 12px; width: 100%; height: 56px; padding: 0 16px; border-radius: var(--md-shape-xl);
 }
 .nav-rail.expanded .nav-item:hover { background: color-mix(in srgb, var(--md-on-surface-variant) 8%, transparent); }
-.nav-rail.expanded .nav-item.active { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+.nav-rail.expanded .nav-item.active { background: var(--nav-indicator); color: var(--on-nav-indicator); }
 .nav-rail.expanded .nav-indicator { width: 24px; height: 24px; background: none !important; }
 .nav-rail.expanded .nav-label { font-size: 14px; letter-spacing: 0.1px; text-align: left; }
 .nav-rail.expanded .nav-item.active .nav-label { font-weight: 700; color: inherit; }
@@ -527,6 +621,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 
 /* Segmented buttons (components/Segmented.tsx): one choice out of a few. */
 .seg { display: inline-flex; flex-wrap: nowrap; max-width: 100%; }
+.seg-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 .seg button {
   margin-left: -1px; border-radius: 0; border-color: var(--md-outline); color: var(--text);
   min-height: 40px; padding: 0 16px; gap: 6px; white-space: nowrap;
@@ -562,7 +657,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .room-canvas .desk { cursor: grab; }
 .room-canvas .desk.selected .desk-body { stroke: var(--accent); stroke-width: 2.5; }
 .desk-body { fill: var(--md-surface-container-high); stroke: var(--md-outline); stroke-width: 1.5; rx: 6px; }
-.desk-body.teacher { fill: #dcebe2; stroke: #5d8b70; }
+.desk-body.teacher { fill: var(--teacher-desk); stroke: var(--teacher-desk-outline); }
 .desk-body.door { fill: #c9a35c; stroke: #a07f38; }
 .desk-body.window { fill: #cfe4f2; stroke: #7aa7c4; }
 .desk-label { font-size: 11px; fill: var(--text-dim); text-anchor: middle; pointer-events: none; }
@@ -575,7 +670,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .seat-name { font-size: 13px; text-anchor: middle; fill: var(--seat-ink); pointer-events: none; font-weight: 700; }
 .seat-surname { font-size: 10px; text-anchor: middle; fill: var(--seat-ink-2); pointer-events: none; font-weight: 500; }
 .seat-points { font-size: 11px; text-anchor: middle; font-weight: 700; pointer-events: none; }
-/* Dark enough to read on the seat's green (about 5:1, WCAG AA). */
+/* Dark enough to read on the seat's tint (about 5:1 on the green, 9:1 on the navy; WCAG AA). */
 .seat-points.pos { fill: var(--md-primary); }
 .seat-points.neg { fill: var(--md-error); }
 .seat-points.zero { fill: var(--md-on-surface-variant); }
@@ -593,7 +688,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .seat-check { font-size: 16px; text-anchor: middle; fill: var(--accent); font-weight: 700; pointer-events: none; }
 .desk-body.label-block { fill: #fdf3cf; stroke: #d9c470; }
 .label-block-text { font-size: 14px; font-weight: 700; fill: #4c4018; text-anchor: middle; pointer-events: none; }
-.crop-rect { fill: rgba(44, 110, 73, 0.05); stroke: var(--accent); stroke-width: 2; stroke-dasharray: 8 6; cursor: move; }
+.crop-rect { fill: color-mix(in srgb, var(--accent) 5%, transparent); stroke: var(--accent); stroke-width: 2; stroke-dasharray: 8 6; cursor: move; }
 .crop-handle { fill: var(--accent); cursor: nwse-resize; }
 .palette { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .layout-tools { align-items: center; }
@@ -1294,14 +1389,14 @@ table.data td.neg, .event-points.neg { color: var(--danger); font-weight: 700; }
   box-shadow: 0 2px 10px rgba(20, 30, 40, 0.18); font-size: 12px; line-height: 1.4; display: flex; flex-direction: column;
 }
 .report-page h1 { margin: 0; font-size: 22px; }
-.report-page h2 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #2c6e49; }
+.report-page h2 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--report-accent); }
 .report-page h3 { margin: 0 0 4px; font-size: 13px; }
 .report-page p { margin: 4px 0; }
-.report-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-bottom: 6px; border-bottom: 2px solid #2c6e49; margin-bottom: 8px; }
+.report-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-bottom: 6px; border-bottom: 2px solid var(--report-accent); margin-bottom: 8px; }
 .report-school { font-size: 12px; font-weight: 700; color: #5c6b7a; text-transform: uppercase; letter-spacing: 0.06em; }
 .report-class { color: #5c6b7a; }
 .report-meta { text-align: right; color: #5c6b7a; font-size: 12px; }
-.report-summary { background: #eef5f0; border-left: 4px solid #2c6e49; padding: 6px 12px; margin-bottom: 8px; break-inside: avoid; }
+.report-summary { background: var(--report-accent-soft); border-left: 4px solid var(--report-accent); padding: 6px 12px; margin-bottom: 8px; break-inside: avoid; }
 .report-summary ul { margin: 0; padding-left: 18px; }
 .report-section { margin-bottom: 8px; break-inside: avoid; }
 .report-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
