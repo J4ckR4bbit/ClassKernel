@@ -511,12 +511,17 @@ test("settings", async ({ page }) => {
   await settingsTab(page, "Export");
   await shot(page, "settings-export");
 
-  // Colours: the setting, then the teaching room plan in Dark.
+  // Colours: the setting, then the teaching room plan in Dark, and in navy and gold.
   await settingsTab(page, "General");
   await shotOf(page, panel(page, "Display"), "settings-display", 0);
-  await page.getByRole("group", { name: "Colours" }).getByRole("button", { name: "Dark" }).click();
+  await page.getByRole("group", { name: "Light or dark" }).getByRole("button", { name: "Dark" }).click();
   await nav(page, "Lesson");
   await shot(page, "lesson-dark");
+  await settingsTab(page, "General");
+  await page.getByRole("group", { name: "Light or dark" }).getByRole("button", { name: "Light" }).click();
+  await page.getByRole("group", { name: "Colour scheme" }).getByRole("button", { name: "Navy and gold" }).click();
+  await nav(page, "Lesson");
+  await shot(page, "lesson-navy");
 });
 
 test("your data: when the data folder isn't ready", async ({ page }) => {

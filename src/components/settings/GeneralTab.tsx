@@ -6,7 +6,7 @@ import RosterSheetTools from "../RosterSheetTools";
 import Segmented from "../Segmented";
 import DataSettings from "./DataSettings";
 import { useTheme } from "../../store/theme";
-import { ThemeChoice } from "../../lib/theme";
+import { Palette, ThemeChoice } from "../../lib/theme";
 
 const THEME_OPTIONS: Array<{ value: ThemeChoice; label: string }> = [
   { value: "light", label: "Light" },
@@ -14,11 +14,18 @@ const THEME_OPTIONS: Array<{ value: ThemeChoice; label: string }> = [
   { value: "system", label: "Match Windows" },
 ];
 
+const PALETTE_OPTIONS: Array<{ value: Palette; label: string }> = [
+  { value: "green", label: "Green" },
+  { value: "navy", label: "Navy and gold" },
+];
+
 /** Settings › General: privacy, display size and colours, the spreadsheet import, time zone, parent reports and data. */
 export default function GeneralTab() {
   const { userPrefs, setUserPrefs } = useAppPick("userPrefs", "setUserPrefs");
   const themeChoice = useTheme((t) => t.choice);
   const setThemeChoice = useTheme((t) => t.setChoice);
+  const palette = useTheme((t) => t.palette);
+  const setPalette = useTheme((t) => t.setPalette);
 
   return (
     <>
@@ -99,15 +106,24 @@ export default function GeneralTab() {
         <h4>Colours</h4>
         <p className="muted lead">
           Dark is easier on the eyes in a dim room. <b>Match Windows</b> follows Windows' own light or dark setting.
-          Chosen on each computer separately, so the classroom board and your laptop can differ. Printing is always in
-          the light colours.
+          <b> Navy and gold</b> are St Benedict's College's colours, in place of the green. Both are chosen on each
+          computer separately, so the classroom board and your laptop can differ. Printing is always in the light
+          colours.
         </p>
-        <Segmented
-          label="Colours"
-          options={THEME_OPTIONS}
-          value={themeChoice}
-          onChange={setThemeChoice}
-        />
+        <div className="seg-stack">
+          <Segmented
+            label="Light or dark"
+            options={THEME_OPTIONS}
+            value={themeChoice}
+            onChange={setThemeChoice}
+          />
+          <Segmented
+            label="Colour scheme"
+            options={PALETTE_OPTIONS}
+            value={palette}
+            onChange={setPalette}
+          />
+        </div>
       </div>
 
       <div className="panel">

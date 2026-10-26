@@ -113,7 +113,7 @@ New items appear in the middle of the room. **Drag** them into place; they snap 
 
 ### Change the selected item
 
-Click an item to select it (it gets a green outline). A second toolbar appears:
+Click an item to select it (it gets a coloured outline). A second toolbar appears:
 
 ![The toolbar for the selected desk](../images/layout-desk-toolbar.png)
 
