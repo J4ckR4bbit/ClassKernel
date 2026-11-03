@@ -426,6 +426,7 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
       enabledPlugins: ["graph-paper", "some-future-tool"],
       teachingStyle: "strip" as const,
       seatPopupStyle: "round" as const,
+      noteTextSize: 20,
       dockSide: "right" as const,
       reseatPinHash: "a".repeat(64),
       timeZone: "Africa/Johannesburg",

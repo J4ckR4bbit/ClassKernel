@@ -36,7 +36,11 @@ export default function TeachingStrip() {
     setFocusMode,
     userPrefs,
     setUserPrefs,
+    openNoteEditor,
+    noteDrafts,
   } = useAppPick(
+    "openNoteEditor",
+    "noteDrafts",
     "currentClass",
     "desks",
     "setDesks",
@@ -306,6 +310,15 @@ export default function TeachingStrip() {
             <button onClick={() => setPickerOpen(true)} disabled={busy}>
               <Icon name="person_raised_hand" size={20} /> Pick a student
             </button>
+            <button
+              onClick={() => {
+                closeActions();
+                openNoteEditor({ kind: "quick", studentId: "", fixedStudent: true });
+              }}
+              disabled={busy}
+            >
+              <Icon name="edit_note" size={20} /> {noteDrafts[""] ? "Quick note (draft)" : "Quick note"}
+            </button>
             {/* Styled as on the room plan, so the two teaching modes read the same. */}
             {lesson.running ? (
               <button
@@ -334,6 +347,11 @@ export default function TeachingStrip() {
                 onAttendance: (status: AttendanceStatus) => markAttendance(actionStudent.id, status),
                 onBathroom: () => toggleBathroom(actionStudent.id),
                 onBehaviour: (c: BehaviourCode) => logBehaviour(actionStudent.id, c),
+                onNote: () => {
+                  closeActions();
+                  openNoteEditor({ kind: "quick", studentId: actionStudent.id, fixedStudent: true });
+                },
+                noteDraft: !!noteDrafts[actionStudent.id],
                 onClose: closeActions,
               };
               return userPrefs.seatPopupStyle === "list" ? <StudentActions {...actions} /> : <StudentGrid {...actions} />;

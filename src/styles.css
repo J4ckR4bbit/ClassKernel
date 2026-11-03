@@ -1595,3 +1595,95 @@ table.data td.neg, .event-points.neg { color: var(--danger); font-weight: 700; }
   .report-summary, .report-bar span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 .report-empty { background: var(--panel); border-radius: var(--md-shape-m); padding: 24px; max-width: 210mm; margin: 0 auto; }
+
+/* ---------- notes: the note boxes, the Notes page, Form F ---------- */
+.modal.note-modal { width: min(92vw, 560px); }
+.modal.note-modal.wide { width: min(94vw, 760px); max-width: min(94vw, 760px); }
+.note-toolbar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.note-toolbar > :first-child { flex: 1; }
+.note-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-dim); }
+.note-field select, .note-field input { color: var(--text); }
+.note-size { display: inline-flex; gap: 4px; margin-left: auto; }
+.note-text, .note-section textarea { width: 100%; resize: vertical; line-height: 1.4; }
+.note-hint { margin: -4px 0 12px; font-size: 13px; }
+.note-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+button.note-tag.on { background: var(--md-primary); color: var(--md-on-primary); border-color: var(--md-primary); }
+.modal .actions .spacer { flex: 1; }
+.modal .actions button.note-escape { color: var(--md-error); }
+.note-sections { display: flex; flex-direction: column; gap: 10px; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
+.note-section { display: flex; flex-direction: column; gap: 4px; font-weight: 500; font-size: 14px; }
+.lesson-btn.has-draft { border-style: dashed; }
+
+.notes-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+.notes-filters input[type="search"] { width: 180px; }
+.note-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.note-card { background: var(--panel); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); padding: 10px 14px; }
+.note-card.detailed { border-left: 4px solid var(--md-primary); }
+.note-card.formF { border-left: 4px solid var(--md-tertiary, var(--md-primary)); }
+.note-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.note-when { color: var(--text-dim); font-size: 13px; font-variant-numeric: tabular-nums; }
+.tag.note-kind { margin: 0; }
+.note-tag-list { margin-top: 6px; }
+.note-text-shown { white-space: pre-wrap; margin: 6px 0 0; }
+.note-sections-shown { margin: 6px 0 0; display: grid; gap: 6px; }
+.note-sections-shown div { display: grid; grid-template-columns: 140px 1fr; gap: 10px; }
+.note-sections-shown dt { color: var(--text-dim); font-weight: 500; }
+.note-sections-shown dd { margin: 0; white-space: pre-wrap; }
+.note-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
+.note-group { margin: 0; }
+.note-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.note-group li { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: start; }
+.note-group .note-text-shown { margin: 0; }
+.note-settings { margin-top: 24px; }
+.note-settings h4 { margin: 18px 0 6px; }
+.note-settings table input { width: 260px; }
+
+/* Form F in its box: the details as a two-column form, then the checklist. */
+.formf-details { display: grid; gap: 8px; margin-bottom: 12px; }
+.formf-row { display: grid; grid-template-columns: 220px 1fr; gap: 12px; align-items: center; font-size: 14px; }
+.formf-modal .note-section { margin-bottom: 12px; }
+.formf-checklist { margin-top: 4px; }
+.formf-checklist td, .formf-checklist th { padding: 6px 10px; }
+.formf-checklist .formf-answer { width: 64px; text-align: center; }
+.formf-checklist input { width: 100%; }
+button.formf-tick { width: 34px; height: 34px; min-height: 34px; border-radius: var(--md-shape-xs); }
+button.formf-tick.on { background: var(--md-primary); border-color: var(--md-primary); color: var(--md-on-primary); }
+
+/* Form F laid out to print: A4 pages on a grey desk, with a bar to print or close. */
+.formf-portal {
+  position: fixed; inset: 0; z-index: var(--z-modal); display: flex; flex-direction: column;
+  background: var(--md-surface-container-highest);
+}
+.formf-bar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--md-surface-container); box-shadow: var(--md-elev-1); }
+.formf-pages { flex: 1; overflow: auto; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.formf-page {
+  width: 210mm; min-height: 297mm; padding: 16mm 18mm; background: #fff; color: #111; box-shadow: var(--md-elev-2);
+  font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt;
+}
+.formf-running { font-size: 8.5pt; margin: 0 0 6mm; letter-spacing: 0.2px; }
+.formf-page h1 { font-size: 16pt; margin: 0 0 4mm; font-weight: 700; }
+.formf-page h2 { font-size: 13pt; margin: 0 0 8mm; font-weight: 700; text-align: center; padding: 0 20mm; }
+.formf-table { width: 100%; border-collapse: collapse; margin-bottom: 7mm; }
+.formf-table th, .formf-table td { border: 1px solid #333; padding: 3mm 3mm; text-align: left; vertical-align: top; font-weight: 400; }
+.formf-table > tbody > tr > th { width: 42%; }
+.formf-ticks th:not(:first-child), .formf-ticks td { width: 13%; text-align: center; font-weight: 700; }
+.formf-ticks thead th { font-weight: 700; }
+.formf-ticks td { font-size: 14pt; }
+.formf-ticks td.formf-percent { font-size: inherit; font-weight: 400; text-align: left; }
+.formf-question { margin: 0 0 3mm; }
+.formf-box { border: 1px solid #333; min-height: 55mm; padding: 3mm; white-space: pre-wrap; }
+.formf-sign { display: flex; gap: 10mm; margin-top: 18mm; }
+.formf-sign span { display: flex; align-items: flex-end; gap: 2mm; flex: 1; }
+.formf-sign i { flex: 1; border-bottom: 1px solid #333; font-style: normal; min-height: 7mm; padding-left: 2mm; }
+
+@page formf { size: A4 portrait; margin: 0; }
+@media print {
+  body.formf-open #root { display: none !important; }
+  html:has(body.formf-open), body.formf-open { height: auto !important; background: #fff; page: formf; }
+  body.formf-open > :not(.formf-portal) { display: none !important; }
+  .formf-portal { position: static; display: block; background: none; }
+  .formf-bar { display: none !important; }
+  .formf-pages { padding: 0; overflow: visible; display: block; }
+  .formf-page { box-shadow: none; margin: 0; break-after: page; }
+  .formf-page:last-child { break-after: auto; }
+}

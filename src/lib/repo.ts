@@ -17,7 +17,9 @@
 //   classes/<class>/question_marks.csv    assessment_id,student_id,q_number,mark
 //   classes/<class>/marks.csv             assessment_id,student_id,mark,comment
 //   classes/<class>/report_comments.csv   student_id,comment,updated  (parent-report comments)
+//   classes/<class>/notes.csv             id,timestamp,student_id,kind,section,text,tags  (see notes.ts)
 //   behaviours.csv, topics.csv, cognitive_levels.csv, settings.csv   app-wide (root)
+//   note_sections.csv                     name  (the notes' sections and tags, app-wide)
 //   layouts/<name>/desks.csv + room.csv   reusable room templates
 //   backups/<stamp>/...                   rolling snapshots
 
@@ -26,6 +28,7 @@ import { snapBehaviourColour } from "./behaviourColours";
 import { getFS } from "./fs";
 import { parseCsv, stringifyCsv, num, numOrNull } from "./csv";
 import { visitSeconds } from "./stats";
+import { DEFAULT_NOTE_SECTIONS, Note, asKind, notesToRows, renameSectionInNotes, rowsToNotes } from "./notes";
 import {
   ANSWER_BEHAVIOURS,
   Assessment,
@@ -473,6 +476,65 @@ export async function saveSeatingPrefs(dataDir: string, className: string, prefs
   await getFS().writeAtomic(p(classDir(dataDir, className), "seating_prefs.csv"), stringifyCsv(rows, SEATING_PREFS_COLS));
 }
 
+// ---------- notes (per class) and their sections (app-wide) ----------
+
+const NOTE_COLS = ["id", "timestamp", "student_id", "kind", "section", "text", "tags"];
+
+export async function loadNotes(dataDir: string, className: string): Promise<Note[]> {
+  const rows = await loadCsvFile(p(classDir(dataDir, className), "notes.csv"));
+  return rowsToNotes(
+    rows
+      .filter((r) => r.id)
+      .map((r) => ({
+        id: r.id,
+        timestamp: r.timestamp ?? "",
+        studentId: r.student_id ?? "",
+        kind: asKind(r.kind ?? ""),
+        section: r.section ?? "",
+        text: r.text ?? "",
+        tags: r.tags ?? "",
+      })),
+  );
+}
+
+export async function saveNotes(dataDir: string, className: string, notes: Note[]): Promise<void> {
+  const rows = notesToRows(notes).map((r) => ({
+    id: r.id,
+    timestamp: r.timestamp,
+    student_id: r.studentId,
+    kind: r.kind,
+    section: r.section,
+    text: r.text,
+    tags: r.tags,
+  }));
+  await getFS().writeAtomic(p(classDir(dataDir, className), "notes.csv"), stringifyCsv(rows, NOTE_COLS));
+}
+
+const NOTE_SECTION_COLS = ["name"];
+
+export async function loadNoteSections(dataDir: string): Promise<string[]> {
+  const path = p(dataDir, "note_sections.csv");
+  if (!(await getFS().exists(path))) return [...DEFAULT_NOTE_SECTIONS];
+  return (await loadCsvFile(path)).map((r) => (r.name ?? "").trim()).filter(Boolean);
+}
+
+export async function saveNoteSections(dataDir: string, sections: string[]): Promise<void> {
+  await getFS().writeAtomic(p(dataDir, "note_sections.csv"), stringifyCsv(sections.map((name) => ({ name })), NOTE_SECTION_COLS));
+}
+
+/** A renamed section carried into every class's notes (sections and tags). Returns how many classes changed. */
+export async function renameNoteSectionInClasses(dataDir: string, from: string, to: string): Promise<number> {
+  let changed = 0;
+  for (const info of await listClasses(dataDir)) {
+    const notes = await loadNotes(dataDir, info.name);
+    const next = renameSectionInNotes(notes, from, to);
+    if (next.every((n, i) => n === notes[i])) continue;
+    await saveNotes(dataDir, info.name, next);
+    changed++;
+  }
+  return changed;
+}
+
 // ---------- parent-report comments (per class) ----------
 // The teacher's comment for each student's parent report. Kept apart from the
 // roster's private notes, which never print.
@@ -909,6 +971,7 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
       .map((s) => s.trim())
       .filter(Boolean),
     teachingStyle: kv.get("teaching_style") === "strip" ? "strip" : "room",
+    noteTextSize: Math.min(32, Math.max(12, num(kv.get("note_text_size"), 16) || 16)),
     seatPopupStyle: SEAT_POPUP_STYLES.includes(kv.get("seat_popup_style") as SeatPopupStyle)
       ? (kv.get("seat_popup_style") as SeatPopupStyle)
       : "list",
@@ -963,6 +1026,7 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "plugins_enabled", value: prefs.enabledPlugins.join(";") },
     { key: "teaching_style", value: prefs.teachingStyle },
     { key: "seat_popup_style", value: prefs.seatPopupStyle },
+    { key: "note_text_size", value: String(prefs.noteTextSize) },
     { key: "dock_side", value: prefs.dockSide },
     { key: "reseat_pin", value: prefs.reseatPinHash },
     { key: "time_zone", value: prefs.timeZone },
@@ -1006,6 +1070,7 @@ export const FILE_RULES: Array<{ pattern: RegExp; rule: MergeRule }> = [
   { pattern: /^behaviours\.csv$/, rule: { kind: "whole" } },
   { pattern: /^cognitive_levels\.csv$/, rule: { kind: "whole" } },
   { pattern: /^timer_presets\.csv$/, rule: { kind: "whole" } },
+  { pattern: /^note_sections\.csv$/, rule: { kind: "whole" } },
   { pattern: /^topics\.csv$/, rule: { kind: "keyed", columns: TOPIC_COLS, key: ["grade", "area", "subtopic"] } },
   { pattern: /^settings\.csv$/, rule: { kind: "keyed", columns: SETTINGS_COLS, key: ["key"] } },
   { pattern: /^layouts\/[^/]+\/(desks|room)\.csv$/, rule: { kind: "whole" } },
@@ -1047,6 +1112,7 @@ export const FILE_RULES: Array<{ pattern: RegExp; rule: MergeRule }> = [
     pattern: new RegExp(`^${CLASS}marks\\.csv$`),
     rule: { kind: "keyed", columns: MARK_COLS, key: ["assessment_id", "student_id"] },
   },
+  { pattern: new RegExp(`^${CLASS}notes\\.csv$`), rule: { kind: "grouped", columns: NOTE_COLS, group: ["id"] } },
   {
     pattern: new RegExp(`^${CLASS}report_comments\\.csv$`),
     rule: { kind: "keyed", columns: REPORT_COMMENT_COLS, key: ["student_id"], ignore: ["updated"] },

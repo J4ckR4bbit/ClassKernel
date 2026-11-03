@@ -16,6 +16,8 @@ import ClassNotesView from "./components/ClassNotesView";
 import PluginView from "./components/PluginView";
 import SettingsView from "./components/settings/SettingsView";
 import AppDialog from "./components/AppDialog";
+import NoteEditor from "./components/notes/NoteEditor";
+import StudentNotesView from "./components/notes/StudentNotesView";
 import TimerMini from "./components/TimerMini";
 import NoiseMini from "./components/NoiseMini";
 import WaitingForFolder from "./components/WaitingForFolder";
@@ -61,6 +63,7 @@ function Overlays() {
         <TimerMini />
       </div>
       <SyncOverlay />
+      <NoteEditor />
       <AppDialog />
     </>
   );
@@ -178,7 +181,8 @@ export default function App() {
               {view === "lesson" && <LessonView />}
               {view === "behaviourLog" && <BehaviourLogView />}
               {view === "assessments" && <AssessmentsView />}
-              {view === "notes" && <ClassNotesView />}
+              {view === "notes" && <StudentNotesView />}
+              {view === "classInfo" && <ClassNotesView />}
               {view === "plugin" && <PluginView />}
               {view === "settings" && <SettingsView />}
             </>

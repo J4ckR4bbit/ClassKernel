@@ -108,7 +108,7 @@ test("home, the class menu and setting up a class", async ({ page }) => {
   await fields.nth(3).fill("Lab 3");
   await shotOf(page, modal(page), "new-class-dialog", 2);
   await modal(page).locator("button.primary").click();
-  await nav(page, "Notes");
+  await nav(page, "Class");
   await page.locator("main button.swatch[title*='Green']").first().click();
 
   await page.locator(".top-bar .class-picker-btn").click();
@@ -118,7 +118,7 @@ test("home, the class menu and setting up a class", async ({ page }) => {
   await fields.nth(2).fill("Physical Sciences");
   await fields.nth(3).fill("Lab 3");
   await modal(page).locator("button.primary").click();
-  await nav(page, "Notes");
+  await nav(page, "Class");
   await page.locator("main button.swatch[title*='Purple']").first().click();
 
   await page.locator(".top-bar .class-picker-btn").click();
@@ -131,8 +131,8 @@ test("home, the class menu and setting up a class", async ({ page }) => {
   await shotOf(page, [page.locator(".top-bar .class-picker-btn"), page.locator(".top-bar .menu")], "class-menu", 4);
   await page.keyboard.press("Escape");
 
-  // Class notes: details, colour and free notes.
-  await nav(page, "Notes");
+  // The Class page: details, colour and free notes.
+  await nav(page, "Class");
   await shot(page, "class-notes");
 
   // Settings → Students: the privacy cover, then the roster and the import dialog.

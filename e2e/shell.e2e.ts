@@ -6,8 +6,8 @@ import { ALL_TOOLS, enableTools, expect, nav, settingsTab, test } from "./fixtur
 test("the navigation rail expands into a drawer and back", async ({ page }) => {
   await page.getByRole("button", { name: "Expand the menu" }).click();
   await expect(page.locator(".nav-rail.expanded")).toBeVisible();
-  // Expanded, it gives full names ("Notes" becomes "Class notes").
-  await expect(page.locator(".nav-rail .nav-label", { hasText: "Class notes" })).toBeVisible();
+  // Expanded, it gives full names ("Behaviour" becomes "Behaviour log").
+  await expect(page.locator(".nav-rail .nav-label", { hasText: "Behaviour log" })).toBeVisible();
   await page.getByRole("button", { name: "Collapse the menu" }).click();
   await expect(page.locator(".nav-rail.expanded")).toHaveCount(0);
 });
@@ -35,7 +35,8 @@ test("every place in the rail opens its page", async ({ page }) => {
     Lesson: "Lesson",
     Behaviour: "Behaviour log",
     Marks: "Marks",
-    Notes: "Class notes",
+    Notes: "Notes",
+    Class: "Class",
     Settings: "Settings",
     Home: "ClassKernel",
   };
@@ -92,7 +93,7 @@ test("the display size is a segmented button", async ({ page }) => {
 });
 
 test("a class colour shows on its Home card and under the top bar", async ({ page }) => {
-  await nav(page, "Notes");
+  await nav(page, "Class");
   await page.locator("main button.swatch[title*='Purple']").click();
   await nav(page, "Home");
   await expect(page.locator(".class-card").first()).toHaveClass(/coloured/);
@@ -103,7 +104,7 @@ test("a class colour shows on its Home card and under the top bar", async ({ pag
   expect(underline).not.toBe("rgba(0, 0, 0, 0)");
 });
 
-test("a class card opens its Lesson, Seats, Marks and Class notes pages", async ({ page }) => {
+test("a class card opens its Lesson, Seats, Marks and Class pages", async ({ page }) => {
   const card = page.locator(".class-card").first();
   await expect(card.locator(".class-card-actions button")).toHaveText(["Seating", "Marks", "Lesson"]);
   // Lesson is the full-width, filled button under the other two.
@@ -119,7 +120,7 @@ test("a class card opens its Lesson, Seats, Marks and Class notes pages", async 
   }
   await nav(page, "Home");
   await card.getByRole("button", { name: "Open class" }).click();
-  await expect(page.locator(".top-bar-title")).toHaveText("Class notes");
+  await expect(page.locator(".top-bar-title")).toHaveText("Class");
 });
 
 test("Export saves a spreadsheet", async ({ page }) => {
@@ -129,8 +130,8 @@ test("Export saves a spreadsheet", async ({ page }) => {
   expect((await download).suggestedFilename()).toMatch(/\.xlsx$/);
 });
 
-test("a class's grade is called Grade on Class notes, and shown as G07 on its Home card", async ({ page }) => {
-  await nav(page, "Notes");
+test("a class's grade is called Grade on the Class page, and shown as G07 on its Home card", async ({ page }) => {
+  await nav(page, "Class");
   await expect(page.locator("main label", { hasText: /^Grade$/ })).toBeVisible();
   await nav(page, "Home");
   await expect(page.locator(".class-card").first()).toContainText("G07");

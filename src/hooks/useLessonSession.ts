@@ -53,6 +53,8 @@ export function useLessonSession() {
     showToast,
     userPrefs,
     confirmDialog,
+    noteDrafts,
+    clearNoteDrafts,
     unlockSeating,
     startLesson: beginLesson,
     stopLesson,
@@ -74,6 +76,8 @@ export function useLessonSession() {
     "showToast",
     "userPrefs",
     "confirmDialog",
+    "noteDrafts",
+    "clearNoteDrafts",
     "unlockSeating",
     "startLesson",
     "stopLesson",
@@ -201,9 +205,12 @@ export function useLessonSession() {
   /** Save each student's seat and behaviour to history, then start a fresh lesson. Resolves true if ended. */
   const endLesson = async (planSeats: SeatAssignment[]): Promise<boolean> => {
     if (!currentClass || planSeats.length === 0) return false;
+    const drafts = Object.keys(noteDrafts).length;
     const ok = await confirmDialog({
       title: `End the lesson for ${currentClass}?`,
-      body: "This saves each student's seat and this lesson's behaviour to the class history (used for seating insights), then starts a fresh count.",
+      body:
+        "This saves each student's seat and this lesson's behaviour to the class history (used for seating insights), then starts a fresh count." +
+        (drafts ? ` ${drafts} unsent note draft${drafts === 1 ? " is" : "s are"} thrown away.` : ""),
       confirmLabel: "End lesson",
     });
     if (!ok) return false;
@@ -237,8 +244,9 @@ export function useLessonSession() {
     await addLessonRecords(records);
     localStorage.setItem(lessonStartKey(currentClass), timestamp);
     localStorage.removeItem(pickedKey(currentClass));
-    // A new lesson may have its seats assigned again.
+    // A new lesson may have its seats assigned again, and starts with no note drafts.
     unlockSeating();
+    clearNoteDrafts();
     stopLesson();
     setLessonStart(timestamp);
     showToast(`Lesson ended — saved ${records.length} seat records to history`);

@@ -343,6 +343,8 @@ export interface UserPrefs {
   teachingStyle: TeachingStyle;
   /** How a tapped student's actions open on the room plan (Lesson and teaching mode). */
   seatPopupStyle: SeatPopupStyle;
+  /** Text size (px) of the note boxes: quick and detailed notes, Form F. */
+  noteTextSize: number;
   /** Which screen edge the teaching strip docks to. */
   dockSide: DockSide;
   /**
@@ -394,6 +396,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   enabledPlugins: [],
   teachingStyle: "room",
   seatPopupStyle: "list",
+  noteTextSize: 16,
   dockSide: "left",
   reseatPinHash: "",
   timeZone: "",

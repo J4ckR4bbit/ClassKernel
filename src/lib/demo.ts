@@ -213,6 +213,33 @@ export async function seedDemoData(): Promise<string> {
   });
   await repo.saveBathroomVisits(dataDir, className, bathroom);
 
+  // A few notes, so the Notes page has something to show: two quick notes
+  // from lessons (one tagged), one about the lesson, and a detailed note.
+  const ago = (days: number, hour: number) => {
+    const t = new Date();
+    t.setDate(t.getDate() - days);
+    t.setHours(hour, 20, 0, 0);
+    return t.toISOString();
+  };
+  await repo.saveNotes(dataDir, className, [
+    { id: "note-demo1", timestamp: ago(9, 9), studentId: students[0].id, kind: "quick", text: "Off task during the practical; moved him to the front bench.", tags: ["Behaviour"], sections: {} },
+    { id: "note-demo2", timestamp: ago(6, 11), studentId: students[6].id, kind: "quick", text: "Excellent graph — ask her to show the class next lesson.", tags: ["Work ethic", "Follow up"], sections: {} },
+    { id: "note-demo3", timestamp: ago(2, 10), studentId: "", kind: "quick", text: "Fire drill took the last 15 minutes; finish the titration next lesson.", tags: [], sections: {} },
+    {
+      id: "note-demo4",
+      timestamp: ago(1, 14),
+      studentId: students[0].id,
+      kind: "detailed",
+      text: "",
+      tags: [],
+      sections: {
+        "Work ethic": "Starts well but loses focus after about 15 minutes; better with short tasks and a checklist.",
+        Behaviour: "Chatty with his neighbour; settles when moved to the front.",
+        Assessment: "Class tests around 55%; loses most marks on longer written answers.",
+      },
+    },
+  ]);
+
   // App-wide topic bank for this grade, used by the multi-question test below
   // and by the New assessment dialog's content-area / topic dropdowns.
   const topics: TopicEntry[] = [

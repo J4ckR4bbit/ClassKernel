@@ -39,16 +39,19 @@ interface Popover {
  * selection instead, so one behaviour can be saved for many students at once.
  */
 export default function LessonView() {
-  const { desks, seating, behaviourCodes, setView, roomConfig, focusMode, setFocusMode, userPrefs } = useAppPick(
-    "desks",
-    "seating",
-    "behaviourCodes",
-    "setView",
-    "roomConfig",
-    "focusMode",
-    "setFocusMode",
-    "userPrefs",
-  );
+  const { desks, seating, behaviourCodes, setView, roomConfig, focusMode, setFocusMode, userPrefs, openNoteEditor, noteDrafts } =
+    useAppPick(
+      "desks",
+      "seating",
+      "behaviourCodes",
+      "setView",
+      "roomConfig",
+      "focusMode",
+      "setFocusMode",
+      "userPrefs",
+      "openNoteEditor",
+      "noteDrafts",
+    );
   const planNames = useMemo(() => [...new Set(seating.map((s) => s.planName))].sort(), [seating]);
   const [plan, setPlan] = useState(planNames[0] ?? "Default");
   const activePlan = planNames.includes(plan) ? plan : planNames[0];
@@ -171,6 +174,20 @@ export default function LessonView() {
       <Icon name="person_raised_hand" /> Pick a student
     </button>
   );
+  // A note about the whole lesson; a student's own note is on their pop-up.
+  const noteButton = (
+    <button
+      className={`lesson-btn ${noteDrafts[""] ? "has-draft" : ""}`}
+      onClick={() => {
+        setPopover(null);
+        openNoteEditor({ kind: "quick", studentId: "", fixedStudent: true });
+      }}
+      disabled={busy}
+      title="Write a quick note about the lesson"
+    >
+      <Icon name="edit_note" /> {noteDrafts[""] ? "Quick note (draft)" : "Quick note"}
+    </button>
+  );
   const batchButton = (
     <button className="lesson-btn" onClick={startBatch} disabled={busy} title="Record one behaviour for several students at once">
       <Icon name="checklist" /> Batch entry
@@ -259,6 +276,7 @@ export default function LessonView() {
                 <span className="bar-group-label">Record</span>
                 {batchButton}
                 {pickButton}
+                {noteButton}
               </div>
               <div className="bar-group">
                 <span className="bar-group-label">Seating</span>
@@ -295,6 +313,7 @@ export default function LessonView() {
           <div className="lesson-toolbar no-print">
             {batchButton}
             {pickButton}
+            {noteButton}
             <span className="lesson-divider" aria-hidden />
             {seatButton}
             <span className="lesson-divider" aria-hidden />
@@ -379,6 +398,11 @@ export default function LessonView() {
               onAttendance: (status: AttendanceStatus) => markAttendance(popStudent.id, status),
               onBathroom: () => toggleBathroom(popStudent.id),
               onBehaviour: (c: BehaviourCode) => logBehaviour(popStudent.id, c),
+              onNote: () => {
+                setPopover(null);
+                openNoteEditor({ kind: "quick", studentId: popStudent.id, fixedStudent: true });
+              },
+              noteDraft: !!noteDrafts[popStudent.id],
               onClose: () => setPopover(null),
             };
             const at = {

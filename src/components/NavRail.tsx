@@ -23,8 +23,9 @@ export const DESTINATIONS: Destination[] = [
   { views: ["seating"], icon: "event_seat", label: "Seats", name: "Seats" },
   { views: ["lesson"], icon: "school", label: "Lesson", name: "Lesson" },
   { views: ["behaviourLog"], icon: "thumbs_up_down", label: "Behaviour", name: "Behaviour log" },
+  { views: ["notes"], icon: "sticky_note_2", label: "Notes", name: "Notes" },
   { views: ["assessments"], icon: "grading", label: "Marks", name: "Marks" },
-  { views: ["notes"], icon: "sticky_note_2", label: "Notes", name: "Class notes" },
+  { views: ["classInfo"], icon: "badge", label: "Class", name: "Class" },
 ];
 
 export const SETTINGS_DESTINATION: Destination = { views: ["settings"], icon: "settings", label: "Settings", name: "Settings" };

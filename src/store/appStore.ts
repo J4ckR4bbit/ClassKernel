@@ -33,6 +33,7 @@ import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import { enterDock, enterFullscreen, restoreWindow } from "../lib/teachingWindow";
 import { setTimeZone } from "../lib/time";
 import { applyRenames, describeRenames, shortenCodes } from "../lib/behaviourCodes";
+import { DEFAULT_NOTE_SECTIONS, Note, NoteKind, renameSectionInNotes } from "../lib/notes";
 import { DASHBOARDS_ID } from "../plugins/registry";
 import {
   Assessment,
@@ -71,10 +72,49 @@ export type View =
   | "behaviourLog"
   | "assessments"
   | "notes"
+  | "classInfo"
   | "plugin"
   | "settings";
 
 const DATA_DIR_KEY = "classkernel.dataDir";
+const draftsKey = (className: string) => `classkernel.noteDrafts.${className}`;
+
+/** A note typed and kept as a draft (Draft in the quick-note box) until it's sent, thrown away, or the lesson ends. */
+export interface NoteDraft {
+  text: string;
+  tags: string[];
+}
+
+/** Which note box is open: a quick note, a detailed note or a Form F, new or an existing one. */
+export interface NoteEditorRequest {
+  kind: NoteKind;
+  /** "" = about the whole lesson (quick notes), or not chosen yet. */
+  studentId: string;
+  /** Editing this note; left out, a new one. */
+  noteId?: string;
+  /** Opened from a seat: the student can't be changed in the box. */
+  fixedStudent?: boolean;
+  /** A Form F to show as the printable form rather than to edit. */
+  print?: boolean;
+}
+
+function readDrafts(className: string): Record<string, NoteDraft> {
+  try {
+    const raw = localStorage.getItem(draftsKey(className));
+    return raw ? (JSON.parse(raw) as Record<string, NoteDraft>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeDrafts(className: string, drafts: Record<string, NoteDraft>) {
+  try {
+    if (Object.keys(drafts).length) localStorage.setItem(draftsKey(className), JSON.stringify(drafts));
+    else localStorage.removeItem(draftsKey(className));
+  } catch {
+    // Kept for this session only.
+  }
+}
 const KEEP_COPY_KEY = "classkernel.keepLocalCopy";
 
 /** How long the launch waits for a missing data folder before opening this computer's copy. */
@@ -181,6 +221,14 @@ export interface AppState {
   questionMarks: QuestionMark[];
   /** Parent-report comment per student id (report_comments.csv). */
   reportComments: Record<string, string>;
+  /** The open class's notes (notes.csv): quick, detailed and Form F. */
+  notes: Note[];
+  /** The open class's note drafts, by student id ("" = the lesson), kept on this computer until the lesson ends. */
+  noteDrafts: Record<string, NoteDraft>;
+  /** The note box that's open, if any (shown over every screen, teaching mode too). */
+  noteEditor: NoteEditorRequest | null;
+  /** The notes' sections, which are also the quick notes' tags (note_sections.csv, app-wide). */
+  noteSections: string[];
   roomConfig: RoomConfig;
   layoutTemplates: string[];
   // App-wide, loaded once with the data folder.
@@ -277,6 +325,19 @@ export interface AppState {
   setSeatingPrefs(prefs: SeatingPrefs): Promise<void>;
   /** Save (or clear, with "") one student's parent-report comment. */
   setReportComment(studentId: string, comment: string): Promise<void>;
+  /** Add a note, or replace the one with its id. */
+  saveNote(note: Note): Promise<void>;
+  /** Remove a note; resolves to it (for Undo), or null if there was none. */
+  deleteNote(id: string): Promise<Note | null>;
+  setNoteSections(sections: string[]): Promise<void>;
+  /** Rename a section, in every class's notes too. Resolves false on a clash or a blank name. */
+  renameNoteSection(from: string, to: string): Promise<boolean>;
+  /** Keep (or, with null, drop) a note draft for a student ("" = the lesson). */
+  setNoteDraft(studentId: string, draft: NoteDraft | null): void;
+  /** The lesson ended: every draft for the open class is thrown away. */
+  clearNoteDrafts(): void;
+  openNoteEditor(request: NoteEditorRequest): void;
+  closeNoteEditor(): void;
   addLessonRecords(records: LessonRecord[]): Promise<void>;
   setAssessments(assessments: Assessment[]): Promise<void>;
   setMarks(marks: Mark[]): Promise<void>;
@@ -367,6 +428,10 @@ export const useApp = create<AppState>((set, get) => {
   assessmentQuestions: [],
   questionMarks: [],
   reportComments: {},
+  notes: [],
+  noteDrafts: {},
+  noteEditor: null,
+  noteSections: [...DEFAULT_NOTE_SECTIONS],
   roomConfig: DEFAULT_ROOM_CONFIG,
   layoutTemplates: [],
   topics: [],
@@ -498,7 +563,7 @@ export const useApp = create<AppState>((set, get) => {
       // The copy is its own root and is never mirrored, snapshotted or remembered as the data folder.
       useFolder(path, null);
     }
-    const [classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets] = await Promise.all([
+    const [classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, noteSections] = await Promise.all([
       repo.listClasses(path),
       repo.loadBehaviourCodes(path),
       repo.listLayoutTemplates(path),
@@ -506,6 +571,7 @@ export const useApp = create<AppState>((set, get) => {
       repo.loadCognitiveLevels(path),
       repo.loadUserPrefs(path),
       repo.loadTimerPresets(path),
+      repo.loadNoteSections(path),
     ]);
     setTimeZone(userPrefs.timeZone);
     // Codes are three characters now: shorten any longer ones, once, in the
@@ -526,6 +592,7 @@ export const useApp = create<AppState>((set, get) => {
       }
     }
     const previous = get().currentClass;
+    set({ noteSections });
     set({ dataDir: path, classes, behaviourCodes: codes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, currentClass: null });
     if (kind === "data") set({ folderStatus: null });
     else if (realDir) set({ folderStatus: { kind: "copy", realDir, since: nowIso(), copyRefreshedAt: "", back: false } });
@@ -808,6 +875,7 @@ export const useApp = create<AppState>((set, get) => {
       questionMarks,
       roomConfig,
       reportComments,
+      notes,
     ] = await Promise.all([
       repo.loadStudents(dataDir, name),
       repo.loadAttendance(dataDir, name),
@@ -823,6 +891,7 @@ export const useApp = create<AppState>((set, get) => {
       repo.loadQuestionMarks(dataDir, name),
       repo.loadRoomConfig(dataDir, name),
       repo.loadReportComments(dataDir, name),
+      repo.loadNotes(dataDir, name),
     ]);
     set({
       currentClass: name,
@@ -841,6 +910,9 @@ export const useApp = create<AppState>((set, get) => {
       questionMarks,
       roomConfig,
       reportComments,
+      notes,
+      noteDrafts: readDrafts(name),
+      noteEditor: null,
       seatingLockedAt: readSeatedAt(name),
       lessonRunningSince: readLessonRunning(name),
       sensitiveRevealed: false,
@@ -985,6 +1057,67 @@ export const useApp = create<AppState>((set, get) => {
     const { dataDir, currentClass } = get();
     set({ seatingPrefs });
     if (dataDir && currentClass) await guarded("seating rules", () => repo.saveSeatingPrefs(dataDir, currentClass, seatingPrefs));
+  },
+
+  async saveNote(note) {
+    const { dataDir, currentClass, notes } = get();
+    const next = notes.some((n) => n.id === note.id) ? notes.map((n) => (n.id === note.id ? note : n)) : [...notes, note];
+    set({ notes: next });
+    if (dataDir && currentClass) await guarded("the notes", () => repo.saveNotes(dataDir, currentClass, next));
+  },
+
+  async deleteNote(id) {
+    const { dataDir, currentClass, notes } = get();
+    const gone = notes.find((n) => n.id === id) ?? null;
+    if (!gone) return null;
+    const next = notes.filter((n) => n.id !== id);
+    set({ notes: next });
+    if (dataDir && currentClass) await guarded("the notes", () => repo.saveNotes(dataDir, currentClass, next));
+    return gone;
+  },
+
+  async setNoteSections(sections) {
+    const { dataDir } = get();
+    set({ noteSections: sections });
+    if (dataDir) await guarded("the note sections", () => repo.saveNoteSections(dataDir, sections));
+  },
+
+  async renameNoteSection(from, to) {
+    const name = to.trim();
+    const { dataDir, noteSections, notes } = get();
+    if (!name || name === from || noteSections.includes(name)) return false;
+    const sections = noteSections.map((s) => (s === from ? name : s));
+    set({ noteSections: sections, notes: renameSectionInNotes(notes, from, name) });
+    if (dataDir) {
+      await guarded("the notes", async () => {
+        await repo.renameNoteSectionInClasses(dataDir, from, name);
+        await repo.saveNoteSections(dataDir, sections);
+      });
+    }
+    return true;
+  },
+
+  setNoteDraft(studentId, draft) {
+    const { currentClass, noteDrafts } = get();
+    const next = { ...noteDrafts };
+    if (draft && (draft.text.trim() || draft.tags.length)) next[studentId] = draft;
+    else delete next[studentId];
+    set({ noteDrafts: next });
+    if (currentClass) writeDrafts(currentClass, next);
+  },
+
+  clearNoteDrafts() {
+    const { currentClass } = get();
+    set({ noteDrafts: {} });
+    if (currentClass) writeDrafts(currentClass, {});
+  },
+
+  openNoteEditor(request) {
+    set({ noteEditor: request });
+  },
+
+  closeNoteEditor() {
+    set({ noteEditor: null });
   },
 
   async setReportComment(studentId, comment) {
