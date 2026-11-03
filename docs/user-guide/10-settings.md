@@ -3,7 +3,8 @@
 [← Teaching tools](09-teaching-tools.md) · [Contents](../README.md) · Next: [Your data and backups →](11-your-data.md)
 
 Open **Settings** at the foot of the navigation rail. The tabs to the left of the divider apply to the whole app;
-the tabs to the right belong to the class chosen in the top bar.
+the tabs to the right belong to the class chosen in the top bar. The tabs stay at the top while the page under them
+scrolls.
 
 | Tab | Covers | Applies to |
 | --- | --- | --- |

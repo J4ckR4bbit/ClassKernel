@@ -44,6 +44,8 @@ interface Props {
    * fits without distortion, instead of sizing to the container's width.
    */
   fill?: boolean;
+  /** The room designer's zoom (1 = one room unit per pixel); ignored when cropped. */
+  zoom?: number;
   seatContent?: (deskId: string, seatIndex: number) => SeatContent;
   /** x/y are pixel coordinates relative to the .canvas-wrap element (popover anchoring). */
   onSeatClick?: (deskId: string, seatIndex: number, x: number, y: number) => void;
@@ -55,12 +57,18 @@ interface Props {
 }
 
 /**
- * Client position → the unscaled designer canvas's room coordinates. Divides
+ * Client position → the designer canvas's room coordinates. With a viewBox
+ * (the zoomable designer) it maps across the drawn box, which takes both the
+ * designer's zoom and the app display zoom with it; without one it divides
  * out the app display zoom (client rects are in zoomed pixels; the SVG's
  * layout width is not).
  */
 export function svgPointFromClient(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {
   const rect = svg.getBoundingClientRect();
+  const vb = svg.viewBox?.baseVal;
+  if (vb && vb.width > 0 && vb.height > 0 && rect.width > 0 && rect.height > 0) {
+    return { x: vb.x + ((clientX - rect.left) * vb.width) / rect.width, y: vb.y + ((clientY - rect.top) * vb.height) / rect.height };
+  }
   const zoom = svg.clientWidth > 0 ? rect.width / svg.clientWidth : 1;
   return { x: (clientX - rect.left) / zoom, y: (clientY - rect.top) / zoom };
 }
@@ -107,6 +115,7 @@ export default function RoomCanvas({
   labelFontScale = 1,
   crop,
   fill = false,
+  zoom,
   seatContent,
   onSeatClick,
   onDeskPointerDown,
@@ -127,7 +136,9 @@ export default function RoomCanvas({
               viewBox: `${view.x} ${view.y} ${view.w} ${view.h}`,
               style: filling ? { width: "100%", height: "100%" } : { width: "100%", height: "auto", aspectRatio: `${view.w} / ${view.h}` },
             }
-          : { width: ROOM_W, height: ROOM_H })}
+          : zoom
+            ? { width: ROOM_W * zoom, height: ROOM_H * zoom, viewBox: `0 0 ${ROOM_W} ${ROOM_H}` }
+            : { width: ROOM_W, height: ROOM_H })}
         onPointerDown={onCanvasPointerDown}
         onPointerMove={onCanvasPointerMove}
         onPointerUp={onCanvasPointerUp}

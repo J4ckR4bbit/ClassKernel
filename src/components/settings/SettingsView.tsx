@@ -33,51 +33,56 @@ export default function SettingsView() {
   const [tab, setTab] = useState<SettingsTab>("general");
   const perClass = TABS.find((t) => t.id === tab)?.perClass;
 
+  // The tabs stay put; only the open tab's page scrolls, under them.
   return (
-    <div>
-      <div className="md-tabs" role="tablist" aria-label="Settings">
-        {TABS.map((t, i) => (
-          <Fragment key={t.id}>
-            {t.perClass && !TABS[i - 1]?.perClass && <span className="md-tab-divider" aria-hidden />}
-            <button
-              role="tab"
-              aria-selected={tab === t.id}
-              className={`md-tab ${tab === t.id ? "active" : ""}`}
-              onClick={() => setTab(t.id)}
-            >
-              <Icon name={t.icon} size={20} />
-              {t.label}
-            </button>
-          </Fragment>
-        ))}
+    <div className="settings-view">
+      <div className="settings-head">
+        <div className="md-tabs" role="tablist" aria-label="Settings">
+          {TABS.map((t, i) => (
+            <Fragment key={t.id}>
+              {t.perClass && !TABS[i - 1]?.perClass && <span className="md-tab-divider" aria-hidden />}
+              <button
+                role="tab"
+                aria-selected={tab === t.id}
+                className={`md-tab ${tab === t.id ? "active" : ""}`}
+                onClick={() => setTab(t.id)}
+              >
+                <Icon name={t.icon} size={20} />
+                {t.label}
+              </button>
+            </Fragment>
+          ))}
+        </div>
+
+        {perClass && currentClass && (
+          <p className="settings-for muted">
+            For <b>{currentClass}</b> — change the class from the menu at the top right.
+          </p>
+        )}
       </div>
 
-      {perClass && currentClass && (
-        <p className="settings-for muted">
-          For <b>{currentClass}</b> — change the class from the menu at the top right.
-        </p>
-      )}
-
-      {tab === "general" && <GeneralTab />}
-      {tab === "behaviour" && <BehaviourButtonsTab />}
-      {tab === "teaching" && <TeachingModeSettings />}
-      {tab === "assessments" && <AssessmentSettings />}
-      {tab === "tools" && <PluginSettings />}
-      {tab === "export" && <ExportView />}
-      {perClass &&
-        (active.length === 0 ? (
-          <div className="panel muted">Create a class first, then set it up here.</div>
-        ) : !currentClass ? (
-          <div className="panel muted">
-            Pick a class from the menu at the top right to edit its {TABS.find((t) => t.id === tab)?.label.toLowerCase()}.
-          </div>
-        ) : tab === "students" ? (
-          <RosterView />
-        ) : tab === "layout" ? (
-          <LayoutDesigner />
-        ) : (
-          <SeatingRulesEditor />
-        ))}
+      <div className="settings-body">
+        {tab === "general" && <GeneralTab />}
+        {tab === "behaviour" && <BehaviourButtonsTab />}
+        {tab === "teaching" && <TeachingModeSettings />}
+        {tab === "assessments" && <AssessmentSettings />}
+        {tab === "tools" && <PluginSettings />}
+        {tab === "export" && <ExportView />}
+        {perClass &&
+          (active.length === 0 ? (
+            <div className="panel muted">Create a class first, then set it up here.</div>
+          ) : !currentClass ? (
+            <div className="panel muted">
+              Pick a class from the menu at the top right to edit its {TABS.find((t) => t.id === tab)?.label.toLowerCase()}.
+            </div>
+          ) : tab === "students" ? (
+            <RosterView />
+          ) : tab === "layout" ? (
+            <LayoutDesigner />
+          ) : (
+            <SeatingRulesEditor />
+          ))}
+      </div>
     </div>
   );
 }

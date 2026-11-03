@@ -53,7 +53,8 @@ Every page has the same frame:
 
 Press the **☰** button at the top to expand the rail into a drawer with full names. The drawer also lists the
 [tools](09-teaching-tools.md) you've switched on. Press it again to collapse it. The app remembers your choice on
-this computer.
+this computer. When the list is too long for the screen, it scrolls; **Settings** stays put at the foot and the
+list slides away behind it.
 
 <br clear="right">
 

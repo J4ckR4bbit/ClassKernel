@@ -1,4 +1,4 @@
-import { expect, nav, settingsTab, test } from "./fixtures";
+import { ALL_TOOLS, enableTools, expect, nav, settingsTab, test } from "./fixtures";
 
 // The frame around every page: the navigation rail, the class menu in the top
 // bar, Settings, and the class colour.
@@ -10,6 +10,22 @@ test("the navigation rail expands into a drawer and back", async ({ page }) => {
   await expect(page.locator(".nav-rail .nav-label", { hasText: "Class notes" })).toBeVisible();
   await page.getByRole("button", { name: "Collapse the menu" }).click();
   await expect(page.locator(".nav-rail.expanded")).toHaveCount(0);
+});
+
+test("Settings stays at the foot of the menu while the tools scroll away behind it", async ({ page }) => {
+  await enableTools(page, ALL_TOOLS);
+  await page.setViewportSize({ width: 1400, height: 560 });
+  await page.getByRole("button", { name: "Expand the menu" }).click();
+  const list = page.locator(".nav-scroll");
+  expect(await list.evaluate((e) => e.scrollHeight > e.clientHeight)).toBe(true);
+  const settings = page.locator(".nav-rail .nav-item", { hasText: "Settings" });
+  const y0 = (await settings.boundingBox())!.y;
+  await list.hover();
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => list.evaluate((e) => e.scrollTop)).toBeGreaterThan(0);
+  const b = (await settings.boundingBox())!;
+  expect(b.y).toBe(y0);
+  expect(b.y + b.height).toBeLessThanOrEqual(560);
 });
 
 test("every place in the rail opens its page", async ({ page }) => {
@@ -52,6 +68,18 @@ test("every Settings tab opens", async ({ page }) => {
     await settingsTab(page, tab);
     await expect(page.locator(".md-tabs .md-tab.active")).toContainText(tab);
   }
+});
+
+test("the Settings tabs stay at the top while the page under them scrolls", async ({ page }) => {
+  await page.setViewportSize({ width: 1400, height: 600 });
+  await settingsTab(page, "General");
+  const tabs = page.locator(".md-tabs");
+  const y0 = (await tabs.boundingBox())!.y;
+  await page.locator(".settings-body").hover();
+  await page.mouse.wheel(0, 1000);
+  await expect.poll(() => page.locator(".settings-body").evaluate((e) => e.scrollTop)).toBeGreaterThan(0);
+  expect((await tabs.boundingBox())!.y).toBe(y0);
+  await expect(tabs).toBeInViewport();
 });
 
 test("the display size is a segmented button", async ({ page }) => {

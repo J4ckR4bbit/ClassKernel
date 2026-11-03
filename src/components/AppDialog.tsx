@@ -38,7 +38,12 @@ export default function AppDialog() {
             : {})}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && text.trim()) ok();
+            if (e.key !== "Enter") return;
+            // Closing hands focus back to the button that opened the dialog while
+            // this key press is still going; left alone, it would press that
+            // button too and open the dialog again.
+            e.preventDefault();
+            if (text.trim()) ok();
           }}
         />
       )}

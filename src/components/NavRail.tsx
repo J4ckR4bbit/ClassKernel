@@ -97,26 +97,29 @@ export default function NavRail({ expanded, onToggle }: { expanded: boolean; onT
         )}
       </div>
 
-      <div className="nav-items">{DESTINATIONS.map(item)}</div>
+      {/* The places and tools scroll when they don't fit; Settings stays put at
+          the foot, and the list scrolls away behind it. */}
+      <div className="nav-scroll">
+        <div className="nav-items">{DESTINATIONS.map(item)}</div>
 
-      {expanded && tools.length > 0 && (
-        <div className="nav-items nav-tools">
-          <div className="nav-section">Tools</div>
-          {tools.map((p) => (
-            <NavItem
-              key={p.id}
-              icon={p.icon}
-              label={p.name}
-              active={view === "plugin" && activePlugin === p.id}
-              expanded
-              onClick={() => openPlugin(p.id)}
-            />
-          ))}
-        </div>
-      )}
+        {expanded && tools.length > 0 && (
+          <div className="nav-items nav-tools">
+            <div className="nav-section">Tools</div>
+            {tools.map((p) => (
+              <NavItem
+                key={p.id}
+                icon={p.icon}
+                label={p.name}
+                active={view === "plugin" && activePlugin === p.id}
+                expanded
+                onClick={() => openPlugin(p.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
-      <div className="nav-spacer" />
-      <div className="nav-items">{item(SETTINGS_DESTINATION)}</div>
+      <div className="nav-items nav-foot">{item(SETTINGS_DESTINATION)}</div>
     </nav>
   );
 }

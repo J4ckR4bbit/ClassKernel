@@ -1,20 +1,22 @@
-import { useRef, useState } from "react";
+import { ReactNode, useRef, useState } from "react";
 import { NEEDS_DATA_FOLDER, useAppPick, useWorkingFromCopy } from "../store/appStore";
 import { newId } from "../lib/id";
 import { DEFAULT_DESK_SIZES, Desk, DeskShape, FrontEdge } from "../lib/types";
 import { PASTEL_PRESETS } from "../lib/tableColours";
+import { useCanvasZoom } from "../hooks/useCanvasZoom";
+import { useDismissOnOutside } from "../hooks/useDismissOnOutside";
 import RoomCanvas, { GRID, ROOM_H, ROOM_W, svgPointFromClient, toRoomCoords } from "./RoomCanvas";
 import Icon from "./Icon";
 
-const PALETTE: Array<{ shape: DeskShape; label: string }> = [
-  { shape: "single", label: "+ Single desk" },
-  { shape: "double", label: "+ Double desk" },
-  { shape: "group4", label: "+ Group of 4" },
-  { shape: "group6", label: "+ Group of 6" },
-  { shape: "teacher", label: "+ Teacher desk" },
-  { shape: "door", label: "+ Door" },
-  { shape: "window", label: "+ Window" },
-  { shape: "label", label: "+ Label box" },
+const PALETTE: Array<{ shape: DeskShape; label: string; title: string }> = [
+  { shape: "single", label: "Single", title: "Add a single desk" },
+  { shape: "double", label: "Double", title: "Add a double desk" },
+  { shape: "group4", label: "Group of 4", title: "Add a group of 4" },
+  { shape: "group6", label: "Group of 6", title: "Add a group of 6" },
+  { shape: "teacher", label: "Teacher", title: "Add the teacher's desk" },
+  { shape: "door", label: "Door", title: "Add a door" },
+  { shape: "window", label: "Window", title: "Add a window" },
+  { shape: "label", label: "Label box", title: "Add a label box: free text for anything in the room" },
 ];
 
 /** Text colours: the two that read on any fill, plus a picker for the rest. */
@@ -30,6 +32,9 @@ const EDGES: Array<{ value: FrontEdge; label: string }> = [
   { value: "left", label: "Front: left" },
 ];
 
+/** What a drag on the canvas leaves to the item's own drag. */
+const ITEMS = ".desk, .crop-rect, .crop-handle";
+
 const MIN_CROP = 220;
 const snap = (v: number) => Math.round(v / GRID) * GRID;
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -39,6 +44,10 @@ type Drag =
   | { kind: "crop-move"; offsetX: number; offsetY: number }
   | { kind: "crop-resize" };
 
+/**
+ * The room designer. The toolbar (and the Add column beside the canvas) stay
+ * put; only the room scrolls and zooms, inside its own view.
+ */
 export default function LayoutDesigner() {
   const fromCopy = useWorkingFromCopy();
   const {
@@ -75,14 +84,31 @@ export default function LayoutDesigner() {
   const crop = cropDraft ?? roomConfig.crop;
   const selectedDesk = shown.find((d) => d.id === selected) ?? null;
 
+  /** A pan or pinch took over mid-drag: whatever was being dragged goes back where it was. */
+  const cancelDrag = () => {
+    drag.current = null;
+    setDraft(null);
+    setCropDraft(null);
+  };
+
+  const view = useCanvasZoom({
+    roomW: ROOM_W,
+    roomH: ROOM_H,
+    itemSelector: ITEMS,
+    onGestureStart: cancelDrag,
+    onFloorTap: () => setSelected(null),
+  });
+
   const addDesk = (shape: DeskShape) => {
     const size = DEFAULT_DESK_SIZES[shape];
+    // In the middle of what's on screen, so it's in view however far in you've zoomed.
+    const at = view.visibleCentre() ?? { x: ROOM_W / 2, y: ROOM_H / 2 };
     const desk: Desk = {
       id: newId("d"),
       label: shape === "label" ? "Label" : "",
       shape,
-      x: snap(ROOM_W / 2 - size.w / 2),
-      y: snap(ROOM_H / 2 - size.h / 2),
+      x: clamp(snap(at.x - size.w / 2), 0, ROOM_W - size.w),
+      y: clamp(snap(at.y - size.h / 2), 20, ROOM_H - size.h),
       w: size.w,
       h: size.h,
       rotation: 0,
@@ -279,193 +305,303 @@ export default function LayoutDesigner() {
   const removeCrop = () => void setRoomConfig({ ...roomConfig, crop: null });
 
   return (
-    <div>
-      <div className="view-header">
-        <select
-          value={roomConfig.frontEdge}
-          onChange={(e) => void setRoomConfig({ ...roomConfig, frontEdge: e.target.value as FrontEdge })}
-          title="Which edge of the canvas is the front of the room"
-        >
-          {EDGES.map((e) => (
-            <option key={e.value} value={e.value}>
-              {e.label}
-            </option>
-          ))}
-        </select>
-        {crop ? (
-          <button onClick={removeCrop}>Remove view crop</button>
-        ) : (
-          <button onClick={addCrop} title="Seating and lesson views will show only this area, scaled up">
-            <Icon name="crop" size={20} /> Set view crop
-          </button>
-        )}
-        <div className="spacer" />
-        <button onClick={() => void clearRoom()} disabled={desks.length === 0}>
-          Clear room
-        </button>
-      </div>
-
-      <div className="palette">
-        {PALETTE.map((p) => (
-          <button key={p.shape} onClick={() => addDesk(p.shape)}>
-            {p.label}
-          </button>
-        ))}
-      </div>
-      {selectedDesk && (
-        <div className="palette">
-          <button onClick={rotateSelected}><Icon name="rotate_right" size={20} /> Rotate</button>
-          <button onClick={duplicateSelected}><Icon name="content_copy" size={20} /> Duplicate</button>
-          <input
-            style={{ width: 160 }}
-            placeholder={selectedDesk.shape === "label" ? "Label text" : "Desk label"}
-            value={selectedDesk.label}
-            onChange={(e) => patchSelected({ label: e.target.value })}
-          />
-          <div className="swatch-row" role="group" aria-label="Preset fill colours">
-            {PASTEL_PRESETS.map((c) => (
-              <button
-                key={c.hex}
-                className={`swatch ${selectedDesk.color === c.hex ? "on" : ""}`}
-                style={{ background: c.hex }}
-                title={c.name}
-                aria-label={`Fill ${c.name}`}
-                onClick={() => patchSelected({ color: c.hex })}
-              />
+    <div className="layout-designer">
+      <div className="layout-toolbar">
+        {/* The whole room. */}
+        <div className="layout-row">
+          <select
+            value={roomConfig.frontEdge}
+            onChange={(e) => void setRoomConfig({ ...roomConfig, frontEdge: e.target.value as FrontEdge })}
+            title="Which edge of the room is the front (the whiteboard)"
+            aria-label="Front of the room"
+          >
+            {EDGES.map((e) => (
+              <option key={e.value} value={e.value}>
+                {e.label}
+              </option>
             ))}
-          </div>
-          <input
-            type="color"
-            title="Custom fill colour"
-            value={selectedDesk.color || "#eef2f6"}
-            onChange={(e) => patchSelected({ color: e.target.value })}
-            style={{ padding: 1, width: 52, height: 36 }}
-          />
-          {selectedDesk.color && (
-            <button className="small" onClick={() => patchSelected({ color: "" })}>
-              Reset fill
+          </select>
+          {crop ? (
+            <button className="small" onClick={removeCrop}>
+              <Icon name="crop" size={18} /> Remove view crop
+            </button>
+          ) : (
+            <button className="small" onClick={addCrop} title="Seating and lesson views will show only this area, scaled up">
+              <Icon name="crop" size={18} /> Set view crop
             </button>
           )}
-          <span className="muted" style={{ marginLeft: 4 }}>
-            Text
-          </span>
-          <div className="swatch-row" role="group" aria-label="Text colour">
-            {TEXT_PRESETS.map((c) => (
-              <button
-                key={c.hex}
-                className={`swatch ${selectedDesk.textColor === c.hex ? "on" : ""}`}
-                style={{ background: c.hex }}
-                title={`${c.name} text`}
-                aria-label={`${c.name} text`}
-                onClick={() => patchSelected({ textColor: c.hex })}
-              />
-            ))}
-          </div>
-          <input
-            type="color"
-            title="Custom text colour"
-            value={selectedDesk.textColor || "#5c6b7a"}
-            onChange={(e) => patchSelected({ textColor: e.target.value })}
-            style={{ padding: 1, width: 52, height: 36 }}
-          />
-          {selectedDesk.textColor && (
-            <button className="small" onClick={() => patchSelected({ textColor: "" })}>
-              Reset text
-            </button>
-          )}
-          <span className="muted" style={{ marginLeft: 4 }}>
-            Size
-          </span>
-          <div className="stepper">
-            <span className="stepper-label">Width</span>
-            <button onClick={() => resizeSelected(-GRID, 0)}>−</button>
-            <span>{selectedDesk.w}</span>
-            <button onClick={() => resizeSelected(GRID, 0)}>+</button>
-          </div>
-          <div className="stepper">
-            <span className="stepper-label">Height</span>
-            <button onClick={() => resizeSelected(0, -GRID)}>−</button>
-            <span>{selectedDesk.h}</span>
-            <button onClick={() => resizeSelected(0, GRID)}>+</button>
-          </div>
-          <button className="danger" onClick={deleteSelected}>
-            <Icon name="delete" size={20} /> Delete
+          <Popover label="Text size" icon="tune">
+            <div className="popover-label">Text size</div>
+            <FontStepper label="Seats" value={roomConfig.seatFontScale} onBump={(d) => bumpFont("seatFontScale", d)} />
+            <FontStepper label="Desks" value={roomConfig.deskFontScale} onBump={(d) => bumpFont("deskFontScale", d)} />
+            <FontStepper label="Labels" value={roomConfig.labelFontScale} onBump={(d) => bumpFont("labelFontScale", d)} />
+          </Popover>
+          <Popover label="Templates" icon="save" count={layoutTemplates.length}>
+            {(close) => (
+              <>
+                <button
+                  className="small popover-wide"
+                  onClick={() => {
+                    close();
+                    void saveTemplate();
+                  }}
+                  disabled={desks.length === 0}
+                  title="Save this room to reuse in another class"
+                >
+                  <Icon name="save" size={18} /> Save as template
+                </button>
+                <div className="popover-label">{layoutTemplates.length ? "Apply a template" : "No templates saved yet."}</div>
+                {layoutTemplates.map((name) => (
+                  <span key={name} className="template-chip">
+                    <button
+                      className="small"
+                      title="Apply this layout"
+                      onClick={() => {
+                        close();
+                        void loadTemplate(name);
+                      }}
+                    >
+                      {name}
+                    </button>
+                    <button
+                      className="icon-only small danger"
+                      title={fromCopy ? NEEDS_DATA_FOLDER : "Delete template"}
+                      aria-label={`Delete template ${name}`}
+                      disabled={fromCopy}
+                      onClick={() => {
+                        close();
+                        void removeTemplate(name);
+                      }}
+                    >
+                      <Icon name="close" size={18} />
+                    </button>
+                  </span>
+                ))}
+              </>
+            )}
+          </Popover>
+          <div className="spacer" />
+          <button className="small" onClick={() => void clearRoom()} disabled={desks.length === 0}>
+            Clear room
           </button>
         </div>
-      )}
 
-      <div className="palette layout-tools">
-        <span className="muted">Text size:</span>
-        <FontStepper label="Seats" value={roomConfig.seatFontScale} onBump={(d) => bumpFont("seatFontScale", d)} />
-        <FontStepper label="Desks" value={roomConfig.deskFontScale} onBump={(d) => bumpFont("deskFontScale", d)} />
-        <FontStepper label="Labels" value={roomConfig.labelFontScale} onBump={(d) => bumpFont("labelFontScale", d)} />
-        <span className="spacer" />
-        <span className="muted">Layouts:</span>
-        <button onClick={() => void saveTemplate()} disabled={desks.length === 0} title="Save this room to reuse in another class">
-          <Icon name="save" size={20} /> Save as template
-        </button>
-        {layoutTemplates.map((name) => (
-          <span key={name} className="template-chip">
-            <button className="small" title="Apply this layout" onClick={() => void loadTemplate(name)}>
-              {name}
-            </button>
-            <button
-              className="icon-only small danger"
-              title={fromCopy ? NEEDS_DATA_FOLDER : "Delete template"}
-              aria-label="Delete template"
-              disabled={fromCopy}
-              onClick={() => void removeTemplate(name)}
-            >
-              <Icon name="close" size={18} />
-            </button>
-          </span>
-        ))}
+        {/* The selected item; a hint when there isn't one, so the canvas doesn't jump. */}
+        <div className="layout-row" aria-label={selectedDesk ? "Selected item" : undefined} role={selectedDesk ? "group" : undefined}>
+          {selectedDesk ? (
+            <>
+              <input
+                className="desk-label-input"
+                placeholder={selectedDesk.shape === "label" ? "Label text" : "Desk label"}
+                aria-label={selectedDesk.shape === "label" ? "Label text" : "Desk label"}
+                value={selectedDesk.label}
+                onChange={(e) => patchSelected({ label: e.target.value })}
+              />
+              <button className="small icon-only" onClick={rotateSelected} title="Rotate 90°" aria-label="Rotate">
+                <Icon name="rotate_right" size={18} />
+              </button>
+              <button className="small icon-only" onClick={duplicateSelected} title="Duplicate" aria-label="Duplicate">
+                <Icon name="content_copy" size={18} />
+              </button>
+              <span className="layout-sep" aria-hidden />
+              <span className="muted layout-caption">Fill</span>
+              <div className="swatch-row" role="group" aria-label="Fill colour">
+                <button
+                  className={`swatch none ${selectedDesk.color ? "" : "on"}`}
+                  title="Default fill"
+                  aria-label="Default fill"
+                  onClick={() => patchSelected({ color: "" })}
+                />
+                {PASTEL_PRESETS.map((c) => (
+                  <button
+                    key={c.hex}
+                    className={`swatch ${selectedDesk.color === c.hex ? "on" : ""}`}
+                    style={{ background: c.hex }}
+                    title={c.name}
+                    aria-label={`Fill ${c.name}`}
+                    onClick={() => patchSelected({ color: c.hex })}
+                  />
+                ))}
+                <input
+                  type="color"
+                  title="Custom fill colour"
+                  aria-label="Custom fill colour"
+                  value={selectedDesk.color || "#eef2f6"}
+                  onChange={(e) => patchSelected({ color: e.target.value })}
+                />
+              </div>
+              <span className="layout-sep" aria-hidden />
+              <span className="muted layout-caption">Text</span>
+              <div className="swatch-row" role="group" aria-label="Text colour">
+                <button
+                  className={`swatch none ${selectedDesk.textColor ? "" : "on"}`}
+                  title="Default text colour"
+                  aria-label="Default text colour"
+                  onClick={() => patchSelected({ textColor: "" })}
+                />
+                {TEXT_PRESETS.map((c) => (
+                  <button
+                    key={c.hex}
+                    className={`swatch ${selectedDesk.textColor === c.hex ? "on" : ""}`}
+                    style={{ background: c.hex }}
+                    title={`${c.name} text`}
+                    aria-label={`${c.name} text`}
+                    onClick={() => patchSelected({ textColor: c.hex })}
+                  />
+                ))}
+                <input
+                  type="color"
+                  title="Custom text colour"
+                  aria-label="Custom text colour"
+                  value={selectedDesk.textColor || "#5c6b7a"}
+                  onChange={(e) => patchSelected({ textColor: e.target.value })}
+                />
+              </div>
+              <span className="layout-sep" aria-hidden />
+              <div className="stepper" title="Width">
+                <span className="stepper-label">W</span>
+                <button onClick={() => resizeSelected(-GRID, 0)} aria-label="Narrower">−</button>
+                <span>{selectedDesk.w}</span>
+                <button onClick={() => resizeSelected(GRID, 0)} aria-label="Wider">+</button>
+              </div>
+              <div className="stepper" title="Height">
+                <span className="stepper-label">H</span>
+                <button onClick={() => resizeSelected(0, -GRID)} aria-label="Shorter">−</button>
+                <span>{selectedDesk.h}</span>
+                <button onClick={() => resizeSelected(0, GRID)} aria-label="Taller">+</button>
+              </div>
+              <button className="small danger" onClick={deleteSelected}>
+                <Icon name="delete" size={18} /> Delete
+              </button>
+            </>
+          ) : (
+            <span className="muted layout-hint">
+              Select a desk to label, colour, rotate, resize or delete it. Drag the floor to move around; pinch or
+              Ctrl + scroll to zoom; hold Space and drag to pan.
+            </span>
+          )}
+        </div>
       </div>
 
-      <RoomCanvas
-        desks={shown}
-        selectedDeskId={selected}
-        editable
-        frontEdge={roomConfig.frontEdge}
-        seatFontScale={roomConfig.seatFontScale}
-        deskFontScale={roomConfig.deskFontScale}
-        labelFontScale={roomConfig.labelFontScale}
-        onDeskPointerDown={startDeskDrag}
-        onCanvasPointerDown={(e) => {
-          if (e.target === e.currentTarget) setSelected(null);
-        }}
-        onCanvasPointerMove={onMove}
-        onCanvasPointerUp={endDrag}
-      >
-        {crop && (
-          <>
-            <rect
-              className="crop-rect"
-              x={crop.x}
-              y={crop.y}
-              width={crop.w}
-              height={crop.h}
-              onPointerDown={(e) => startCropDrag("crop-move", e)}
-            />
-            <rect
-              className="crop-handle"
-              x={crop.x + crop.w - 10}
-              y={crop.y + crop.h - 10}
-              width={20}
-              height={20}
-              rx={3}
-              onPointerDown={(e) => startCropDrag("crop-resize", e)}
-            />
-          </>
-        )}
-      </RoomCanvas>
-      <p className="muted">
-        Drag desks to arrange your room — they snap to the grid. Select a desk to rotate, recolour, resize (W/H),
-        label, duplicate or delete it. Label boxes are free text blocks for anything in the room. Use “Text size” to
-        scale seat names, desk labels and label boxes. Save a room as a template to reuse the same setup in another
-        class. Use “Front:” to say which edge the whiteboard is on, and “Set view crop” to zoom every seating view to
-        just the used part of the room.
-      </p>
+      <div className="layout-work">
+        <div className="layout-add" role="group" aria-label="Add to the room">
+          <span className="muted layout-caption">Add</span>
+          <div className="layout-add-buttons">
+            {PALETTE.map((p) => (
+              <button key={p.shape} className="small" title={p.title} onClick={() => addDesk(p.shape)}>
+                <Icon name="add" size={18} /> {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="layout-frame">
+          <div {...view.viewportProps} tabIndex={0} aria-label="Room plan: drag to scroll, pinch or Ctrl + scroll to zoom">
+            <div className="layout-stage">
+              <RoomCanvas
+                desks={shown}
+                selectedDeskId={selected}
+                editable
+                zoom={view.zoom}
+                frontEdge={roomConfig.frontEdge}
+                seatFontScale={roomConfig.seatFontScale}
+                deskFontScale={roomConfig.deskFontScale}
+                labelFontScale={roomConfig.labelFontScale}
+                onDeskPointerDown={startDeskDrag}
+                onCanvasPointerMove={onMove}
+                onCanvasPointerUp={endDrag}
+              >
+                {crop && (
+                  <>
+                    <rect
+                      className="crop-rect"
+                      x={crop.x}
+                      y={crop.y}
+                      width={crop.w}
+                      height={crop.h}
+                      onPointerDown={(e) => startCropDrag("crop-move", e)}
+                    />
+                    <rect
+                      className="crop-handle"
+                      x={crop.x + crop.w - 10}
+                      y={crop.y + crop.h - 10}
+                      width={20}
+                      height={20}
+                      rx={3}
+                      onPointerDown={(e) => startCropDrag("crop-resize", e)}
+                    />
+                  </>
+                )}
+              </RoomCanvas>
+            </div>
+          </div>
+
+          <div className="zoom-controls" role="group" aria-label="Zoom">
+            <button className="small icon-only" onClick={view.zoomOut} disabled={!view.canZoomOut} title="Zoom out (Ctrl −)" aria-label="Zoom out">
+              −
+            </button>
+            <button className="small zoom-level" onClick={view.actualSize} title="Actual size (Ctrl 1)">
+              {Math.round(view.zoom * 100)}%
+            </button>
+            <button className="small icon-only" onClick={view.zoomIn} disabled={!view.canZoomIn} title="Zoom in (Ctrl +)" aria-label="Zoom in">
+              +
+            </button>
+            <button
+              className={`small ${view.isFit ? "on" : ""}`}
+              onClick={view.fitRoom}
+              aria-pressed={view.isFit}
+              title="Fit the whole room (Ctrl 0)"
+            >
+              Fit
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A toolbar button that opens a small panel under it (closed by a tap outside
+ * or Escape). Children may be a function given `close`, for actions that open
+ * a dialog.
+ */
+function Popover({
+  label,
+  icon,
+  count,
+  children,
+}: {
+  label: string;
+  icon: "tune" | "save";
+  count?: number;
+  children: ReactNode | ((close: () => void) => ReactNode);
+}) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
+  useDismissOnOutside(box, open, () => {
+    const inside = box.current?.contains(document.activeElement);
+    setOpen(false);
+    if (inside) toggle.current?.focus();
+  });
+  // Focus goes back to the toggle, so a dialog opened from the panel hands it back there.
+  const close = () => {
+    setOpen(false);
+    toggle.current?.focus();
+  };
+  return (
+    <div className="popover-anchor" ref={box}>
+      <button ref={toggle} className={`small ${open ? "on" : ""}`} aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Icon name={icon} size={18} /> {label}
+        {count ? <span className="popover-count">{count}</span> : null}
+        <Icon name="arrow_drop_down" size={18} />
+      </button>
+      {open && (
+        <div className="popover-panel" role="group" aria-label={label}>
+          {typeof children === "function" ? children(close) : children}
+        </div>
+      )}
     </div>
   );
 }
@@ -475,11 +611,11 @@ function FontStepper({ label, value, onBump }: { label: string; value: number; o
   return (
     <div className="stepper" title={`${label} text size`}>
       <span className="stepper-label">{label}</span>
-      <button onClick={() => onBump(-0.1)} disabled={value <= 0.5}>
+      <button onClick={() => onBump(-0.1)} disabled={value <= 0.5} aria-label={`Smaller ${label.toLowerCase()} text`}>
         −
       </button>
       <span>{Math.round(value * 100)}%</span>
-      <button onClick={() => onBump(0.1)} disabled={value >= 3}>
+      <button onClick={() => onBump(0.1)} disabled={value >= 3} aria-label={`Larger ${label.toLowerCase()} text`}>
         +
       </button>
     </div>

@@ -161,9 +161,23 @@ test("home, the class menu and setting up a class", async ({ page }) => {
   await settingsTab(page, "Room layout");
   await page.locator(".room-canvas g.desk").nth(2).click();
   await shot(page, "room-layout");
-  await shotOf(page, page.locator("main .palette").nth(0), "layout-add-buttons", 6);
-  await shotOf(page, page.locator("main .palette").nth(1), "layout-desk-toolbar", 6);
-  await shotOf(page, page.locator("main .palette.layout-tools"), "layout-text-and-templates", 6);
+  await shotOf(page, page.locator("main .layout-add"), "layout-add-buttons", 6);
+  await shotOf(page, page.locator("main .layout-toolbar .layout-row").nth(1), "layout-desk-toolbar", 6);
+  await shotOf(page, page.locator("main .zoom-controls"), "layout-zoom", 6);
+  // The Text size and Templates pop-ups, with one template saved.
+  const textSize = page.getByRole("button", { name: /^Text size/ });
+  await textSize.click();
+  await shotOf(page, [textSize, page.locator(".popover-panel")], "layout-text-size", 6);
+  await textSize.click();
+  const templates = page.getByRole("button", { name: /^Templates/ });
+  await templates.click();
+  await page.locator(".popover-panel").getByRole("button", { name: "Save as template" }).click();
+  await modal(page).locator("input").fill("Lab 2");
+  await modal(page).locator("button.primary").click();
+  await expect(modal(page)).toHaveCount(0);
+  await templates.click();
+  await shotOf(page, [templates, page.locator(".popover-panel")], "layout-templates", 6);
+  await templates.click();
   await page.getByRole("button", { name: "Set view crop" }).click();
   await shot(page, "room-layout-crop");
 
@@ -505,7 +519,7 @@ test("settings", async ({ page }) => {
   await modal(page).locator("input").fill("8");
   await modal(page).locator("button.primary").click();
   await page.getByLabel("Same topics as:").selectOption("7");
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await toTop(page, ".settings-body");
   await shot(page, "settings-assessments");
 
   await settingsTab(page, "Export");
