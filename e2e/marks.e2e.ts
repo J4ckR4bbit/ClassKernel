@@ -131,3 +131,43 @@ test("the rank column is tinted green for the top rank to red for the lowest", a
   expect(rN).toBeGreaterThan(gN); // red
   expect(rN).toBeGreaterThan(bN);
 });
+
+test("a comment on a student's paper, from the button at the end of their row", async ({ page }) => {
+  await nav(page, "Marks");
+  await page.locator("tr", { hasText: "Forces & energy test" }).getByRole("button", { name: "Enter marks" }).click();
+  await reveal(page);
+  const row = page.locator(".mark-grid tbody tr").first();
+  const button = row.locator("button.comment-btn");
+  await expect(button).not.toHaveClass(/has-comment/);
+
+  await button.click();
+  const dialog = page.locator(".modal.mark-comment-modal");
+  await dialog.locator("textarea").fill("Left Q3 blank; ask about it in class.");
+  await dialog.getByRole("button", { name: "Save" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(button).toHaveClass(/has-comment/);
+  await expect(button).toHaveAttribute("title", "Left Q3 blank; ask about it in class.");
+
+  // Clearing every mark in the row keeps the comment.
+  const cells = row.locator("input.grid-input");
+  const n = await cells.count();
+  for (let c = 0; c < n; c++) await cells.nth(c).fill("");
+  await button.click();
+  await expect(dialog.locator("textarea")).toHaveValue("Left Q3 blank; ask about it in class.");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+
+  // The read-only View shows it, and only rows with a comment have the button.
+  await page.getByRole("button", { name: "Done" }).click();
+  await page.locator("tr", { hasText: "Forces & energy test" }).getByRole("button", { name: "View" }).click();
+  await expect(page.locator(".mark-grid tbody button.comment-btn")).toHaveCount(1);
+  await page.locator(".mark-grid tbody button.comment-btn").click();
+  await expect(dialog).toContainText("Left Q3 blank; ask about it in class.");
+  await expect(dialog.locator("textarea")).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Close" }).click();
+
+  // Clear takes it away.
+  await page.getByRole("button", { name: "Enter marks" }).click();
+  await button.click();
+  await dialog.getByRole("button", { name: "Clear" }).click();
+  await expect(button).not.toHaveClass(/has-comment/);
+});
