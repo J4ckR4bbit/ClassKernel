@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NoteEditorRequest, useApp, useAppPick } from "../../store/appStore";
+import { NoteEditorRequest, useAppPick } from "../../store/appStore";
 import { newId, today } from "../../lib/id";
 import { dateInZone } from "../../lib/time";
 import { gradeLabel } from "../../lib/format";
@@ -75,8 +75,8 @@ export default function FormFDialog({ request }: { request: NoteEditorRequest })
   };
 
   const size = { fontSize: userPrefs.noteTextSize };
-  // The teacher's name comes from the parent-report header; say where, if it's blank.
-  const noTeacher = !useApp.getState().userPrefs.reportTeacher;
+  // The teacher's name comes from the parent-report header; while it's blank here, say where to set it.
+  const noTeacher = !fields.teacher?.trim() && !userPrefs.reportTeacher;
 
   return (
     <Modal title="Form F — teacher comment" onClose={closeNoteEditor} className="note-modal wide formf-modal">

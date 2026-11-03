@@ -107,12 +107,23 @@ The buttons you tap during a lesson. They are **shared by all your classes** (st
 | Column | What it does |
 | --- | --- |
 | **⠿** | Drag to reorder. The order here is the order on the buttons. |
-| **Code** | A short code (e.g. `HW-`). Edit it and click away to rename. Renaming updates the open class's history; other classes keep the old code in their logs. |
+| **Code** | Up to **three** characters (e.g. `+HW`): what the [grid and round pop-ups](05-lesson.md#grid-and-round-pop-ups) show on each tile. Edit it and click away to rename. Renaming changes it in every class's behaviour log too, so the history keeps its labels. |
+| **Icon** | Tap to choose an icon for the button (or **No icon**). It shows on the list buttons, the tiles and the rings. |
 | **Label** | The text on the button, shown in the button's own colour. |
 | **Type** | Positive or negative. |
 | **Points** | e.g. `+2`, `-1`. |
 | **Colour** | A fixed set of deep shades that all carry white text. |
 | **✕** | Removes the button. Events already logged keep their points. |
+
+![Choosing a behaviour's icon](../images/behaviour-icon-picker.png)
+
+The icons are grouped: classroom and learning, rewards and praise, consequences, science, maths, humanities and
+languages, and arts, technology and sport.
+
+**Codes from before.** Codes used to be any length. The first time the app opens your data folder after the update,
+any code longer than three characters is shortened to its sign and two letters (*TALK* becomes *-TA*, *HELP* becomes
+*+HE*; if that's taken, other letters, then a digit). Every class's behaviour log is changed to match, and a
+message lists what changed. Rename any of them here if you'd like something else.
 
 **+ Positive behaviour** and **+ Negative behaviour** add a button. *Asked and answered* and *Unable to answer* are
 the buttons [Pick a student](05-lesson.md#pick-a-student) uses; you can rename or recolour them like any other.
@@ -124,6 +135,7 @@ the buttons [Pick a student](05-lesson.md#pick-a-student) uses; you can rename o
 | Setting | What it does |
 | --- | --- |
 | **Room plan (full screen)** / **Side panel of tables** | Which style the **Teaching mode** button opens. You can switch during a lesson. |
+| **Student pop-up** | What opens when you tap a student on the room plan: **List** (labelled buttons), **Grid** (tiles) or **Round** (rings around the seat). See [Grid and round pop-ups](05-lesson.md#grid-and-round-pop-ups). |
 | **Side panel edge** | Left or right. |
 | **Room plan buttons** | Which edge of the full-screen room plan the lesson buttons sit on: top, right, bottom or left. Put them within reach of where you stand. |
 | **Reseat PIN** | **Set PIN**, **Change PIN** or **Remove PIN**. Changing or removing it asks for the current PIN first, so a student at the board can't clear it. See [Seats](04-seats.md#once-per-lesson-and-the-reseat-pin). |
@@ -135,7 +147,7 @@ the buttons [Pick a student](05-lesson.md#pick-a-student) uses; you can rename o
 ### Assessable topics by grade
 
 The topic bank used to tag test questions, shared by all classes (stored in `topics.csv`). Each class's grade is set
-on its [Class notes](02-setting-up-a-class.md#class-notes-details-colour-and-notes) page.
+on its [Class](02-setting-up-a-class.md#the-class-page-details-colour-and-notes) page.
 
 - Choose the **Grade**, or **+ Grade** to add one. A new grade starts with the content areas *Chemistry*, *Physics*
   and *Science Skills*.
@@ -144,7 +156,7 @@ on its [Class notes](02-setting-up-a-class.md#class-notes-details-colour-and-not
   them. If the grade had subtopics of its own, you're asked first, because its own list is replaced. Choose
   **— its own list —** to stop sharing: the grade keeps a copy of the topics to change on its own.
 - The **✕** beside the grade deletes it with its topics. Grades that shared its list keep it. A grade that a class
-  still has stays in the list until that class's grade is changed on its Class notes page.
+  still has stays in the list until that class's grade is changed on its Class page.
 - Each **content area** has a table of **subtopics**, each with an optional **short label** (e.g. *Nrg* for
   *Energy*) used as the column heading in the marking grid.
 - Type a subtopic into the bottom row and press **Enter**, or **paste a whole column from a spreadsheet** into it.
@@ -171,7 +183,7 @@ on its [Class notes](02-setting-up-a-class.md#class-notes-details-colour-and-not
 One row per grade (G08, G10, …). Type the **examinations' share** of the weighted mark; the informal tasks get the
 rest. Every grade starts at 50 / 50. A student who hasn't written an examination yet is marked on their informal
 tasks alone. Each task's own weight, and whether it counts as informal or an examination, is set on the Marks page
-(see [Weighting](07-marks.md#weighting)). The grades listed are those of your classes (set on each Class notes
+(see [Weighting](07-marks.md#weighting)). The grades listed are those of your classes (set on each Class
 page) and of the topic bank.
 
 ## Tools

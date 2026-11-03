@@ -242,6 +242,14 @@ test("lesson", async ({ page }) => {
   await shotOf(page, page.locator(".toast"), "toast-undo", 10);
   await toasts(page, false);
 
+  // A note about a student, from their pop-up.
+  await seats(page).nth(4).click({ force: true });
+  await page.locator(".behaviour-popover").getByRole("button", { name: "Note" }).click();
+  await modal(page).locator("textarea").fill("Forgot his calculator again; lend him one and remind him on Friday.");
+  await modal(page).getByRole("button", { name: "Assessment" }).click();
+  await shotOf(page, modal(page), "quick-note", 2);
+  await modal(page).getByRole("button", { name: "Escape" }).click();
+
   // A trip outside under way.
   await seats(page).nth(9).click({ force: true });
   await page.locator(".behaviour-popover .bathroom-btn").click();
@@ -281,6 +289,61 @@ test("lesson", async ({ page }) => {
   await page.getByRole("button", { name: "End lesson" }).click();
   await shotOf(page, modal(page), "end-lesson-dialog", 2);
   await modal(page).locator("button.primary").click();
+
+  // The grid and round pop-ups (Settings → Teaching mode → Student pop-up).
+  for (const style of ["Grid", "Round"] as const) {
+    await settingsTab(page, "Teaching mode");
+    await page.getByRole("group", { name: "Student pop-up" }).getByRole("button", { name: style }).click();
+    await nav(page, "Lesson");
+    await seats(page).nth(4).click({ force: true });
+    const target = style === "Grid" ? [page.locator(".behaviour-popover")] : [page.locator(".student-ring"), page.locator(".ring-name")];
+    await shotOf(page, target, style === "Grid" ? "popup-grid" : "popup-round", 10);
+    await page.keyboard.press("Escape");
+  }
+});
+
+test("notes", async ({ page }) => {
+  await prep(page);
+  await nav(page, "Notes");
+  await reveal(page);
+  await shot(page, "notes-page");
+  // One student's notes, by section (the demo's first student has a detailed note and a tagged quick note).
+  await page.getByRole("combobox", { name: "Whose notes" }).selectOption({ index: 2 });
+  await page.getByRole("group", { name: "Layout" }).getByRole("button", { name: "By section" }).click();
+  await shot(page, "notes-by-section");
+
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await page.getByRole("button", { name: "Detailed note" }).click();
+  const section = (name: string) => modal(page).locator(".note-section", { hasText: name }).locator("textarea");
+  await section("Work ethic").fill("Works steadily; checks his answers before handing in.");
+  await section("Assessment").fill("Strong on calculations; loses marks explaining in words.");
+  await shotOf(page, modal(page), "detailed-note", 2);
+  await modal(page).getByRole("button", { name: "Cancel" }).click();
+
+  await page.setViewportSize({ width: 1280, height: 1500 });
+  await page.getByRole("button", { name: "Form F" }).click();
+  const field = (label: string) => modal(page).locator(".formf-row", { hasText: label }).locator("input");
+  await field("Teacher").fill("Mr K. Hilder");
+  await field("applied for").fill("Extra time (25%)");
+  await field("terms").fill("3");
+  await modal(page).locator(".note-section textarea").fill("Extra time; a reader for longer questions.");
+  for (const [answer, question] of [
+    ["Yes", "understand what they have read"],
+    ["Yes", "frequent spelling errors"],
+    ["Yes", "handwriting legible"],
+    ["No", "oral work noticeably better"],
+    ["Yes", "expression better when typed"],
+  ]) {
+    await modal(page).getByRole("button", { name: new RegExp(`^${answer.replace("/", "\\/")}: .*${question}`) }).click();
+  }
+  await modal(page).evaluate((e) => (e.scrollTop = 0));
+  await shotOf(page, modal(page), "form-f", 2);
+  await modal(page).getByRole("button", { name: "Save and print" }).click();
+  await page.setViewportSize(VIEW);
+  await shot(page, "form-f-print");
+  await page.locator(".formf-portal").getByRole("button", { name: "Close" }).click();
+
+  await shotOf(page, page.locator(".note-settings"), "notes-settings", 0);
 });
 
 test("behaviour log", async ({ page }) => {
@@ -510,6 +573,10 @@ test("settings", async ({ page }) => {
   await shotOf(page, panel(page, "Teaching mode"), "settings-teaching-mode", 0);
   await settingsTab(page, "Behaviour");
   await shotOf(page, panel(page, "Behaviour buttons"), "settings-behaviour-buttons", 0);
+  const iconButton = page.getByRole("button", { name: "Icon for Talking / off task" });
+  await iconButton.click();
+  await shotOf(page, [iconButton, page.locator(".icon-picker")], "behaviour-icon-picker", 6);
+  await page.keyboard.press("Escape");
 
   await settingsTab(page, "Assessments");
   await shotOf(page, [panel(page, "Mark entry"), panel(page, "Show results as")], "settings-mark-entry-and-results", 0);

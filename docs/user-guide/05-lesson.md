@@ -1,6 +1,6 @@
 # 5. Lesson
 
-[← Seats](04-seats.md) · [Contents](../README.md) · Next: [Behaviour log →](06-behaviour-log.md)
+[← Seats](04-seats.md) · [Contents](../README.md) · Next: [Behaviour log and notes →](06-behaviour-log.md)
 
 Open **Lesson** in the navigation rail (or **Lesson** on a class's Home card). In a live lesson **the seating plan is
 the interface**: tap a student's seat to record behaviour or attendance for them.
@@ -20,6 +20,7 @@ A lesson needs a room layout and a seating plan. Without them the page links you
 | **Start lesson** / **End lesson** | Starts the lesson and marks the class present, then becomes **End lesson**, which saves the lesson to the class history and starts a fresh count. See [Start lesson](#start-lesson) and [End lesson](#end-lesson). |
 | **Batch entry** | Records one behaviour for several students at once. |
 | **Pick a student** | Chooses a student at random to answer a question. |
+| **Quick note** | A note about the whole lesson (see [Notes](#notes)). It reads **Quick note (draft)** while a draft is waiting. |
 | **Randomise** / **🔒 Reseat…** | Rerolls the seating, once per lesson (see [Seats](04-seats.md#once-per-lesson-and-the-reseat-pin)). Also starts the lesson if it isn't running yet. |
 | **Teaching mode** | Opens your default [teaching mode](#teaching-mode). |
 | **Side panel** / **Room plan** | Opens the *other* teaching mode. |
@@ -35,6 +36,7 @@ Tap any student's seat and a pop-up opens beside it:
 - **P / A / L / E** marks today's attendance (present, absent, late, excused). The seat then shows a small mark in
   its corner (✕ absent, L late, E excused), and the message has **Undo**.
 - **OUTSIDE — start timer** times a trip out of the classroom (below).
+- **Note** writes a note about this student (see [Notes](#notes)). It reads **Note (draft)** while one is waiting.
 - **Behaviour buttons**, in two labelled groups — **Positive**, then **Negative** — each starting with its points
   (*+1 Great effort*). Tap one to record it. They are your own buttons, set up under
   [Settings → Behaviour](10-settings.md#behaviour).
@@ -42,6 +44,32 @@ Tap any student's seat and a pop-up opens beside it:
   student's seat closes this pop-up and opens theirs. The student sheet in the side panel closes the same way.
 
 With a keyboard, **Tab** moves from seat to seat and **Enter** opens the pop-up.
+
+### Grid and round pop-ups
+
+The pop-up above is the **List**. Under [Settings → Teaching mode](10-settings.md#teaching-mode) you can choose
+**Grid** or **Round** instead. Both do the same things as the list.
+
+![The grid pop-up](../images/popup-grid.png)
+
+**Grid** is a near-square of tiles:
+
+- Across the top: attendance (**P A L E**), **OUTSIDE** and **NOTE**.
+- Below that, a tile for each behaviour, picked out by its colour, icon and three-character code (e.g. **+HW**),
+  with its points underneath.
+- Positives come first. The negatives start a row of their own, so the two kinds stay apart.
+
+![The round pop-up](../images/popup-round.png)
+
+**Round** opens rings centred on the seat you tapped:
+
+- **✕** is in the middle and closes it.
+- The inner ring has attendance across the top, with **OUTSIDE** and **NOTE** below.
+- The outer ring has the behaviours: positives along the top, negatives along the bottom. More than eight of a kind
+  spill onto a further ring.
+- Near the edge of the plan, the rings shift so they stay on screen.
+
+The side panel uses the grid when Round is chosen, because there is no seat to centre the rings on.
 
 Every recording shows a message with **Undo** for a few seconds. With privacy mode on, the message says
 *"recorded"* rather than the student's name.
@@ -65,6 +93,25 @@ appears above the plan with the time ticking:
 When they're back, tap their chip in the **Outside now** bar (or tap their seat and press **Back inside**). The
 trip — when they left, when they returned and for how long — goes into the
 [Outside log](06-behaviour-log.md#outside-log).
+
+## Notes
+
+Tap **Note** on a student's pop-up, or **Quick note** on the toolbar for the lesson as a whole:
+
+![A quick note](../images/quick-note.png)
+
+1. Type the note. **A−** / **A+** make the writing smaller or bigger; the size is remembered.
+2. Tap any tags that fit (**Behaviour**, **Homework**, **Parent contact**…). These are the same list as the
+   sections of a detailed note, and you set them on the [Notes page](06-behaviour-log.md#notes-settings).
+3. Choose one of three buttons:
+
+| Button | What it does |
+| --- | --- |
+| **Submit** | Saves the note (to the class's [Notes](06-behaviour-log.md#notes)), clears the box and closes it. **Ctrl + Enter** does the same. |
+| **Draft** | Closes the box but keeps what you typed. Open the same student again (or **Quick note**) and it's still there. **Esc**, or a tap outside the box, does the same, so a slip never loses your typing. |
+| **Escape** | Clears everything and saves nothing. |
+
+**End lesson** throws away any drafts that are still unsent, and its message says how many.
 
 ## Pick a student
 
@@ -172,6 +219,7 @@ This:
 - starts a fresh **events this lesson** count;
 - **unlocks Randomise** for the next lesson;
 - resets **Pick a student**'s no-repeat list;
+- throws away any unsent note drafts;
 - turns the button back into **Start lesson**.
 
 Behaviour events and attendance are saved the moment you record them — End lesson doesn't need to be pressed for

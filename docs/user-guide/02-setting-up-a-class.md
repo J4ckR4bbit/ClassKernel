@@ -19,11 +19,12 @@ Press **New class** on Home, or open the class menu (top right) and choose **New
 
 Press **Create class**. The new class becomes the one you're working with.
 
-## Class notes: details, colour and notes
+## The Class page: details, colour and notes
 
-Open **Notes** in the navigation rail.
+Open **Class** in the navigation rail. (Notes about students and lessons are on the [Notes](06-behaviour-log.md#notes)
+page.)
 
-![The Class notes page](../images/class-notes.png)
+![The Class page](../images/class-notes.png)
 
 | Control | What it does |
 | --- | --- |
