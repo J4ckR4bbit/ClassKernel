@@ -182,7 +182,7 @@ export default function TeachingStrip() {
 
         {/* Who's out, at the top, so a trip ends with one tap whoever's row is out of sight. */}
         {outNow.length > 0 && !batch.active && (
-          <div className="strip-out no-print" role="group" aria-label="Out at the bathroom">
+          <div className="strip-out no-print" role="group" aria-label="Outside the classroom">
             {outNow.map((v) => {
               const s = byId.get(v.studentId);
               return (
@@ -192,7 +192,7 @@ export default function TeachingStrip() {
                   title="Tap when the student is back"
                   onClick={() => lesson.toggleBathroom(v.studentId)}
                 >
-                  <Icon name="wc" size={16} />
+                  <Icon name="door_open" size={16} />
                   {s ? displayStudentName(s, userPrefs.seatNameStyle) : v.studentId} · <Elapsed visit={v} />
                 </button>
               );

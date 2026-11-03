@@ -64,7 +64,7 @@ export const EXPORT_SECTIONS: SectionInfo[] = [
   { id: "attendanceSummary", label: "Attendance summary", description: "Per student: present / absent / late / excused and rate", sheetNames: ["Attendance summary"], defaultOn: true },
   { id: "behaviour", label: "Behaviour log", description: "Every logged behaviour event with its points", sheetNames: ["Behaviour log"], defaultOn: true },
   { id: "behaviourSummary", label: "Behaviour summary", description: "Per student: positives, negatives and net points", sheetNames: ["Behaviour summary"], defaultOn: true },
-  { id: "bathroom", label: "Bathroom log", description: "Every timed bathroom trip: when they left, came back and for how long", sheetNames: ["Bathroom log"], defaultOn: true },
+  { id: "bathroom", label: "Outside log", description: "Every timed trip outside the classroom: when they left, came back and for how long", sheetNames: ["Outside log"], defaultOn: true },
   { id: "assessments", label: "Assessments", description: "Each test with mean, median, range and spread", sheetNames: ["Assessments"], defaultOn: true },
   { id: "marks", label: "Marks", description: "Per student per assessment: mark, percentage and level or symbol", sheetNames: ["Marks"], defaultOn: true },
   { id: "questionMarks", label: "Question marks", description: "Per question marks with topic and cognitive level (large)", sheetNames: ["Question marks"], defaultOn: false },
@@ -341,7 +341,7 @@ const behaviourSummarySheet: Builder = (bundles) => [
 
 const bathroomSheet: Builder = (bundles) => [
   {
-    name: "Bathroom log",
+    name: "Outside log",
     columns: ["Class", "Date", "Student ID", "Student", "Out", "Back", "Duration", "Seconds"],
     rows: bundles.flatMap((b) => {
       const nameOf = nameLookup(b.students);

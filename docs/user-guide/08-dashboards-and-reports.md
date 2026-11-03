@@ -22,7 +22,7 @@ summary built from fixed, explainable rules, so you can always see why someone i
 ![The Class dashboard: summary, tiles and behaviour](../images/dashboard-class.png)
 
 **Summary and tiles** — class average, attendance, positive and negative entries, net points, questions answered
-(from Pick a student) and bathroom trips.
+(from Pick a student) and trips outside.
 
 Every average, rank and "top" student on the dashboards uses each student's **weighted mark** — the same one as the
 [markbook](07-marks.md#the-markbook), blending informal tasks and examinations by the grade's split (see
@@ -41,7 +41,7 @@ that student's dashboard.
 | **Stars** | Most positive entries. |
 | **Best answerers** | Answered at least half the questions they were asked (asked 3 or more times). |
 | **Rarely asked** | Not picked to answer yet, or far less than most. |
-| **Bathroom trips** | Most trips, with time out. |
+| **Trips outside** | Most trips, with time out. |
 | **Attendance below 90%** | With their absences and lates. |
 | **Top marks** | Highest weighted mark. |
 | **Flagged on marks** | Latest result well below their own average, far below the class, or three drops in a row. |
@@ -77,7 +77,7 @@ get here from the **chart** button in Settings → Students, or a student's name
 
 - **Flags and notes** beside the name.
 - **Summary and tiles**: weighted mark and rank in the class, level or symbol, attendance, behaviour, questions
-  answered, bathroom trips.
+  answered, trips outside.
 - **Marks**: every assessment with mark, %, level or symbol, the class mean and the gap to it (±); their trend
   against the class; and, for tests marked per question, strengths **by topic** and **by cognitive level** beside
   the class's.
@@ -85,10 +85,10 @@ get here from the **chart** button in Settings → Students, or a student's name
   ![A student's marks](../images/dashboard-student-marks.png)
 
 - **Behaviour**: week by week, what's been logged, and the latest entries.
-- **Questions** (answered / unable), **Bathroom** trips with times, and **Attendance** with the dates absent or
+- **Questions** (answered / unable), **Outside** trips with times, and **Attendance** with the dates absent or
   late.
 
-  ![A student's behaviour, questions, bathroom trips and attendance](../images/dashboard-student-behaviour.png)
+  ![A student's behaviour, questions, trips outside and attendance](../images/dashboard-student-behaviour.png)
 
 ## Parent reports
 
@@ -109,7 +109,7 @@ Both open a full-screen print preview: options on the left, the pages on the rig
 | **Class** | (From the Home card) the class menu, since the preview covers the top bar. |
 | **Students** | (From the Home card) **Whole class**, one page each, or one student. |
 | **Period: From / To** | The dates the report covers. **From the start** clears the start date. |
-| **Include** | Tick the sections to print: *Marks*, *Topic strengths*, *Behaviour & class questions*, *Attendance & bathroom*. Remembered on this computer. |
+| **Include** | Tick the sections to print: *Marks*, *Topic strengths*, *Behaviour & class questions*, *Attendance & outside*. Remembered on this computer. |
 | **Print** | Prints the pages (or saves a PDF via the Windows printer list). |
 | **Close** / **Home** (or **Esc**) | Leaves the preview. |
 
@@ -126,7 +126,7 @@ Put your **school name** and **your name** at the top of every page under
 - **Marks** against the class average, with a small trend chart.
 - **Topic strengths** by topic and by cognitive level (for tests marked per question).
 - **Behaviour** as *Going well* and *To work on*, and questions answered in class.
-- **Attendance** and bathroom trips.
+- **Attendance** and trips outside the classroom.
 - A **Teacher's comment** box: type straight onto the page. It is saved with the class (in
   `report_comments.csv`) when you click away, and is there next time. Leave it empty and it prints as blank lines
   to handwrite on.

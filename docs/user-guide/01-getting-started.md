@@ -46,7 +46,7 @@ Every page has the same frame:
 | **Attendance** | The register for the chosen class. |
 | **Seats** | Seating plans: place students by hand or **Randomise**. |
 | **Lesson** | The live lesson: the seating plan you tap to record behaviour. |
-| **Behaviour** | The behaviour log and the bathroom log. |
+| **Behaviour** | The behaviour log and the Outside log. |
 | **Marks** | Assessments and mark entry. |
 | **Notes** | Class details, colour and free-form notes. |
 | **Settings** | App settings, students, room layout, seating rules, tools and export. |

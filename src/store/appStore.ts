@@ -261,7 +261,7 @@ export interface AppState {
   setBathroomVisits(visits: BathroomVisit[]): Promise<void>;
   /** Begin a bathroom trip for the student (no-op if one is already running). */
   startBathroomVisit(studentId: string): Promise<void>;
-  /** Close the student's running bathroom trip, stamping the return time. */
+  /** Close the student's running trip outside, stamping the return time. */
   endBathroomVisit(studentId: string): Promise<void>;
   setDesks(desks: Desk[]): Promise<void>;
   setRoomConfig(config: RoomConfig): Promise<void>;
@@ -899,7 +899,7 @@ export const useApp = create<AppState>((set, get) => {
   async setBathroomVisits(bathroomVisits) {
     const { dataDir, currentClass } = get();
     set({ bathroomVisits });
-    if (dataDir && currentClass) await guarded("the bathroom log", () => repo.saveBathroomVisits(dataDir, currentClass, bathroomVisits));
+    if (dataDir && currentClass) await guarded("the Outside log", () => repo.saveBathroomVisits(dataDir, currentClass, bathroomVisits));
   },
 
   async startBathroomVisit(studentId) {

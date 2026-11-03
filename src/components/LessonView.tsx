@@ -197,7 +197,7 @@ export default function LessonView() {
   const bathroomBar = outNow.length > 0 && (
     <div className={`bathroom-bar no-print ${sideBar ? "bar-group" : ""}`}>
       <span className="muted bathroom-bar-label">
-        <Icon name="wc" size={18} /> Out now:
+        <Icon name="door_open" size={18} /> Outside now:
       </span>
       {outNow.map((v) => {
         const s = byId.get(v.studentId);

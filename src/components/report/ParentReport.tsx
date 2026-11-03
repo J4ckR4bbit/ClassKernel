@@ -177,7 +177,7 @@ export default function ParentReport({
             </p>
           )}
           <p>
-            Bathroom trips during lessons:{" "}
+            Trips outside the classroom during lessons:{" "}
             {p.bathroom.trips === 0
               ? "none."
               : `${p.bathroom.trips}, ${fmtNum(p.bathroom.totalSeconds / 60)} min in total (longest ${formatDuration(p.bathroom.longestSeconds)}) — ${p.bathroom.visits

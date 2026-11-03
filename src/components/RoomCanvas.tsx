@@ -10,7 +10,7 @@ export interface SeatContent {
   label: string; // short name to show on the seat (fallback when no name parts)
   firstName?: string; // first name shown on the top line
   lastName?: string; // surname shown smaller on the line below
-  /** A small marker in the seat's corner: an icon (bathroom, absent) or a letter (L late, E excused). */
+  /** A small marker in the seat's corner: an icon (outside, absent) or a letter (L late, E excused). */
   badge?: SeatBadge;
   occupied: boolean;
   points?: number | null; // running behaviour points (lesson view)

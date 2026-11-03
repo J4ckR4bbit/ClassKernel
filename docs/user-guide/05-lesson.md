@@ -34,7 +34,7 @@ Tap any student's seat and a pop-up opens beside it:
 
 - **P / A / L / E** marks today's attendance (present, absent, late, excused). The seat then shows a small mark in
   its corner (✕ absent, L late, E excused), and the message has **Undo**.
-- **Bathroom — start timer** times a bathroom trip (below).
+- **OUTSIDE — start timer** times a trip out of the classroom (below).
 - **Behaviour buttons**, in two labelled groups — **Positive**, then **Negative** — each starting with its points
   (*+1 Great effort*). Tap one to record it. They are your own buttons, set up under
   [Settings → Behaviour](10-settings.md#behaviour).
@@ -55,16 +55,16 @@ in Settings if you want it. With privacy mode off, the points always show.
 
 <br clear="right">
 
-## Bathroom trips
+## Outside
 
-Tap the student's seat, then **Bathroom — start timer**. Their seat gets a 🚻 badge and an **Out now** bar appears
-above the plan with the time ticking:
+Tap the student's seat, then **OUTSIDE — start timer**. Their seat gets a door badge and an **Outside now** bar
+appears above the plan with the time ticking:
 
-![A student out at the bathroom](../images/bathroom-bar.png)
+![A student outside the classroom](../images/bathroom-bar.png)
 
-When they're back, tap their chip in the **Out now** bar (or tap their seat and press **Back from bathroom**). The
+When they're back, tap their chip in the **Outside now** bar (or tap their seat and press **Back inside**). The
 trip — when they left, when they returned and for how long — goes into the
-[bathroom log](06-behaviour-log.md#bathroom-log).
+[Outside log](06-behaviour-log.md#outside-log).
 
 ## Pick a student
 
@@ -138,7 +138,7 @@ coloured card.
 
 | Control | What it does |
 | --- | --- |
-| **Tap a student** | Opens the same actions as the seat pop-up (attendance, bathroom, behaviour). |
+| **Tap a student** | Opens the same actions as the seat pop-up (attendance, OUTSIDE, behaviour). |
 | **🎨** (palette) | Colour the tables: pick a pastel or any colour for each table (right-hand picture), then **Done**. **Auto** goes back to the automatic colour. Each table keeps its colour from lesson to lesson. |
 | **Dock** button | Moves the panel to the other edge of the screen. |
 | **Full-screen** button | Switches to the room-plan teaching mode. |

@@ -46,7 +46,7 @@ export default function BehaviourLogView() {
 
   const codeOf = (code: string) => behaviourCodes.find((c) => c.code === code);
 
-  // The bathroom log honours the same student and date filters as the events.
+  // The Outside log honours the same student and date filters as the events.
   const bathroomFiltered = bathroomVisits
     .filter((v) => !studentFilter || v.studentId === studentFilter)
     .filter((v) => !from || v.date >= from)
@@ -56,7 +56,7 @@ export default function BehaviourLogView() {
   const deleteVisit = (studentId: string, start: string) => {
     const previous = bathroomVisits;
     void setBathroomVisits(bathroomVisits.filter((v) => !(v.studentId === studentId && v.start === start)));
-    showToast("Bathroom visit deleted", { label: "Undo", run: () => void setBathroomVisits(previous) });
+    showToast("Trip outside deleted", { label: "Undo", run: () => void setBathroomVisits(previous) });
   };
 
   return (
@@ -149,7 +149,7 @@ export default function BehaviourLogView() {
       {filtered.length > 300 && <p className="muted">Showing the latest 300 of {filtered.length} events.</p>}
 
       <h2 className="section-heading">
-        <Icon name="wc" size={20} /> Bathroom log
+        <Icon name="door_open" size={20} /> Outside log
       </h2>
       <table className="data fit">
         <thead>

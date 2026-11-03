@@ -207,7 +207,7 @@ Turns what you've collected into one Excel workbook (`.xlsx`) that also opens in
 | Attendance summary | Per student: present, absent, late, excused and rate | ✓ |
 | Behaviour log | Every behaviour event with its points | ✓ |
 | Behaviour summary | Per student: positives, negatives and net points | ✓ |
-| Bathroom log | Every timed bathroom trip | ✓ |
+| Outside log | Every timed trip outside the classroom | ✓ |
 | Assessments | Each test with whether it counts as informal or an examination, its weight, and its mean, median, range and spread | ✓ |
 | Marks | Per student per assessment (with the Adam number): mark, % and level or symbol | ✓ |
 | Question marks | Per-question marks with topic and cognitive level (large) | |

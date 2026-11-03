@@ -8,7 +8,7 @@ import BehaviourButton from "./BehaviourButton";
 interface Props {
   student: Student;
   status: AttendanceStatus | undefined;
-  /** The student's running bathroom trip, if they're out now. */
+  /** The student's running trip outside the classroom, if they're out now. */
   outVisit: BathroomVisit | undefined;
   onAttendance: (status: AttendanceStatus) => void;
   onBathroom: () => void;
@@ -18,7 +18,7 @@ interface Props {
 
 /**
  * Everything the teacher can record for one student during a lesson:
- * attendance, a bathroom timer and the behaviour buttons. Shown as the seat
+ * attendance, the OUTSIDE timer and the behaviour buttons. Shown as the seat
  * popover on the room plan and as a sheet in the teaching strip.
  */
 export default function StudentActions({ student, status, outVisit, onAttendance, onBathroom, onBehaviour, onClose }: Props) {
@@ -67,16 +67,16 @@ export default function StudentActions({ student, status, outVisit, onAttendance
       <div className="att-legend">P present · A absent · L late · E excused</div>
       <button
         className={`bathroom-btn ${outVisit ? "out" : ""}`}
-        title="Time a bathroom trip; it's saved to the bathroom log when the student is back"
+        title="Time a trip outside the classroom; it's saved to the Outside log when the student is back"
         onClick={onBathroom}
       >
-        <Icon name="wc" size={20} />
+        <Icon name="door_open" size={20} />
         {outVisit ? (
           <>
-            Back from bathroom · <Elapsed visit={outVisit} />
+            Back inside · <Elapsed visit={outVisit} />
           </>
         ) : (
-          "Bathroom — start timer"
+          "OUTSIDE — start timer"
         )}
       </button>
       {/* Two labelled groups, apart, so a hurried tap doesn't land on the wrong kind. */}

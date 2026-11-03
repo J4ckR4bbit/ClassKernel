@@ -50,7 +50,7 @@ export const PLUGINS: PluginManifest[] = [
     name: "Class & student dashboards",
     tagline: "How the class and each student are doing — behaviour, answers and marks.",
     description:
-      "Two dashboards for the open class. Class: a written summary, behaviour week by week, the top issues, students to watch, stars, best answerers, rarely asked, bathroom trips and attendance, plus the marks analysis. Student: everything recorded for one child, each assessment against the class average, and topic strengths. Filter to the last 2 weeks, 4 weeks or everything. It only reads your class data; nothing new is saved. While it's on, the chart button in the Students list and names in the Behaviour log open a student's dashboard.",
+      "Two dashboards for the open class. Class: a written summary, behaviour week by week, the top issues, students to watch, stars, best answerers, rarely asked, trips outside and attendance, plus the marks analysis. Student: everything recorded for one child, each assessment against the class average, and topic strengths. Filter to the last 2 weeks, 4 weeks or everything. It only reads your class data; nothing new is saved. While it's on, the chart button in the Students list and names in the Behaviour log open a student's dashboard.",
     icon: "bar_chart",
     load: () => import("../components/DashboardView").then((m) => m.default),
   },
@@ -59,7 +59,7 @@ export const PLUGINS: PluginManifest[] = [
     name: "Parent reports",
     tagline: "One-page A4 reports for parent evenings.",
     description:
-      "Prints a one-page report per student — for one child or the whole class — with a parent-friendly summary, marks against the class average, topic strengths, behaviour, questions answered, attendance and bathroom trips. Choose the period and sections, type a teacher's comment on each page (saved with the class in report_comments.csv), and there are lines for notes during the meeting. With the dashboards on too, each dashboard gets a Print button.",
+      "Prints a one-page report per student — for one child or the whole class — with a parent-friendly summary, marks against the class average, topic strengths, behaviour, questions answered, attendance and trips outside the classroom. Choose the period and sections, type a teacher's comment on each page (saved with the class in report_comments.csv), and there are lines for notes during the meeting. With the dashboards on too, each dashboard gets a Print button.",
     icon: "print",
     load: () => import("../components/report/ParentReportsView").then((m) => m.default),
   },

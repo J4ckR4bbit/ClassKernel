@@ -242,7 +242,7 @@ test("lesson", async ({ page }) => {
   await shotOf(page, page.locator(".toast"), "toast-undo", 10);
   await toasts(page, false);
 
-  // A bathroom trip under way.
+  // A trip outside under way.
   await seats(page).nth(9).click({ force: true });
   await page.locator(".behaviour-popover .bathroom-btn").click();
   await page.waitForTimeout(2200);
@@ -291,7 +291,7 @@ test("behaviour log", async ({ page }) => {
   await page.locator("main .view-header select").first().selectOption({ index: 1 });
   await shot(page, "behaviour-log-student");
   await page.locator("main .view-header select").first().selectOption({ index: 0 });
-  await shotFrom(page, page.locator("main h2", { hasText: "Bathroom log" }), "bathroom-log");
+  await shotFrom(page, page.locator("main h2", { hasText: "Outside log" }), "bathroom-log");
 });
 
 test("marks", async ({ page }) => {

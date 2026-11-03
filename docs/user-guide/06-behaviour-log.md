@@ -26,10 +26,10 @@ undo straight away.
 
 With the [dashboards](08-dashboards-and-reports.md) switched on, each student's name is a link to their dashboard.
 
-## Bathroom log
+## Outside log
 
-Below the behaviour table is the **Bathroom log**: every timed trip from the [Lesson](05-lesson.md#bathroom-trips)
+Below the behaviour table is the **Outside log**: every timed trip out of the classroom from the [Lesson](05-lesson.md#outside)
 page, with the date, when the student left and came back, and how long they were out. A trip still running shows
 **still out**. The student and date filters at the top apply here too, and **✕** deletes a trip (with Undo).
 
-![The bathroom log](../images/bathroom-log.png)
+![The Outside log](../images/bathroom-log.png)

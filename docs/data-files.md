@@ -153,6 +153,8 @@ color: #1e7b46
 
 ### `bathroom.csv`
 
+Trips **outside** the classroom, timed from the Lesson page (the file keeps its original name).
+
 | Column | Meaning |
 | --- | --- |
 | `date` | |

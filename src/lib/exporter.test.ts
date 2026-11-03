@@ -160,8 +160,8 @@ describe("buildSheets", () => {
     expect(cell(s, 1, "Time")).toBe("10:20");
   });
 
-  it("logs bathroom trips with durations, flagging one still out", () => {
-    const s = sheet(buildSheets(data, { sections: ["bathroom"] }), "Bathroom log");
+  it("logs trips outside with durations, flagging one still out", () => {
+    const s = sheet(buildSheets(data, { sections: ["bathroom"] }), "Outside log");
     expect(s.rows).toHaveLength(2);
     expect(cell(s, 0, "Student")).toBe("Anna Brown");
     expect(cell(s, 0, "Out")).toBe("09:30");
@@ -257,7 +257,7 @@ describe("date range", () => {
     const sheets = buildSheets(data, { sections: ALL, from: "2026-01-01", to: "2026-01-31" });
     expect(sheet(sheets, "Attendance").rows).toHaveLength(2);
     expect(sheet(sheets, "Behaviour log").rows).toHaveLength(1);
-    expect(sheet(sheets, "Bathroom log").rows).toHaveLength(1);
+    expect(sheet(sheets, "Outside log").rows).toHaveLength(1);
     expect(sheet(sheets, "Assessments").rows).toHaveLength(1);
     // Only the January test remains, so Marks drops to one row per student.
     expect(sheet(sheets, "Marks").rows).toHaveLength(2);

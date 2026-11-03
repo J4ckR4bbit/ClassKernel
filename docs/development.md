@@ -28,7 +28,7 @@ The first time you run the browser tests or the screenshots, install the browser
 
 Outside the desktop app (`npm run dev`, the browser tests, the screenshots) there is no file system, so the app
 starts in **demo mode**: `src/lib/demo.ts` seeds an in-memory data folder with one class, *7B-Science* — 24 students,
-a room of double desks, four weeks of attendance, behaviour, bathroom trips and ended lessons, a topic bank, and four
+a room of double desks, four weeks of attendance, behaviour, trips outside and ended lessons, a topic bank, and four
 assessments including one marked per question. A banner says so; nothing is saved.
 
 Open it with `?simulate=folder-missing` (and optionally `&wait=<seconds>`) to try what happens when the data folder

@@ -182,7 +182,7 @@ describe("class profile", () => {
     expect(lines).toContain("Most common issue: Talking / off task (3).");
     expect(lines).toContain("Questions: 7 asked, 4 answered (57%).");
     expect(lines).toContain("2 students haven't been picked to answer in the last 4 weeks.");
-    expect(lines.some((l) => l.startsWith("3 bathroom trips, 20 min out in total; most by Cal (3)"))).toBe(true);
+    expect(lines.some((l) => l.startsWith("3 trips outside, 20 min out in total; most by Cal (3)"))).toBe(true);
     expect(lines).toContain("Strongest topic: Forces (85%); weakest: Energy (55%).");
   });
 
@@ -224,14 +224,14 @@ describe("student profile", () => {
     );
     expect(lines).toContain("One to watch: 3 negatives, mostly Talking / off task (2).");
     expect(lines).toContain("Not picked to answer a question in the last 4 weeks.");
-    expect(lines).toContain("No bathroom trips in the last 4 weeks.");
+    expect(lines).toContain("No trips outside in the last 4 weeks.");
     expect(lines).toContain("Average 45% across 2 assessments, 20 points below the class average (65%); ranked 2 of 2.");
     expect(lines).toContain("Latest: Test 2 40% (class 60%), down from 50%.");
     expect(lines).toContain("Strongest topic: Forces (70%); weakest: Energy (30%).");
 
     const cal = studentSummary(studentProfile(d.students[2], d, cls, "4w", TODAY), cls, "4w");
     expect(cal).toContain("Asked 4 times; answered 1 (25%), below the class median of 63%.");
-    expect(cal.some((l) => l.startsWith("3 bathroom trips (class average 0,8), 20 min out in total; longest 12:00."))).toBe(true);
+    expect(cal.some((l) => l.startsWith("3 trips outside (class average 0,8), 20 min out in total; longest 12:00."))).toBe(true);
     expect(cal).toContain("No marks entered for Cal in the last 4 weeks.");
   });
 });
@@ -287,7 +287,7 @@ describe("parent report", () => {
     expect(lines).toContain("Answered 3 of 3 questions when asked in class.");
     expect(lines).toContain("Attendance 50% (1 absence).");
     const cal = parentSummary(profileOf(2), cls, ALL);
-    expect(cal).toContain("3 bathroom trips during lessons (20 min in total).");
+    expect(cal).toContain("3 trips outside the classroom during lessons (20 min in total).");
     expect(cal).toContain("No marks have been entered for Cal in this period yet.");
   });
 
