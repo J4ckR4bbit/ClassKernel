@@ -267,17 +267,43 @@ const slashes = (p: string) => p.replace(/\\/g, "/").replace(/\/+$/, "");
  *
  * It also passes the data folder as the `root` of each write inside it, so a
  * cloud folder that has gone away mid-session isn't re-created by a save.
+ *
+ * While changes are sent to the data folder in batches (`workIn`), every file
+ * inside the data folder is read from and written to this computer's copy
+ * instead, so a save never touches Google Drive; the sender (batchSync.ts)
+ * copies the changed files across every few minutes. Backups and exports
+ * still go straight to the data folder.
  */
 export class MirrorFS implements AppFS {
   private root: string | null = null;
   private mirrorTo: string | null = null;
+  private workIn: string | null = null;
+  /** Called after each save to the copy while working in it (so the sender knows there's something to send). */
+  onWorkWrite: (() => void) | null = null;
 
   constructor(readonly inner: AppFS) {}
 
-  /** The open data folder, and where to mirror it (null: don't). */
-  useFolder(root: string | null, mirrorTo: string | null): void {
+  /** The open data folder, where to mirror it (null: don't), and where to work instead of it (null: in it). */
+  useFolder(root: string | null, mirrorTo: string | null, workIn: string | null = null): void {
     this.root = root === null ? null : slashes(root);
     this.mirrorTo = mirrorTo === null ? null : slashes(mirrorTo);
+    this.workIn = workIn === null ? null : slashes(workIn);
+  }
+
+  /** Where a path really is: in this computer's copy while working there, except backups and exports. */
+  private at(path: string): string {
+    if (this.workIn === null || this.root === null) return path;
+    const p = slashes(path);
+    if (p === this.root) return this.workIn;
+    const rel = this.rel(p);
+    if (rel === null) return path;
+    const top = rel.split("/")[0];
+    if (top === "backups" || top === "exports") return path;
+    return `${this.workIn}/${rel}`;
+  }
+
+  private worked(path: string): boolean {
+    return this.at(path) !== path;
   }
 
   /** The path relative to the open data folder, or null if it's outside it. */
@@ -296,6 +322,11 @@ export class MirrorFS implements AppFS {
   }
 
   async writeAtomic(path: string, contents: string, root?: string) {
+    if (this.worked(path)) {
+      await this.inner.writeAtomic(this.at(path), contents);
+      this.onWorkWrite?.();
+      return;
+    }
     const inRoot = this.rel(path) !== null;
     const copyPath = this.mirrorPath(path);
     await this.inner.writeAtomic(path, contents, inRoot && this.root !== null ? this.root : root);
@@ -308,6 +339,11 @@ export class MirrorFS implements AppFS {
     }
   }
   async rename(from: string, to: string) {
+    if (this.worked(from) || this.worked(to)) {
+      await this.inner.rename(this.at(from), this.at(to));
+      this.onWorkWrite?.();
+      return;
+    }
     const copyFrom = this.mirrorPath(from);
     const copyTo = this.mirrorPath(to);
     await this.inner.rename(from, to);
@@ -320,22 +356,22 @@ export class MirrorFS implements AppFS {
     }
   }
   readText(path: string) {
-    return this.inner.readText(path);
+    return this.inner.readText(this.at(path));
   }
   readTextIfExists(path: string) {
-    return this.inner.readTextIfExists(path);
+    return this.inner.readTextIfExists(this.at(path));
   }
   writeBinary(path: string, bytes: Uint8Array) {
-    return this.inner.writeBinary(path, bytes);
+    return this.inner.writeBinary(this.at(path), bytes);
   }
   exists(path: string) {
-    return this.inner.exists(path);
+    return this.inner.exists(this.at(path));
   }
   mkdirs(path: string) {
-    return this.inner.mkdirs(path);
+    return this.inner.mkdirs(this.at(path));
   }
   listDir(path: string) {
-    return this.inner.listDir(path);
+    return this.inner.listDir(this.at(path));
   }
   snapshot(dataDir: string, stamp: string, keep: number, copy?: CopyTarget) {
     return this.inner.snapshot(dataDir, stamp, keep, copy);
@@ -504,9 +540,25 @@ export function setFS(fs: AppFS): void {
 
 /**
  * Tell the file layer which data folder is open (its writes are refused if it
- * goes missing) and where to keep this computer's copy of it (null: nowhere).
+ * goes missing), where to keep this computer's copy of it (null: nowhere),
+ * and, while changes are sent in batches, to work in that copy instead.
  */
-export function useFolder(root: string | null, mirrorTo: string | null): void {
+export function useFolder(root: string | null, mirrorTo: string | null, workIn: string | null = null): void {
   getFS();
-  mirror?.useFolder(root, mirrorTo);
+  mirror?.useFolder(root, mirrorTo, workIn);
+}
+
+/** Be told of each save while working in this computer's copy (null: stop). */
+export function onWorkWrite(listener: (() => void) | null): void {
+  getFS();
+  if (mirror) mirror.onWorkWrite = listener;
+}
+
+/**
+ * The disk itself: no queue, no copy, no mirroring. What the sender and the
+ * folder checks use to see the data folder as it really is.
+ */
+export function diskFS(): AppFS {
+  getFS();
+  return mirror!.inner;
 }

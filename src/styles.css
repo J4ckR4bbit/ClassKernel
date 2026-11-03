@@ -1232,6 +1232,7 @@ button.icon-choice.on { background: var(--md-secondary-container); color: var(--
 .privacy-gate-btn { font-size: 16px; padding: 12px 26px; }
 
 .pref-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; }
+.pref-block h4 { margin: 14px 0 6px; }
 .pref-row > span { max-width: 720px; }
 .pref-row > input[type="checkbox"].switch { order: 2; margin-left: auto; }
 
@@ -1259,6 +1260,13 @@ button.icon-choice.on { background: var(--md-secondary-container); color: var(--
 .folder-banner > button { flex: none; }
 .sync-notes { margin: 6px 0 0; padding-left: 20px; }
 .sync-notes li { margin: 2px 0; }
+/* The top bar's chip while changes are sent to the data folder in batches. */
+button.send-status {
+  min-height: 32px; padding: 0 12px 0 8px; gap: 6px; font-size: 13px; font-weight: 500; border-radius: 16px;
+  border-color: transparent; color: var(--text-dim); white-space: nowrap;
+}
+button.send-status.waiting { color: var(--md-on-secondary-container); background: var(--md-secondary-container); }
+button.send-status.away { color: var(--away); background: var(--away-container); }
 .copy-chip {
   position: fixed; top: 10px; right: 12px; z-index: var(--z-chip); display: flex; align-items: center; gap: 6px;
   padding: 4px 12px 4px 8px; border-radius: 999px; font-size: 12px;

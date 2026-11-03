@@ -94,6 +94,10 @@ Leave either blank to leave it off.
   when the data folder isn't there at launch. See [If Google Drive isn't ready](11-your-data.md#if-google-drive-isnt-ready).
   While the app works from that copy, the panel shows the real folder as not available, and **My data folder is
   somewhere else…** takes the place of **Change data folder…**.
+- **Send changes to your data folder**: every **2**, **5** or **10 minutes**, **at pauses only** (End lesson, Done
+  after marking, switching class, closing the app), or **with every save**. Changes are always saved on this
+  computer at once; this is how often they're sent to the (synced) data folder. Every 2 minutes unless you change it;
+  chosen on each computer. See [Sending changes to Google Drive](11-your-data.md#sending-changes-to-google-drive).
 - **Restore a backup** lists the newest backups, taken every time the app starts. **Restore…** puts a backup's
   files back (a safety copy of today's data is taken first). See [Your data and backups](11-your-data.md).
 - The number of active and archived classes.

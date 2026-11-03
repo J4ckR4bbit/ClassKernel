@@ -41,6 +41,38 @@ To use the same data on another computer, point ClassKernel there at the same sy
 under **Settings → General → Data → Change data folder…**). Sync clients copy whole files, so it's safest not to
 have the app open on two computers at the same time.
 
+## Sending changes to Google Drive
+
+Every tap that records something (a mark, a behaviour, attendance) changes a file. If each change went straight to
+a Google Drive folder, Drive would be uploading all lesson. Instead, ClassKernel saves every change **on this
+computer** at once (in its own copy of the data), and sends the changed files to the data folder **together**:
+
+- **every 2 minutes**, if anything has changed;
+- at **natural pauses**: **End lesson**, **Done** after marking, switching to another class, the window being
+  minimised, and **closing the app**.
+
+The chip at the top of the screen says where things stand:
+
+| Chip | Means |
+| --- | --- |
+| **Sent 3 min ago** | Everything is in the data folder. |
+| **Changes waiting · Send now** | Saved on this computer, not yet sent. |
+| **Sending…** | On its way. |
+| **Waiting for Google Drive** | The folder can't be reached just now. Your changes are safe on this computer and go as soon as it's back. |
+
+Press the chip to send at once. That also takes in anything changed on another computer meanwhile.
+
+- **Nothing is lost if the computer crashes or the power goes**: the changes are on this computer, and they're
+  copied into the data folder the next time ClassKernel starts (as in [If Google Drive isn't ready](#if-google-drive-isnt-ready)).
+- **Changes made on another computer** are taken in at the next natural pause, or when you press the chip. If the
+  same file changed on both computers, the two are joined row by row. Both originals are kept in
+  `backups/.sync/`, and a message says what happened if anything needs a look.
+- **Renaming a class**, **deleting a room template** and **restoring a backup** change the data folder itself, so
+  they send what's waiting first. They need the folder to be reachable.
+- **How often** is set under **Settings → General → Data → Send changes to your data folder**: every 2, 5 or 10
+  minutes, at pauses only, or **with every save** (the old way). It's chosen on each computer, and it needs **Keep a
+  copy on this computer** to be on.
+
 ## Automatic backups
 
 Each time ClassKernel starts, it copies the whole data folder into `backups/` (named by date and time). Every
@@ -103,7 +135,9 @@ first row (the column names) as it is.
 A few conveniences are remembered by the computer rather than saved in the data folder, so they don't follow you to
 another computer:
 
-- where the data folder is, and this computer's copy of it (see [If Google Drive isn't ready](#if-google-drive-isnt-ready));
+- where the data folder is, and this computer's copy of it (see [If Google Drive isn't ready](#if-google-drive-isnt-ready)),
+  with any changes not yet sent to the folder (see [Sending changes to Google Drive](#sending-changes-to-google-drive));
+- how often changes are sent to the data folder;
 - whether the navigation rail is expanded;
 - the **once-per-lesson** seat lock and when the current lesson started;
 - Pick a student's **no-repeat** list for the lesson;

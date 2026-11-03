@@ -1,5 +1,6 @@
 import { CSSProperties, useEffect, useState } from "react";
-import { useApp, useAppPick } from "./store/appStore";
+import { sendBeforeClosing, sendWhileHidden, useApp, useAppPick } from "./store/appStore";
+import { isTauri } from "./lib/fs";
 import Onboarding from "./components/Onboarding";
 import NavRail from "./components/NavRail";
 import TopAppBar from "./components/TopAppBar";
@@ -101,6 +102,36 @@ export default function App() {
   useEffect(() => {
     void boot();
   }, [boot]);
+
+  // Changes saved on this computer but not yet sent go to the data folder when
+  // the window is hidden, and before it closes (for up to ten seconds; anything
+  // left is sent at the next launch, as nothing is lost from this computer).
+  useEffect(() => {
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") sendWhileHidden();
+    };
+    document.addEventListener("visibilitychange", onHidden);
+    let unlisten: (() => void) | undefined;
+    if (isTauri()) {
+      void (async () => {
+        const { getCurrentWindow } = await import("@tauri-apps/api/window");
+        const win = getCurrentWindow();
+        unlisten = await win.onCloseRequested(async (event) => {
+          if (useApp.getState().folderStatus?.kind !== "batched") return;
+          event.preventDefault();
+          try {
+            await Promise.race([sendBeforeClosing(), new Promise((resolve) => setTimeout(resolve, 10_000))]);
+          } finally {
+            await win.destroy();
+          }
+        });
+      })();
+    }
+    return () => {
+      document.removeEventListener("visibilitychange", onHidden);
+      unlisten?.();
+    };
+  }, []);
 
   // The rail expands into a drawer with full labels and the teacher's tools;
   // remembered on this computer, since it's about this screen, not the data.

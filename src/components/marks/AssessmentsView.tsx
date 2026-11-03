@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useExamWeight, useAppPick } from "../../store/appStore";
+import { useApp, useExamWeight, useAppPick } from "../../store/appStore";
 import { Assessment, AssessmentKind } from "../../lib/types";
 import { assessmentStats, taskShares } from "../../lib/stats";
 import { fmtDecimal, shortDate } from "../../lib/format";
@@ -91,7 +91,12 @@ export default function AssessmentsView() {
     else setMarkingId(a.id);
   };
 
-  const done = () => { setMarkingId(null); showToast("Marks saved"); };
+  // Done marking is a natural pause: the marks go to the data folder now.
+  const done = () => {
+    setMarkingId(null);
+    showToast("Marks saved");
+    useApp.getState().naturalPause();
+  };
 
   // Whichever screen is open within Marks is named in the top bar, with its Back.
   const outOf = (a: Assessment) => `out of ${fmtDecimal(a.totalMarks, 1)}`;

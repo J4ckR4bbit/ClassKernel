@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { WAIT_FOR_FOLDER_MS, keepLocalCopy, useApp, useAppPick } from "../../store/appStore";
+import { SendEvery, WAIT_FOR_FOLDER_MS, keepLocalCopy, sendEvery, useApp, useAppPick } from "../../store/appStore";
+import Segmented from "../Segmented";
 import * as repo from "../../lib/repo";
 import { backupStamp } from "../../lib/id";
 
@@ -89,7 +90,44 @@ function LocalCopySettings({ away }: { away: boolean }) {
           folder: on a computer other people sign in to, switch it off.
         </span>
       </label>
+      <SendEverySetting keep={keep} away={away} />
     </>
+  );
+}
+
+const SEND_OPTIONS: Array<{ value: SendEvery; label: string }> = [
+  { value: "2", label: "Every 2 min" },
+  { value: "5", label: "Every 5 min" },
+  { value: "10", label: "Every 10 min" },
+  { value: "pauses", label: "At pauses only" },
+  { value: "now", label: "With every save" },
+];
+
+/** How often this computer sends its changes to the data folder (the folder isn't uploading after every tap). */
+function SendEverySetting({ keep, away }: { keep: boolean; away: boolean }) {
+  const { setSendEvery } = useAppPick("setSendEvery");
+  const [every, setEvery] = useState(sendEvery);
+  return (
+    <div className="pref-block">
+      <h4>Send changes to your data folder</h4>
+      <p className="muted lead">
+        Every change is saved on this computer straight away. With Google Drive or OneDrive, sending each one to the
+        data folder the moment it's made keeps the folder uploading all lesson; instead, the changes go across together
+        every few minutes, and at natural pauses: End lesson, Done after marking, switching class and closing the app.
+        The chip at the top shows when they were last sent; press it to send now.
+        {!keep && " Sending in batches needs the copy on this computer, so with it switched off every save goes straight to the folder."}
+      </p>
+      <Segmented
+        label="Send changes to your data folder"
+        options={SEND_OPTIONS}
+        value={keep ? every : "now"}
+        onChange={(v) => {
+          if (!keep || away) return;
+          setEvery(v);
+          void setSendEvery(v);
+        }}
+      />
+    </div>
   );
 }
 
@@ -124,6 +162,11 @@ function BackupRestore({
     if (!ok) return;
     setBusy(true);
     try {
+      // A restore replaces files in the data folder itself: this computer's changes go there first.
+      if (!(await useApp.getState().stopBatching())) {
+        showToast("This computer's latest changes haven't reached your data folder yet — try again once Google Drive is back");
+        return;
+      }
       await repo.restoreBackup(dataDir, stamp, `pre-restore-${backupStamp()}`);
       await onRestore(dataDir);
       showToast("Backup restored");
