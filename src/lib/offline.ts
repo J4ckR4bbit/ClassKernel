@@ -15,7 +15,7 @@
 // The changed files are simply those that differ between local-copy/ and
 // offline-base/, so nothing has to be tracked per save.
 
-import { getFS } from "./fs";
+import { diskFS, getFS } from "./fs";
 import { mergeFile, Clash } from "./merge";
 import * as repo from "./repo";
 import { Mark } from "./types";
@@ -85,7 +85,8 @@ export function sameFolder(a: string, b: string): boolean {
  * cloud drive still starting, is not ready.
  */
 export async function isReady(dir: string, timeoutMs = 5000): Promise<boolean> {
-  const read = getFS()
+  // The disk itself: while changes are sent in batches, the app's own reads come from this computer's copy.
+  const read = diskFS()
     .readTextIfExists(`${slashes(dir)}/behaviours.csv`)
     .then((t) => !!t && t.trim().length > 0)
     .catch(() => false);
@@ -132,7 +133,7 @@ export async function startOfflineSession(paths: LocalPaths, realDir: string): P
 }
 
 /** Every file under `dir`, relative to it, leaving out bookkeeping and temp files. */
-async function walk(dir: string, prefix = ""): Promise<string[]> {
+export async function walk(dir: string, prefix = ""): Promise<string[]> {
   const fs = getFS();
   if (!(await fs.exists(dir))) return [];
   const out: string[] = [];
@@ -156,6 +157,8 @@ export async function changedFiles(paths: LocalPaths): Promise<string[]> {
 }
 
 export interface SyncReport {
+  /** The banner's heading, when it isn't the copy-back's. */
+  heading?: string;
   /** Files copied across as they were (only this computer had changed them). */
   copied: string[];
   /** Files joined with changes made elsewhere. */
@@ -241,7 +244,7 @@ export async function syncBack(paths: LocalPaths, realDir: string, stamp: string
 }
 
 /** Sync clients keep a version they couldn't reconcile beside the file, e.g. "marks (1).csv" or "marks-LAPTOP.csv". */
-async function noteConflictCopies(dir: string, rel: string, report: SyncReport): Promise<void> {
+export async function noteConflictCopies(dir: string, rel: string, report: SyncReport): Promise<void> {
   const slash = rel.lastIndexOf("/");
   const folder = slash < 0 ? dir : `${dir}/${rel.slice(0, slash)}`;
   const file = rel.slice(slash + 1);
@@ -250,7 +253,8 @@ async function noteConflictCopies(dir: string, rel: string, report: SyncReport):
   const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`^${esc(stem)}( \\(\\d+\\)|-[^.]+)${esc(ext)}$`);
   try {
-    for (const e of await getFS().listDir(folder)) {
+    // The folder as it really is, not this computer's copy of it.
+    for (const e of await diskFS().listDir(folder)) {
       if (!e.isDir && pattern.test(e.name)) {
         report.notes.push(`"${e.name}" next to ${rel} looks like a copy your sync app kept from a clash — check it by hand.`);
       }
@@ -261,7 +265,7 @@ async function noteConflictCopies(dir: string, rel: string, report: SyncReport):
 }
 
 /** A multi-question test's total is the sum of its question marks; join the two and they could disagree. */
-async function recalculateTotals(dir: string, cls: string): Promise<void> {
+export async function recalculateTotals(dir: string, cls: string): Promise<void> {
   const [questions, qmarks, marks] = await Promise.all([
     repo.loadAssessmentQuestions(dir, cls),
     repo.loadQuestionMarks(dir, cls),

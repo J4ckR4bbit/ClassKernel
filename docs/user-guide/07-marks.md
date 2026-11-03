@@ -110,6 +110,15 @@ question's maximum (e.g. */6*) and topic short label under its number.
 - The line above the students shows the share still **left to enter**, the **class mean** so far and the **top**
   student.
 - The **Average (mark)** and **Average (%)** rows at the bottom show how each question went.
+- The **speech bubble** at the end of each row adds a **comment** on that student's paper (e.g. *Left Q3 blank;
+  ask about it in class*).
+  - Type it and press **Save** (or **Ctrl + Enter**). **Clear** removes it.
+
+    ![A comment on a student's paper](../images/marking-comment.png)
+
+  - A filled bubble means the student has a comment; point at it to read it.
+  - The comment stays even if you clear the student's marks.
+  - It shows when you view the results, on the student's dashboard and in the spreadsheet export.
 - Only the student rows scroll; the title, headings and average rows stay in place.
 - **Calculator** shows a small calculator beside the grid (see [The calculator](#the-calculator)).
 
@@ -141,7 +150,8 @@ colleague — without any risk of changing a mark.
 
 - For a **single-mark** test: each student's mark, %, level or symbol, rank (tinted as above) and comment, with the
   class figures above the list and the average mark and % below it.
-- For a test **marked per question**: the same grid as marking, with plain numbers.
+- For a test **marked per question**: the same grid as marking, with plain numbers. A student with a comment has a
+  filled speech bubble at the end of their row; tap it to read the comment.
 
 ![The buttons on a results page](../images/marks-view-toolbar.png)
 

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useAppPick } from "../store/appStore";
 import { dateTimeInZone } from "../lib/time";
 import Icon from "./Icon";
@@ -54,7 +55,7 @@ export function FolderBanner() {
     <div className={`folder-banner ${needsALook ? "attention" : "done"}`} role="status">
       <Icon name={needsALook ? "info" : "check"} size={20} />
       <div className="grow">
-        <b>This computer's changes are back in your data folder</b>
+        <b>{syncReport.heading ?? "This computer's changes are back in your data folder"}</b>
         {changed > 0 && (
           <>
             {" "}
@@ -123,5 +124,52 @@ export function CopyChip() {
       <Icon name={folderStatus.back ? "cloud_sync" : "cloud_off"} size={18} />
       {folderStatus.back ? "Folder back — copied when you leave teaching mode" : "This computer's copy"}
     </div>
+  );
+}
+
+/** "just now", "3 min ago", "2 h ago". */
+function ago(iso: string, now: number): string {
+  const mins = Math.floor((now - Date.parse(iso)) / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  return `${Math.floor(mins / 60)} h ago`;
+}
+
+/**
+ * In the top bar while changes are sent to the data folder in batches: whether
+ * they're on their way, waiting, or sent (and when). Pressing it sends now,
+ * and takes in changes made on another computer.
+ */
+export function SendStatus() {
+  const { folderStatus, sendNow } = useAppPick("folderStatus", "sendNow");
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  if (folderStatus?.kind !== "batched") return null;
+  const { sending, driveAway, pending, lastSent } = folderStatus;
+  const [icon, text, tone, title] = sending
+    ? (["cloud_sync", "Sending…", "", "Sending this computer's changes to your data folder"] as const)
+    : driveAway
+      ? ([
+          "cloud_off",
+          "Waiting for Google Drive",
+          "away",
+          "Your data folder can't be reached just now. Your changes are safe on this computer and are sent when it's back. Press to try now.",
+        ] as const)
+      : pending
+        ? (["cloud_upload", "Changes waiting · Send now", "waiting", "Saved on this computer. Press to send to your data folder now."] as const)
+        : ([
+            "cloud_done",
+            lastSent ? `Sent ${ago(lastSent, now)}` : "Up to date",
+            "",
+            "Everything is in your data folder. Press to send now and take in changes from other computers.",
+          ] as const);
+  return (
+    <button className={`send-status no-print ${tone}`} onClick={() => void sendNow()} disabled={sending} title={title} aria-live="polite">
+      <Icon name={icon} size={18} />
+      {text}
+    </button>
   );
 }

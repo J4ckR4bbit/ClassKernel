@@ -1100,6 +1100,17 @@ button.icon-choice.on { background: var(--md-secondary-container); color: var(--
 .mark-grid .sticky-right.third { right: 108px; }
 .mark-grid .sticky-right.fourth { right: 162px; }
 .mark-grid .sticky-right.fourth, .mark-grid .sticky-right.divider { border-left: 2px solid var(--border); }
+/* The per-question grid's comment column takes the right edge; the totals move in by its width. */
+.mark-grid .col-comment-btn { width: 40px; min-width: 40px; padding: 2px; }
+.mark-grid.with-comment .sticky-right { right: 40px; }
+.mark-grid.with-comment .sticky-right.comment { right: 0; }
+.mark-grid.with-comment .sticky-right.second { right: 94px; }
+.mark-grid.with-comment .sticky-right.third { right: 148px; }
+.mark-grid.with-comment .sticky-right.fourth { right: 202px; }
+.mark-grid button.comment-btn { width: 32px; min-width: 32px; min-height: 30px; height: 30px; border-color: transparent; color: var(--text-dim); }
+.mark-grid button.comment-btn.has-comment { color: var(--md-primary); }
+.mark-comment-modal textarea { width: 100%; resize: vertical; }
+.mark-comment-text { white-space: pre-wrap; margin: 0; }
 .mark-grid tfoot .avg-row th, .mark-grid tfoot .avg-row td { background: var(--md-surface-container-low); color: var(--text-dim); font-size: 12px; font-variant-numeric: tabular-nums; }
 .mark-grid tfoot .sticky-left { background: var(--md-surface-container-low); text-align: left; }
 
@@ -1221,6 +1232,7 @@ button.icon-choice.on { background: var(--md-secondary-container); color: var(--
 .privacy-gate-btn { font-size: 16px; padding: 12px 26px; }
 
 .pref-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; }
+.pref-block h4 { margin: 14px 0 6px; }
 .pref-row > span { max-width: 720px; }
 .pref-row > input[type="checkbox"].switch { order: 2; margin-left: auto; }
 
@@ -1248,6 +1260,13 @@ button.icon-choice.on { background: var(--md-secondary-container); color: var(--
 .folder-banner > button { flex: none; }
 .sync-notes { margin: 6px 0 0; padding-left: 20px; }
 .sync-notes li { margin: 2px 0; }
+/* The top bar's chip while changes are sent to the data folder in batches. */
+button.send-status {
+  min-height: 32px; padding: 0 12px 0 8px; gap: 6px; font-size: 13px; font-weight: 500; border-radius: 16px;
+  border-color: transparent; color: var(--text-dim); white-space: nowrap;
+}
+button.send-status.waiting { color: var(--md-on-secondary-container); background: var(--md-secondary-container); }
+button.send-status.away { color: var(--away); background: var(--away-container); }
 .copy-chip {
   position: fixed; top: 10px; right: 12px; z-index: var(--z-chip); display: flex; align-items: center; gap: 6px;
   padding: 4px 12px 4px 8px; border-radius: 999px; font-size: 12px;

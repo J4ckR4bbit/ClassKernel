@@ -55,6 +55,7 @@ export function useLessonSession() {
     confirmDialog,
     noteDrafts,
     clearNoteDrafts,
+    naturalPause,
     unlockSeating,
     startLesson: beginLesson,
     stopLesson,
@@ -78,6 +79,7 @@ export function useLessonSession() {
     "confirmDialog",
     "noteDrafts",
     "clearNoteDrafts",
+    "naturalPause",
     "unlockSeating",
     "startLesson",
     "stopLesson",
@@ -250,6 +252,8 @@ export function useLessonSession() {
     stopLesson();
     setLessonStart(timestamp);
     showToast(`Lesson ended — saved ${records.length} seat records to history`);
+    // The end of a lesson is a natural pause: what it recorded goes to the data folder now.
+    naturalPause();
     return true;
   };
 

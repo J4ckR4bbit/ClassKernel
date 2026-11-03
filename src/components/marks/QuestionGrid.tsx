@@ -1,4 +1,4 @@
-import { type KeyboardEvent as ReactKeyboardEvent, useMemo, useRef } from "react";
+import { type KeyboardEvent as ReactKeyboardEvent, useMemo, useRef, useState } from "react";
 import { useApp, useAppPick } from "../../store/appStore";
 import { Assessment, Mark, QuestionMark, studentName, sortByName } from "../../lib/types";
 import {
@@ -17,6 +17,7 @@ import MarkSheetTools from "../MarkSheetTools";
 import Icon from "../Icon";
 import StatTile from "../StatTile";
 import MarkCalculator, { CalculatorButton, useCalculatorShown } from "./MarkCalculator";
+import MarkCommentDialog from "./MarkCommentDialog";
 
 /**
  * Clamp a typed grid cell to [0, max], mirroring the reference app: over-max or
@@ -60,13 +61,20 @@ export default function QuestionGrid({
   /** After marks were imported from a spreadsheet. */
   onImported: () => void;
 }) {
-  const { students, questionMarks, topics, userPrefs, assessmentQuestions } = useAppPick(
+  const { students, questionMarks, topics, userPrefs, assessmentQuestions, marks } = useAppPick(
     "students",
     "questionMarks",
     "topics",
     "userPrefs",
     "assessmentQuestions",
+    "marks",
   );
+  // Each student's comment on this test (marks.csv), and whose comment box is open.
+  const comments = useMemo(
+    () => new Map(marks.filter((m) => m.assessmentId === assessment.id && m.comment).map((m) => [m.studentId, m.comment])),
+    [marks, assessment.id],
+  );
+  const [commentFor, setCommentFor] = useState<string | null>(null);
   const scale = userPrefs.gradeScale;
   const scaleInfo = GRADE_SCALES[scale];
   const questions = useMemo(
@@ -105,11 +113,26 @@ export default function QuestionGrid({
     const total = mine.reduce((s, m) => s + (m.mark as number), 0);
     const existing = store.marks.find((m) => m.assessmentId === assessment.id && m.studentId === studentId);
     const restMarks = store.marks.filter((m) => !(m.assessmentId === assessment.id && m.studentId === studentId));
+    const comment = existing?.comment ?? "";
+    // No marks left: the row goes, unless it still holds a comment.
     const nextMarks: Mark[] =
       mine.length === 0
-        ? restMarks
-        : [...restMarks, { assessmentId: assessment.id, studentId, mark: total, comment: existing?.comment ?? "" }];
+        ? comment
+          ? [...restMarks, { assessmentId: assessment.id, studentId, mark: null, comment }]
+          : restMarks
+        : [...restMarks, { assessmentId: assessment.id, studentId, mark: total, comment }];
     void store.setMarks(nextMarks);
+  };
+
+  // Save (or, with "", clear) a student's comment on this test, keeping their mark.
+  const saveComment = (studentId: string, comment: string) => {
+    const store = useApp.getState();
+    const existing = store.marks.find((m) => m.assessmentId === assessment.id && m.studentId === studentId);
+    const rest = store.marks.filter((m) => m !== existing);
+    const mark = existing?.mark ?? null;
+    void store.setMarks(
+      mark === null && !comment ? rest : [...rest, { assessmentId: assessment.id, studentId, mark, comment }],
+    );
   };
 
   const focusCell = (r: number, c: number) => cells.current[r]?.[c]?.focus();
@@ -215,7 +238,7 @@ export default function QuestionGrid({
 
       <div className="marking-body">
         <div className="mark-grid-wrap">
-          <table className={`mark-grid ${readOnly ? "read-only" : ""}`}>
+          <table className={`mark-grid with-comment ${readOnly ? "read-only" : ""}`}>
             <thead>
               <tr>
                 <th className="col-no sticky-left">No</th>
@@ -233,6 +256,9 @@ export default function QuestionGrid({
                   {scaleInfo.short}
                 </th>
                 <th className="col-total sticky-right">Rank</th>
+                <th className="col-comment-btn sticky-right comment" title="A comment on the student's paper">
+                  <Icon name="chat_bubble" size={16} label="Comment" />
+                </th>
               </tr>
               <tr className="topic-row">
                 <th className="sticky-left" colSpan={3}>
@@ -247,6 +273,7 @@ export default function QuestionGrid({
                 <th className="sticky-right third"></th>
                 <th className="sticky-right second"></th>
                 <th className="sticky-right"></th>
+                <th className="sticky-right comment"></th>
               </tr>
             </thead>
             <tbody>
@@ -302,12 +329,29 @@ export default function QuestionGrid({
                     <td className="col-total sticky-right" style={rank != null ? { background: rankTint.get(s.id) } : undefined}>
                       {rank ?? ""}
                     </td>
+                    <td className="col-comment-btn sticky-right comment">
+                      {(() => {
+                        const comment = comments.get(s.id) ?? "";
+                        // In the read-only View only a row with a comment has the button.
+                        if (readOnly && !comment) return null;
+                        return (
+                          <button
+                            className={`small icon-only comment-btn ${comment ? "has-comment" : ""}`}
+                            title={comment || `Add a comment for ${studentName(s)}`}
+                            aria-label={comment ? `Comment for ${studentName(s)}: ${comment}` : `Add a comment for ${studentName(s)}`}
+                            onClick={() => setCommentFor(s.id)}
+                          >
+                            <Icon name="chat_bubble" filled={!!comment} size={18} />
+                          </button>
+                        );
+                      })()}
+                    </td>
                   </tr>
                 );
               })}
               {nRows === 0 && (
                 <tr>
-                  <td colSpan={nCols + 7} className="empty-row start">
+                  <td colSpan={nCols + 8} className="empty-row start">
                     Add students to the class first.
                   </td>
                 </tr>
@@ -327,6 +371,7 @@ export default function QuestionGrid({
                 <td className="sticky-right third"></td>
                 <td className="sticky-right second"></td>
                 <td className="sticky-right"></td>
+                <td className="sticky-right comment"></td>
               </tr>
               <tr className="avg-row">
                 <th className="sticky-left" colSpan={3}>
@@ -341,12 +386,27 @@ export default function QuestionGrid({
                 <td className="sticky-right third">{classMean ?? ""}</td>
                 <td className="sticky-right second">{classMean !== null ? gradeForPct(classMean, scale) : ""}</td>
                 <td className="sticky-right"></td>
+                <td className="sticky-right comment"></td>
               </tr>
             </tfoot>
           </table>
         </div>
         {showCalculator && <MarkCalculator onClose={() => setCalculator(false)} />}
       </div>
+      {commentFor &&
+        (() => {
+          const student = sorted.find((x) => x.id === commentFor);
+          return student ? (
+            <MarkCommentDialog
+              student={studentName(student)}
+              test={assessment.title}
+              initial={comments.get(commentFor) ?? ""}
+              readOnly={readOnly}
+              onSave={(text) => saveComment(commentFor, text)}
+              onClose={() => setCommentFor(null)}
+            />
+          ) : null;
+        })()}
     </div>
   );
 }

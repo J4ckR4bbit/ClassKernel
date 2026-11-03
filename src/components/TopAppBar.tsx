@@ -3,6 +3,7 @@ import { useSubPageStore } from "../store/subPage";
 import { pluginById } from "../plugins/registry";
 import Icon from "./Icon";
 import ClassPicker from "./ClassPicker";
+import { SendStatus } from "./FolderBanner";
 import { DESTINATIONS, SETTINGS_DESTINATION } from "./NavRail";
 
 // The bar across the top of every page: where you are on the left, and which
@@ -53,6 +54,7 @@ export default function TopAppBar() {
         )}
       </h1>
       <div className="spacer" />
+      <SendStatus />
       <ClassPicker />
     </header>
   );

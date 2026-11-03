@@ -1,12 +1,14 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { backupStamp, nowIso, today } from "../lib/id";
-import { getFS, isTauri, useFolder } from "../lib/fs";
+import { getFS, isTauri, onWorkWrite, useFolder } from "../lib/fs";
+import { needsALook, sendChanges } from "../lib/batchSync";
 import * as repo from "../lib/repo";
 import {
   LocalPaths,
   SettleTracker,
   SyncReport,
+  changedFiles,
   decideBoot,
   isReady,
   localPaths,
@@ -120,6 +122,21 @@ const KEEP_COPY_KEY = "classkernel.keepLocalCopy";
 /** How long the launch waits for a missing data folder before opening this computer's copy. */
 export const WAIT_FOR_FOLDER_MS = 30_000;
 
+/** How often changes go to the data folder: every 2, 5 or 10 minutes, only at natural pauses, or with every save. */
+export type SendEvery = "2" | "5" | "10" | "pauses" | "now";
+export const SEND_EVERY: SendEvery[] = ["2", "5", "10", "pauses", "now"];
+const SEND_KEY = "classkernel.sendEvery";
+
+/** How often this computer sends changes to the data folder (Settings → Data; every 2 minutes unless changed). */
+export function sendEvery(): SendEvery {
+  try {
+    const v = localStorage.getItem(SEND_KEY) as SendEvery | null;
+    return v && SEND_EVERY.includes(v) ? v : "2";
+  } catch {
+    return "2";
+  }
+}
+
 /** Whether this computer keeps its own copy of the data folder (Settings → Data; on unless switched off). */
 export function keepLocalCopy(): boolean {
   try {
@@ -139,7 +156,12 @@ export function keepLocalCopy(): boolean {
 export type FolderStatus =
   | { kind: "waiting"; realDir: string; since: number; copyAvailable: boolean }
   | { kind: "copy"; realDir: string; since: string; copyRefreshedAt: string; back: boolean }
-  | { kind: "syncing"; realDir: string };
+  | { kind: "syncing"; realDir: string }
+  /**
+   * Working in this computer's copy, sending the changes to the data folder
+   * (realDir) every few minutes and at natural pauses (batchSync.ts).
+   */
+  | { kind: "batched"; realDir: string; lastSent: string | null; pending: boolean; driveAway: boolean; sending: boolean };
 
 /** A toast message, optionally with a single action (usually Undo). */
 export interface Toast {
@@ -252,6 +274,14 @@ export interface AppState {
   /** Copy this computer's changes back into the data folder now (it must be ready). */
   syncNow(): Promise<void>;
   dismissSyncReport(): void;
+  /** Send this computer's changes to the data folder now, taking in any made elsewhere (Send now). */
+  sendNow(): Promise<void>;
+  /** A natural pause (End lesson, Done marking, another class): send, join and take in changes from elsewhere. */
+  naturalPause(): void;
+  /** How often changes are sent to the data folder (this computer only). */
+  setSendEvery(every: SendEvery): Promise<void>;
+  /** Stop sending in batches, everything sent first; resolves false if something couldn't be sent. */
+  stopBatching(): Promise<boolean>;
   /** Switch this computer's copy on or off (Settings → Data); off also removes it. */
   setKeepLocalCopy(on: boolean): Promise<void>;
   setView(view: View): void;
@@ -366,6 +396,13 @@ const stopPolling = () => {
 };
 /** The waits involved (the browser demo's ?simulate=folder-missing shortens them). */
 export const folderTiming = { waitMs: WAIT_FOR_FOLDER_MS, pollMs: 2000, returnPollMs: 10_000, settleMs: 30_000 };
+/** A minute, for the send interval (the browser demo's ?simulate=drive shortens it). */
+export const sendTiming = { minuteMs: 60_000 };
+/** Set in the browser demo with ?simulate=drive: the demo folder behaves as a synced one, with this computer's copy. */
+let simulateDrive = false;
+export function setSimulateDrive(on: boolean): void {
+  simulateDrive = on;
+}
 /** Set in the browser demo with ?simulate=folder-missing: hides the demo folder after seeding. */
 let simulateMissingFolder: ((dataDir: string) => Promise<void>) | null = null;
 export function setSimulateMissingFolder(fn: ((dataDir: string) => Promise<void>) | null): void {
@@ -487,6 +524,10 @@ export const useApp = create<AppState>((set, get) => {
   },
 
   async chooseDataDir(path: string) {
+    if (batchedStatus() && !(await stopBatchingNow())) {
+      get().showToast("This computer's latest changes haven't reached your data folder yet — try again once Google Drive is back");
+      return;
+    }
     const paths = await localPaths();
     if (await readSession(paths)) {
       // Only the data folder itself (wherever it is now) can take these
@@ -524,9 +565,12 @@ export const useApp = create<AppState>((set, get) => {
   },
 
   async openFolder(path, { kind, realDir, create = false, keepClass = false }) {
+    if (batchedStatus()) await stopBatchingNow();
     const fs = getFS();
     const paths = await localPaths();
-    const copying = (isTauri() || !!simulateMissingFolder) && kind === "data";
+    const copying = (isTauri() || !!simulateMissingFolder || simulateDrive) && kind === "data";
+    // Settles true once this computer's copy has been refreshed from the folder.
+    let copyFresh: Promise<boolean> = Promise.resolve(false);
     if (kind === "data") {
       await repo.ensureDataDir(path, create);
       if (isTauri()) {
@@ -549,13 +593,19 @@ export const useApp = create<AppState>((set, get) => {
         useFolder(path, keep ? paths.copy : null);
         // Copied in the background while the classes load, refreshing this
         // computer's copy in the same pass; it is the folder as it was opened.
-        fs.snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, keep ? { to: paths.copy, guard: paths.session } : undefined)
+        copyFresh = fs
+          .snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, keep ? { to: paths.copy, guard: paths.session } : undefined)
           .then(async () => {
             if (keep && !(await readSession(paths))) {
               await fs.writeAtomic(paths.source, JSON.stringify({ realDir: path, refreshedAt: nowIso() }));
+              return true;
             }
+            return false;
           })
-          .catch((e) => console.warn("Backup snapshot failed", e));
+          .catch((e) => {
+            console.warn("Backup snapshot failed", e);
+            return false;
+          });
       } else {
         useFolder(path, null);
       }
@@ -563,16 +613,8 @@ export const useApp = create<AppState>((set, get) => {
       // The copy is its own root and is never mirrored, snapshotted or remembered as the data folder.
       useFolder(path, null);
     }
-    const [classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, noteSections] = await Promise.all([
-      repo.listClasses(path),
-      repo.loadBehaviourCodes(path),
-      repo.listLayoutTemplates(path),
-      repo.loadTopics(path),
-      repo.loadCognitiveLevels(path),
-      repo.loadUserPrefs(path),
-      repo.loadTimerPresets(path),
-      repo.loadNoteSections(path),
-    ]);
+    const { classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, noteSections } =
+      await loadAppWide(path);
     setTimeZone(userPrefs.timeZone);
     // Codes are three characters now: shorten any longer ones, once, in the
     // logs first, so an interrupted run is simply finished next time. Only in
@@ -602,6 +644,8 @@ export const useApp = create<AppState>((set, get) => {
     if (renames.size > 0) {
       get().showToast(`Behaviour codes are now 3 characters: ${describeRenames(renames)}`, { label: "OK", run: () => {} });
     }
+    // Once the copy is fresh, work in it and send changes to the folder in batches.
+    void copyFresh.then((fresh) => (fresh ? startBatching(path) : undefined)).catch((e) => console.warn("Couldn't start sending in batches", e));
   },
 
   async openLocalCopy() {
@@ -625,11 +669,45 @@ export const useApp = create<AppState>((set, get) => {
     set({ syncReport: null });
   },
 
+  async sendNow() {
+    if (!batchedStatus()) return;
+    if (!(await send(true))) get().showToast("Couldn't reach your data folder — your changes are safe on this computer and are sent when it's back");
+  },
+
+  naturalPause() {
+    if (batchedStatus()) void send(true);
+  },
+
+  async setSendEvery(every) {
+    try {
+      localStorage.setItem(SEND_KEY, every);
+    } catch {
+      // Applies for this session only.
+    }
+    const { dataDir, folderStatus } = get();
+    if (every === "now") {
+      if (batchedStatus() && !(await stopBatchingNow())) {
+        get().showToast("Your latest changes haven't reached the data folder yet — they're sent with every save once it's back");
+      }
+      return;
+    }
+    if (batchedStatus()) armSendTimer();
+    else if (!folderStatus && dataDir && keepLocalCopy() && (isTauri() || simulateDrive)) await startBatching(dataDir);
+  },
+
+  stopBatching() {
+    return stopBatchingNow();
+  },
+
   async setKeepLocalCopy(on) {
     try {
       localStorage.setItem(KEEP_COPY_KEY, on ? "1" : "0");
     } catch {
       // Applies for this session only.
+    }
+    if (!on && batchedStatus() && !(await stopBatchingNow())) {
+      get().showToast("This computer's latest changes haven't reached your data folder yet — try again once Google Drive is back");
+      return;
     }
     const { dataDir, folderStatus } = get();
     if (folderStatus) return;
@@ -860,63 +938,19 @@ export const useApp = create<AppState>((set, get) => {
   async openClass(name) {
     const { dataDir } = get();
     if (!dataDir) return;
-    const [
-      students,
-      attendance,
-      behaviourEvents,
-      bathroomVisits,
-      desks,
-      seating,
-      seatingPrefs,
-      lessons,
-      assessments,
-      marks,
-      assessmentQuestions,
-      questionMarks,
-      roomConfig,
-      reportComments,
-      notes,
-    ] = await Promise.all([
-      repo.loadStudents(dataDir, name),
-      repo.loadAttendance(dataDir, name),
-      repo.loadBehaviourEvents(dataDir, name),
-      repo.loadBathroomVisits(dataDir, name),
-      repo.loadDesks(dataDir, name),
-      repo.loadSeating(dataDir, name),
-      repo.loadSeatingPrefs(dataDir, name),
-      repo.loadLessons(dataDir, name),
-      repo.loadAssessments(dataDir, name),
-      repo.loadMarks(dataDir, name),
-      repo.loadAssessmentQuestions(dataDir, name),
-      repo.loadQuestionMarks(dataDir, name),
-      repo.loadRoomConfig(dataDir, name),
-      repo.loadReportComments(dataDir, name),
-      repo.loadNotes(dataDir, name),
-    ]);
+    const data = await loadClassData(dataDir, name);
     set({
       currentClass: name,
       dashboardStudent: null,
-      students,
-      attendance,
-      behaviourEvents,
-      bathroomVisits,
-      desks,
-      seating,
-      seatingPrefs,
-      lessons,
-      assessments,
-      marks,
-      assessmentQuestions,
-      questionMarks,
-      roomConfig,
-      reportComments,
-      notes,
+      ...data,
       noteDrafts: readDrafts(name),
       noteEditor: null,
       seatingLockedAt: readSeatedAt(name),
       lessonRunningSince: readLessonRunning(name),
       sensitiveRevealed: false,
     });
+    // Another class is a natural pause: send what's waiting, and take in changes made elsewhere.
+    if (batchedStatus()) void send(true);
   },
 
   async updateClassInfo(info) {
@@ -928,11 +962,16 @@ export const useApp = create<AppState>((set, get) => {
 
   async renameClass(oldName, newName) {
     const { dataDir, classes, folderStatus } = get();
-    if (!dataDir || !newName || oldName === newName || folderStatus) return;
+    if (!dataDir || !newName || oldName === newName || (folderStatus && folderStatus.kind !== "batched")) return;
     const info = classes.find((c) => c.name === oldName);
     if (!info) return;
-    await repo.renameClass(dataDir, oldName, newName);
-    await repo.saveClassInfo(dataDir, { ...info, name: newName });
+    // Moves a folder: done in the data folder itself, not sent file by file.
+    const done = await inDataFolder(async () => {
+      await repo.renameClass(dataDir, oldName, newName);
+      await repo.saveClassInfo(dataDir, { ...info, name: newName });
+      return true;
+    });
+    if (!done) return;
     set({ classes: await repo.listClasses(dataDir) });
     if (get().currentClass === oldName) await get().openClass(newName);
   },
@@ -1179,9 +1218,10 @@ export const useApp = create<AppState>((set, get) => {
 
   async deleteLayoutTemplate(name) {
     const { dataDir, folderStatus } = get();
-    if (!dataDir || folderStatus) return false;
+    if (!dataDir || (folderStatus && folderStatus.kind !== "batched")) return false;
     try {
-      await repo.deleteLayoutTemplate(dataDir, name);
+      // Moves a folder: done in the data folder itself, not sent file by file.
+      if ((await inDataFolder(async () => repo.deleteLayoutTemplate(dataDir, name).then(() => true))) === undefined) return false;
     } catch (e) {
       console.error(`Couldn't delete layout template ${name}`, e);
       await get().refreshLayoutTemplates().catch(() => {});
@@ -1262,6 +1302,259 @@ export function useAppPick<K extends keyof AppState>(...keys: K[]): Pick<AppStat
       return picked;
     }),
   );
+}
+
+// ---------- sending changes to the data folder in batches ----------
+// While batched, saves land in this computer's copy only (MirrorFS workIn) and
+// are sent to the data folder every few minutes and at natural pauses, so a
+// synced folder isn't uploading after every tap. The offline session marker
+// stays while batched, so changes not yet sent survive a crash or power cut:
+// the next launch works from the copy and copies them back (offline.ts).
+
+let sendTimer: ReturnType<typeof setInterval> | undefined;
+/** A save has landed in the copy since the last send began. */
+let unsent = false;
+let sendChain: Promise<unknown> = Promise.resolve();
+
+function batchedStatus() {
+  const s = useApp.getState().folderStatus;
+  return s?.kind === "batched" ? s : null;
+}
+
+function patchBatched(patch: Partial<Extract<FolderStatus, { kind: "batched" }>>): void {
+  const s = batchedStatus();
+  if (s) useApp.setState({ folderStatus: { ...s, ...patch } });
+}
+
+function clearSendTimer(): void {
+  if (sendTimer) clearInterval(sendTimer);
+  sendTimer = undefined;
+}
+
+function armSendTimer(): void {
+  clearSendTimer();
+  const every = sendEvery();
+  if (!batchedStatus() || every === "pauses" || every === "now") return;
+  sendTimer = setInterval(() => {
+    if (unsent) void send(false);
+  }, Number(every) * sendTiming.minuteMs);
+}
+
+function watchSaves(on: boolean): void {
+  onWorkWrite(
+    on
+      ? () => {
+          unsent = true;
+          const s = batchedStatus();
+          if (s && !s.pending) patchBatched({ pending: true });
+        }
+      : null,
+  );
+}
+
+/**
+ * Start working in this computer's copy (already current: just refreshed, or
+ * kept so by every save), sending changes to `realDir` in batches.
+ */
+async function startBatching(realDir: string): Promise<void> {
+  const st = useApp.getState();
+  if (st.folderStatus || st.dataDir !== realDir || sendEvery() === "now" || !keepLocalCopy()) return;
+  const paths = await localPaths();
+  await getFS().flush();
+  await startOfflineSession(paths, realDir);
+  unsent = false;
+  watchSaves(true);
+  useFolder(realDir, null, paths.copy);
+  useApp.setState({ folderStatus: { kind: "batched", realDir, lastSent: null, pending: false, driveAway: false, sending: false } });
+  armSendTimer();
+}
+
+/**
+ * Send what's waiting. At a pause it also joins files changed in both places
+ * and takes in changes made elsewhere, then reads the open class again if
+ * anything here changed. One send at a time. Resolves true when nothing is
+ * left waiting.
+ */
+function send(atPause: boolean): Promise<boolean> {
+  const run = async (): Promise<boolean> => {
+    const s = batchedStatus();
+    if (!s) return true;
+    patchBatched({ sending: true });
+    unsent = false;
+    try {
+      if (!(await isReady(s.realDir))) throw new Error("The data folder isn't available");
+      const paths = await localPaths();
+      const report = await sendChanges(paths, s.realDir, backupStamp(), atPause);
+      if (report.localChanged) await reloadFromCopy();
+      if (needsALook(report)) useApp.setState({ syncReport: report });
+      const pending = (await changedFiles(paths)).length > 0;
+      unsent = pending;
+      patchBatched({ sending: false, driveAway: false, pending, lastSent: nowIso() });
+      return !pending;
+    } catch (e) {
+      console.warn("Couldn't send changes to the data folder", e);
+      unsent = true;
+      patchBatched({ sending: false, driveAway: true, pending: true });
+      return false;
+    }
+  };
+  const next = sendChain.then(run, run);
+  sendChain = next.catch(() => {});
+  return next;
+}
+
+/** Read again what a send changed here: the whole-folder lists, and the open class, keeping the screen as it is. */
+async function reloadFromCopy(): Promise<void> {
+  const { dataDir, currentClass } = useApp.getState();
+  if (!dataDir) return;
+  useApp.setState(await loadAppWide(dataDir));
+  if (!currentClass) return;
+  const data = await loadClassData(dataDir, currentClass);
+  // Not if the teacher moved to another class meanwhile.
+  if (useApp.getState().currentClass === currentClass) useApp.setState(data);
+}
+
+/** Stop working in the copy: everything sent first, then saves go straight to the data folder again. */
+async function stopBatchingNow(): Promise<boolean> {
+  const s = batchedStatus();
+  if (!s) return true;
+  clearSendTimer();
+  if (!(await send(true))) {
+    armSendTimer();
+    return false;
+  }
+  const paths = await localPaths();
+  // From here saves go straight to the folder (and its copy). Anything saved
+  // in the moment between is sent across now.
+  watchSaves(false);
+  useFolder(s.realDir, keepLocalCopy() ? paths.copy : null);
+  try {
+    const late = await sendChanges(paths, s.realDir, backupStamp(), false);
+    if (late.held.length) console.warn("Changed in both places while switching; kept in this computer's copy", late.held);
+  } catch (e) {
+    console.warn("Couldn't send the last changes", e);
+  }
+  await getFS().removeLocal(paths.session).catch((e) => console.warn("Couldn't clear the session marker", e));
+  await getFS().removeLocal(paths.base).catch((e) => console.warn("Couldn't clear the starting point", e));
+  useApp.setState({ folderStatus: null });
+  return true;
+}
+
+/**
+ * Do something to the data folder itself that a file-by-file send can't carry
+ * (a class renamed, a template deleted, a backup restored): everything sent
+ * first, the change made there directly, then this computer's copy refreshed
+ * from it and batching started again. Resolves undefined if the folder
+ * couldn't be reached first.
+ */
+async function inDataFolder<T>(fn: () => Promise<T>): Promise<T | undefined> {
+  const s = batchedStatus();
+  if (!s) return fn();
+  if (!(await stopBatchingNow())) {
+    useApp
+      .getState()
+      .showToast("That needs your data folder, and this computer's latest changes haven't reached it yet — try again once Google Drive is back");
+    return undefined;
+  }
+  try {
+    return await fn();
+  } finally {
+    const paths = await localPaths();
+    await getFS()
+      .copyFolder(s.realDir, paths.copy, ["backups", "exports"])
+      .then(() => getFS().writeAtomic(paths.source, JSON.stringify({ realDir: s.realDir, refreshedAt: nowIso() })))
+      .then(() => startBatching(s.realDir))
+      .catch((e) => console.warn("Couldn't start sending in batches again", e));
+  }
+}
+
+/**
+ * Before the app closes: send what's waiting and, if it all went, end the
+ * batched session so the next launch opens the data folder as usual. If it
+ * couldn't be sent, the marker stays and the next launch copies it back.
+ */
+export async function sendBeforeClosing(): Promise<void> {
+  const s = batchedStatus();
+  if (!s) return;
+  clearSendTimer();
+  if (!(await send(true))) return;
+  const paths = await localPaths();
+  await getFS().removeLocal(paths.session).catch(() => {});
+  await getFS().removeLocal(paths.base).catch(() => {});
+}
+
+/** The window was hidden (minimised, another app full screen): a good moment to send, without reading anything again. */
+export function sendWhileHidden(): void {
+  if (batchedStatus() && unsent) void send(false);
+}
+
+/** Everything the app holds for the whole data folder (not one class). */
+async function loadAppWide(path: string) {
+  const [classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, noteSections] = await Promise.all([
+    repo.listClasses(path),
+    repo.loadBehaviourCodes(path),
+    repo.listLayoutTemplates(path),
+    repo.loadTopics(path),
+    repo.loadCognitiveLevels(path),
+    repo.loadUserPrefs(path),
+    repo.loadTimerPresets(path),
+    repo.loadNoteSections(path),
+  ]);
+  return { classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, noteSections };
+}
+
+/** One class's records. */
+async function loadClassData(dataDir: string, name: string) {
+  const [
+    students,
+    attendance,
+    behaviourEvents,
+    bathroomVisits,
+    desks,
+    seating,
+    seatingPrefs,
+    lessons,
+    assessments,
+    marks,
+    assessmentQuestions,
+    questionMarks,
+    roomConfig,
+    reportComments,
+    notes,
+  ] = await Promise.all([
+    repo.loadStudents(dataDir, name),
+    repo.loadAttendance(dataDir, name),
+    repo.loadBehaviourEvents(dataDir, name),
+    repo.loadBathroomVisits(dataDir, name),
+    repo.loadDesks(dataDir, name),
+    repo.loadSeating(dataDir, name),
+    repo.loadSeatingPrefs(dataDir, name),
+    repo.loadLessons(dataDir, name),
+    repo.loadAssessments(dataDir, name),
+    repo.loadMarks(dataDir, name),
+    repo.loadAssessmentQuestions(dataDir, name),
+    repo.loadQuestionMarks(dataDir, name),
+    repo.loadRoomConfig(dataDir, name),
+    repo.loadReportComments(dataDir, name),
+    repo.loadNotes(dataDir, name),
+  ]);
+  return {
+    students,
+    attendance,
+    behaviourEvents,
+    bathroomVisits,
+    desks,
+    seating,
+    seatingPrefs,
+    lessons,
+    assessments,
+    marks,
+    assessmentQuestions,
+    questionMarks,
+    roomConfig,
+    reportComments,
+    notes,
+  };
 }
 
 /** Work from this computer's copy, keeping its starting point for the copy-back, and watch for the folder. */

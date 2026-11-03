@@ -388,6 +388,11 @@ test("marks", async ({ page }) => {
   // The per-question grid of the demo test, mid-way through a row.
   await page.locator("tr", { hasText: "Forces & energy test" }).getByRole("button", { name: "Enter marks" }).click();
   await reveal(page);
+  // A comment on one student's paper: its speech bubble fills in.
+  await page.locator(".mark-grid tbody tr").nth(1).locator("button.comment-btn").click();
+  await modal(page).locator("textarea").fill("Rushed the last question; ran out of time.");
+  await shotOf(page, modal(page), "marking-comment", 2);
+  await modal(page).getByRole("button", { name: "Save" }).click();
   await page.locator(".mark-grid tbody tr").nth(4).locator("input.grid-input").nth(2).focus();
   await shot(page, "marking-grid");
   await page.getByRole("button", { name: "Done" }).click();
