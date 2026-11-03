@@ -1,6 +1,6 @@
 # 7. Marks
 
-[← Behaviour log](06-behaviour-log.md) · [Contents](../README.md) · Next: [Dashboards and parent reports →](08-dashboards-and-reports.md)
+[← Behaviour log and notes](06-behaviour-log.md) · [Contents](../README.md) · Next: [Dashboards and parent reports →](08-dashboards-and-reports.md)
 
 Open **Marks** in the navigation rail. It lists the class's assessments, newest first.
 

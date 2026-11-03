@@ -23,6 +23,7 @@ and its columns, for anyone who wants to read, check or repair the data outside 
 ```
 <data folder>/
   behaviours.csv              behaviour buttons (shared by all classes)
+  note_sections.csv           the notes' sections, also the quick notes' tags (shared by all classes)
   topics.csv                  topic bank by grade
   cognitive_levels.csv        cognitive levels for tagging questions
   settings.csv                app-wide preferences
@@ -39,11 +40,12 @@ and its columns, for anyone who wants to read, check or repair the data outside 
 
 | Column | Meaning |
 | --- | --- |
-| `code` | Short code, unique, e.g. `HW-`. Behaviour events refer to it. |
+| `code` | Short code of up to three characters, unique, e.g. `+HW`. Behaviour events refer to it. |
 | `label` | Text on the button. |
 | `kind` | `positive` or `negative`. |
 | `points` | Points recorded, e.g. `2`, `-1`. |
 | `color` | Button colour, `#rrggbb`. |
+| `icon` | A Material Symbol name, e.g. `task_alt` (empty = none). A file from before icons has no column; the default behaviours then get their default icons. |
 
 The row order is the button order. `Q+` (*Asked and answered*) and `Q-` (*Unable to answer*) are the codes Pick a
 student records; the dashboards count them as questions, not behaviour.
@@ -78,6 +80,8 @@ Two columns, `key` and `value`:
 | `popover_flags`, `popover_notes` | Show flags / notes in the seat pop-up: `true` / `false` |
 | `ui_scale` | Display size: `1`, `1.25`, `1.5` or `1.75` |
 | `teaching_style` | `room` or `strip` (side panel) |
+| `seat_popup_style` | The student pop-up on the room plan: `list`, `grid` or `round` |
+| `note_text_size` | Text size in the note boxes, in pixels (12–32; default 16) |
 | `dock_side` | Side-panel edge: `left` or `right` |
 | `lesson_bar_side` | Room-plan button edge: `top`, `right`, `bottom` or `left` |
 | `reseat_pin` | SHA-256 hash of the reseat PIN (empty = no PIN) |
@@ -88,6 +92,12 @@ Two columns, `key` and `value`:
 | `topic_links` | Grades that use another grade's topic list, `;`-separated, e.g. `11=10;12=10` (G11 and G12 use G10's list in `topics.csv`). |
 | `report_school`, `report_teacher` | Parent-report header |
 | `plugins_enabled` | Switched-on tools, `;`-separated ids: `class-dashboards`, `parent-reports`, `test-timer`, `clock`, `stopwatch`, `graph-paper`, `practical-graph`, `motion-graph`, `noise-meter` |
+
+### `note_sections.csv`
+
+One column, `name`: the sections of a detailed note, which are also the tags a quick note can have, in order.
+Without the file, the defaults are *Work ethic*, *Behaviour*, *Assessment*, *Homework*, *Attendance*,
+*Parent contact*, *Wellbeing* and *Follow up*.
 
 ### `timer_presets.csv`
 
@@ -153,12 +163,28 @@ color: #1e7b46
 
 ### `bathroom.csv`
 
+Trips **outside** the classroom, timed from the Lesson page (the file keeps its original name).
+
 | Column | Meaning |
 | --- | --- |
 | `date` | |
 | `student_id` | |
 | `start`, `end` | Out and back. `end` is empty while the student is still out. |
 | `duration_seconds` | |
+
+### `notes.csv`
+
+The Notes page. A note is one row or several sharing an `id`:
+
+| Column | Meaning |
+| --- | --- |
+| `id` | The note. |
+| `timestamp` | When it was written (detailed notes and Form F: the date chosen), UTC. |
+| `student_id` | Who it's about; empty = a note about the whole lesson. |
+| `kind` | `quick`, `detailed` or `formF`. |
+| `section` | Detailed note: the section of this row, e.g. `Work ethic`. Form F: the field, e.g. `applied_for`, `q_spelling`. Empty for a quick note. |
+| `text` | The note's text, the section's text, or the field's value (a Form F checklist answer is `Yes`, `No` or `N/A`). |
+| `tags` | Quick note: its tags, `;`-separated. |
 
 ### `desks.csv`
 

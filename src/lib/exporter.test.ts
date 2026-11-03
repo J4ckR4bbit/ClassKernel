@@ -44,8 +44,8 @@ beforeEach(async () => {
     { date: "2026-03-05", studentId: "s2", status: "P", note: "" },
   ]);
   await repo.saveBehaviourEvents(DIR, CLS, [
-    { timestamp: "2026-01-10T09:15:00.000Z", studentId: "s1", code: "EFF", points: 1, note: "" },
-    { timestamp: "2026-03-05T10:20:00.000Z", studentId: "s2", code: "TALK", points: -1, note: "chatting" },
+    { timestamp: "2026-01-10T09:15:00.000Z", studentId: "s1", code: "+EF", points: 1, note: "" },
+    { timestamp: "2026-03-05T10:20:00.000Z", studentId: "s2", code: "-TA", points: -1, note: "chatting" },
   ]);
   await repo.saveBathroomVisits(DIR, CLS, [
     { date: "2026-01-10", studentId: "s1", start: "2026-01-10T09:30:00.000Z", end: "2026-01-10T09:34:10.000Z" },
@@ -160,8 +160,8 @@ describe("buildSheets", () => {
     expect(cell(s, 1, "Time")).toBe("10:20");
   });
 
-  it("logs bathroom trips with durations, flagging one still out", () => {
-    const s = sheet(buildSheets(data, { sections: ["bathroom"] }), "Bathroom log");
+  it("logs trips outside with durations, flagging one still out", () => {
+    const s = sheet(buildSheets(data, { sections: ["bathroom"] }), "Outside log");
     expect(s.rows).toHaveLength(2);
     expect(cell(s, 0, "Student")).toBe("Anna Brown");
     expect(cell(s, 0, "Out")).toBe("09:30");
@@ -257,7 +257,7 @@ describe("date range", () => {
     const sheets = buildSheets(data, { sections: ALL, from: "2026-01-01", to: "2026-01-31" });
     expect(sheet(sheets, "Attendance").rows).toHaveLength(2);
     expect(sheet(sheets, "Behaviour log").rows).toHaveLength(1);
-    expect(sheet(sheets, "Bathroom log").rows).toHaveLength(1);
+    expect(sheet(sheets, "Outside log").rows).toHaveLength(1);
     expect(sheet(sheets, "Assessments").rows).toHaveLength(1);
     // Only the January test remains, so Marks drops to one row per student.
     expect(sheet(sheets, "Marks").rows).toHaveLength(2);

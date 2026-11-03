@@ -1,5 +1,5 @@
 // The analysis behind the Class and Student dashboards: everything the app
-// records about a class (behaviour, cold-call answers, bathroom trips,
+// records about a class (behaviour, cold-call answers, trips outside,
 // attendance, marks) boiled down per student and per class, plus short
 // plain-language summaries built from fixed, explainable rules. Pure functions
 // over the class's data; "today" always comes in as an argument.
@@ -512,7 +512,7 @@ export function classSummary(
   if (p.bathroom.trips > 0) {
     const most = p.bathroomUsers[0];
     lines.push(
-      `${p.bathroom.trips} bathroom trip${p.bathroom.trips === 1 ? "" : "s"}, ${minutes(p.bathroom.totalSeconds)} out in total` +
+      `${p.bathroom.trips} trip${p.bathroom.trips === 1 ? "" : "s"} outside, ${minutes(p.bathroom.totalSeconds)} out in total` +
         (most && most.value >= 3 ? `; most by ${nameOf(most.studentId)} (${most.value}).` : "."),
     );
   }
@@ -642,12 +642,12 @@ export function studentSummary(p: StudentProfile, cls: ClassProfile, period: Per
   if (p.bathroom.trips > 0) {
     const often = p.bathroom.trips >= 3 && p.bathroom.trips >= 2 * cls.bathroom.avgTrips;
     lines.push(
-      `${p.bathroom.trips} bathroom trip${p.bathroom.trips === 1 ? "" : "s"} (class average ${fmtNum(cls.bathroom.avgTrips, 1)}), ` +
+      `${p.bathroom.trips} trip${p.bathroom.trips === 1 ? "" : "s"} outside (class average ${fmtNum(cls.bathroom.avgTrips, 1)}), ` +
         `${minutes(p.bathroom.totalSeconds)} out in total; longest ${formatDuration(p.bathroom.longestSeconds)}.` +
         (often ? ` That's well above the class.` : ""),
     );
   } else {
-    lines.push(`No bathroom trips ${when}.`);
+    lines.push(`No trips outside ${when}.`);
   }
 
   // Attendance.
@@ -699,7 +699,7 @@ export const REPORT_SECTIONS: Array<{ id: ReportSection; label: string }> = [
   { id: "marks", label: "Marks" },
   { id: "topics", label: "Topic strengths" },
   { id: "behaviour", label: "Behaviour & class questions" },
-  { id: "attendance", label: "Attendance & bathroom" },
+  { id: "attendance", label: "Attendance & outside" },
 ];
 
 const tally = (counts: CodeCount[]) => counts.map((c) => `${c.label} (${c.count})`).join(", ");
@@ -757,7 +757,7 @@ export function parentSummary(p: StudentProfile, cls: ClassProfile, sections: Se
     }
     if (p.bathroom.trips > 0) {
       lines.push(
-        `${p.bathroom.trips} bathroom trip${p.bathroom.trips === 1 ? "" : "s"} during lessons (${minutes(p.bathroom.totalSeconds)} in total).`,
+        `${p.bathroom.trips} trip${p.bathroom.trips === 1 ? "" : "s"} outside the classroom during lessons (${minutes(p.bathroom.totalSeconds)} in total).`,
       );
     }
   }

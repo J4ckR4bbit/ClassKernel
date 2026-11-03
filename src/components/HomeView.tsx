@@ -88,7 +88,7 @@ export default function HomeView() {
                   <Icon name="school" size={18} /> Lesson
                 </button>
               </div>
-              <button className="text small class-card-open" onClick={() => void go(c.name, "notes")}>
+              <button className="text small class-card-open" onClick={() => void go(c.name, "classInfo")}>
                 Open class <Icon name="chevron_right" size={18} />
               </button>
             </div>

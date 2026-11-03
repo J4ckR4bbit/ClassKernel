@@ -62,7 +62,7 @@ export default function ClassDashboard({
           value={p.answers.rate !== null ? fmtPct(p.answers.rate * 100) : "—"}
           label={`questions answered (${p.answers.answered}/${p.answers.asked})`}
         />
-        <StatTile value={String(p.bathroom.trips)} label="bathroom trips" />
+        <StatTile value={String(p.bathroom.trips)} label="trips outside" />
       </div>
 
       <h2 className="section-heading">Behaviour</h2>
@@ -126,12 +126,12 @@ export default function ClassDashboard({
           max={10}
         />
         <PeopleList
-          icon="wc"
-          title="Bathroom trips"
+          icon="door_open"
+          title="Trips outside"
           people={p.bathroomUsers}
           nameOf={nameOf}
           onOpen={onOpenStudent}
-          empty="No bathroom trips."
+          empty="No trips outside."
         />
         <PeopleList
           icon="event_busy"

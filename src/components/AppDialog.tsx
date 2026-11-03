@@ -33,12 +33,18 @@ export default function AppDialog() {
           autoFocus
           value={text}
           placeholder={dialog.placeholder}
+          maxLength={dialog.maxLength}
           {...(dialog.secret
             ? { type: "password", inputMode: "numeric" as const, autoComplete: "off", className: "pin-input" }
             : {})}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && text.trim()) ok();
+            if (e.key !== "Enter") return;
+            // Closing hands focus back to the button that opened the dialog while
+            // this key press is still going; left alone, it would press that
+            // button too and open the dialog again.
+            e.preventDefault();
+            if (text.trim()) ok();
           }}
         />
       )}

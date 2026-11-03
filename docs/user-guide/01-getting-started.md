@@ -46,14 +46,16 @@ Every page has the same frame:
 | **Attendance** | The register for the chosen class. |
 | **Seats** | Seating plans: place students by hand or **Randomise**. |
 | **Lesson** | The live lesson: the seating plan you tap to record behaviour. |
-| **Behaviour** | The behaviour log and the bathroom log. |
+| **Behaviour** | The behaviour log and the Outside log. |
+| **Notes** | Quick notes from lessons, detailed notes in sections, and Form F. |
 | **Marks** | Assessments and mark entry. |
-| **Notes** | Class details, colour and free-form notes. |
+| **Class** | The class's details, colour and free-form notes. |
 | **Settings** | App settings, students, room layout, seating rules, tools and export. |
 
 Press the **☰** button at the top to expand the rail into a drawer with full names. The drawer also lists the
 [tools](09-teaching-tools.md) you've switched on. Press it again to collapse it. The app remembers your choice on
-this computer.
+this computer. When the list is too long for the screen, it scrolls; **Settings** stays put at the foot and the
+list slides away behind it.
 
 <br clear="right">
 
@@ -79,10 +81,10 @@ Home shows every active class as a card.
 | **Seating** | Opens the class's Seats page, where you randomise or move students. |
 | **Marks** | Opens the class's Marks page. |
 | **Lesson** (the big button) | Opens the class's live Lesson page. |
-| **Open class** | Opens the class's Class notes page: its details, colour and notes. |
+| **Open class** | Opens the class's Class page: its details, colour and notes. |
 | **New class** (top right of Home) | Creates a class. |
 
-A class with a colour (set on its [Class notes](02-setting-up-a-class.md#class-notes-details-colour-and-notes) page)
+A class with a colour (set on its [Class](02-setting-up-a-class.md#the-class-page-details-colour-and-notes) page)
 shows it along the top of its card and in the circle with its initials.
 
 Below the classes is the **Tools** section. It stays empty, with a short note, until you switch tools on under

@@ -74,13 +74,13 @@ test("side panel: tapping off a student's sheet closes it", async ({ page }) => 
   await expect(sheet).toHaveCount(0);
 });
 
-test("lesson: the bathroom timer starts and stops", async ({ page }) => {
+test("lesson: the OUTSIDE timer starts and stops", async ({ page }) => {
   await nav(page, "Lesson");
   await seats(page).nth(2).click({ force: true });
   await page.locator(".behaviour-popover .bathroom-btn").click();
-  await expect(toast(page)).toContainText("Bathroom timer started");
+  await expect(toast(page)).toContainText("OUTSIDE timer started");
   await seats(page).nth(2).click({ force: true });
-  await expect(page.locator(".behaviour-popover .bathroom-btn")).toContainText("Back from bathroom");
+  await expect(page.locator(".behaviour-popover .bathroom-btn")).toContainText("Back inside");
   await page.locator(".behaviour-popover .bathroom-btn").click();
 });
 
@@ -168,7 +168,7 @@ test("Randomise starts the lesson", async ({ page }) => {
   await expect(page.getByRole("button", { name: "End lesson" })).toBeVisible();
 });
 
-test("end lesson, then the behaviour log lists events and bathroom trips", async ({ page }) => {
+test("end lesson, then the behaviour log lists events and trips outside", async ({ page }) => {
   await nav(page, "Lesson");
   await seats(page).first().click({ force: true });
   await page.locator(".behaviour-popover .bh-btn").first().click();
@@ -180,7 +180,7 @@ test("end lesson, then the behaviour log lists events and bathroom trips", async
   await nav(page, "Behaviour");
   await reveal(page);
   expect(await page.locator("main table.data tbody tr").count()).toBeGreaterThan(3);
-  await expect(page.locator("main h2", { hasText: "Bathroom log" })).toBeVisible();
+  await expect(page.locator("main h2", { hasText: "Outside log" })).toBeVisible();
 });
 
 test("teaching mode: Escape closes a seat's pop-up first, then leaves", async ({ page }) => {

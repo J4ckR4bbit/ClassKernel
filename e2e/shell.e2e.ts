@@ -1,4 +1,4 @@
-import { expect, nav, settingsTab, test } from "./fixtures";
+import { ALL_TOOLS, enableTools, expect, nav, settingsTab, test } from "./fixtures";
 
 // The frame around every page: the navigation rail, the class menu in the top
 // bar, Settings, and the class colour.
@@ -6,10 +6,26 @@ import { expect, nav, settingsTab, test } from "./fixtures";
 test("the navigation rail expands into a drawer and back", async ({ page }) => {
   await page.getByRole("button", { name: "Expand the menu" }).click();
   await expect(page.locator(".nav-rail.expanded")).toBeVisible();
-  // Expanded, it gives full names ("Notes" becomes "Class notes").
-  await expect(page.locator(".nav-rail .nav-label", { hasText: "Class notes" })).toBeVisible();
+  // Expanded, it gives full names ("Behaviour" becomes "Behaviour log").
+  await expect(page.locator(".nav-rail .nav-label", { hasText: "Behaviour log" })).toBeVisible();
   await page.getByRole("button", { name: "Collapse the menu" }).click();
   await expect(page.locator(".nav-rail.expanded")).toHaveCount(0);
+});
+
+test("Settings stays at the foot of the menu while the tools scroll away behind it", async ({ page }) => {
+  await enableTools(page, ALL_TOOLS);
+  await page.setViewportSize({ width: 1400, height: 560 });
+  await page.getByRole("button", { name: "Expand the menu" }).click();
+  const list = page.locator(".nav-scroll");
+  expect(await list.evaluate((e) => e.scrollHeight > e.clientHeight)).toBe(true);
+  const settings = page.locator(".nav-rail .nav-item", { hasText: "Settings" });
+  const y0 = (await settings.boundingBox())!.y;
+  await list.hover();
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => list.evaluate((e) => e.scrollTop)).toBeGreaterThan(0);
+  const b = (await settings.boundingBox())!;
+  expect(b.y).toBe(y0);
+  expect(b.y + b.height).toBeLessThanOrEqual(560);
 });
 
 test("every place in the rail opens its page", async ({ page }) => {
@@ -19,7 +35,8 @@ test("every place in the rail opens its page", async ({ page }) => {
     Lesson: "Lesson",
     Behaviour: "Behaviour log",
     Marks: "Marks",
-    Notes: "Class notes",
+    Notes: "Notes",
+    Class: "Class",
     Settings: "Settings",
     Home: "ClassKernel",
   };
@@ -54,6 +71,18 @@ test("every Settings tab opens", async ({ page }) => {
   }
 });
 
+test("the Settings tabs stay at the top while the page under them scrolls", async ({ page }) => {
+  await page.setViewportSize({ width: 1400, height: 600 });
+  await settingsTab(page, "General");
+  const tabs = page.locator(".md-tabs");
+  const y0 = (await tabs.boundingBox())!.y;
+  await page.locator(".settings-body").hover();
+  await page.mouse.wheel(0, 1000);
+  await expect.poll(() => page.locator(".settings-body").evaluate((e) => e.scrollTop)).toBeGreaterThan(0);
+  expect((await tabs.boundingBox())!.y).toBe(y0);
+  await expect(tabs).toBeInViewport();
+});
+
 test("the display size is a segmented button", async ({ page }) => {
   await settingsTab(page, "General");
   const size = page.getByRole("group", { name: "Text and button size" });
@@ -64,7 +93,7 @@ test("the display size is a segmented button", async ({ page }) => {
 });
 
 test("a class colour shows on its Home card and under the top bar", async ({ page }) => {
-  await nav(page, "Notes");
+  await nav(page, "Class");
   await page.locator("main button.swatch[title*='Purple']").click();
   await nav(page, "Home");
   await expect(page.locator(".class-card").first()).toHaveClass(/coloured/);
@@ -75,7 +104,7 @@ test("a class colour shows on its Home card and under the top bar", async ({ pag
   expect(underline).not.toBe("rgba(0, 0, 0, 0)");
 });
 
-test("a class card opens its Lesson, Seats, Marks and Class notes pages", async ({ page }) => {
+test("a class card opens its Lesson, Seats, Marks and Class pages", async ({ page }) => {
   const card = page.locator(".class-card").first();
   await expect(card.locator(".class-card-actions button")).toHaveText(["Seating", "Marks", "Lesson"]);
   // Lesson is the full-width, filled button under the other two.
@@ -91,7 +120,7 @@ test("a class card opens its Lesson, Seats, Marks and Class notes pages", async 
   }
   await nav(page, "Home");
   await card.getByRole("button", { name: "Open class" }).click();
-  await expect(page.locator(".top-bar-title")).toHaveText("Class notes");
+  await expect(page.locator(".top-bar-title")).toHaveText("Class");
 });
 
 test("Export saves a spreadsheet", async ({ page }) => {
@@ -101,8 +130,8 @@ test("Export saves a spreadsheet", async ({ page }) => {
   expect((await download).suggestedFilename()).toMatch(/\.xlsx$/);
 });
 
-test("a class's grade is called Grade on Class notes, and shown as G07 on its Home card", async ({ page }) => {
-  await nav(page, "Notes");
+test("a class's grade is called Grade on the Class page, and shown as G07 on its Home card", async ({ page }) => {
+  await nav(page, "Class");
   await expect(page.locator("main label", { hasText: /^Grade$/ })).toBeVisible();
   await nav(page, "Home");
   await expect(page.locator(".class-card").first()).toContainText("G07");

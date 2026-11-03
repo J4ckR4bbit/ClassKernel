@@ -19,11 +19,12 @@ Press **New class** on Home, or open the class menu (top right) and choose **New
 
 Press **Create class**. The new class becomes the one you're working with.
 
-## Class notes: details, colour and notes
+## The Class page: details, colour and notes
 
-Open **Notes** in the navigation rail.
+Open **Class** in the navigation rail. (Notes about students and lessons are on the [Notes](06-behaviour-log.md#notes)
+page.)
 
-![The Class notes page](../images/class-notes.png)
+![The Class page](../images/class-notes.png)
 
 | Control | What it does |
 | --- | --- |
@@ -96,35 +97,59 @@ the live lesson are drawn on.
 
 ![The room layout designer, with a desk selected](../images/room-layout.png)
 
+The two rows of buttons at the top and the **Add** buttons on the left stay where they are. Only the room moves: it
+zooms and scrolls in its own window.
+
 ### Add furniture
 
 ![The buttons that add furniture](../images/layout-add-buttons.png)
 
 | Button | Adds | Seats |
 | --- | --- | --- |
-| **+ Single desk** | A one-person desk | 1 |
-| **+ Double desk** | A two-person desk | 2 |
-| **+ Group of 4** / **+ Group of 6** | A group table | 4 / 6 |
-| **+ Teacher desk** | Your desk | – |
-| **+ Door**, **+ Window** | Room features, for orientation | – |
-| **+ Label box** | A free-text box (e.g. *Book corner*, *Fume cupboard*) | – |
+| **Single** | A one-person desk | 1 |
+| **Double** | A two-person desk | 2 |
+| **Group of 4** / **Group of 6** | A group table | 4 / 6 |
+| **Teacher** | Your desk | – |
+| **Door**, **Window** | Room features, for orientation | – |
+| **Label box** | A free-text box (e.g. *Book corner*, *Fume cupboard*) | – |
 
-New items appear in the middle of the room. **Drag** them into place; they snap to the grid.
+New items appear in the middle of the part of the room you can see. **Drag** them into place; they snap to the grid.
+
+### Zoom and scroll
+
+The room opens zoomed to fit. The zoom buttons sit in the bottom-right corner of the room:
+
+![The zoom buttons](../images/layout-zoom.png)
+
+The keys and mouse work as they do in Adobe's programs (Acrobat, Photoshop, Illustrator), and fingers as on any
+touch screen:
+
+| To | Mouse and keyboard | Touch screen |
+| --- | --- | --- |
+| Scroll | Mouse wheel (**Shift** + wheel scrolls sideways), or drag the empty floor | Drag the empty floor with one finger; a flick carries on for a moment |
+| Zoom in or out | **Ctrl** + wheel (or **Alt** + wheel), **Ctrl +** / **Ctrl −**, a touchpad pinch, or **−** / **+** | Pinch with two fingers |
+| Pan, even over a desk | Hold **Space** and drag, or drag with the middle mouse button | Move two fingers together |
+| Fit the whole room | **Ctrl 0**, or **Fit** | **Fit** |
+| Actual size (100%) | **Ctrl 1**, or press the percentage | Press the percentage |
+
+A drag that starts on a desk moves the desk, and one inside the dashed view crop box moves the box (see below). To
+scroll from there, use two fingers, or hold **Space**.
 
 ### Change the selected item
 
-Click an item to select it (it gets a coloured outline). A second toolbar appears:
+Click an item to select it (it gets a coloured outline). The second row of buttons then changes it. With nothing
+selected, that row says how to zoom and scroll.
 
 ![The toolbar for the selected desk](../images/layout-desk-toolbar.png)
 
 | Control | What it does |
 | --- | --- |
-| **Rotate** | Turns it 90°. |
-| **Duplicate** | Adds a copy beside it — the quickest way to build rows of desks. |
 | **Desk label** | A name for the desk (e.g. *Front left*), used by the teaching side panel and the seating insights. Unlabelled desks are numbered *Desk 1*, *Desk 2*, … |
-| **Fill swatches** / colour box / **Reset fill** | The desk's colour. |
-| **Text** (black, white or any colour) / **Reset text** | The colour of the label. |
-| **Width** / **Height** − + | Resize in grid steps. |
+| **Rotate** (the circular arrow) | Turns it 90°. |
+| **Duplicate** (the two sheets) | Adds a copy beside it — the quickest way to build rows of desks. |
+| **Fill** swatches / colour box | The desk's colour. The struck-through swatch puts back the usual colour. |
+| **Text** (usual, black, white or any colour) | The colour of the label. |
+| **W** / **H** − + | Width and height, in grid steps. |
 | **Delete** | Removes it (with Undo). |
 
 ### The whole room
@@ -139,16 +164,19 @@ Click an item to select it (it gets a coloured outline). A second toolbar appear
 
 ### Text size and templates
 
-![Text size steppers and layout templates](../images/layout-text-and-templates.png)
+![The Text size pop-up](../images/layout-text-size.png)
 
-- **Text size: Seats / Desks / Labels** scales the student names on seats, desk labels and label boxes
-  (50%–300%). Make them bigger for a large classroom panel.
-- **Save as template** stores this room under a name. The template then appears as a button here in **every**
-  class: press it to apply that layout (it replaces the class's current desks), or its **✕** to delete the
-  template. Useful when several classes are taught in the same lab. If a template can't be read (for example, it
-  was deleted on another computer and the sync hasn't caught up), the room is left as it was and a message says so.
-  If a template can't be saved, the red *Couldn't save* banner appears with **Try again**; if one can't be
-  deleted, it stays in the list and a message says so.
+- **Text size** opens the **Seats / Desks / Labels** steppers, which scale the student names on seats, desk labels
+  and label boxes (50%–300%). Make them bigger for a large classroom panel.
+
+![The Templates pop-up, with one template saved](../images/layout-templates.png)
+
+- **Templates** (with the number saved beside it) opens **Save as template**, which stores this room under a name.
+  Saved templates are listed under it in **every** class: press one to apply that layout (it replaces the class's
+  current desks), or its **✕** to delete the template. Useful when several classes are taught in the same lab. If a
+  template can't be read (for example, it was deleted on another computer and the sync hasn't caught up), the room
+  is left as it was and a message says so. If a template can't be saved, the red *Couldn't save* banner appears with
+  **Try again**; if one can't be deleted, it stays in the list and a message says so.
 
 ## Seating rules
 

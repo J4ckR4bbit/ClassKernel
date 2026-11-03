@@ -108,7 +108,7 @@ test("home, the class menu and setting up a class", async ({ page }) => {
   await fields.nth(3).fill("Lab 3");
   await shotOf(page, modal(page), "new-class-dialog", 2);
   await modal(page).locator("button.primary").click();
-  await nav(page, "Notes");
+  await nav(page, "Class");
   await page.locator("main button.swatch[title*='Green']").first().click();
 
   await page.locator(".top-bar .class-picker-btn").click();
@@ -118,7 +118,7 @@ test("home, the class menu and setting up a class", async ({ page }) => {
   await fields.nth(2).fill("Physical Sciences");
   await fields.nth(3).fill("Lab 3");
   await modal(page).locator("button.primary").click();
-  await nav(page, "Notes");
+  await nav(page, "Class");
   await page.locator("main button.swatch[title*='Purple']").first().click();
 
   await page.locator(".top-bar .class-picker-btn").click();
@@ -131,8 +131,8 @@ test("home, the class menu and setting up a class", async ({ page }) => {
   await shotOf(page, [page.locator(".top-bar .class-picker-btn"), page.locator(".top-bar .menu")], "class-menu", 4);
   await page.keyboard.press("Escape");
 
-  // Class notes: details, colour and free notes.
-  await nav(page, "Notes");
+  // The Class page: details, colour and free notes.
+  await nav(page, "Class");
   await shot(page, "class-notes");
 
   // Settings → Students: the privacy cover, then the roster and the import dialog.
@@ -161,9 +161,23 @@ test("home, the class menu and setting up a class", async ({ page }) => {
   await settingsTab(page, "Room layout");
   await page.locator(".room-canvas g.desk").nth(2).click();
   await shot(page, "room-layout");
-  await shotOf(page, page.locator("main .palette").nth(0), "layout-add-buttons", 6);
-  await shotOf(page, page.locator("main .palette").nth(1), "layout-desk-toolbar", 6);
-  await shotOf(page, page.locator("main .palette.layout-tools"), "layout-text-and-templates", 6);
+  await shotOf(page, page.locator("main .layout-add"), "layout-add-buttons", 6);
+  await shotOf(page, page.locator("main .layout-toolbar .layout-row").nth(1), "layout-desk-toolbar", 6);
+  await shotOf(page, page.locator("main .zoom-controls"), "layout-zoom", 6);
+  // The Text size and Templates pop-ups, with one template saved.
+  const textSize = page.getByRole("button", { name: /^Text size/ });
+  await textSize.click();
+  await shotOf(page, [textSize, page.locator(".popover-panel")], "layout-text-size", 6);
+  await textSize.click();
+  const templates = page.getByRole("button", { name: /^Templates/ });
+  await templates.click();
+  await page.locator(".popover-panel").getByRole("button", { name: "Save as template" }).click();
+  await modal(page).locator("input").fill("Lab 2");
+  await modal(page).locator("button.primary").click();
+  await expect(modal(page)).toHaveCount(0);
+  await templates.click();
+  await shotOf(page, [templates, page.locator(".popover-panel")], "layout-templates", 6);
+  await templates.click();
   await page.getByRole("button", { name: "Set view crop" }).click();
   await shot(page, "room-layout-crop");
 
@@ -228,7 +242,15 @@ test("lesson", async ({ page }) => {
   await shotOf(page, page.locator(".toast"), "toast-undo", 10);
   await toasts(page, false);
 
-  // A bathroom trip under way.
+  // A note about a student, from their pop-up.
+  await seats(page).nth(4).click({ force: true });
+  await page.locator(".behaviour-popover").getByRole("button", { name: "Note" }).click();
+  await modal(page).locator("textarea").fill("Forgot his calculator again; lend him one and remind him on Friday.");
+  await modal(page).getByRole("button", { name: "Assessment" }).click();
+  await shotOf(page, modal(page), "quick-note", 2);
+  await modal(page).getByRole("button", { name: "Escape" }).click();
+
+  // A trip outside under way.
   await seats(page).nth(9).click({ force: true });
   await page.locator(".behaviour-popover .bathroom-btn").click();
   await page.waitForTimeout(2200);
@@ -267,6 +289,61 @@ test("lesson", async ({ page }) => {
   await page.getByRole("button", { name: "End lesson" }).click();
   await shotOf(page, modal(page), "end-lesson-dialog", 2);
   await modal(page).locator("button.primary").click();
+
+  // The grid and round pop-ups (Settings → Teaching mode → Student pop-up).
+  for (const style of ["Grid", "Round"] as const) {
+    await settingsTab(page, "Teaching mode");
+    await page.getByRole("group", { name: "Student pop-up" }).getByRole("button", { name: style }).click();
+    await nav(page, "Lesson");
+    await seats(page).nth(4).click({ force: true });
+    const target = style === "Grid" ? [page.locator(".behaviour-popover")] : [page.locator(".student-ring"), page.locator(".ring-name")];
+    await shotOf(page, target, style === "Grid" ? "popup-grid" : "popup-round", 10);
+    await page.keyboard.press("Escape");
+  }
+});
+
+test("notes", async ({ page }) => {
+  await prep(page);
+  await nav(page, "Notes");
+  await reveal(page);
+  await shot(page, "notes-page");
+  // One student's notes, by section (the demo's first student has a detailed note and a tagged quick note).
+  await page.getByRole("combobox", { name: "Whose notes" }).selectOption({ index: 2 });
+  await page.getByRole("group", { name: "Layout" }).getByRole("button", { name: "By section" }).click();
+  await shot(page, "notes-by-section");
+
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await page.getByRole("button", { name: "Detailed note" }).click();
+  const section = (name: string) => modal(page).locator(".note-section", { hasText: name }).locator("textarea");
+  await section("Work ethic").fill("Works steadily; checks his answers before handing in.");
+  await section("Assessment").fill("Strong on calculations; loses marks explaining in words.");
+  await shotOf(page, modal(page), "detailed-note", 2);
+  await modal(page).getByRole("button", { name: "Cancel" }).click();
+
+  await page.setViewportSize({ width: 1280, height: 1500 });
+  await page.getByRole("button", { name: "Form F" }).click();
+  const field = (label: string) => modal(page).locator(".formf-row", { hasText: label }).locator("input");
+  await field("Teacher").fill("Mr K. Hilder");
+  await field("applied for").fill("Extra time (25%)");
+  await field("terms").fill("3");
+  await modal(page).locator(".note-section textarea").fill("Extra time; a reader for longer questions.");
+  for (const [answer, question] of [
+    ["Yes", "understand what they have read"],
+    ["Yes", "frequent spelling errors"],
+    ["Yes", "handwriting legible"],
+    ["No", "oral work noticeably better"],
+    ["Yes", "expression better when typed"],
+  ]) {
+    await modal(page).getByRole("button", { name: new RegExp(`^${answer.replace("/", "\\/")}: .*${question}`) }).click();
+  }
+  await modal(page).evaluate((e) => (e.scrollTop = 0));
+  await shotOf(page, modal(page), "form-f", 2);
+  await modal(page).getByRole("button", { name: "Save and print" }).click();
+  await page.setViewportSize(VIEW);
+  await shot(page, "form-f-print");
+  await page.locator(".formf-portal").getByRole("button", { name: "Close" }).click();
+
+  await shotOf(page, page.locator(".note-settings"), "notes-settings", 0);
 });
 
 test("behaviour log", async ({ page }) => {
@@ -277,7 +354,7 @@ test("behaviour log", async ({ page }) => {
   await page.locator("main .view-header select").first().selectOption({ index: 1 });
   await shot(page, "behaviour-log-student");
   await page.locator("main .view-header select").first().selectOption({ index: 0 });
-  await shotFrom(page, page.locator("main h2", { hasText: "Bathroom log" }), "bathroom-log");
+  await shotFrom(page, page.locator("main h2", { hasText: "Outside log" }), "bathroom-log");
 });
 
 test("marks", async ({ page }) => {
@@ -496,6 +573,10 @@ test("settings", async ({ page }) => {
   await shotOf(page, panel(page, "Teaching mode"), "settings-teaching-mode", 0);
   await settingsTab(page, "Behaviour");
   await shotOf(page, panel(page, "Behaviour buttons"), "settings-behaviour-buttons", 0);
+  const iconButton = page.getByRole("button", { name: "Icon for Talking / off task" });
+  await iconButton.click();
+  await shotOf(page, [iconButton, page.locator(".icon-picker")], "behaviour-icon-picker", 6);
+  await page.keyboard.press("Escape");
 
   await settingsTab(page, "Assessments");
   await shotOf(page, [panel(page, "Mark entry"), panel(page, "Show results as")], "settings-mark-entry-and-results", 0);
@@ -505,7 +586,7 @@ test("settings", async ({ page }) => {
   await modal(page).locator("input").fill("8");
   await modal(page).locator("button.primary").click();
   await page.getByLabel("Same topics as:").selectOption("7");
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await toTop(page, ".settings-body");
   await shot(page, "settings-assessments");
 
   await settingsTab(page, "Export");

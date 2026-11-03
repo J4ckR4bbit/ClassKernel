@@ -23,8 +23,9 @@ export const DESTINATIONS: Destination[] = [
   { views: ["seating"], icon: "event_seat", label: "Seats", name: "Seats" },
   { views: ["lesson"], icon: "school", label: "Lesson", name: "Lesson" },
   { views: ["behaviourLog"], icon: "thumbs_up_down", label: "Behaviour", name: "Behaviour log" },
+  { views: ["notes"], icon: "sticky_note_2", label: "Notes", name: "Notes" },
   { views: ["assessments"], icon: "grading", label: "Marks", name: "Marks" },
-  { views: ["notes"], icon: "sticky_note_2", label: "Notes", name: "Class notes" },
+  { views: ["classInfo"], icon: "badge", label: "Class", name: "Class" },
 ];
 
 export const SETTINGS_DESTINATION: Destination = { views: ["settings"], icon: "settings", label: "Settings", name: "Settings" };
@@ -97,26 +98,29 @@ export default function NavRail({ expanded, onToggle }: { expanded: boolean; onT
         )}
       </div>
 
-      <div className="nav-items">{DESTINATIONS.map(item)}</div>
+      {/* The places and tools scroll when they don't fit; Settings stays put at
+          the foot, and the list scrolls away behind it. */}
+      <div className="nav-scroll">
+        <div className="nav-items">{DESTINATIONS.map(item)}</div>
 
-      {expanded && tools.length > 0 && (
-        <div className="nav-items nav-tools">
-          <div className="nav-section">Tools</div>
-          {tools.map((p) => (
-            <NavItem
-              key={p.id}
-              icon={p.icon}
-              label={p.name}
-              active={view === "plugin" && activePlugin === p.id}
-              expanded
-              onClick={() => openPlugin(p.id)}
-            />
-          ))}
-        </div>
-      )}
+        {expanded && tools.length > 0 && (
+          <div className="nav-items nav-tools">
+            <div className="nav-section">Tools</div>
+            {tools.map((p) => (
+              <NavItem
+                key={p.id}
+                icon={p.icon}
+                label={p.name}
+                active={view === "plugin" && activePlugin === p.id}
+                expanded
+                onClick={() => openPlugin(p.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
-      <div className="nav-spacer" />
-      <div className="nav-items">{item(SETTINGS_DESTINATION)}</div>
+      <div className="nav-items nav-foot">{item(SETTINGS_DESTINATION)}</div>
     </nav>
   );
 }

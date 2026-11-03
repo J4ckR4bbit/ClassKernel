@@ -95,7 +95,7 @@ export default function StudentDashboard({
           tone={p.behaviour.net > 0 ? "good" : p.behaviour.net < 0 ? "bad" : undefined}
         />
         <StatTile value={a.asked ? `${a.answered}/${a.asked}` : "—"} label="questions answered" />
-        <StatTile value={String(p.bathroom.trips)} label="bathroom trips" />
+        <StatTile value={String(p.bathroom.trips)} label="trips outside" />
       </div>
 
       <h2 className="section-heading">Marks</h2>
@@ -224,10 +224,10 @@ export default function StudentDashboard({
 
         <div className="panel">
           <h3>
-            <Icon name="wc" size={20} /> Bathroom
+            <Icon name="door_open" size={20} /> Outside
           </h3>
           {p.bathroom.trips === 0 ? (
-            <p className="muted">No bathroom trips in this period.</p>
+            <p className="muted">No trips outside in this period.</p>
           ) : (
             <>
               <p>

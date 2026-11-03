@@ -41,13 +41,13 @@ function data(): ClassData {
     behaviourCodes: DEFAULT_BEHAVIOURS,
     behaviourEvents: [
       // Ben is the talker; Amy is the star.
-      ev("b", "TALK", "2026-10-06", -1),
-      ev("b", "TALK", "2026-10-05", -1),
-      ev("b", "DISR", "2026-10-01", -2),
-      ev("b", "TALK", "2026-09-01", -1), // outside 4 weeks
-      ev("a", "EFF", "2026-10-06", 1),
-      ev("a", "HELP", "2026-10-02", 1),
-      ev("c", "TALK", "2026-10-06", -1),
+      ev("b", "-TA", "2026-10-06", -1),
+      ev("b", "-TA", "2026-10-05", -1),
+      ev("b", "-DI", "2026-10-01", -2),
+      ev("b", "-TA", "2026-09-01", -1), // outside 4 weeks
+      ev("a", "+EF", "2026-10-06", 1),
+      ev("a", "+HE", "2026-10-02", 1),
+      ev("c", "-TA", "2026-10-06", -1),
       // Cold-call answers count as questions, not behaviour.
       ev("a", "Q+", "2026-10-06", 1),
       ev("a", "Q+", "2026-10-05", 1),
@@ -118,7 +118,7 @@ describe("periods", () => {
     expect(two.assessments.map((a) => a.id)).toEqual(["t2"]);
     expect(two.questionMarks).toHaveLength(0);
     const prev = previousPeriod(data(), "4w", TODAY)!;
-    expect(prev.behaviourEvents.map((e) => e.code)).toEqual(["TALK"]);
+    expect(prev.behaviourEvents.map((e) => e.code)).toEqual(["-TA"]);
     expect(previousPeriod(data(), "all", TODAY)).toBeNull();
   });
 });
@@ -143,7 +143,7 @@ describe("class profile", () => {
 
   it("counts conduct without the cold-call answers", () => {
     expect(p.behaviour).toMatchObject({ positive: 2, negative: 4, net: -3 });
-    expect(p.behaviour.byCode[0]).toMatchObject({ code: "TALK", count: 3 });
+    expect(p.behaviour.byCode[0]).toMatchObject({ code: "-TA", count: 3 });
     expect(p.answers).toMatchObject({ asked: 7, answered: 4 });
   });
 
@@ -159,8 +159,8 @@ describe("class profile", () => {
 
   it("doesn't list a mostly-positive student as one to watch", () => {
     const d = data();
-    d.behaviourEvents.push(...["01", "02", "05"].map((day) => ev("a", "TALK", `2026-10-${day}`, -1)));
-    d.behaviourEvents.push(...["01", "02", "05", "06"].map((day) => ev("a", "HW+", `2026-10-${day}`, 2)));
+    d.behaviourEvents.push(...["01", "02", "05"].map((day) => ev("a", "-TA", `2026-10-${day}`, -1)));
+    d.behaviourEvents.push(...["01", "02", "05", "06"].map((day) => ev("a", "+HW", `2026-10-${day}`, 2)));
     const p = classProfile(filterToPeriod(d, "4w", TODAY), "4w", TODAY);
     expect(p.watch.map((w) => w.studentId)).toEqual(["b"]);
   });
@@ -182,7 +182,7 @@ describe("class profile", () => {
     expect(lines).toContain("Most common issue: Talking / off task (3).");
     expect(lines).toContain("Questions: 7 asked, 4 answered (57%).");
     expect(lines).toContain("2 students haven't been picked to answer in the last 4 weeks.");
-    expect(lines.some((l) => l.startsWith("3 bathroom trips, 20 min out in total; most by Cal (3)"))).toBe(true);
+    expect(lines.some((l) => l.startsWith("3 trips outside, 20 min out in total; most by Cal (3)"))).toBe(true);
     expect(lines).toContain("Strongest topic: Forces (85%); weakest: Energy (55%).");
   });
 
@@ -224,21 +224,21 @@ describe("student profile", () => {
     );
     expect(lines).toContain("One to watch: 3 negatives, mostly Talking / off task (2).");
     expect(lines).toContain("Not picked to answer a question in the last 4 weeks.");
-    expect(lines).toContain("No bathroom trips in the last 4 weeks.");
+    expect(lines).toContain("No trips outside in the last 4 weeks.");
     expect(lines).toContain("Average 45% across 2 assessments, 20 points below the class average (65%); ranked 2 of 2.");
     expect(lines).toContain("Latest: Test 2 40% (class 60%), down from 50%.");
     expect(lines).toContain("Strongest topic: Forces (70%); weakest: Energy (30%).");
 
     const cal = studentSummary(studentProfile(d.students[2], d, cls, "4w", TODAY), cls, "4w");
     expect(cal).toContain("Asked 4 times; answered 1 (25%), below the class median of 63%.");
-    expect(cal.some((l) => l.startsWith("3 bathroom trips (class average 0,8), 20 min out in total; longest 12:00."))).toBe(true);
+    expect(cal.some((l) => l.startsWith("3 trips outside (class average 0,8), 20 min out in total; longest 12:00."))).toBe(true);
     expect(cal).toContain("No marks entered for Cal in the last 4 weeks.");
   });
 });
 
 describe("helpers", () => {
   it("builds a weekly trend with empty weeks kept", () => {
-    const weeks = weeklyBehaviour([ev("a", "TALK", "2026-10-06", -1), ev("a", "EFF", "2026-09-24", 1)], "2w", TODAY);
+    const weeks = weeklyBehaviour([ev("a", "-TA", "2026-10-06", -1), ev("a", "+EF", "2026-09-24", 1)], "2w", TODAY);
     expect(weeks.map((w) => [w.week, w.net])).toEqual([
       ["2026-09-21", 1],
       ["2026-09-28", 0],
@@ -287,7 +287,7 @@ describe("parent report", () => {
     expect(lines).toContain("Answered 3 of 3 questions when asked in class.");
     expect(lines).toContain("Attendance 50% (1 absence).");
     const cal = parentSummary(profileOf(2), cls, ALL);
-    expect(cal).toContain("3 bathroom trips during lessons (20 min in total).");
+    expect(cal).toContain("3 trips outside the classroom during lessons (20 min in total).");
     expect(cal).toContain("No marks have been entered for Cal in this period yet.");
   });
 

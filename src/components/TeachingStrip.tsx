@@ -10,6 +10,7 @@ import { useBatchEntry } from "../hooks/useBatchEntry";
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
+import StudentGrid from "./StudentGrid";
 import BatchPanel from "./BatchPanel";
 import Elapsed from "./Elapsed";
 import TimerMini from "./TimerMini";
@@ -35,7 +36,11 @@ export default function TeachingStrip() {
     setFocusMode,
     userPrefs,
     setUserPrefs,
+    openNoteEditor,
+    noteDrafts,
   } = useAppPick(
+    "openNoteEditor",
+    "noteDrafts",
     "currentClass",
     "desks",
     "setDesks",
@@ -182,7 +187,7 @@ export default function TeachingStrip() {
 
         {/* Who's out, at the top, so a trip ends with one tap whoever's row is out of sight. */}
         {outNow.length > 0 && !batch.active && (
-          <div className="strip-out no-print" role="group" aria-label="Out at the bathroom">
+          <div className="strip-out no-print" role="group" aria-label="Outside the classroom">
             {outNow.map((v) => {
               const s = byId.get(v.studentId);
               return (
@@ -192,7 +197,7 @@ export default function TeachingStrip() {
                   title="Tap when the student is back"
                   onClick={() => lesson.toggleBathroom(v.studentId)}
                 >
-                  <Icon name="wc" size={16} />
+                  <Icon name="door_open" size={16} />
                   {s ? displayStudentName(s, userPrefs.seatNameStyle) : v.studentId} · <Elapsed visit={v} />
                 </button>
               );
@@ -305,6 +310,15 @@ export default function TeachingStrip() {
             <button onClick={() => setPickerOpen(true)} disabled={busy}>
               <Icon name="person_raised_hand" size={20} /> Pick a student
             </button>
+            <button
+              onClick={() => {
+                closeActions();
+                openNoteEditor({ kind: "quick", studentId: "", fixedStudent: true });
+              }}
+              disabled={busy}
+            >
+              <Icon name="edit_note" size={20} /> {noteDrafts[""] ? "Quick note (draft)" : "Quick note"}
+            </button>
             {/* Styled as on the room plan, so the two teaching modes read the same. */}
             {lesson.running ? (
               <button
@@ -323,16 +337,25 @@ export default function TeachingStrip() {
         )}
 
         {actionStudent && !batch.active && (
-          <div ref={sheetRef} className="strip-sheet behaviour-popover">
-            <StudentActions
-              student={actionStudent}
-              status={statusOf(actionStudent.id)}
-              outVisit={outVisitOf(actionStudent.id)}
-              onAttendance={(status) => markAttendance(actionStudent.id, status)}
-              onBathroom={() => toggleBathroom(actionStudent.id)}
-              onBehaviour={(c) => logBehaviour(actionStudent.id, c)}
-              onClose={closeActions}
-            />
+          // The grid fits the strip; the round pop-up needs a seat to centre on, so the strip shows the grid instead.
+          <div ref={sheetRef} className={`strip-sheet behaviour-popover ${userPrefs.seatPopupStyle === "list" ? "" : "grid"}`}>
+            {(() => {
+              const actions = {
+                student: actionStudent,
+                status: statusOf(actionStudent.id),
+                outVisit: outVisitOf(actionStudent.id),
+                onAttendance: (status: AttendanceStatus) => markAttendance(actionStudent.id, status),
+                onBathroom: () => toggleBathroom(actionStudent.id),
+                onBehaviour: (c: BehaviourCode) => logBehaviour(actionStudent.id, c),
+                onNote: () => {
+                  closeActions();
+                  openNoteEditor({ kind: "quick", studentId: actionStudent.id, fixedStudent: true });
+                },
+                noteDraft: !!noteDrafts[actionStudent.id],
+                onClose: closeActions,
+              };
+              return userPrefs.seatPopupStyle === "list" ? <StudentActions {...actions} /> : <StudentGrid {...actions} />;
+            })()}
           </div>
         )}
       </aside>

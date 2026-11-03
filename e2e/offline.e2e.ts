@@ -30,7 +30,7 @@ test("waits for the folder, works from this computer's copy, and copies the chan
 
   await markFirstAbsent(page);
   // A class rename can't be copied back safely, so it waits for the folder.
-  await nav(page, "Notes");
+  await nav(page, "Class");
   await expect(page.getByRole("button", { name: "Rename class" })).toBeDisabled();
 
   await page.evaluate(() => window.__ckDemo!.folderBack());
