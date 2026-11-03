@@ -2,7 +2,7 @@
 // folder. File layout (all portable, Excel/Notepad friendly):
 //
 // <dataDir>/
-//   behaviours.csv                        code,label,kind,points,color
+//   behaviours.csv                        code,label,kind,points,color,icon
 //   classes/<class>/class.md              front matter + free notes
 //   classes/<class>/students.csv          id,first_name,last_name,gender,flags,notes
 //   classes/<class>/attendance.csv        date,student_id,status,note
@@ -232,7 +232,12 @@ export async function saveAttendance(dataDir: string, className: string, entries
 
 // ---------- behaviour catalog + events ----------
 
-const BEHAVIOUR_CODE_COLS = ["code", "label", "kind", "points", "color"];
+const BEHAVIOUR_CODE_COLS = ["code", "label", "kind", "points", "color", "icon"];
+
+/** A behaviour saved before buttons had icons gets the one its default namesake has. */
+function defaultIconFor(code: string, label: string): string {
+  return DEFAULT_BEHAVIOURS.find((d) => d.code === code || d.label.toLowerCase() === label.toLowerCase())?.icon ?? "";
+}
 
 export async function loadBehaviourCodes(dataDir: string): Promise<BehaviourCode[]> {
   const rows = await loadCsvFile(p(dataDir, "behaviours.csv"));
@@ -245,12 +250,14 @@ export async function loadBehaviourCodes(dataDir: string): Promise<BehaviourCode
       points: num(r.points),
       // Colours from before the fixed palette snap to its nearest shade.
       color: snapBehaviourColour(r.color ?? ""),
+      // No icon column yet (an older file): the default's icon; a blank one is "none".
+      icon: r.icon ?? defaultIconFor(r.code, r.label ?? r.code),
     }));
   return codes.length ? codes : DEFAULT_BEHAVIOURS;
 }
 
 export async function saveBehaviourCodes(dataDir: string, codes: BehaviourCode[]): Promise<void> {
-  const rows = codes.map((c) => ({ code: c.code, label: c.label, kind: c.kind, points: c.points, color: c.color }));
+  const rows = codes.map((c) => ({ code: c.code, label: c.label, kind: c.kind, points: c.points, color: c.color, icon: c.icon }));
   await getFS().writeAtomic(p(dataDir, "behaviours.csv"), stringifyCsv(rows, BEHAVIOUR_CODE_COLS));
 }
 
@@ -278,6 +285,27 @@ export async function saveBehaviourEvents(dataDir: string, className: string, ev
     note: e.note,
   }));
   await getFS().writeAtomic(p(classDir(dataDir, className), "behaviour.csv"), stringifyCsv(rows, BEHAVIOUR_EVENT_COLS));
+}
+
+/**
+ * Renamed behaviour codes (old → new), carried into every class's log,
+ * archived classes too, so each logged event keeps its button. A class with
+ * nothing to rename isn't rewritten. Returns how many classes changed.
+ */
+export async function renameBehaviourCodesInClasses(dataDir: string, renames: Map<string, string>): Promise<number> {
+  if (renames.size === 0) return 0;
+  let changed = 0;
+  for (const info of await listClasses(dataDir)) {
+    const events = await loadBehaviourEvents(dataDir, info.name);
+    if (!events.some((e) => renames.has(e.code))) continue;
+    await saveBehaviourEvents(
+      dataDir,
+      info.name,
+      events.map((e) => (renames.has(e.code) ? { ...e, code: renames.get(e.code)! } : e)),
+    );
+    changed++;
+  }
+  return changed;
 }
 
 // ---------- bathroom visits (per class) ----------

@@ -44,8 +44,8 @@ beforeEach(async () => {
     { date: "2026-03-05", studentId: "s2", status: "P", note: "" },
   ]);
   await repo.saveBehaviourEvents(DIR, CLS, [
-    { timestamp: "2026-01-10T09:15:00.000Z", studentId: "s1", code: "EFF", points: 1, note: "" },
-    { timestamp: "2026-03-05T10:20:00.000Z", studentId: "s2", code: "TALK", points: -1, note: "chatting" },
+    { timestamp: "2026-01-10T09:15:00.000Z", studentId: "s1", code: "+EF", points: 1, note: "" },
+    { timestamp: "2026-03-05T10:20:00.000Z", studentId: "s2", code: "-TA", points: -1, note: "chatting" },
   ]);
   await repo.saveBathroomVisits(DIR, CLS, [
     { date: "2026-01-10", studentId: "s1", start: "2026-01-10T09:30:00.000Z", end: "2026-01-10T09:34:10.000Z" },

@@ -52,11 +52,14 @@ export interface AttendanceEntry {
 }
 
 export interface BehaviourCode {
+  /** Its short ID, at most three characters (e.g. +HW): on the tiles, and in the class logs. */
   code: string;
   label: string;
   kind: "positive" | "negative";
   points: number;
   color: string;
+  /** A Material Symbol from behaviourIcons.ts; "" = none. */
+  icon: string;
 }
 
 export interface BehaviourEvent {
@@ -439,6 +442,7 @@ export const ANSWERED_BEHAVIOUR: BehaviourCode = {
   kind: "positive",
   points: 1,
   color: BC.indigo,
+  icon: "front_hand",
 };
 export const NO_ANSWER_BEHAVIOUR: BehaviourCode = {
   code: "Q-",
@@ -446,17 +450,18 @@ export const NO_ANSWER_BEHAVIOUR: BehaviourCode = {
   kind: "negative",
   points: -1,
   color: BC.slate,
+  icon: "help",
 };
 export const ANSWER_BEHAVIOURS: BehaviourCode[] = [ANSWERED_BEHAVIOUR, NO_ANSWER_BEHAVIOUR];
 
 export const DEFAULT_BEHAVIOURS: BehaviourCode[] = [
-  { code: "EFF", label: "Great effort", kind: "positive", points: 1, color: BC.green },
-  { code: "HELP", label: "Helping others", kind: "positive", points: 1, color: BC.teal },
-  { code: "ANS", label: "Great answer", kind: "positive", points: 1, color: BC.blue },
-  { code: "HW+", label: "Homework done well", kind: "positive", points: 2, color: BC.purple },
-  { code: "TALK", label: "Talking / off task", kind: "negative", points: -1, color: BC.amber },
-  { code: "DISR", label: "Disruptive", kind: "negative", points: -2, color: BC.orange },
-  { code: "HW-", label: "Missing homework", kind: "negative", points: -1, color: BC.red },
-  { code: "LATE", label: "Late to lesson", kind: "negative", points: -1, color: BC.pink },
+  { code: "+EF", label: "Great effort", kind: "positive", points: 1, color: BC.green, icon: "trending_up" },
+  { code: "+HE", label: "Helping others", kind: "positive", points: 1, color: BC.teal, icon: "handshake" },
+  { code: "+AN", label: "Great answer", kind: "positive", points: 1, color: BC.blue, icon: "lightbulb" },
+  { code: "+HW", label: "Homework done well", kind: "positive", points: 2, color: BC.purple, icon: "task_alt" },
+  { code: "-TA", label: "Talking / off task", kind: "negative", points: -1, color: BC.amber, icon: "record_voice_over" },
+  { code: "-DI", label: "Disruptive", kind: "negative", points: -2, color: BC.orange, icon: "campaign" },
+  { code: "-HW", label: "Missing homework", kind: "negative", points: -1, color: BC.red, icon: "assignment_late" },
+  { code: "-LA", label: "Late to lesson", kind: "negative", points: -1, color: BC.pink, icon: "schedule" },
   ...ANSWER_BEHAVIOURS,
 ];

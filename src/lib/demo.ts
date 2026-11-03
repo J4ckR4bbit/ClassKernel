@@ -195,7 +195,7 @@ export async function seedDemoData(): Promise<string> {
     t.setDate(t.getDate() - daysAgo);
     events.push({ timestamp: t.toISOString(), studentId: s.id, code: code.code, points: code.points, note: "" });
   }
-  events.push({ timestamp: nowIso(), studentId: students[0].id, code: "EFF", points: 1, note: "Excellent start" });
+  events.push({ timestamp: nowIso(), studentId: students[0].id, code: "+EF", points: 1, note: "Excellent start" });
   await repo.saveBehaviourEvents(dataDir, className, events);
 
   // Timed bathroom trips over four weeks; one student goes far more often.

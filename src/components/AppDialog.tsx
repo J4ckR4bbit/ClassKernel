@@ -33,6 +33,7 @@ export default function AppDialog() {
           autoFocus
           value={text}
           placeholder={dialog.placeholder}
+          maxLength={dialog.maxLength}
           {...(dialog.secret
             ? { type: "password", inputMode: "numeric" as const, autoComplete: "off", className: "pin-input" }
             : {})}

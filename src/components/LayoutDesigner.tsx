@@ -1,12 +1,12 @@
-import { ReactNode, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { NEEDS_DATA_FOLDER, useAppPick, useWorkingFromCopy } from "../store/appStore";
 import { newId } from "../lib/id";
 import { DEFAULT_DESK_SIZES, Desk, DeskShape, FrontEdge } from "../lib/types";
 import { PASTEL_PRESETS } from "../lib/tableColours";
 import { useCanvasZoom } from "../hooks/useCanvasZoom";
-import { useDismissOnOutside } from "../hooks/useDismissOnOutside";
 import RoomCanvas, { GRID, ROOM_H, ROOM_W, svgPointFromClient, toRoomCoords } from "./RoomCanvas";
 import Icon from "./Icon";
+import Popover from "./Popover";
 
 const PALETTE: Array<{ shape: DeskShape; label: string; title: string }> = [
   { shape: "single", label: "Single", title: "Add a single desk" },
@@ -557,51 +557,6 @@ export default function LayoutDesigner() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-/**
- * A toolbar button that opens a small panel under it (closed by a tap outside
- * or Escape). Children may be a function given `close`, for actions that open
- * a dialog.
- */
-function Popover({
-  label,
-  icon,
-  count,
-  children,
-}: {
-  label: string;
-  icon: "tune" | "save";
-  count?: number;
-  children: ReactNode | ((close: () => void) => ReactNode);
-}) {
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-  const toggle = useRef<HTMLButtonElement>(null);
-  useDismissOnOutside(box, open, () => {
-    const inside = box.current?.contains(document.activeElement);
-    setOpen(false);
-    if (inside) toggle.current?.focus();
-  });
-  // Focus goes back to the toggle, so a dialog opened from the panel hands it back there.
-  const close = () => {
-    setOpen(false);
-    toggle.current?.focus();
-  };
-  return (
-    <div className="popover-anchor" ref={box}>
-      <button ref={toggle} className={`small ${open ? "on" : ""}`} aria-expanded={open} onClick={() => setOpen(!open)}>
-        <Icon name={icon} size={18} /> {label}
-        {count ? <span className="popover-count">{count}</span> : null}
-        <Icon name="arrow_drop_down" size={18} />
-      </button>
-      {open && (
-        <div className="popover-panel" role="group" aria-label={label}>
-          {typeof children === "function" ? children(close) : children}
-        </div>
-      )}
     </div>
   );
 }

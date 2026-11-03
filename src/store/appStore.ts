@@ -32,6 +32,7 @@ import {
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
 import { enterDock, enterFullscreen, restoreWindow } from "../lib/teachingWindow";
 import { setTimeZone } from "../lib/time";
+import { applyRenames, describeRenames, shortenCodes } from "../lib/behaviourCodes";
 import { DASHBOARDS_ID } from "../plugins/registry";
 import {
   Assessment,
@@ -119,6 +120,8 @@ export interface DialogRequest {
   initial?: string;
   /** Mask the prompt's input and offer a number pad (PIN entry). */
   secret?: boolean;
+  /** The most characters the prompt's input takes. */
+  maxLength?: number;
 }
 
 export interface AppState {
@@ -258,6 +261,11 @@ export interface AppState {
   removeBehaviourEvents(timestamp: string, code: string, studentIds: string[]): Promise<void>;
   setBehaviourEvents(events: BehaviourEvent[]): Promise<void>;
   setBehaviourCodes(codes: BehaviourCode[]): Promise<void>;
+  /**
+   * Rename one behaviour's code, carrying it into every class's log so each
+   * logged event keeps its button. Resolves false (nothing changed) on a clash.
+   */
+  renameBehaviourCode(oldCode: string, newCode: string): Promise<boolean>;
   setBathroomVisits(visits: BathroomVisit[]): Promise<void>;
   /** Begin a bathroom trip for the student (no-op if one is already running). */
   startBathroomVisit(studentId: string): Promise<void>;
@@ -500,13 +508,33 @@ export const useApp = create<AppState>((set, get) => {
       repo.loadTimerPresets(path),
     ]);
     setTimeZone(userPrefs.timeZone);
+    // Codes are three characters now: shorten any longer ones, once, in the
+    // logs first, so an interrupted run is simply finished next time. Only in
+    // the data folder itself: renamed rows in this computer's copy would come
+    // back as duplicates when it is joined to the folder.
+    let codes = behaviourCodes;
+    const renames = kind === "data" ? shortenCodes(behaviourCodes) : new Map<string, string>();
+    if (renames.size > 0) {
+      try {
+        await repo.renameBehaviourCodesInClasses(path, renames);
+        codes = applyRenames(behaviourCodes, renames);
+        await repo.saveBehaviourCodes(path, codes);
+      } catch (e) {
+        console.error("Couldn't shorten the behaviour codes", e);
+        renames.clear();
+        codes = behaviourCodes;
+      }
+    }
     const previous = get().currentClass;
-    set({ dataDir: path, classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, currentClass: null });
+    set({ dataDir: path, classes, behaviourCodes: codes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, currentClass: null });
     if (kind === "data") set({ folderStatus: null });
     else if (realDir) set({ folderStatus: { kind: "copy", realDir, since: nowIso(), copyRefreshedAt: "", back: false } });
     const active = classes.filter((c) => !c.archived);
     const reopen = keepClass && previous && classes.some((c) => c.name === previous) ? previous : active[0]?.name;
     if (reopen) await get().openClass(reopen);
+    if (renames.size > 0) {
+      get().showToast(`Behaviour codes are now 3 characters: ${describeRenames(renames)}`, { label: "OK", run: () => {} });
+    }
   },
 
   async openLocalCopy() {
@@ -894,6 +922,25 @@ export const useApp = create<AppState>((set, get) => {
     const { dataDir } = get();
     set({ behaviourCodes: codes });
     if (dataDir) await guarded("behaviour buttons", () => repo.saveBehaviourCodes(dataDir, codes));
+  },
+
+  async renameBehaviourCode(oldCode, newCode) {
+    const { dataDir, behaviourCodes, behaviourEvents } = get();
+    if (!newCode || newCode === oldCode || behaviourCodes.some((c) => c.code === newCode)) return false;
+    const renames = new Map([[oldCode, newCode]]);
+    const codes = applyRenames(behaviourCodes, renames);
+    set({
+      behaviourCodes: codes,
+      behaviourEvents: behaviourEvents.map((e) => (e.code === oldCode ? { ...e, code: newCode } : e)),
+    });
+    if (dataDir) {
+      // The logs first, then the buttons: a failure leaves the old code, still matching its events.
+      await guarded("the behaviour logs", async () => {
+        await repo.renameBehaviourCodesInClasses(dataDir, renames);
+        await repo.saveBehaviourCodes(dataDir, codes);
+      });
+    }
+    return true;
   },
 
   async setBathroomVisits(bathroomVisits) {

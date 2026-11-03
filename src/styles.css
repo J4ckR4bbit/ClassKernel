@@ -712,6 +712,16 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .bh-swatches { flex-wrap: wrap; gap: 4px; max-width: 290px; }
 .bh-swatches .swatch { width: 24px; height: 24px; min-height: 24px; }
 .bh-label-input { color: var(--on-fill); font-weight: 700; border-color: transparent; }
+/* The behaviour table lets the icon picker hang out of it; its corners are rounded by hand instead. */
+table.data.bh-table { overflow: visible; }
+table.data.bh-table thead th:first-child { border-top-left-radius: var(--md-shape-m); }
+table.data.bh-table thead th:last-child { border-top-right-radius: var(--md-shape-m); }
+button.small.icon-pick { width: 44px; padding: 0; color: var(--text); }
+.popover-panel.icon-picker { width: 344px; max-height: min(60vh, 460px); z-index: var(--z-menu); }
+.icon-group { width: 100%; }
+.icon-grid { display: grid; grid-template-columns: repeat(8, 36px); gap: 2px; }
+button.icon-choice { width: 36px; height: 36px; min-height: 36px; padding: 0; border-radius: var(--md-shape-s); border-color: transparent; color: var(--text); }
+button.icon-choice.on { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
 .bh-label-input:focus { outline-color: var(--text); }
 
 .stepper { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--md-outline); border-radius: 20px; padding: 2px; background: var(--panel); }
@@ -738,7 +748,7 @@ table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
 .layout-caption { font-size: 12px; }
 .layout-hint { font-size: 13px; }
 .layout-sep { width: 1px; align-self: stretch; margin: 4px 2px; background: var(--md-outline-variant); }
-.layout-designer button.small.on { background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; }
+.layout-designer button.small.on, .popover-anchor > button.on { background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; }
 /* "Default" colour: the seat's own, shown as a struck-through swatch. */
 .swatch.none {
   background:
