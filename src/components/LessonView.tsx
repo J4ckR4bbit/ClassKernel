@@ -10,6 +10,8 @@ import RoomCanvas from "./RoomCanvas";
 import { fitView } from "../lib/room";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
+import StudentGrid from "./StudentGrid";
+import StudentRing from "./StudentRing";
 import BatchPanel from "./BatchPanel";
 import Elapsed from "./Elapsed";
 import Icon from "./Icon";
@@ -109,6 +111,7 @@ export default function LessonView() {
   // Tapping anywhere off the pop-up closes it without recording anything.
   useDismissOnOutside(popRef, !!popover, () => setPopover(null));
   const [popPos, setPopPos] = useState<{ left: number; top: number } | null>(null);
+  const popStyle = userPrefs.seatPopupStyle;
   useLayoutEffect(() => {
     if (!popover || !canvasBoxRef.current || !popRef.current) {
       setPopPos(null);
@@ -118,11 +121,20 @@ export default function LessonView() {
     // (getBoundingClientRect would be scaled by the app zoom).
     const wrap = canvasBoxRef.current;
     const pop = popRef.current;
+    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, hi));
+    if (popStyle === "round") {
+      // Centred on the seat that was tapped, kept on the plan (with room above for the name).
+      setPopPos({
+        left: clamp(popover.x - pop.offsetWidth / 2, 4, wrap.offsetWidth - pop.offsetWidth - 4),
+        top: clamp(popover.y - pop.offsetHeight / 2, 34, wrap.offsetHeight - pop.offsetHeight - 4),
+      });
+      return;
+    }
     setPopPos({
       left: Math.max(4, Math.min(popover.x + 24, wrap.offsetWidth - pop.offsetWidth - 4)),
       top: Math.max(4, Math.min(popover.y - 40, wrap.offsetHeight - pop.offsetHeight - 4)),
     });
-  }, [popover]);
+  }, [popover, popStyle]);
 
   if (desks.length === 0 || planSeats.length === 0) {
     return (
@@ -357,27 +369,33 @@ export default function LessonView() {
           }}
         />
 
-        {popover && popStudent && (
-          <div
-            ref={popRef}
-            className="behaviour-popover"
-            style={{
+        {popover &&
+          popStudent &&
+          (() => {
+            const actions = {
+              student: popStudent,
+              status: statusOf(popStudent.id),
+              outVisit: outVisitOf(popStudent.id),
+              onAttendance: (status: AttendanceStatus) => markAttendance(popStudent.id, status),
+              onBathroom: () => toggleBathroom(popStudent.id),
+              onBehaviour: (c: BehaviourCode) => logBehaviour(popStudent.id, c),
+              onClose: () => setPopover(null),
+            };
+            const at = {
               left: popPos?.left ?? popover.x + 24,
               top: popPos?.top ?? Math.max(popover.y - 40, 4),
-              visibility: popPos ? "visible" : "hidden",
-            }}
-          >
-            <StudentActions
-              student={popStudent}
-              status={statusOf(popStudent.id)}
-              outVisit={outVisitOf(popStudent.id)}
-              onAttendance={(status) => markAttendance(popStudent.id, status)}
-              onBathroom={() => toggleBathroom(popStudent.id)}
-              onBehaviour={(c) => logBehaviour(popStudent.id, c)}
-              onClose={() => setPopover(null)}
-            />
-          </div>
-        )}
+              visibility: popPos ? ("visible" as const) : ("hidden" as const),
+            };
+            return popStyle === "round" ? (
+              <div ref={popRef} className="ring-anchor" style={{ position: "absolute", ...at }}>
+                <StudentRing {...actions} />
+              </div>
+            ) : (
+              <div ref={popRef} className={`behaviour-popover ${popStyle === "grid" ? "grid" : ""}`} style={at}>
+                {popStyle === "grid" ? <StudentGrid {...actions} /> : <StudentActions {...actions} />}
+              </div>
+            );
+          })()}
       </div>
       {pickerOpen && (
         <StudentPicker

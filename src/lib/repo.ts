@@ -52,7 +52,9 @@ import {
   QuestionMark,
   RoomConfig,
   SeatAssignment,
+  SEAT_POPUP_STYLES,
   SeatNameStyle,
+  SeatPopupStyle,
   SeatingPrefs,
   Student,
   TimerPreset,
@@ -907,6 +909,9 @@ export async function loadUserPrefs(dataDir: string): Promise<UserPrefs> {
       .map((s) => s.trim())
       .filter(Boolean),
     teachingStyle: kv.get("teaching_style") === "strip" ? "strip" : "room",
+    seatPopupStyle: SEAT_POPUP_STYLES.includes(kv.get("seat_popup_style") as SeatPopupStyle)
+      ? (kv.get("seat_popup_style") as SeatPopupStyle)
+      : "list",
     dockSide: kv.get("dock_side") === "right" ? "right" : "left",
     reseatPinHash: /^[0-9a-f]{64}$/.test(kv.get("reseat_pin") ?? "") ? kv.get("reseat_pin")! : "",
     // An unknown zone (typo, or one this machine doesn't know) falls back to the device's.
@@ -957,6 +962,7 @@ export async function saveUserPrefs(dataDir: string, prefs: UserPrefs): Promise<
     { key: "lesson_bar_side", value: prefs.lessonBarSide },
     { key: "plugins_enabled", value: prefs.enabledPlugins.join(";") },
     { key: "teaching_style", value: prefs.teachingStyle },
+    { key: "seat_popup_style", value: prefs.seatPopupStyle },
     { key: "dock_side", value: prefs.dockSide },
     { key: "reseat_pin", value: prefs.reseatPinHash },
     { key: "time_zone", value: prefs.timeZone },

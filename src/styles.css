@@ -901,6 +901,79 @@ button.icon-choice.on { background: var(--md-secondary-container); color: var(--
 .behaviour-popover .att-legend { margin: 4px 0 8px; }
 .bh-btn { display: flex; justify-content: flex-start; width: 100%; text-align: left; margin-bottom: 6px; border-radius: var(--md-shape-s); color: var(--on-fill); border: none; padding: 9px 12px; }
 
+/* The list pop-up's OUTSIDE and Note side by side. */
+.sa-row { display: flex; gap: 6px; }
+.sa-row .bathroom-btn { flex: 1; }
+.note-btn {
+  flex: none; margin-bottom: 8px; border-radius: var(--md-shape-s); padding: 9px 12px; min-height: 0;
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; font-weight: 700;
+}
+.note-btn.draft { border: 2px dashed var(--md-on-secondary-container); }
+
+/* Grid pop-up: a near-square of tiles, four across. */
+.behaviour-popover.grid { width: 336px; }
+.sg-top { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.sg-att { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.sg-att .att-btn { width: auto; height: 34px; min-height: 34px; border-radius: var(--md-shape-xs); }
+.sg-big {
+  flex-direction: column; gap: 2px; min-height: 71px; padding: 4px; border-radius: var(--md-shape-s); font-weight: 700; font-size: 13px;
+  letter-spacing: 0.5px; font-variant-numeric: tabular-nums;
+}
+.sg-outside { background: var(--away-container); border: 1px solid var(--away-outline); color: var(--away); }
+.sg-outside.out { background: var(--away); border-color: var(--away); color: var(--on-fill); }
+.sg-note { background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; }
+.sg-note.draft { border: 2px dashed var(--md-on-secondary-container); }
+.sg-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.sg-tiles + .sg-tiles { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.sg-tile {
+  flex-direction: column; gap: 0; min-height: 70px; padding: 4px 2px; border: none; border-radius: var(--md-shape-s);
+  color: var(--on-fill); line-height: 1.1;
+}
+.sg-code { font-size: 19px; font-weight: 800; letter-spacing: 0.5px; }
+.sg-points { font-size: 11px; font-weight: 500; opacity: 0.9; font-variant-numeric: tabular-nums; }
+
+/* Round pop-up: rings around the tapped seat. Only the rings take taps; the
+   corners of their square let a tap through to the seat beneath. */
+.ring-anchor { z-index: var(--z-popover); pointer-events: none; }
+.student-ring { position: relative; pointer-events: none; animation: ring-in 0.14s ease-out; }
+@keyframes ring-in { from { opacity: 0; transform: scale(0.9); } }
+@media (prefers-reduced-motion: reduce) { .student-ring { animation: none; } }
+.student-ring svg { display: block; overflow: visible; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28)); }
+.ring-back { fill: var(--md-surface-container); }
+.ring-name {
+  position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -4px); pointer-events: auto;
+  padding: 3px 12px; border-radius: 14px; white-space: nowrap; font-weight: 700; font-size: 15px;
+  background: var(--md-inverse-surface); color: var(--md-inverse-on-surface); box-shadow: var(--md-elev-1);
+}
+.ring-seg { pointer-events: auto; cursor: pointer; outline: none; }
+.ring-seg > path { stroke: none; transition: filter 0.1s; }
+.ring-seg:hover > path { filter: brightness(1.08); }
+.ring-seg:active > path { filter: brightness(0.92); }
+.ring-seg:focus-visible > path { stroke: var(--md-primary); stroke-width: 3px; }
+.ring-seg text { text-anchor: middle; pointer-events: none; font-weight: 700; }
+.ring-icon { fill: currentColor; }
+.ring-letter { font-size: 17px; }
+.ring-word { font-size: 10.5px; letter-spacing: 0.6px; }
+.ring-code { font-size: 15px; font-weight: 800; letter-spacing: 0.4px; }
+.ring-att > path { fill: var(--md-surface-container-high); }
+.ring-att { color: var(--text); fill: var(--text); }
+.ring-att.on.P > path { fill: var(--md-primary); }
+.ring-att.on.A > path { fill: var(--att-absent); }
+.ring-att.on.E > path { fill: var(--att-excused); }
+.ring-att.on.P, .ring-att.on.A, .ring-att.on.E { fill: var(--on-fill); }
+.ring-att.on.L > path { fill: var(--att-late); }
+.ring-att.on.L { fill: var(--on-att-late); }
+.ring-outside > path { fill: var(--away-container); }
+.ring-outside { color: var(--away); fill: var(--away); }
+.ring-outside.out > path { fill: var(--away); }
+.ring-outside.out { color: var(--on-fill); fill: var(--on-fill); }
+.ring-note > path { fill: var(--md-secondary-container); }
+.ring-note { color: var(--md-on-secondary-container); fill: var(--md-on-secondary-container); }
+.ring-note.draft > path { stroke: var(--md-on-secondary-container); stroke-width: 2px; stroke-dasharray: 5 4; }
+.ring-behaviour .ring-on-fill { color: var(--on-fill); fill: var(--on-fill); }
+.ring-close > path { fill: var(--md-surface-container-highest); }
+.ring-close { color: var(--text); }
+
 /* bathroom timer */
 .bathroom-btn {
   display: flex; justify-content: flex-start; width: 100%; text-align: left; margin-bottom: 8px; border-radius: var(--md-shape-s);
@@ -1394,6 +1467,7 @@ button.icon-choice.on { background: var(--md-secondary-container); color: var(--
   position: absolute; left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 80%; overflow-y: auto; z-index: var(--z-popover);
 }
 .strip-mode .batch-panel { margin-bottom: 0; }
+.strip-sheet.grid { width: auto; }
 
 /* Narrow windows (the docked strip): dialogs and the picker fit the column. */
 @media (max-width: 420px) {

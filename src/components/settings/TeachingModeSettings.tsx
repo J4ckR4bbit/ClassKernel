@@ -1,5 +1,5 @@
 import { useApp, useAppPick } from "../../store/appStore";
-import { LESSON_BAR_SIDES, LessonBarSide, TeachingStyle } from "../../lib/types";
+import { LESSON_BAR_SIDES, LessonBarSide, SeatPopupStyle, TeachingStyle } from "../../lib/types";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../../lib/pin";
 import { IconName } from "../Icon";
 import Segmented from "../Segmented";
@@ -20,6 +20,12 @@ export default function TeachingModeSettings() {
     "showToast",
   );
   const hasPin = !!userPrefs.reseatPinHash;
+
+  const popupStyles: Array<{ value: SeatPopupStyle; label: string; icon: IconName }> = [
+    { value: "list", label: "List", icon: "menu" },
+    { value: "grid", label: "Grid", icon: "apps" },
+    { value: "round", label: "Round", icon: "donut_large" },
+  ];
 
   const styles: Array<{ value: TeachingStyle; label: string; icon: IconName }> = [
     { value: "room", label: "Room plan (full screen)", icon: "fullscreen" },
@@ -75,6 +81,21 @@ export default function TeachingModeSettings() {
         options={styles}
         value={userPrefs.teachingStyle}
         onChange={(v) => void setUserPrefs({ ...userPrefs, teachingStyle: v })}
+      />
+
+      <h4>Student pop-up</h4>
+      <p className="muted lead">
+        What opens when you tap a student on the room plan, on the Lesson page and in teaching mode. <b>List</b> is a
+        column of labelled buttons. <b>Grid</b> is a square of tiles, each behaviour picked out by its colour, icon and
+        three-character code. <b>Round</b> opens rings around the seat you tapped: attendance, OUTSIDE and Note inside,
+        the behaviours outside, positives along the top and negatives along the bottom. The side panel uses the grid
+        for Round.
+      </p>
+      <Segmented
+        label="Student pop-up"
+        options={popupStyles}
+        value={userPrefs.seatPopupStyle}
+        onChange={(v) => void setUserPrefs({ ...userPrefs, seatPopupStyle: v })}
       />
 
       <h4>Side panel edge</h4>

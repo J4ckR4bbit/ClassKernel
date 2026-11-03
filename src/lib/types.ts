@@ -301,6 +301,10 @@ export const LESSON_BAR_SIDES: LessonBarSide[] = ["top", "right", "bottom", "lef
  */
 export type TeachingStyle = "room" | "strip";
 
+/** How a student's actions open on the room plan: today's list, a grid of tiles, or a ring around the seat. */
+export type SeatPopupStyle = "list" | "grid" | "round";
+export const SEAT_POPUP_STYLES: SeatPopupStyle[] = ["list", "grid", "round"];
+
 /** Which screen edge the teaching strip docks to. */
 export type DockSide = "left" | "right";
 
@@ -337,6 +341,8 @@ export interface UserPrefs {
   enabledPlugins: string[];
   /** Which teaching mode the Teaching mode button opens. */
   teachingStyle: TeachingStyle;
+  /** How a tapped student's actions open on the room plan (Lesson and teaching mode). */
+  seatPopupStyle: SeatPopupStyle;
   /** Which screen edge the teaching strip docks to. */
   dockSide: DockSide;
   /**
@@ -387,6 +393,7 @@ export const DEFAULT_USER_PREFS: UserPrefs = {
   lessonBarSide: "left",
   enabledPlugins: [],
   teachingStyle: "room",
+  seatPopupStyle: "list",
   dockSide: "left",
   reseatPinHash: "",
   timeZone: "",

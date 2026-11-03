@@ -5,7 +5,8 @@ import Elapsed from "./Elapsed";
 import Icon from "./Icon";
 import BehaviourButton from "./BehaviourButton";
 
-interface Props {
+/** What every style of a student's pop-up (list, grid, round) is given. */
+export interface StudentActionProps {
   student: Student;
   status: AttendanceStatus | undefined;
   /** The student's running trip outside the classroom, if they're out now. */
@@ -13,24 +14,37 @@ interface Props {
   onAttendance: (status: AttendanceStatus) => void;
   onBathroom: () => void;
   onBehaviour: (code: BehaviourCode) => void;
+  /** Write a note about the student; left out, there's no Note button. */
+  onNote?: () => void;
+  /** A note about them is waiting as a draft. */
+  noteDraft?: boolean;
   onClose: () => void;
 }
 
-/**
- * Everything the teacher can record for one student during a lesson:
- * attendance, the OUTSIDE timer and the behaviour buttons. Shown as the seat
- * popover on the room plan and as a sheet in the teaching strip.
- */
-export default function StudentActions({ student, status, outVisit, onAttendance, onBathroom, onBehaviour, onClose }: Props) {
-  const { behaviourCodes, userPrefs } = useAppPick("behaviourCodes", "userPrefs");
-  const positives = behaviourCodes.filter((c) => c.kind === "positive");
-  const negatives = behaviourCodes.filter((c) => c.kind === "negative");
+export const ATTENDANCE_CODES: AttendanceStatus[] = ["P", "A", "L", "E"];
+export const ATTENDANCE_WORDS: Record<AttendanceStatus, string> = { P: "Present", A: "Absent", L: "Late", E: "Excused" };
+
+/** The behaviours in two groups, positives first, so a hurried tap doesn't land on the wrong kind. */
+export function useBehaviourGroups() {
+  const { behaviourCodes } = useAppPick("behaviourCodes");
+  return {
+    positives: behaviourCodes.filter((c) => c.kind === "positive"),
+    negatives: behaviourCodes.filter((c) => c.kind === "negative"),
+  };
+}
+
+/** The student's name as this screen may show it: in privacy mode, the way the seats show it. */
+export function usePopupName(student: Student): string {
+  const { userPrefs } = useAppPick("userPrefs");
+  return userPrefs.privacyMode ? displayStudentName(student, userPrefs.seatNameStyle) : studentName(student);
+}
+
+/** The pop-up's name line, with flags and notes where Settings allows, and the close button. */
+export function StudentHead({ student, onClose }: { student: Student; onClose: () => void }) {
+  const { userPrefs } = useAppPick("userPrefs");
   const showFlags = student.flags && (!userPrefs.privacyMode || userPrefs.popoverShowFlags);
   const showNotes = student.notes && (!userPrefs.privacyMode || userPrefs.popoverShowNotes);
-
-  // The class can see this pop-up: in privacy mode it names the student as the seats do.
-  const name = userPrefs.privacyMode ? displayStudentName(student, userPrefs.seatNameStyle) : studentName(student);
-
+  const name = usePopupName(student);
   return (
     <>
       <div className="sa-head">
@@ -51,8 +65,33 @@ export default function StudentActions({ student, status, outVisit, onAttendance
         </button>
       </div>
       {showNotes && <p className="muted lead">{student.notes}</p>}
+    </>
+  );
+}
+
+/**
+ * Everything the teacher can record for one student during a lesson, as a
+ * list: attendance, the OUTSIDE timer, a note and the behaviour buttons.
+ * Shown as the seat popover on the room plan and as a sheet in the teaching strip.
+ */
+export default function StudentActions({
+  student,
+  status,
+  outVisit,
+  onAttendance,
+  onBathroom,
+  onBehaviour,
+  onNote,
+  noteDraft,
+  onClose,
+}: StudentActionProps) {
+  const { positives, negatives } = useBehaviourGroups();
+
+  return (
+    <>
+      <StudentHead student={student} onClose={onClose} />
       <div className="att-seg" role="radiogroup" aria-label="Attendance" style={{ marginBottom: 2 }}>
-        {(["P", "A", "L", "E"] as AttendanceStatus[]).map((code) => (
+        {ATTENDANCE_CODES.map((code) => (
           <button
             key={code}
             role="radio"
@@ -65,21 +104,27 @@ export default function StudentActions({ student, status, outVisit, onAttendance
         ))}
       </div>
       <div className="att-legend">P present · A absent · L late · E excused</div>
-      <button
-        className={`bathroom-btn ${outVisit ? "out" : ""}`}
-        title="Time a trip outside the classroom; it's saved to the Outside log when the student is back"
-        onClick={onBathroom}
-      >
-        <Icon name="door_open" size={20} />
-        {outVisit ? (
-          <>
-            Back inside · <Elapsed visit={outVisit} />
-          </>
-        ) : (
-          "OUTSIDE — start timer"
+      <div className="sa-row">
+        <button
+          className={`bathroom-btn ${outVisit ? "out" : ""}`}
+          title="Time a trip outside the classroom; it's saved to the Outside log when the student is back"
+          onClick={onBathroom}
+        >
+          <Icon name="door_open" size={20} />
+          {outVisit ? (
+            <>
+              Back inside · <Elapsed visit={outVisit} />
+            </>
+          ) : (
+            "OUTSIDE — start timer"
+          )}
+        </button>
+        {onNote && (
+          <button className={`note-btn ${noteDraft ? "draft" : ""}`} onClick={onNote} title="Write a note about this student">
+            <Icon name="edit_note" size={20} /> {noteDraft ? "Note (draft)" : "Note"}
+          </button>
         )}
-      </button>
-      {/* Two labelled groups, apart, so a hurried tap doesn't land on the wrong kind. */}
+      </div>
       {positives.length > 0 && (
         <div className="bh-group" role="group" aria-label="Positive">
           <span className="bh-group-label">Positive</span>

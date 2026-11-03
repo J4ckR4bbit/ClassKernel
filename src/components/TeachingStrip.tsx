@@ -10,6 +10,7 @@ import { useBatchEntry } from "../hooks/useBatchEntry";
 import { useDismissOnOutside } from "../hooks/useDismissOnOutside";
 import StudentPicker from "./StudentPicker";
 import StudentActions from "./StudentActions";
+import StudentGrid from "./StudentGrid";
 import BatchPanel from "./BatchPanel";
 import Elapsed from "./Elapsed";
 import TimerMini from "./TimerMini";
@@ -323,16 +324,20 @@ export default function TeachingStrip() {
         )}
 
         {actionStudent && !batch.active && (
-          <div ref={sheetRef} className="strip-sheet behaviour-popover">
-            <StudentActions
-              student={actionStudent}
-              status={statusOf(actionStudent.id)}
-              outVisit={outVisitOf(actionStudent.id)}
-              onAttendance={(status) => markAttendance(actionStudent.id, status)}
-              onBathroom={() => toggleBathroom(actionStudent.id)}
-              onBehaviour={(c) => logBehaviour(actionStudent.id, c)}
-              onClose={closeActions}
-            />
+          // The grid fits the strip; the round pop-up needs a seat to centre on, so the strip shows the grid instead.
+          <div ref={sheetRef} className={`strip-sheet behaviour-popover ${userPrefs.seatPopupStyle === "list" ? "" : "grid"}`}>
+            {(() => {
+              const actions = {
+                student: actionStudent,
+                status: statusOf(actionStudent.id),
+                outVisit: outVisitOf(actionStudent.id),
+                onAttendance: (status: AttendanceStatus) => markAttendance(actionStudent.id, status),
+                onBathroom: () => toggleBathroom(actionStudent.id),
+                onBehaviour: (c: BehaviourCode) => logBehaviour(actionStudent.id, c),
+                onClose: closeActions,
+              };
+              return userPrefs.seatPopupStyle === "list" ? <StudentActions {...actions} /> : <StudentGrid {...actions} />;
+            })()}
           </div>
         )}
       </aside>
