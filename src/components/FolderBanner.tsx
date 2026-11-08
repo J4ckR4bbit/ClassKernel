@@ -1,51 +1,18 @@
 import { useEffect, useState } from "react";
-import { useAppPick } from "../store/appStore";
+import { FolderStatus, useAppPick } from "../store/appStore";
 import { dateTimeInZone } from "../lib/time";
-import Icon from "./Icon";
+import Icon, { IconName } from "./Icon";
 
 const when = (iso: string) => (iso ? dateTimeInZone(iso) : "");
 
 /**
- * Above every page while the app works from this computer's copy of the data:
- * how old the copy is, and (once the folder is back) a button to copy the
- * changes back now. After a copy-back, what it did, until dismissed.
+ * Above every page after a copy-back or send that needs a look: changes made
+ * in both places, files kept aside. Stays until dismissed. (Working from this
+ * computer's copy, or the folder being out of reach, is only the small chip
+ * in the top bar: see SendStatus.)
  */
 export function FolderBanner() {
-  const { folderStatus, syncNow, syncReport, dismissSyncReport } = useAppPick(
-    "folderStatus",
-    "syncNow",
-    "syncReport",
-    "dismissSyncReport",
-  );
-
-  if (folderStatus?.kind === "copy") {
-    return (
-      <div className="folder-banner" role="status">
-        <Icon name="cloud_off" size={20} />
-        <div className="grow">
-          {folderStatus.back ? (
-            <>
-              <b>Your data folder is back.</b> This computer's changes are copied into it in a moment (once it has
-              settled, and never during teaching mode) — or now.
-            </>
-          ) : (
-            <>
-              <b>Your data folder isn't available</b> (<code>{folderStatus.realDir}</code>) — you're working from this
-              computer's copy
-              {folderStatus.copyRefreshedAt && <>, last updated from the folder {when(folderStatus.copyRefreshedAt)}</>}.
-              Changes made on other computers since then aren't shown. Everything you do is copied back when the folder
-              returns.
-            </>
-          )}
-        </div>
-        {folderStatus.back && (
-          <button className="small primary" onClick={() => void syncNow()}>
-            Copy my changes back now
-          </button>
-        )}
-      </div>
-    );
-  }
+  const { syncReport, dismissSyncReport } = useAppPick("syncReport", "dismissSyncReport");
 
   if (!syncReport) return null;
   const { copied, joined, clashes, keptAside, notes, backupDir } = syncReport;
@@ -135,41 +102,91 @@ function ago(iso: string, now: number): string {
   return `${Math.floor(mins / 60)} h ago`;
 }
 
+/** The chip's look: the icon, its words (none: icon only), its tone and its tooltip. */
+type ChipLook = { icon: IconName; text: string; tone: "" | "waiting" | "quiet"; title: string; busy?: boolean };
+
 /**
- * In the top bar while changes are sent to the data folder in batches: whether
- * they're on their way, waiting, or sent (and when). Pressing it sends now,
- * and takes in changes made on another computer.
+ * In the top bar, while the data isn't simply saved straight to the data
+ * folder: sending in batches (on its way, waiting, or sent, and when), or
+ * working from this computer's copy. When the folder can't be reached it
+ * says so once (a message), then stays small and grey until it's back.
+ * Pressing it sends now (or copies back now).
  */
 export function SendStatus() {
-  const { folderStatus, sendNow } = useAppPick("folderStatus", "sendNow");
+  const { folderStatus, sendNow, syncNow } = useAppPick("folderStatus", "sendNow", "syncNow");
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(t);
   }, []);
-  if (folderStatus?.kind !== "batched") return null;
-  const { sending, driveAway, pending, lastSent } = folderStatus;
-  const [icon, text, tone, title] = sending
-    ? (["cloud_sync", "Sending…", "", "Sending this computer's changes to your data folder"] as const)
-    : driveAway
-      ? ([
-          "cloud_off",
-          "Waiting for Google Drive",
-          "away",
-          "Your data folder can't be reached just now. Your changes are safe on this computer and are sent when it's back. Press to try now.",
-        ] as const)
-      : pending
-        ? (["cloud_upload", "Changes waiting · Send now", "waiting", "Saved on this computer. Press to send to your data folder now."] as const)
-        : ([
-            "cloud_done",
-            lastSent ? `Sent ${ago(lastSent, now)}` : "Up to date",
-            "",
-            "Everything is in your data folder. Press to send now and take in changes from other computers.",
-          ] as const);
+  const look = chipLook(folderStatus, now);
+  if (!look) return null;
+  const press = folderStatus?.kind === "batched" ? sendNow : syncNow;
   return (
-    <button className={`send-status no-print ${tone}`} onClick={() => void sendNow()} disabled={sending} title={title} aria-live="polite">
-      <Icon name={icon} size={18} />
-      {text}
+    <button
+      className={`send-status no-print ${look.tone} ${look.text ? "" : "icon-only"}`}
+      onClick={() => void press()}
+      disabled={look.busy}
+      title={look.title}
+      aria-label={look.text || look.title}
+      aria-live="polite"
+    >
+      <Icon name={look.icon} size={18} />
+      {look.text}
     </button>
   );
+}
+
+const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? "" : "s"}`;
+
+function chipLook(st: FolderStatus | null, now: number): ChipLook | null {
+  if (st?.kind === "syncing") return { icon: "cloud_sync", text: "Copying back…", tone: "", title: "Copying this computer's changes to your data folder", busy: true };
+  if (st?.kind === "copy") {
+    const problem = st.lastError ? `\n\nLast try: ${st.lastError}` : "";
+    return st.back
+      ? {
+          icon: "cloud_sync",
+          text: "Folder back · Copy back now",
+          tone: "waiting",
+          title: `Your data folder is back. This computer's changes are copied into it by themselves in a moment (never during teaching mode) — or press to do it now.${problem}`,
+        }
+      : {
+          icon: "cloud_off",
+          text: "This computer's copy",
+          tone: "quiet",
+          title:
+            `Your data folder (${st.realDir}) can't be reached, so you're working from this computer's copy` +
+            (st.copyRefreshedAt ? `, last updated from the folder ${when(st.copyRefreshedAt)}` : "") +
+            `. Changes made on other computers since then aren't shown. Everything you do is copied back by itself once the folder is there.${problem}`,
+        };
+  }
+  if (st?.kind !== "batched") return null;
+  const { sending, driveAway, pending, lastSent, failed, lastError } = st;
+  if (sending) return { icon: "cloud_sync", text: "Sending…", tone: "", title: "Sending this computer's changes to your data folder", busy: true };
+  if (driveAway) {
+    return {
+      icon: "cloud_off",
+      text: "",
+      tone: "quiet",
+      title:
+        `Not sent yet: your data folder can't be reached just now. Your changes are safe on this computer and are sent once it's back (tried again every few minutes). Press to try now.` +
+        (lastError ? `\n\nLast try: ${lastError}` : ""),
+    };
+  }
+  if (pending) {
+    const left = failed.length
+      ? `\n\n${plural(failed.length, "file")} couldn't be sent last time — is it open in another program (Excel, say)? It's tried again with the next send.\n` +
+        failed
+          .slice(0, 5)
+          .map((f) => `• ${f.file}: ${f.error}`)
+          .join("\n")
+      : "";
+    return { icon: "cloud_upload", text: "Changes waiting · Send now", tone: "waiting", title: `Saved on this computer. Press to send to your data folder now.${left}` };
+  }
+  return {
+    icon: "cloud_done",
+    text: lastSent ? `Sent ${ago(lastSent, now)}` : "Up to date",
+    tone: "",
+    title: "Everything is in your data folder. Press to send now and take in changes from other computers.",
+  };
 }

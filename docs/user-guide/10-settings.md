@@ -98,6 +98,8 @@ Leave either blank to leave it off.
   after marking, switching class, closing the app), or **with every save**. Changes are always saved on this
   computer at once; this is how often they're sent to the (synced) data folder. Every 2 minutes unless you change it;
   chosen on each computer. See [Sending changes to Google Drive](11-your-data.md#sending-changes-to-google-drive).
+  While a send isn't getting through, a **Last problem sending to your data folder** line under it says why, in
+  the app's own words.
 - **Restore a backup** lists the newest backups, taken every time the app starts. **Restore…** puts a backup's
   files back (a safety copy of today's data is taken first). See [Your data and backups](11-your-data.md).
 - The number of active and archived classes.

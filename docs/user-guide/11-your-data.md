@@ -58,12 +58,24 @@ The chip at the top of the screen says where things stand:
 | **Sent 3 min ago** | Everything is in the data folder. |
 | **Changes waiting · Send now** | Saved on this computer, not yet sent. |
 | **Sending…** | On its way. |
-| **Waiting for Google Drive** | The folder can't be reached just now. Your changes are safe on this computer and go as soon as it's back. |
+| A small grey cloud, crossed out | The folder can't be reached just now (Google Drive signed out, say). Your changes are safe on this computer and go as soon as it's back. |
 
 Press the chip to send at once. That also takes in anything changed on another computer meanwhile.
 
-- **Nothing is lost if the computer crashes or the power goes**: the changes are on this computer, and they're
-  copied into the data folder the next time ClassKernel starts (as in [If Google Drive isn't ready](#if-google-drive-isnt-ready)).
+If the folder can't be reached, a short message says so **once**; after that only the small grey cloud shows (point
+at it for the details), and the app keeps trying by itself every few minutes. When the folder is back, a short
+message says your changes are in it.
+
+- **Nothing is lost if the computer crashes, the power goes or the app is closed before a send**: the changes are on
+  this computer, and they're sent the next time ClassKernel starts. It opens your data folder as usual and sends them
+  straight away.
+- **Only ClassKernel's own files are sent**: the `.csv` and `.md` files it keeps. Anything else you keep in the data
+  folder (a PDF, a spreadsheet, Windows' `desktop.ini`) is left alone.
+- **A file open in another program** (a CSV open in Excel, say) can't be read until it's closed. That one file waits
+  and goes with the next send, and everything else is sent as usual. Point at the chip to see which file it is.
+- **If it keeps saying it can't reach the folder** while the folder opens fine in File Explorer,
+  **Settings → General → Data** shows the last problem in ClassKernel's own words. Close whatever has the file open,
+  or pass that line on.
 - **Changes made on another computer** are taken in at the next natural pause, or when you press the chip. If the
   same file changed on both computers, the two are joined row by row. Both originals are kept in
   `backups/.sync/`, and a message says what happened if anything needs a look.
@@ -94,7 +106,8 @@ never asks you to choose it again. Instead it waits:
 - If the folder appears within **30 seconds**, it opens as normal.
 - Otherwise ClassKernel opens **this computer's copy** of your data (press **Open this computer's copy now** to skip
   the wait). Every save on this computer also updates that copy, so it's as recent as the last time you used the
-  app here. A banner says so, and how old the copy is:
+  app here. A short message says so once; after that, a small **This computer's copy** chip in the top bar is the
+  only reminder (point at it to see how old the copy is):
 
 ![Working from this computer's copy](../images/folder-working-from-copy.png)
 
@@ -102,21 +115,25 @@ Teach and record as usual. A few things wait for the folder: renaming a class, d
 a backup, and **Save to data folder** (Export can still save anywhere).
 
 When the folder is back, and has stayed back for half a minute (so Google Drive has caught up), ClassKernel copies
-this computer's changes into it — not mid-lesson in teaching mode, but as soon as you leave it, or straight away with
-**Copy my changes back now**. If you close the app first, it happens at the next launch.
+this computer's changes into it — not mid-lesson in teaching mode, but as soon as you leave it, or straight away by
+pressing the chip (it reads **Folder back · Copy back now**). If you close the app first, it happens at the next
+launch. A short message says when it's done:
 
 ![The changes are back in the data folder](../images/folder-copied-back.png)
 
 - If nothing else changed the files meanwhile, your changes are simply copied across.
 - If another computer changed the same file (say you entered marks at home last night), the two are **joined row by
   row**: every register entry, mark, behaviour and comment from both is kept. Only where both changed the very same
-  thing (the same boy's mark in the same test) does this computer's version win, and the summary lists each one.
+  thing (the same boy's mark in the same test) does this computer's version win. Then a summary stays at the top
+  of the screen, listing each one, until you dismiss it.
   Seating plans, room layouts and the behaviour buttons are joined as whole units, so a plan never mixes two
   arrangements.
 - Both original versions of every file it touched are kept in `backups/.sync/<date and time>/` (`drive/` and
   `this-computer/`), so nothing is lost even then.
 - A class renamed on another computer meanwhile isn't re-created: your changes to it are kept in that folder and the
   summary says so.
+- A file that can't be copied just then (open in Excel, say) is left for later; everything else goes, and the app
+  carries on sending that file in the background until it's done.
 
 The copy lives in `%LOCALAPPDATA%\com.classkernel.app\local-copy`. It holds the same student information as the
 data folder, so on a computer other people sign in to, switch it off under **Settings → General → Data → Keep a
@@ -153,6 +170,7 @@ book and follow your school's data-handling policy for where it lives and who ca
 | Problem | What to do |
 | --- | --- |
 | A red banner says *"Couldn't save … to disk"* | The folder couldn't be written to (e.g. a drive went offline). Fix that, then press **Try again** before closing the app. |
+| A small grey crossed-out cloud stays in the top bar while Google Drive is running | Point at it to see why, or look under **Settings → General → Data** for the *Last problem sending* line. A file open in Excel waits until it's closed; your changes are safe on this computer meanwhile. |
 | *"Waiting for your data folder…"* at launch | Google Drive or OneDrive hasn't started yet. Wait, or open this computer's copy. If the folder has moved (a new drive letter), press **Choose a different folder…**: any changes made on this computer are copied into it. |
 | Randomise shows **🔒 Reseat…** | Seats were already assigned this lesson. Press **End lesson**, or **Reseat…** and your PIN. See [Seats](04-seats.md#once-per-lesson-and-the-reseat-pin). |
 | Forgotten the reseat PIN | Close ClassKernel, open `settings.csv` in the data folder with Notepad, delete the value on the `reseat_pin` row (keep `reseat_pin,`), and save. The next unlock asks you to create a new PIN. |

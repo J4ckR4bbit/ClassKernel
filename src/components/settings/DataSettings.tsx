@@ -17,6 +17,8 @@ export default function DataSettings() {
   );
   // While the data folder is away, dataDir is this computer's copy.
   const awayFrom = folderStatus?.kind === "copy" || folderStatus?.kind === "syncing" ? folderStatus.realDir : null;
+  // Why the last send or copy-back didn't (all) go, word for word: what to pass on if it keeps happening.
+  const problem = folderStatus?.kind === "batched" || folderStatus?.kind === "copy" ? folderStatus.lastError : null;
 
   return (
     <div className="panel">
@@ -48,6 +50,13 @@ export default function DataSettings() {
         archived. Archived classes stay on disk in <code>classes/</code>; restore them from Class notes.
       </p>
       <LocalCopySettings away={!!awayFrom} />
+      {problem && (
+        <p className="muted send-problem" role="status">
+          <b>Last problem sending to your data folder:</b> <code>{problem}</code>. Your changes are safe on this computer
+          and it tries again by itself. If this keeps showing while the folder opens fine in File Explorer, close any
+          program that has the file open, or pass this line on.
+        </p>
+      )}
       {awayFrom ? (
         <p className="muted">Restoring a backup is available again once your data folder is back.</p>
       ) : (

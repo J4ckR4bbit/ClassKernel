@@ -3,6 +3,7 @@ import { MemFS, getFS, setFS } from "./fs";
 import { stringifyCsv, parseCsv } from "./csv";
 import * as repo from "./repo";
 import {
+  CopyBackIncomplete,
   LocalPaths,
   SettleTracker,
   changedFiles,
@@ -11,6 +12,7 @@ import {
   localPaths,
   readSession,
   startOfflineSession,
+  isDataFile,
   syncBack,
 } from "./offline";
 
@@ -43,11 +45,10 @@ beforeEach(async () => {
 
 describe("decideBoot", () => {
   const source = { realDir: REAL, refreshedAt: "t" };
-  it("works from the copy whenever changes are waiting", () => {
-    expect(decideBoot({ savedDir: REAL, session: { realDir: REAL, since: "", copyRefreshedAt: "" }, ready: true, source })).toEqual({
-      kind: "copy",
-      realDir: REAL,
-    });
+  it("with changes waiting, opens their folder if it's there, and otherwise waits with the copy on offer", () => {
+    const session = { realDir: REAL, since: "", copyRefreshedAt: "" };
+    expect(decideBoot({ savedDir: "D:/Other", session, ready: true, source: null })).toEqual({ kind: "open", dir: REAL });
+    expect(decideBoot({ savedDir: REAL, session, ready: false, source: null })).toEqual({ kind: "wait", realDir: REAL, copyAvailable: true });
   });
   it("opens a ready folder, waits for a missing one, and asks when there is none", () => {
     expect(decideBoot({ savedDir: REAL, session: null, ready: true, source })).toEqual({ kind: "open", dir: REAL });
@@ -124,9 +125,32 @@ describe("syncBack", () => {
     // The app closes; next morning Drive is up. Boot sees the marker first.
     const next = await localPaths();
     const session = await readSession(next);
-    expect(decideBoot({ savedDir: REAL, session, ready: true, source: null }).kind).toBe("copy");
+    expect(decideBoot({ savedDir: REAL, session, ready: true, source: null })).toEqual({ kind: "open", dir: REAL });
     await syncBack(next, REAL, "s2");
     expect(await disk.readText(`${REAL}/${ATT}`)).toContain("2026-03-10,s1,A");
+  });
+
+  it("copies the rest when one file can't be read just now, and keeps the marker for it", async () => {
+    await offline(ATT, att(["2026-03-09", "s1", "P"], ["2026-03-10", "s1", "A"]));
+    const info = `classes/${CLS}/class.md`;
+    await disk.writeAtomic(`${paths.copy}/${info}`, (await disk.readText(`${paths.copy}/${info}`)).replace("Lab 3", "Lab 7"));
+    // Not UTF-8, as Windows sees it (or open in Excel): it can't be read as text.
+    await disk.writeAtomic(`${paths.copy}/desktop.ini`, "\uFFFE");
+    const { readTextIfExists } = disk;
+    disk.readTextIfExists = (path) =>
+      path === `${REAL}/${ATT}` ? Promise.reject(new Error("os error 32")) : readTextIfExists.call(disk, path);
+    const err = await syncBack(paths, REAL, "s1").catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(CopyBackIncomplete);
+    expect((err as CopyBackIncomplete).report.copied).toEqual([info]);
+    expect((err as CopyBackIncomplete).report.failed.map((f) => f.file)).toEqual([ATT]);
+    expect(await disk.readText(`${REAL}/${info}`)).toContain("Lab 7");
+    expect(await readSession(paths)).not.toBeNull();
+
+    disk.readTextIfExists = readTextIfExists;
+    const r = await syncBack(paths, REAL, "s2");
+    expect(r.copied).toContain(ATT);
+    expect(await disk.readText(`${REAL}/${ATT}`)).toContain("2026-03-10,s1,A");
+    expect(await readSession(paths)).toBeNull();
   });
 
   it("doesn't re-create a class renamed on another computer", async () => {
@@ -236,5 +260,21 @@ describe("SettleTracker", () => {
     expect(t.poll(false, 20_000)).toBe(false);
     expect(t.poll(true, 25_000)).toBe(false);
     expect(t.poll(true, 55_000)).toBe(true);
+  });
+});
+
+describe("isDataFile", () => {
+  it("is ClassKernel's own .csv and .md files only", () => {
+    for (const ok of ["behaviours.csv", "classes/10A/class.md", "classes/10A/marks.csv", "layouts/Lab/desks.csv"]) expect(isDataFile(ok)).toBe(true);
+    for (const no of [
+      "desktop.ini",
+      "Form F.pdf",
+      "classes/10A/~$marks.csv",
+      "classes/10A/marks.csv.123-4.tmp.classkernel",
+      "layouts/.trash-Lab-1/desks.csv",
+      ".source.json",
+      "classes/10A/photo.jpg",
+    ])
+      expect(isDataFile(no)).toBe(false);
   });
 });

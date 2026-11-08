@@ -96,9 +96,12 @@ export async function isReady(dir: string, timeoutMs = 5000): Promise<boolean> {
 
 export type BootPlan =
   | { kind: "onboarding" }
+  /**
+   * Open the data folder. With changes from last time still waiting on this
+   * computer, opening it carries on from the copy and sends them (appStore
+   * openFolder), so they're never left behind a "working from the copy" step.
+   */
   | { kind: "open"; dir: string }
-  /** Changes are waiting: work from the copy, join back once the folder has settled. */
-  | { kind: "copy"; realDir: string }
   /** The folder isn't there yet: wait, then (if `copyAvailable`) open the copy. */
   | { kind: "wait"; realDir: string; copyAvailable: boolean };
 
@@ -109,7 +112,8 @@ export function decideBoot(input: {
   source: CopySource | null;
 }): BootPlan {
   const { savedDir, session, ready, source } = input;
-  if (session) return { kind: "copy", realDir: session.realDir };
+  // Changes are waiting for this folder: the copy holds them, so it can always be opened.
+  if (session) return ready ? { kind: "open", dir: session.realDir } : { kind: "wait", realDir: session.realDir, copyAvailable: true };
   if (!savedDir) return { kind: "onboarding" };
   if (ready) return { kind: "open", dir: savedDir };
   return { kind: "wait", realDir: savedDir, copyAvailable: !!source && sameFolder(source.realDir, savedDir) };
@@ -132,26 +136,51 @@ export async function startOfflineSession(paths: LocalPaths, realDir: string): P
   return session;
 }
 
-/** Every file under `dir`, relative to it, leaving out bookkeeping and temp files. */
+/**
+ * Whether a file (relative to the data folder) is one of ClassKernel's own:
+ * the .csv and .md files it writes. Everything else that may sit in the
+ * folder is left alone, never sent, joined or taken in: a desktop.ini, a PDF
+ * or spreadsheet saved there, Excel's "~$" lock files, temp files, and
+ * anything in a hidden folder (a deleted layout template's .trash-… folder).
+ * Reading one of those as text would fail and stop the whole send.
+ */
+export function isDataFile(rel: string): boolean {
+  const parts = rel.split("/");
+  const name = parts[parts.length - 1];
+  if (parts.some((part) => part.startsWith("."))) return false;
+  if (name.startsWith("~$") || name.endsWith(".tmp.classkernel")) return false;
+  return /\.(csv|md)$/i.test(name);
+}
+
+/** ClassKernel's data files under `dir`, relative to it (see isDataFile). */
 export async function walk(dir: string, prefix = ""): Promise<string[]> {
   const fs = getFS();
   if (!(await fs.exists(dir))) return [];
   const out: string[] = [];
   for (const e of await fs.listDir(dir)) {
     const rel = prefix ? `${prefix}/${e.name}` : e.name;
-    if (e.isDir) out.push(...(await walk(`${dir}/${e.name}`, rel)));
-    else if (rel !== ".source.json" && !e.name.endsWith(".tmp.classkernel")) out.push(rel);
+    if (e.isDir) {
+      if (!e.name.startsWith(".")) out.push(...(await walk(`${dir}/${e.name}`, rel)));
+    } else if (isDataFile(rel)) out.push(rel);
   }
   return out;
 }
 
-/** Files that differ between the copy and its starting point: added or changed while offline. */
+/**
+ * Files that differ between the copy and its starting point: added or
+ * changed while offline. One that can't be read just now counts as changed,
+ * so whoever sends it finds out why (and the others still go).
+ */
 export async function changedFiles(paths: LocalPaths): Promise<string[]> {
   const fs = getFS();
   const changed: string[] = [];
   for (const rel of (await walk(paths.copy)).sort()) {
-    const [ours, base] = await Promise.all([fs.readTextIfExists(`${paths.copy}/${rel}`), fs.readTextIfExists(`${paths.base}/${rel}`)]);
-    if (ours !== base) changed.push(rel);
+    try {
+      const [ours, base] = await Promise.all([fs.readTextIfExists(`${paths.copy}/${rel}`), fs.readTextIfExists(`${paths.base}/${rel}`)]);
+      if (ours !== base) changed.push(rel);
+    } catch {
+      changed.push(rel);
+    }
   }
   return changed;
 }
@@ -168,6 +197,8 @@ export interface SyncReport {
   keptAside: Array<{ file: string; reason: string }>;
   /** Things worth a look: likely duplicates, a sync client's conflict copies. */
   notes: string[];
+  /** Files that couldn't be read or written just now (open in another program, say): tried again next time. */
+  failed: Array<{ file: string; error: string }>;
   /** Where the originals were saved (inside the data folder). */
   backupDir: string;
 }
@@ -190,25 +221,25 @@ export async function syncBack(paths: LocalPaths, realDir: string, stamp: string
   const fs = getFS();
   const dir = slashes(realDir);
   const backupDir = `${dir}/backups/.sync/${stamp}`;
-  const report: SyncReport = { copied: [], joined: [], clashes: [], keptAside: [], notes: [], backupDir };
+  const report: SyncReport = { copied: [], joined: [], clashes: [], keptAside: [], notes: [], failed: [], backupDir };
   const write = (rel: string, text: string) => fs.writeAtomic(`${dir}/${rel}`, text, dir);
   const keep = async (side: "drive" | "this-computer", rel: string, text: string | null) => {
     if (text !== null) await fs.writeAtomic(`${backupDir}/${side}/${rel}`, text, dir);
   };
   const touchedClasses = new Set<string>();
 
-  for (const rel of await changedFiles(paths)) {
+  const copyBackFile = async (rel: string) => {
     const [ours, base, theirs] = await Promise.all([
       fs.readTextIfExists(`${paths.copy}/${rel}`),
       fs.readTextIfExists(`${paths.base}/${rel}`),
       fs.readTextIfExists(`${dir}/${rel}`),
     ]);
-    if (ours === null) continue;
+    if (ours === null) return;
     const cls = rel.match(/^classes\/([^/]+)\//)?.[1];
     if (base !== null && theirs === null) {
       await keep("this-computer", rel, ours);
       report.keptAside.push({ file: rel, reason: cls ? `the class "${cls}" was renamed or removed on another computer` : "it was removed on another computer" });
-      continue;
+      return;
     }
     if (theirs === null) {
       await write(rel, ours);
@@ -223,7 +254,7 @@ export async function syncBack(paths: LocalPaths, realDir: string, stamp: string
       await keep("this-computer", rel, ours);
       if (result.status === "refused") {
         report.keptAside.push({ file: rel, reason: result.reason });
-        continue;
+        return;
       }
       await write(rel, result.text);
       report.joined.push(rel);
@@ -231,6 +262,16 @@ export async function syncBack(paths: LocalPaths, realDir: string, stamp: string
     }
     if (cls) touchedClasses.add(cls);
     await noteConflictCopies(dir, rel, report);
+  };
+
+  // One file that can't be read or written just now (open in Excel, say)
+  // doesn't hold up the rest; it is tried again next time.
+  for (const rel of await changedFiles(paths)) {
+    try {
+      await copyBackFile(rel);
+    } catch (e) {
+      report.failed.push({ file: rel, error: describeError(e) });
+    }
   }
 
   for (const cls of touchedClasses) {
@@ -238,9 +279,24 @@ export async function syncBack(paths: LocalPaths, realDir: string, stamp: string
     await noteLikelyDuplicates(dir, cls, report);
   }
 
+  // Not done until every file is: the marker stays, and the next attempt carries on.
+  if (report.failed.length > 0) throw new CopyBackIncomplete(report);
   await fs.removeLocal(paths.session);
   await fs.removeLocal(paths.base);
   return report;
+}
+
+/** A copy-back that couldn't take every file across: what it did, and which files are left. */
+export class CopyBackIncomplete extends Error {
+  constructor(readonly report: SyncReport) {
+    super(`Couldn't copy ${report.failed.map((f) => `${f.file} (${f.error})`).join(", ")}`);
+  }
+}
+
+/** An error as a short line for the teacher (the Rust side sends plain strings). */
+export function describeError(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  return typeof e === "string" ? e : String(e);
 }
 
 /** Sync clients keep a version they couldn't reconcile beside the file, e.g. "marks (1).csv" or "marks-LAPTOP.csv". */
