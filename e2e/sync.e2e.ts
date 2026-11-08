@@ -123,3 +123,20 @@ test("renaming a class is done in the data folder itself, and sending in batches
   await chip(page).click();
   await expect.poll(() => onDrive(page, "classes/7B Science/attendance.csv")).toContain(",A,");
 });
+
+test("the launch backup is kept on this computer, not in the data folder, and restores from Settings", async ({ page }) => {
+  await launch(page, 60);
+  const before = await onDrive(page, ATTENDANCE);
+  await markFirstAbsent(page);
+  await settingsTab(page, "General");
+  const backup = page.locator(".backup-list li").first();
+  await expect(backup).toBeVisible();
+  await expect(backup).not.toContainText("in the data folder");
+  await backup.getByRole("button", { name: "Restore…" }).click();
+  await page.getByRole("button", { name: "Restore backup" }).click();
+  await expect(page.locator(".toast")).toHaveText("Backup restored");
+  // The register is back as it was when the app opened, in the data folder too.
+  expect(await onDrive(page, ATTENDANCE)).toBe(before);
+  await nav(page, "Attendance");
+  await expect(page.locator(".att-seg").first().locator(".att-btn.A")).not.toHaveClass(/\bon\b/);
+});

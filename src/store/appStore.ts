@@ -607,7 +607,7 @@ export const useApp = create<AppState>((set, get) => {
         useFolder(path, null, paths.copy);
         // Today's backup of the folder; the marker keeps it from refreshing the copy.
         void fs
-          .snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, { to: paths.copy, guard: paths.session })
+          .snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, { to: paths.copy, guard: paths.session }, backupsFor(paths))
           .catch((e) => console.warn("Backup snapshot failed", e));
       } else if (copying) {
         const keep = keepLocalCopy();
@@ -623,7 +623,7 @@ export const useApp = create<AppState>((set, get) => {
         // Copied in the background while the classes load, refreshing this
         // computer's copy in the same pass; it is the folder as it was opened.
         copyFresh = fs
-          .snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, keep ? { to: paths.copy, guard: paths.session } : undefined)
+          .snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, keep ? { to: paths.copy, guard: paths.session } : undefined, backupsFor(paths))
           .then(async () => {
             if (keep && !(await readSession(paths))) {
               await fs.writeAtomic(paths.source, JSON.stringify({ realDir: path, refreshedAt: nowIso() }));
@@ -764,6 +764,9 @@ export const useApp = create<AppState>((set, get) => {
     } else {
       useFolder(dataDir, null);
       if (!(await readSession(paths))) await getFS().removeLocal(paths.copy);
+      // Its backups hold the same student information: they go too, and from
+      // now on the launch backups are made in the data folder again.
+      await getFS().removeLocal(paths.backups).catch((e) => console.warn("Couldn't remove this computer's backups", e));
     }
   },
 
@@ -1478,6 +1481,15 @@ function send(atPause: boolean): Promise<boolean> {
   const next = sendChain.then(run, run);
   sendChain = next.catch(() => {});
   return next;
+}
+
+/**
+ * Where the launch backups go: on this computer while it keeps a copy (so a
+ * synced data folder isn't uploaded in full at every launch), otherwise in the
+ * data folder's own backups/ (a shared computer keeps no student data).
+ */
+export function backupsFor(paths: LocalPaths): string | undefined {
+  return keepLocalCopy() ? paths.backups : undefined;
 }
 
 /** The short message after a copy-back with nothing to look at. */

@@ -22,7 +22,7 @@ Everything the app records is saved in that folder as plain `.csv` and `.md` fil
 computers. ClassKernel itself never touches the network. More in [Your data and backups](11-your-data.md).
 
 The app remembers the folder. Next time it opens straight onto the Home page, and takes a backup copy of the whole
-folder as it starts.
+folder as it starts (kept on this computer: see [Automatic backups](11-your-data.md#automatic-backups)).
 
 ## The screen
 

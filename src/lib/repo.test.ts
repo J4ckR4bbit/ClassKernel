@@ -498,28 +498,100 @@ describe("app-wide topic bank, cognitive levels, settings", () => {
 });
 
 describe("backups", () => {
+  const LOCAL = "/this-computer/backups";
+  const s1: Student = { id: "s1", firstName: "Amelia", lastName: "Adams", adamNo: "", gender: "", flags: "SEN", notes: "" };
+  const students = `${DIR}/classes/${CLS}/students.csv`;
+
+  /** Make reading some files fail, as Windows does for a file that isn't UTF-8 text or is open in Excel. */
+  function refuseReads(refused: (path: string) => boolean): void {
+    const { readText } = fs;
+    fs.readText = (path) => (refused(path) ? Promise.reject(new Error(`${path}: os error 32`)) : readText.call(fs, path));
+  }
+
   it("restores a snapshot over the live files, taking a safety copy first", async () => {
-    const s1: Student = { id: "s1", firstName: "Amelia", lastName: "Adams", adamNo: "", gender: "", flags: "SEN", notes: "" };
     await repo.saveStudents(DIR, CLS, [s1]);
-    // Fake the app-start snapshot of the current state (the desktop backend
-    // does this in Rust; MemFS snapshots don't copy).
-    const snap = `${DIR}/backups/2026-01-01_080000`;
-    await getFS().writeAtomic(`${snap}/classes/${CLS}/students.csv`, await getFS().readText(`${DIR}/classes/${CLS}/students.csv`));
+    await fs.snapshot(DIR, "2026-01-01_080000", 14);
     // The live file is then wrecked.
     await repo.saveStudents(DIR, CLS, []);
     expect(await repo.loadStudents(DIR, CLS)).toHaveLength(0);
-    expect(await repo.listBackups(DIR)).toEqual(["2026-01-01_080000"]);
+    const [snap] = await repo.listBackups(DIR);
+    expect(snap).toEqual({ dir: `${DIR}/backups`, stamp: "2026-01-01_080000", onThisComputer: false });
 
-    await repo.restoreBackup(DIR, "2026-01-01_080000", "pre-restore-test");
+    expect(await repo.restoreBackup(DIR, snap, `${DIR}/backups/pre-restore-test`)).toEqual({ notRestored: [] });
     expect(await repo.loadStudents(DIR, CLS)).toEqual([s1]);
     // The safety copy holds the pre-restore (empty) state and is listed.
     const safety = await getFS().readText(`${DIR}/backups/pre-restore-test/classes/${CLS}/students.csv`);
     expect(safety).not.toContain("s1");
-    expect(await repo.listBackups(DIR)).toContain("pre-restore-test");
+    expect((await repo.listBackups(DIR)).map((b) => b.stamp)).toContain("pre-restore-test");
+  });
+
+  it("takes the launch backups on this computer, listed before the older ones in the data folder", async () => {
+    await fs.snapshot(DIR, "2026-01-01_080000", 14);
+    await fs.snapshot(DIR, "2026-02-01_080000", 14, undefined, LOCAL);
+    await fs.snapshot(DIR, "2026-02-02_080000", 14, undefined, LOCAL);
+    expect(await fs.exists(`${DIR}/backups/2026-02-01_080000`)).toBe(false);
+    expect(await fs.exists(`${LOCAL}/2026-02-01_080000/classes/${CLS}/class.md`)).toBe(true);
+    expect((await repo.listBackups(DIR, LOCAL)).map((b) => `${b.onThisComputer ? "here" : "folder"} ${b.stamp}`)).toEqual([
+      "here 2026-02-02_080000",
+      "here 2026-02-01_080000",
+      "folder 2026-01-01_080000",
+    ]);
+    // Never anywhere but the app's own folder: old ones are pruned there.
+    await expect(fs.snapshot(DIR, "x", 14, undefined, "/elsewhere")).rejects.toThrow(/local folder/);
+  });
+
+  it("restores from this computer's backups, with the safety copy kept here too", async () => {
+    await repo.saveStudents(DIR, CLS, [s1]);
+    await fs.snapshot(DIR, "2026-02-01_080000", 14, undefined, LOCAL);
+    await repo.saveStudents(DIR, CLS, []);
+    const [snap] = await repo.listBackups(DIR, LOCAL);
+    await repo.restoreBackup(DIR, snap, `${LOCAL}/pre-restore-test`);
+    expect(await repo.loadStudents(DIR, CLS)).toEqual([s1]);
+    expect(await fs.exists(`${LOCAL}/pre-restore-test/classes/${CLS}/students.csv`)).toBe(true);
+    expect(await fs.exists(`${DIR}/backups/pre-restore-test`)).toBe(false);
+  });
+
+  it("leaves alone files that aren't ClassKernel's own, in the backup and in the folder", async () => {
+    await repo.saveStudents(DIR, CLS, [s1]);
+    await getFS().writeAtomic(`${DIR}/desktop.ini`, "\uFFFE");
+    await getFS().writeAtomic(`${DIR}/Form F scan.pdf`, "%PDF");
+    await getFS().writeAtomic(`${DIR}/exports/marks.xlsx`, "PK");
+    await fs.snapshot(DIR, "2026-02-01_080000", 14, undefined, LOCAL);
+    await repo.saveStudents(DIR, CLS, []);
+    refuseReads((path) => /desktop\.ini$|\.pdf$|\.xlsx$/.test(path));
+    const [snap] = await repo.listBackups(DIR, LOCAL);
+    expect(await repo.restoreBackup(DIR, snap, `${LOCAL}/pre-restore-test`)).toEqual({ notRestored: [] });
+    expect(await repo.loadStudents(DIR, CLS)).toEqual([s1]);
+  });
+
+  it("changes nothing if a live file can't be read for the safety copy", async () => {
+    await repo.saveStudents(DIR, CLS, [s1]);
+    await fs.snapshot(DIR, "2026-02-01_080000", 14, undefined, LOCAL);
+    await repo.saveStudents(DIR, CLS, []);
+    refuseReads((path) => path === students);
+    const [snap] = await repo.listBackups(DIR, LOCAL);
+    await expect(repo.restoreBackup(DIR, snap, `${LOCAL}/pre-restore-test`)).rejects.toBeInstanceOf(repo.RestoreBlocked);
+    expect(await fs.readTextIfExists(students)).not.toContain("s1");
+  });
+
+  it("restores the rest when one file can't be written, and says which", async () => {
+    await repo.saveStudents(DIR, CLS, [s1]);
+    await fs.snapshot(DIR, "2026-02-01_080000", 14, undefined, LOCAL);
+    await repo.saveStudents(DIR, CLS, []);
+    const info = `${DIR}/classes/${CLS}/class.md`;
+    await getFS().writeAtomic(info, (await getFS().readText(info)).replace("Lab 2", "Lab 9"));
+    const { writeAtomic } = fs;
+    fs.writeAtomic = (path, text, root) =>
+      path === students ? Promise.reject(new Error("os error 32")) : writeAtomic.call(fs, path, text, root);
+    const [snap] = await repo.listBackups(DIR, LOCAL);
+    expect(await repo.restoreBackup(DIR, snap, `${LOCAL}/pre-restore-test`)).toEqual({ notRestored: [`classes/${CLS}/students.csv`] });
+    expect(await getFS().readText(info)).toContain("Lab 2");
   });
 
   it("rejects a restore of a missing snapshot", async () => {
-    await expect(repo.restoreBackup(DIR, "nope", "safety")).rejects.toThrow(/not found/i);
+    await expect(repo.restoreBackup(DIR, { dir: `${DIR}/backups`, stamp: "nope", onThisComputer: false }, "/data/backups/safety")).rejects.toThrow(
+      /not found/i,
+    );
   });
 });
 

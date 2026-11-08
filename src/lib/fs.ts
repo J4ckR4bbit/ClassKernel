@@ -31,11 +31,13 @@ export interface AppFS {
   listDir(path: string): Promise<DirEntry[]>;
   rename(from: string, to: string): Promise<void>;
   /**
-   * Snapshot the data folder into backups/<stamp>/, pruning old snapshots, and
-   * (with `copy`) refresh this computer's copy of it in the same pass. Returns
+   * Snapshot the data folder into <backups>/<stamp>/, pruning old snapshots,
+   * and (with `copy`) refresh this computer's copy of it in the same pass.
+   * The backups go in `backupsDir` (on this computer, inside the app's local
+   * folder) when given, otherwise in the data folder's own backups/. Returns
    * the snapshot path.
    */
-  snapshot(dataDir: string, stamp: string, keep: number, copy?: CopyTarget): Promise<string>;
+  snapshot(dataDir: string, stamp: string, keep: number, copy?: CopyTarget, backupsDir?: string): Promise<string>;
   /** Replace `dest` (inside the app's local folder) with a copy of `src`, minus `skip` folders. */
   copyFolder(src: string, dest: string, skip: string[]): Promise<void>;
   /** Delete a file or folder inside the app's local folder; nothing else can be removed. */
@@ -82,8 +84,8 @@ class TauriFS implements AppFS {
   rename(from: string, to: string) {
     return this.invoke<void>("rename_path", { from, to });
   }
-  snapshot(dataDir: string, stamp: string, keep: number, copy?: CopyTarget) {
-    return this.invoke<string>("snapshot_backup", { dataDir, stamp, keep, copyTo: copy?.to, copyGuard: copy?.guard });
+  snapshot(dataDir: string, stamp: string, keep: number, copy?: CopyTarget, backupsDir?: string) {
+    return this.invoke<string>("snapshot_backup", { dataDir, stamp, keep, copyTo: copy?.to, copyGuard: copy?.guard, backupsDir });
   }
   copyFolder(src: string, dest: string, skip: string[]) {
     return this.invoke<void>("copy_folder", { src, dest, skip });
@@ -218,8 +220,9 @@ export class MemFS implements AppFS {
       }
     }
   }
-  async snapshot(dataDir: string, stamp: string, _keep: number, copy?: CopyTarget): Promise<string> {
-    const dest = `${this.norm(dataDir)}/backups/${stamp}`;
+  async snapshot(dataDir: string, stamp: string, _keep: number, copy?: CopyTarget, backupsDir?: string): Promise<string> {
+    if (backupsDir !== undefined && !this.inLocal(backupsDir)) throw new Error(`Not in the app's local folder: ${backupsDir}`);
+    const dest = `${this.norm(backupsDir ?? `${dataDir}/backups`)}/${stamp}`;
     await this.mkdirs(dest);
     this.copyFiles(dataDir, dest, ["backups"]);
     if (copy && !(await this.exists(copy.guard))) {
@@ -373,8 +376,8 @@ export class MirrorFS implements AppFS {
   listDir(path: string) {
     return this.inner.listDir(this.at(path));
   }
-  snapshot(dataDir: string, stamp: string, keep: number, copy?: CopyTarget) {
-    return this.inner.snapshot(dataDir, stamp, keep, copy);
+  snapshot(dataDir: string, stamp: string, keep: number, copy?: CopyTarget, backupsDir?: string) {
+    return this.inner.snapshot(dataDir, stamp, keep, copy, backupsDir);
   }
   copyFolder(src: string, dest: string, skip: string[]) {
     return this.inner.copyFolder(src, dest, skip);
@@ -492,9 +495,9 @@ export class QueuedFS implements AppFS {
     await this.backup;
     return this.inner.rename(from, to);
   }
-  snapshot(dataDir: string, stamp: string, keep: number, copy?: CopyTarget) {
+  snapshot(dataDir: string, stamp: string, keep: number, copy?: CopyTarget, backupsDir?: string) {
     // The gate goes up at once, so even a write queued right after this call waits.
-    const copying = this.allSettled().then(() => this.inner.snapshot(dataDir, stamp, keep, copy));
+    const copying = this.allSettled().then(() => this.inner.snapshot(dataDir, stamp, keep, copy, backupsDir));
     this.backup = copying.then(
       () => {},
       () => {},

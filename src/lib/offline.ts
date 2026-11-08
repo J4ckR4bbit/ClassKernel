@@ -11,12 +11,17 @@
 //                          after joining back
 //   state.json             the data folder in use, in case WebView storage
 //                          is ever cleared while changes are waiting
+//   backups/<stamp>/       the snapshots taken at each launch, while this
+//                          computer keeps a copy (so they aren't uploaded)
 //
 // The changed files are simply those that differ between local-copy/ and
 // offline-base/, so nothing has to be tracked per save.
 
 import { diskFS, getFS } from "./fs";
+import { isDataFile } from "./dataFiles";
 import { mergeFile, Clash } from "./merge";
+
+export { isDataFile };
 import * as repo from "./repo";
 import { Mark } from "./types";
 
@@ -27,6 +32,8 @@ export interface LocalPaths {
   session: string;
   state: string;
   source: string;
+  /** The launch snapshots, while this computer keeps a copy (see appStore keepLocalCopy). */
+  backups: string;
 }
 
 export async function localPaths(): Promise<LocalPaths> {
@@ -38,6 +45,7 @@ export async function localPaths(): Promise<LocalPaths> {
     session: `${root}/offline-session.json`,
     state: `${root}/state.json`,
     source: `${root}/local-copy/.source.json`,
+    backups: `${root}/backups`,
   };
 }
 
@@ -134,22 +142,6 @@ export async function startOfflineSession(paths: LocalPaths, realDir: string): P
   const session: OfflineSession = { realDir, since: new Date().toISOString(), copyRefreshedAt: source?.refreshedAt ?? "" };
   await fs.writeAtomic(paths.session, JSON.stringify(session));
   return session;
-}
-
-/**
- * Whether a file (relative to the data folder) is one of ClassKernel's own:
- * the .csv and .md files it writes. Everything else that may sit in the
- * folder is left alone, never sent, joined or taken in: a desktop.ini, a PDF
- * or spreadsheet saved there, Excel's "~$" lock files, temp files, and
- * anything in a hidden folder (a deleted layout template's .trash-… folder).
- * Reading one of those as text would fail and stop the whole send.
- */
-export function isDataFile(rel: string): boolean {
-  const parts = rel.split("/");
-  const name = parts[parts.length - 1];
-  if (parts.some((part) => part.startsWith("."))) return false;
-  if (name.startsWith("~$") || name.endsWith(".tmp.classkernel")) return false;
-  return /\.(csv|md)$/i.test(name);
 }
 
 /** ClassKernel's data files under `dir`, relative to it (see isDataFile). */

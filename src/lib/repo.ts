@@ -21,11 +21,13 @@
 //   behaviours.csv, topics.csv, cognitive_levels.csv, settings.csv   app-wide (root)
 //   note_sections.csv                     name  (the notes' sections and tags, app-wide)
 //   layouts/<name>/desks.csv + room.csv   reusable room templates
-//   backups/<stamp>/...                   rolling snapshots
+//   backups/<stamp>/...                   rolling snapshots: the older ones (now they're
+//                                         kept on this computer: offline.ts localPaths)
 
 import { isValidTimeZone } from "./time";
 import { snapBehaviourColour } from "./behaviourColours";
 import { getFS } from "./fs";
+import { isDataFile } from "./dataFiles";
 import { parseCsv, stringifyCsv, num, numOrNull } from "./csv";
 import { visitSeconds } from "./stats";
 import { DEFAULT_NOTE_SECTIONS, Note, asKind, notesToRows, renameSectionInNotes, rowsToNotes } from "./notes";
@@ -892,53 +894,84 @@ export async function saveTimerPresets(dataDir: string, presets: TimerPreset[]):
   await getFS().writeAtomic(p(dataDir, "timer_presets.csv"), stringifyCsv(rows, TIMER_PRESET_COLS));
 }
 
-// ---------- backup snapshots (backups/<stamp>/) ----------
-// Snapshots are taken automatically at every app start (fs.snapshot). Restore
-// is done here in TS with the plain FS primitives so it behaves identically on
-// the desktop backend and the in-memory FS (demo mode / tests).
+// ---------- backup snapshots ----------
+// Snapshots are taken automatically at every app start (fs.snapshot): on this
+// computer while it keeps a copy, otherwise (and before this version) in the
+// data folder's backups/. Restore is done here in TS with the plain FS
+// primitives so it behaves identically on the desktop backend and the
+// in-memory FS (demo mode / tests).
 
-/** Newest-first list of snapshot folder names under backups/. */
-export async function listBackups(dataDir: string): Promise<string[]> {
+/** A backup snapshot: the folder that holds it, and its name (a date-and-time stamp, or pre-restore-…). */
+export interface BackupRef {
+  dir: string;
+  stamp: string;
+  /** In this computer's backups, rather than the data folder's backups/. */
+  onThisComputer: boolean;
+}
+
+async function snapshotsIn(dir: string, onThisComputer: boolean): Promise<BackupRef[]> {
   const fs = getFS();
-  const dir = p(dataDir, "backups");
   if (!(await fs.exists(dir))) return [];
   const entries = await fs.listDir(dir);
   return entries
     .filter((e) => e.isDir && !e.name.startsWith("."))
-    .map((e) => e.name)
-    .sort((a, b) => b.localeCompare(a));
+    .map((e) => ({ dir, stamp: e.name, onThisComputer }))
+    .sort((a, b) => b.stamp.localeCompare(a.stamp));
 }
 
-/** Recursively copy every file under src into dest, skipping skipNames at the top level. */
-async function copyTree(src: string, dest: string, skipNames: string[] = []): Promise<void> {
+/**
+ * Newest first: this computer's backups (`localBackups`, while it keeps
+ * them), then any in the data folder's backups/ (older ones, or all of them on
+ * a computer that keeps no copy).
+ */
+export async function listBackups(dataDir: string, localBackups: string | null = null): Promise<BackupRef[]> {
+  return [...(localBackups ? await snapshotsIn(localBackups, true) : []), ...(await snapshotsIn(p(dataDir, "backups"), false))];
+}
+
+/** A restore that couldn't start, with nothing changed: why, in the teacher's words. */
+export class RestoreBlocked extends Error {}
+
+/**
+ * Copy ClassKernel's own files under `src` into `dest` (dataFiles.ts): not
+ * backups, exports or anything else kept there, which may not even be text.
+ * `whole`: a file that can't be read or written stops the copy (a safety copy
+ * must be complete); otherwise it's skipped and listed.
+ */
+async function copyDataFiles(src: string, dest: string, whole: boolean, prefix = "", skipped: string[] = []): Promise<string[]> {
   const fs = getFS();
-  const entries = await fs.listDir(src);
-  for (const e of entries) {
-    if (skipNames.includes(e.name) || e.name.endsWith(".tmp.classkernel")) continue;
-    const from = p(src, e.name);
-    const to = p(dest, e.name);
+  for (const e of await fs.listDir(prefix ? p(src, prefix) : src)) {
+    const rel = prefix ? `${prefix}/${e.name}` : e.name;
+    if (!prefix && (e.name === "backups" || e.name === "exports")) continue;
     if (e.isDir) {
-      await fs.mkdirs(to);
-      await copyTree(from, to);
-    } else {
-      await fs.writeAtomic(to, await fs.readText(from));
+      if (!e.name.startsWith(".")) await copyDataFiles(src, dest, whole, rel, skipped);
+      continue;
+    }
+    if (!isDataFile(rel)) continue;
+    try {
+      await fs.writeAtomic(p(dest, rel), await fs.readText(p(src, rel)));
+    } catch (err) {
+      console.warn(`Couldn't copy ${rel}`, err);
+      if (whole) throw new RestoreBlocked(`${rel} can't be read just now — is it open in another program? Close it and try again`);
+      skipped.push(rel);
     }
   }
+  return skipped;
 }
 
 /**
  * Copy a snapshot's files back over the live data folder. A safety copy of the
- * current state is written to backups/<safetyStamp> first, so a restore is
- * itself undoable. Files created since the snapshot are left in place.
+ * current state is written to `safetyDir` first, so a restore is itself
+ * undoable; if any file can't be read for it, nothing is changed. Files
+ * created since the snapshot are left in place. A file that can't be written
+ * (open in Excel, say) is skipped and listed in `notRestored`.
  */
-export async function restoreBackup(dataDir: string, stamp: string, safetyStamp: string): Promise<void> {
+export async function restoreBackup(dataDir: string, from: BackupRef, safetyDir: string): Promise<{ notRestored: string[] }> {
   const fs = getFS();
-  const snapDir = p(dataDir, "backups", stamp);
-  if (!(await fs.exists(snapDir))) throw new Error(`Backup not found: ${stamp}`);
-  const safetyDir = p(dataDir, "backups", safetyStamp);
+  const snapDir = p(from.dir, from.stamp);
+  if (!(await fs.exists(snapDir))) throw new Error(`Backup not found: ${from.stamp}`);
   await fs.mkdirs(safetyDir);
-  await copyTree(dataDir, safetyDir, ["backups"]);
-  await copyTree(snapDir, dataDir, ["backups"]);
+  await copyDataFiles(dataDir, safetyDir, true);
+  return { notRestored: await copyDataFiles(snapDir, dataDir, false) };
 }
 
 // ---------- app-wide user preferences (settings.csv: key,value) ----------

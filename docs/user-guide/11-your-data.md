@@ -21,7 +21,8 @@ ClassroomData/
       question_marks.csv, report_comments.csv, notes.csv
   layouts/                               saved room templates
   exports/                               spreadsheets from "Save to data folder"
-  backups/                               automatic snapshots
+  backups/                               older automatic snapshots (they're now kept on
+                                         this computer: see Automatic backups)
 ```
 
 Every file opens in Excel or Notepad. The [data file reference](../data-files.md) lists what each one holds, column
@@ -87,14 +88,29 @@ message says your changes are in it.
 
 ## Automatic backups
 
-Each time ClassKernel starts, it copies the whole data folder into `backups/` (named by date and time). Every
-backup from today is kept, plus the last one from each of the 14 most recent earlier days you used the app, so
-you always have two teaching weeks to go back to, however often you open it (and a holiday doesn't eat into
-them). The copy runs in the background while your classes open.
+Each time ClassKernel starts, it copies the whole data folder into a backup named by date and time. Every backup
+from today is kept, plus the last one from each of the 14 most recent earlier days you used the app, so you always
+have two teaching weeks to go back to, however often you open it (and a holiday doesn't eat into them). The copy
+runs in the background while your classes open.
+
+The backups are kept **on this computer**, in `%LOCALAPPDATA%\com.classkernel.app\backups`, not in your Google
+Drive folder. A backup inside Drive would be uploaded in full every time the app starts. Each computer keeps its own
+backups of the folder as it was when the app opened there.
+
+- On a computer where **Keep a copy on this computer** is switched off (one other people sign in to), the backups
+  hold the same student information, so they're made in the data folder's `backups/` instead, as they used to be.
+  Switching that setting off also removes this computer's backups.
+- Backups made before this change are still in the data folder's `backups/`. They're listed under Restore (marked
+  *in the data folder*), and nothing new is added there. Once you're happy, you can delete them in File Explorer.
 
 To go back to one, open **Settings → General → Data → Restore a backup**, choose a backup and press **Restore…**.
 The backup's files replace the current ones (anything created since that backup is kept), and a safety copy of
 today's data is taken first, so a restore can itself be undone.
+
+- Only ClassKernel's own files (`.csv` and `.md`) are restored. Anything else in the folder is left alone.
+- If a file is open in another program (a CSV open in Excel, say), the safety copy can't be taken, so nothing is
+  restored and a message names the file. Close it and try again.
+- If one file can't be replaced, the rest are still restored, and the message says which one was missed.
 
 ## If Google Drive isn't ready
 
@@ -154,6 +170,7 @@ another computer:
 
 - where the data folder is, and this computer's copy of it (see [If Google Drive isn't ready](#if-google-drive-isnt-ready)),
   with any changes not yet sent to the folder (see [Sending changes to Google Drive](#sending-changes-to-google-drive));
+- the automatic backups (see [Automatic backups](#automatic-backups));
 - how often changes are sent to the data folder;
 - whether the navigation rail is expanded;
 - the **once-per-lesson** seat lock and when the current lesson started;

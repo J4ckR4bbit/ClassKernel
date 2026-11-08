@@ -93,9 +93,14 @@ async fn rename_path(from: String, to: String) -> Result<(), String> {
     blocking(move || fs::rename(&from, &to).map_err(err)).await
 }
 
-/// Copy the data folder (minus backups/) into backups/<stamp>/ and prune old
-/// snapshots: every one from today is kept, plus the newest from each of the
-/// `keep` most recent earlier days (see backup_policy.rs).
+/// Copy the data folder (minus backups/) into <backups>/<stamp>/ and prune old
+/// snapshots there: every one from today is kept, plus the newest from each of
+/// the `keep` most recent earlier days (see backup_policy.rs).
+///
+/// The backups go in `backups_dir` when given: a folder on this computer,
+/// inside the app's own local folder (so a synced data folder isn't
+/// re-uploaded in full at every launch). Otherwise they go in the data
+/// folder's own backups/, as they always did.
 ///
 /// With `copy_to`, the same pass also refreshes this computer's copy of the
 /// data folder (without exports/), file by file, then removes what the folder
@@ -103,18 +108,31 @@ async fn rename_path(from: String, to: String) -> Result<(), String> {
 /// the copy holds changes not yet copied back, which a refresh would lose.
 #[tauri::command]
 async fn snapshot_backup(
+    app: tauri::AppHandle,
     data_dir: String,
     stamp: String,
     keep: u32,
     copy_to: Option<String>,
     copy_guard: Option<String>,
+    backups_dir: Option<String>,
 ) -> Result<String, String> {
+    let local = app.path().app_local_data_dir().map_err(err)?;
     blocking(move || {
         let root = PathBuf::from(&data_dir);
         if !root.is_dir() {
             return Err(format!("Not a folder: {data_dir}"));
         }
-        let backups = root.join("backups");
+        // Old snapshots are deleted from here, so it must be the app's own.
+        let backups = match backups_dir {
+            Some(dir) => {
+                let dir = PathBuf::from(dir);
+                if !is_within(&local, &dir) {
+                    return Err(format!("Not in the app's local folder: {}", dir.display()));
+                }
+                dir
+            }
+            None => root.join("backups"),
+        };
         let dest = backups.join(&stamp);
         let guarded = copy_guard.as_deref().map(|g| Path::new(g).exists()).unwrap_or(false);
         let copy = copy_to.filter(|_| !guarded).map(PathBuf::from);
