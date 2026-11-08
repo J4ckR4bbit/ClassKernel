@@ -10,9 +10,49 @@ import {
   paint,
 } from "./drawing";
 
+// The tests start from a bare sheet — no axes, arrows or ticks, automatic weights —
+// and switch on only what each one is about. The shipped defaults are pinned below.
+const PLAIN: Partial<GraphPaperSettings> = {
+  autoWeights: true,
+  yAxisLine: false,
+  yArrowTop: false,
+  yArrowBottom: false,
+  xAxisLine: false,
+  xArrowRight: false,
+  xTicks: false,
+  yTicks: false,
+};
+
 const settings = (patch: Partial<GraphPaperSettings> = {}): GraphPaperSettings => ({
   ...DEFAULT_GRAPH_PAPER,
+  ...PLAIN,
   ...patch,
+});
+
+describe("graph paper defaults", () => {
+  it("opens with fine manual weights, both axes, arrows and small ticks", () => {
+    expect(DEFAULT_GRAPH_PAPER).toMatchObject({
+      autoWeights: false,
+      xMajorW: 0.2,
+      xMinorW: 0.1,
+      yMajorW: 0.2,
+      yMinorW: 0.1,
+      axisW: 0.3,
+      yAxisLine: true,
+      yArrowTop: true,
+      yArrowBottom: false,
+      xAxisLine: true,
+      xArrowRight: true,
+      xAxisPosition: "bottom",
+      arrowSize: 2,
+      xTicks: true,
+      xTickLen: 1,
+      xTickW: 0.3,
+      yTicks: true,
+      yTickLen: 1,
+      yTickW: 0.3,
+    });
+  });
 });
 
 describe("graph paper geometry", () => {
