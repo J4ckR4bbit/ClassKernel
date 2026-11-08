@@ -75,6 +75,38 @@ test("With every save, changes go to the data folder straight away", async ({ pa
   await expect.poll(() => onDrive(page, ATTENDANCE), { timeout: 2_000 }).not.toBe(before);
 });
 
+test("changes left unsent last time are sent at launch, without working from this computer's copy", async ({ page }) => {
+  await page.goto("/?simulate=drive&minute=60&leftover=1");
+  await expect.poll(() => onDrive(page, ATTENDANCE), { timeout: 10_000 }).toContain("2001-01-01,leftover,A");
+  await expect(chip(page)).toContainText(/Sent|Up to date/);
+  await expect(page.locator(".folder-banner")).toHaveCount(0);
+  await expect(chip(page)).not.toContainText("This computer's copy");
+});
+
+test("when the folder can't be reached it says so once, stays quiet, and says when it's back", async ({ page }) => {
+  await launch(page, 1); // "every 2 minutes" = every 2 s
+  await page.evaluate(() => window.__ckDemo!.driveAway!());
+  await markFirstAbsent(page);
+  const toast = page.locator(".toast");
+  await expect(toast).toContainText("Can't reach your data folder just now", { timeout: 8_000 });
+  // Then just a small grey icon in the top bar, with the details in its tooltip.
+  await expect(chip(page)).toHaveClass(/\bquiet\b/);
+  await expect(chip(page)).toHaveText("");
+  await expect(chip(page)).toHaveAttribute("title", /can't be reached/);
+  await page.locator(".toast-action").click();
+  // Further tries (every 2 s here) don't say it again.
+  await page.waitForTimeout(5_000);
+  await expect(toast).toHaveCount(0);
+  await settingsTab(page, "General");
+  await expect(page.locator(".send-problem")).toContainText("Last problem sending");
+
+  await page.evaluate(() => window.__ckDemo!.driveBack!());
+  await expect(toast).toContainText("Your data folder is back", { timeout: 8_000 });
+  await expect(chip(page)).toContainText("Sent");
+  await expect(page.locator(".send-problem")).toHaveCount(0);
+  expect(await onDrive(page, ATTENDANCE)).toContain(",A,");
+});
+
 test("renaming a class is done in the data folder itself, and sending in batches carries on", async ({ page }) => {
   await launch(page, 60);
   await nav(page, "Class");
@@ -90,4 +122,21 @@ test("renaming a class is done in the data folder itself, and sending in batches
   await markFirstAbsent(page);
   await chip(page).click();
   await expect.poll(() => onDrive(page, "classes/7B Science/attendance.csv")).toContain(",A,");
+});
+
+test("the launch backup is kept on this computer, not in the data folder, and restores from Settings", async ({ page }) => {
+  await launch(page, 60);
+  const before = await onDrive(page, ATTENDANCE);
+  await markFirstAbsent(page);
+  await settingsTab(page, "General");
+  const backup = page.locator(".backup-list li").first();
+  await expect(backup).toBeVisible();
+  await expect(backup).not.toContainText("in the data folder");
+  await backup.getByRole("button", { name: "Restore…" }).click();
+  await page.getByRole("button", { name: "Restore backup" }).click();
+  await expect(page.locator(".toast")).toHaveText("Backup restored");
+  // The register is back as it was when the app opened, in the data folder too.
+  expect(await onDrive(page, ATTENDANCE)).toBe(before);
+  await nav(page, "Attendance");
+  await expect(page.locator(".att-seg").first().locator(".att-btn.A")).not.toHaveClass(/\bon\b/);
 });

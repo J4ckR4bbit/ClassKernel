@@ -624,16 +624,21 @@ test("your data: when the data folder isn't ready", async ({ page }) => {
   await page.getByRole("button", { name: "Open this computer's copy now" }).click();
   await nav(page, "Attendance");
   await page.locator(".att-seg").first().locator(".att-btn.A").click();
-  await asDrive();
-  await shotOf(page, page.locator(".folder-banner"), "folder-working-from-copy", 0);
+  // Once the message has gone, only the small chip in the top bar says so.
+  await expect(page.locator(".toast")).toHaveCount(0, { timeout: 10_000 });
+  await expect(page.locator(".top-bar .send-status")).toHaveText("This computer's copy");
+  await shotOf(page, page.locator(".top-bar"), "folder-working-from-copy", 0);
 
-  // Another computer recorded a register meanwhile, so the two are joined.
+  // Another computer recorded a register meanwhile, so the two are joined; with
+  // nothing to look at, a short message says so.
+  await toasts(page, true);
   await page.evaluate(async () => {
     const rel = "classes/7B-Science/attendance.csv";
     const drive = (await window.__ckDemo!.readOnDrive(rel)) ?? "date,student_id,status,note\r\n";
     await window.__ckDemo!.editOnDrive(rel, `${drive}2001-01-01,elsewhere,L,\r\n`);
     await window.__ckDemo!.folderBack();
   });
-  await expect(page.locator(".folder-banner")).toContainText("back in your data folder", { timeout: 15_000 });
-  await shotOf(page, page.locator(".folder-banner"), "folder-copied-back", 0);
+  const done = page.locator(".toast");
+  await expect(done).toContainText("Your data folder is back", { timeout: 15_000 });
+  await shotOf(page, done, "folder-copied-back", 0);
 });

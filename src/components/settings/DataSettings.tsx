@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { SendEvery, WAIT_FOR_FOLDER_MS, keepLocalCopy, sendEvery, useApp, useAppPick } from "../../store/appStore";
+import { SendEvery, WAIT_FOR_FOLDER_MS, backupsFor, keepLocalCopy, sendEvery, useApp, useAppPick } from "../../store/appStore";
+import { localPaths } from "../../lib/offline";
 import Segmented from "../Segmented";
 import * as repo from "../../lib/repo";
 import { backupStamp } from "../../lib/id";
@@ -17,6 +18,8 @@ export default function DataSettings() {
   );
   // While the data folder is away, dataDir is this computer's copy.
   const awayFrom = folderStatus?.kind === "copy" || folderStatus?.kind === "syncing" ? folderStatus.realDir : null;
+  // Why the last send or copy-back didn't (all) go, word for word: what to pass on if it keeps happening.
+  const problem = folderStatus?.kind === "batched" || folderStatus?.kind === "copy" ? folderStatus.lastError : null;
 
   return (
     <div className="panel">
@@ -35,9 +38,10 @@ export default function DataSettings() {
       </div>
       <p className="muted">
         Everything lives in plain .csv / .md files in that folder — open them in Excel or Notepad any time. Put the
-        folder inside OneDrive or Google Drive and the sync client backs it up automatically. A snapshot copy is
-        made into <code>backups/</code> every time the app starts: all of today's are kept, plus the last one from each of
-        the 14 most recent earlier days the app was used.
+        folder inside OneDrive or Google Drive and the sync client backs it up automatically. A backup copy is made
+        every time the app starts, on this computer (not in Google Drive, so Drive isn't re-uploading everything at
+        each start; with <b>Keep a copy on this computer</b> off, in the folder's <code>backups/</code> instead): all of
+        today's are kept, plus the last one from each of the 14 most recent earlier days the app was used.
       </p>
       <p className="muted">
         Student information (names, flags, notes, marks) is stored in these files as plain, readable text — treat
@@ -48,6 +52,13 @@ export default function DataSettings() {
         archived. Archived classes stay on disk in <code>classes/</code>; restore them from Class notes.
       </p>
       <LocalCopySettings away={!!awayFrom} />
+      {problem && (
+        <p className="muted send-problem" role="status">
+          <b>Last problem sending to your data folder:</b> <code>{problem}</code>. Your changes are safe on this computer
+          and it tries again by itself. If this keeps showing while the folder opens fine in File Explorer, close any
+          program that has the file open, or pass this line on.
+        </p>
+      )}
       {awayFrom ? (
         <p className="muted">Restoring a backup is available again once your data folder is back.</p>
       ) : (
@@ -68,8 +79,8 @@ function LocalCopySettings({ away }: { away: boolean }) {
   const toggle = async (on: boolean) => {
     if (!on) {
       const ok = await confirmDialog({
-        title: "Remove this computer's copy?",
-        body: "If your data folder isn't there when ClassKernel starts, you'll be asked to choose it again instead of carrying on from the copy.",
+        title: "Remove this computer's copy and backups?",
+        body: "This computer's copy of your data and its backups are removed; backups are made in your data folder again from the next start. If your data folder isn't there when ClassKernel starts, you'll be asked to choose it again instead of carrying on from the copy.",
         confirmLabel: "Remove",
         danger: true,
       });
@@ -77,7 +88,7 @@ function LocalCopySettings({ away }: { away: boolean }) {
     }
     setKeep(on);
     await setKeepLocalCopy(on);
-    showToast(on ? "This computer now keeps a copy of your data" : "This computer's copy removed");
+    showToast(on ? "This computer now keeps a copy of your data, and its backups" : "This computer's copy and backups removed");
   };
   return (
     <>
@@ -86,8 +97,8 @@ function LocalCopySettings({ away }: { away: boolean }) {
         <span>
           <b>Keep a copy on this computer</b> — if your data folder isn't there when ClassKernel starts (Google Drive or
           OneDrive still starting), it waits {Math.round(WAIT_FOR_FOLDER_MS / 1000)} seconds, then carries on from this
-          copy and copies your changes back when the folder returns. The copy holds the same student information as the
-          folder: on a computer other people sign in to, switch it off.
+          copy and copies your changes back when the folder returns. The automatic backups are kept here too. Both hold
+          the same student information as the folder: on a computer other people sign in to, switch it off.
         </span>
       </label>
       <SendEverySetting keep={keep} away={away} />
@@ -131,6 +142,13 @@ function SendEverySetting({ keep, away }: { keep: boolean; away: boolean }) {
   );
 }
 
+/** The backups to offer: this computer's newest, then a few of the older ones still in the data folder. */
+async function backupsToOffer(dataDir: string): Promise<repo.BackupRef[]> {
+  const paths = await localPaths();
+  const all = await repo.listBackups(dataDir, backupsFor(paths) ?? null);
+  return [...all.filter((b) => b.onThisComputer).slice(0, 8), ...all.filter((b) => !b.onThisComputer).slice(0, 4)];
+}
+
 /** List of snapshot backups with one-tap restore (a safety copy is taken first). */
 function BackupRestore({
   dataDir,
@@ -143,18 +161,18 @@ function BackupRestore({
   confirmDialog: ReturnType<typeof useApp.getState>["confirmDialog"];
   showToast: (message: string) => void;
 }) {
-  const [backups, setBackups] = useState<string[]>([]);
+  const [backups, setBackups] = useState<repo.BackupRef[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (dataDir) void repo.listBackups(dataDir).then(setBackups);
+    if (dataDir) void backupsToOffer(dataDir).then(setBackups);
   }, [dataDir]);
 
   if (!dataDir || backups.length === 0) return null;
 
-  const restore = async (stamp: string) => {
+  const restore = async (from: repo.BackupRef) => {
     const ok = await confirmDialog({
-      title: `Restore the backup from ${stamp.replace("_", " at ").replace(/(\d{2})(\d{2})(\d{2})$/, "$1:$2")}?`,
+      title: `Restore the backup from ${from.stamp.replace("_", " at ").replace(/(\d{2})(\d{2})(\d{2})$/, "$1:$2")}?`,
       body: "All current files are replaced with the backup's copies (anything created since the backup is kept). A safety copy of today's data is made first.",
       confirmLabel: "Restore backup",
       danger: true,
@@ -167,15 +185,20 @@ function BackupRestore({
         showToast("This computer's latest changes haven't reached your data folder yet — try again once Google Drive is back");
         return;
       }
-      await repo.restoreBackup(dataDir, stamp, `pre-restore-${backupStamp()}`);
+      const safetyIn = backupsFor(await localPaths()) ?? `${dataDir}/backups`;
+      const { notRestored } = await repo.restoreBackup(dataDir, from, `${safetyIn}/pre-restore-${backupStamp()}`);
       await onRestore(dataDir);
-      showToast("Backup restored");
+      showToast(
+        notRestored.length
+          ? `Backup restored, except ${notRestored.join(", ")} (open in another program?) — close it and restore again to bring it back too`
+          : "Backup restored",
+      );
     } catch (e) {
       console.error("Restore failed", e);
-      showToast("Restore failed — the backup files may be missing");
+      showToast(e instanceof repo.RestoreBlocked ? `Nothing was restored: ${e.message}` : "Restore failed — the backup files may be missing");
     } finally {
       setBusy(false);
-      void repo.listBackups(dataDir).then(setBackups);
+      void backupsToOffer(dataDir).then(setBackups);
     }
   };
 
@@ -183,9 +206,12 @@ function BackupRestore({
     <div style={{ marginTop: 8 }}>
       <b>Restore a backup</b>
       <ul className="backup-list">
-        {backups.slice(0, 8).map((b) => (
-          <li key={b}>
-            <span className="muted">{b.replace("_", " · ")}</span>
+        {backups.map((b) => (
+          <li key={`${b.onThisComputer ? "here" : "folder"}/${b.stamp}`}>
+            <span className="muted">
+              {b.stamp.replace("_", " · ")}
+              {!b.onThisComputer && " · in the data folder"}
+            </span>
             <button className="small" disabled={busy} onClick={() => void restore(b)}>
               Restore…
             </button>

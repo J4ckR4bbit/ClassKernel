@@ -2,14 +2,16 @@ import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { backupStamp, nowIso, today } from "../lib/id";
 import { getFS, isTauri, onWorkWrite, useFolder } from "../lib/fs";
-import { needsALook, sendChanges } from "../lib/batchSync";
+import { FolderAway, needsALook, sendChanges } from "../lib/batchSync";
 import * as repo from "../lib/repo";
 import {
+  CopyBackIncomplete,
   LocalPaths,
   SettleTracker,
   SyncReport,
   changedFiles,
   decideBoot,
+  describeError,
   isReady,
   localPaths,
   readSession,
@@ -151,17 +153,29 @@ export function keepLocalCopy(): boolean {
  * - waiting: the saved folder isn't there yet (Google Drive still starting);
  * - copy: working from this computer's copy; `back` once the folder has
  *   returned and settled, while the copy-back waits for a safe moment;
+ *   `lastError`, why the last copy-back didn't work;
  * - syncing: copying this computer's changes back into the folder.
  */
 export type FolderStatus =
   | { kind: "waiting"; realDir: string; since: number; copyAvailable: boolean }
-  | { kind: "copy"; realDir: string; since: string; copyRefreshedAt: string; back: boolean }
+  | { kind: "copy"; realDir: string; since: string; copyRefreshedAt: string; back: boolean; lastError?: string }
   | { kind: "syncing"; realDir: string }
   /**
    * Working in this computer's copy, sending the changes to the data folder
    * (realDir) every few minutes and at natural pauses (batchSync.ts).
+   * `failed`: files the last send couldn't take across (tried again next
+   * time); `lastError`: why the last send, or a file in it, didn't go.
    */
-  | { kind: "batched"; realDir: string; lastSent: string | null; pending: boolean; driveAway: boolean; sending: boolean };
+  | {
+      kind: "batched";
+      realDir: string;
+      lastSent: string | null;
+      pending: boolean;
+      driveAway: boolean;
+      sending: boolean;
+      failed: Array<{ file: string; error: string }>;
+      lastError: string | null;
+    };
 
 /** A toast message, optionally with a single action (usually Undo). */
 export interface Toast {
@@ -507,12 +521,8 @@ export const useApp = create<AppState>((set, get) => {
         } catch (e) {
           // The folder went away (or turned unreadable) while loading.
           console.warn("Couldn't open the data folder", e);
-          waitForFolder(plan.dir, !!(await readSource(paths)));
+          waitForFolder(plan.dir, !!session || !!(await readSource(paths)));
         }
-      } else if (plan.kind === "copy") {
-        // Changes from last time are still waiting: the copy opens, and if the
-        // folder is already there the banner says so (and offers to copy back).
-        await openCopy(paths, plan.realDir, ready);
       } else if (plan.kind === "wait") {
         waitForFolder(plan.realDir, plan.copyAvailable);
       }
@@ -546,8 +556,14 @@ export const useApp = create<AppState>((set, get) => {
       set({ folderStatus: { kind: "syncing", realDir: path } });
       try {
         await getFS().flush();
-        set({ syncReport: await syncBack(paths, path, backupStamp()) });
+        showSyncReport(await syncBack(paths, path, backupStamp()), "This computer's changes are in that folder now");
       } catch (e) {
+        if (e instanceof CopyBackIncomplete) {
+          // The rest went: the files left over are sent from the folder's own session (openFolder).
+          showSyncReport(e.report, "This computer's changes are in that folder now");
+          await get().openFolder(path, { kind: "data", create: true });
+          return;
+        }
         console.warn("Copying back failed", e);
         const session = await readSession(paths);
         if (session) await openCopy(paths, session.realDir);
@@ -569,6 +585,10 @@ export const useApp = create<AppState>((set, get) => {
     const fs = getFS();
     const paths = await localPaths();
     const copying = (isTauri() || !!simulateMissingFolder || simulateDrive) && kind === "data";
+    // Changes saved on this computer and not yet in the folder (the app was
+    // closed before they were sent, or they're left from working offline):
+    // carry on from this computer's copy, which holds them, and send them now.
+    const waiting = copying ? await readSession(paths) : null;
     // Settles true once this computer's copy has been refreshed from the folder.
     let copyFresh: Promise<boolean> = Promise.resolve(false);
     if (kind === "data") {
@@ -580,7 +600,16 @@ export const useApp = create<AppState>((set, get) => {
           // state.json below still remembers it.
         }
       }
-      if (copying) {
+      if (waiting) {
+        // They go to this folder (it may have moved, say to another drive letter).
+        if (!sameFolder(waiting.realDir, path)) await fs.writeAtomic(paths.session, JSON.stringify({ ...waiting, realDir: path }));
+        void writeState(paths, path).catch((e) => console.warn("Couldn't record the data folder", e));
+        useFolder(path, null, paths.copy);
+        // Today's backup of the folder; the marker keeps it from refreshing the copy.
+        void fs
+          .snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, { to: paths.copy, guard: paths.session }, backupsFor(paths))
+          .catch((e) => console.warn("Backup snapshot failed", e));
+      } else if (copying) {
         const keep = keepLocalCopy();
         const source = await readSource(paths);
         if (keep && source && !sameFolder(source.realDir, path) && !(await readSession(paths))) {
@@ -594,7 +623,7 @@ export const useApp = create<AppState>((set, get) => {
         // Copied in the background while the classes load, refreshing this
         // computer's copy in the same pass; it is the folder as it was opened.
         copyFresh = fs
-          .snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, keep ? { to: paths.copy, guard: paths.session } : undefined)
+          .snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, keep ? { to: paths.copy, guard: paths.session } : undefined, backupsFor(paths))
           .then(async () => {
             if (keep && !(await readSession(paths))) {
               await fs.writeAtomic(paths.source, JSON.stringify({ realDir: path, refreshedAt: nowIso() }));
@@ -621,7 +650,7 @@ export const useApp = create<AppState>((set, get) => {
     // the data folder itself: renamed rows in this computer's copy would come
     // back as duplicates when it is joined to the folder.
     let codes = behaviourCodes;
-    const renames = kind === "data" ? shortenCodes(behaviourCodes) : new Map<string, string>();
+    const renames = kind === "data" && !waiting ? shortenCodes(behaviourCodes) : new Map<string, string>();
     if (renames.size > 0) {
       try {
         await repo.renameBehaviourCodesInClasses(path, renames);
@@ -636,11 +665,22 @@ export const useApp = create<AppState>((set, get) => {
     const previous = get().currentClass;
     set({ noteSections });
     set({ dataDir: path, classes, behaviourCodes: codes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, currentClass: null });
-    if (kind === "data") set({ folderStatus: null });
+    if (kind === "data") set({ folderStatus: waiting ? batchedStart(path, true) : null });
     else if (realDir) set({ folderStatus: { kind: "copy", realDir, since: nowIso(), copyRefreshedAt: "", back: false } });
+    if (waiting) {
+      unsent = true;
+      watchSaves(true);
+    }
     const active = classes.filter((c) => !c.archived);
     const reopen = keepClass && previous && classes.some((c) => c.name === previous) ? previous : active[0]?.name;
+    // Opening a class while sending in batches is a pause: what's waiting goes now.
     if (reopen) await get().openClass(reopen);
+    else if (waiting) void send(true);
+    if (waiting) {
+      // Batching was switched off meanwhile: send, then save straight to the folder again.
+      if (sendEvery() === "now" || !keepLocalCopy()) void stopBatchingNow();
+      else armSendTimer();
+    }
     if (renames.size > 0) {
       get().showToast(`Behaviour codes are now 3 characters: ${describeRenames(renames)}`, { label: "OK", run: () => {} });
     }
@@ -671,7 +711,14 @@ export const useApp = create<AppState>((set, get) => {
 
   async sendNow() {
     if (!batchedStatus()) return;
-    if (!(await send(true))) get().showToast("Couldn't reach your data folder — your changes are safe on this computer and are sent when it's back");
+    if (await send(true)) return;
+    // Asked for: say why it didn't go (replacing any first-time notice).
+    const s = batchedStatus();
+    get().showToast(
+      s?.driveAway
+        ? "Still can't reach your data folder — your changes are safe on this computer"
+        : `Not everything could be sent yet${s?.failed[0] ? ` (${s.failed[0].file})` : ""} — it's tried again with the next send`,
+    );
   },
 
   naturalPause() {
@@ -717,6 +764,9 @@ export const useApp = create<AppState>((set, get) => {
     } else {
       useFolder(dataDir, null);
       if (!(await readSession(paths))) await getFS().removeLocal(paths.copy);
+      // Its backups hold the same student information: they go too, and from
+      // now on the launch backups are made in the data folder again.
+      await getFS().removeLocal(paths.backups).catch((e) => console.warn("Couldn't remove this computer's backups", e));
     }
   },
 
@@ -1314,6 +1364,11 @@ export function useAppPick<K extends keyof AppState>(...keys: K[]): Pick<AppStat
 let sendTimer: ReturnType<typeof setInterval> | undefined;
 /** A save has landed in the copy since the last send began. */
 let unsent = false;
+/**
+ * The teacher has been told, once, that the data folder can't be reached.
+ * Until it's back, the chip says so quietly; once it is, they're told that too.
+ */
+let toldAway = false;
 let sendChain: Promise<unknown> = Promise.resolve();
 
 function batchedStatus() {
@@ -1365,8 +1420,12 @@ async function startBatching(realDir: string): Promise<void> {
   unsent = false;
   watchSaves(true);
   useFolder(realDir, null, paths.copy);
-  useApp.setState({ folderStatus: { kind: "batched", realDir, lastSent: null, pending: false, driveAway: false, sending: false } });
+  useApp.setState({ folderStatus: batchedStart(realDir, false) });
   armSendTimer();
+}
+
+function batchedStart(realDir: string, pending: boolean): FolderStatus {
+  return { kind: "batched", realDir, lastSent: null, pending, driveAway: false, sending: false, failed: [], lastError: null };
 }
 
 /**
@@ -1382,25 +1441,71 @@ function send(atPause: boolean): Promise<boolean> {
     patchBatched({ sending: true });
     unsent = false;
     try {
-      if (!(await isReady(s.realDir))) throw new Error("The data folder isn't available");
+      if (!(await isReady(s.realDir))) throw new FolderAway(`${s.realDir} can't be read just now`);
       const paths = await localPaths();
       const report = await sendChanges(paths, s.realDir, backupStamp(), atPause);
       if (report.localChanged) await reloadFromCopy();
-      if (needsALook(report)) useApp.setState({ syncReport: report });
+      showSyncReport(report);
       const pending = (await changedFiles(paths)).length > 0;
       unsent = pending;
-      patchBatched({ sending: false, driveAway: false, pending, lastSent: nowIso() });
+      const problem = report.failed[0];
+      patchBatched({
+        sending: false,
+        driveAway: false,
+        pending,
+        lastSent: nowIso(),
+        failed: report.failed,
+        lastError: problem ? `${problem.file}: ${problem.error}` : null,
+      });
+      if (toldAway) {
+        toldAway = false;
+        useApp.getState().showToast("Your data folder is back — this computer's changes are in it");
+      }
       return !pending;
     } catch (e) {
       console.warn("Couldn't send changes to the data folder", e);
       unsent = true;
-      patchBatched({ sending: false, driveAway: true, pending: true });
+      patchBatched({ sending: false, driveAway: true, pending: true, lastError: describeError(e) });
+      if (!toldAway) {
+        toldAway = true;
+        useApp
+          .getState()
+          .showToast("Can't reach your data folder just now — your changes are safe on this computer and are sent once it's back", {
+            label: "OK",
+            run: () => {},
+          });
+      }
       return false;
     }
   };
   const next = sendChain.then(run, run);
   sendChain = next.catch(() => {});
   return next;
+}
+
+/**
+ * Where the launch backups go: on this computer while it keeps a copy (so a
+ * synced data folder isn't uploaded in full at every launch), otherwise in the
+ * data folder's own backups/ (a shared computer keeps no student data).
+ */
+export function backupsFor(paths: LocalPaths): string | undefined {
+  return keepLocalCopy() ? paths.backups : undefined;
+}
+
+/** The short message after a copy-back with nothing to look at. */
+function copiedBack(report: SyncReport): string {
+  return report.joined.length > 0
+    ? "Your data folder is back — this computer's changes are in it, joined with changes made on another computer"
+    : "Your data folder is back — this computer's changes are in it";
+}
+
+/**
+ * A copy-back or send that needs a look (clashes, files kept aside) stays on
+ * screen until dismissed; otherwise there's at most a short message.
+ */
+function showSyncReport(report: SyncReport, done?: string): void {
+  if (needsALook(report)) useApp.setState({ syncReport: report });
+  else if (done) useApp.getState().showToast(done);
 }
 
 /** Read again what a send changed here: the whole-folder lists, and the open class, keeping the screen as it is. */
@@ -1557,13 +1662,27 @@ async function loadClassData(dataDir: string, name: string) {
   };
 }
 
-/** Work from this computer's copy, keeping its starting point for the copy-back, and watch for the folder. */
+/** Said once per spell on the copy that a copy-back didn't work; the chip carries the rest. */
+let toldCopyBackFailed = false;
+
+/**
+ * Work from this computer's copy, keeping its starting point for the
+ * copy-back, and watch for the folder. Said once; then only the small chip
+ * in the top bar shows it, until the folder is back.
+ */
 async function openCopy(paths: LocalPaths, realDir: string, back = false): Promise<void> {
   const session = await startOfflineSession(paths, realDir);
   await useApp.getState().openFolder(paths.copy, { kind: "copy", realDir });
   useApp.setState({
     folderStatus: { kind: "copy", realDir, since: session.since, copyRefreshedAt: session.copyRefreshedAt, back },
   });
+  toldCopyBackFailed = false;
+  useApp
+    .getState()
+    .showToast("Your data folder can't be reached — you're working from this computer's copy, and your changes go back once it's there", {
+      label: "OK",
+      run: () => {},
+    });
   watchForReturn(realDir);
 }
 
@@ -1637,14 +1756,28 @@ async function copyBack(realDir: string): Promise<void> {
     await getFS().flush();
     const report = await syncBack(paths, realDir, backupStamp());
     await useApp.getState().openFolder(realDir, { kind: "data", keepClass: true });
-    useApp.setState({ syncReport: report });
+    showSyncReport(report, copiedBack(report));
   } catch (e) {
+    if (e instanceof CopyBackIncomplete) {
+      // Everything else went. The marker stays, so opening the folder carries
+      // on from the copy and sends the files left over in batches.
+      try {
+        await useApp.getState().openFolder(realDir, { kind: "data", keepClass: true });
+        showSyncReport(e.report, copiedBack(e.report));
+        return;
+      } catch (err) {
+        e = err;
+      }
+    }
     console.warn("Copying back failed", e);
     if (await readSession(paths)) {
-      // Nothing lost: still working from the copy; the next poll tries again.
-      if (before?.kind === "copy") useApp.setState({ folderStatus: { ...before, back: false } });
+      // Nothing lost: still working from the copy; the next poll tries again, quietly.
+      if (before?.kind === "copy") useApp.setState({ folderStatus: { ...before, back: false, lastError: describeError(e) } });
       watchForReturn(realDir);
-      useApp.getState().showToast("Couldn't copy your changes back yet — still working from this computer's copy");
+      if (!toldCopyBackFailed) {
+        toldCopyBackFailed = true;
+        useApp.getState().showToast("Couldn't copy your changes back yet — still working from this computer's copy, and it tries again by itself");
+      }
     } else {
       // Copied back, but the folder couldn't be opened after all: wait for it.
       waitForFolder(realDir, false);

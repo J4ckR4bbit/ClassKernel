@@ -31,7 +31,7 @@ and its columns, for anyone who wants to read, check or repair the data outside 
   classes/<class name>/       one folder per class (see below)
   layouts/<template name>/    room templates: desks.csv + room.csv
   exports/                    spreadsheets saved with "Save to data folder"
-  backups/<YYYY-MM-DD_hhmmss>/  automatic snapshots (today's, plus the last of each of 14 earlier days)
+  backups/<YYYY-MM-DD_hhmmss>/  older automatic snapshots (now kept on this computer; see below)
 ```
 
 ## App-wide files
@@ -285,6 +285,11 @@ A full copy of the data folder (except `backups/` itself), taken each time the a
 is kept, plus the newest from each of the 14 most recent earlier days that have one; older ones are deleted. A restore
 first takes a safety copy named `pre-restore-<stamp>`, which is never deleted automatically.
 
+The snapshots are made in this computer's own folder (`backups/` in the table below), so the synced data folder
+isn't uploaded in full at every launch. Only on a computer that keeps no copy (**Keep a copy on this computer** off)
+are they made in the data folder's `backups/`, as all of them were before. Older snapshots there stay listed under
+Restore, and nothing new is added or deleted there. A restore copies back only the `.csv` and `.md` files.
+
 `backups/.sync/<YYYY-MM-DD_hhmmss>/` holds both originals of every file changed when this computer's copy was copied
 back after the data folder had been unavailable: `drive/` (the data folder's version) and `this-computer/`, with the
 real file names. These aren't listed under Restore a backup and are never deleted automatically.
@@ -298,6 +303,7 @@ Kept in the app's own folder on each computer (`%LOCALAPPDATA%\com.classkernel.a
 | `local-copy/` | The data folder without `backups/` and `exports/`, refreshed at each launch and updated by every save. `.source.json` records which folder and when. |
 | `offline-base/` | While working from the copy: the copy as it was when the data folder went missing, what the changes are compared against when copying back. |
 | `offline-session.json` | Present while this computer has changes not yet copied back. |
+| `backups/<YYYY-MM-DD_hhmmss>/` | The launch snapshots, as described under Backups above, while this computer keeps a copy. Removed with it when **Keep a copy on this computer** is switched off. |
 | `state.json` | The data folder in use. |
 
 How each file is joined when both copies changed it (row by row, by plan or assessment, or as a whole file) is set in

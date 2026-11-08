@@ -8,13 +8,16 @@
 
 import { diskFS, getFS, isTauri } from "./fs";
 import { backupStamp, nowIso } from "./id";
-import { localPaths, writeState } from "./offline";
+import { localPaths, startOfflineSession, writeState } from "./offline";
 import { folderTiming, sendTiming, setSimulateDrive, setSimulateMissingFolder, useApp } from "../store/appStore";
 
 export interface DemoFolderControls {
   folderBack(): Promise<void>;
   editOnDrive(rel: string, text: string): Promise<void>;
   readOnDrive(rel: string): Promise<string | null>;
+  /** ?simulate=drive: the folder can't be reached (Google Drive signed out, say), then is back. */
+  driveAway?(): Promise<void>;
+  driveBack?(): Promise<void>;
 }
 
 declare global {
@@ -59,14 +62,45 @@ export function installMissingFolderDemo(): void {
  * ?simulate=drive: the demo folder behaves as one Google Drive syncs, so
  * changes are saved on this computer and sent to it in batches.
  * &minute=<seconds> sets how long a "minute" of the send interval is (default 1 s).
+ * &leftover=1 starts as after a session whose last changes never reached the
+ * folder (the app closed while Drive was out of reach): an absence on
+ * 2001-01-01 waits in this computer's copy.
  */
 function installDriveDemo(params: URLSearchParams): void {
   setSimulateDrive(true);
   sendTiming.minuteMs = Number(params.get("minute") ?? 1) * 1000;
-  const folder = () => useApp.getState().dataDir ?? "";
+  // The open data folder (remembered while it's away), and whether it is.
+  let dataDir = "";
+  let away = false;
+  const folder = () => (away ? `${dataDir}-signed-out` : (useApp.getState().dataDir ?? ""));
+  if (params.get("leftover")) {
+    setSimulateMissingFolder(async (dir) => {
+      const fs = getFS();
+      const paths = await localPaths();
+      await fs.snapshot(dir, backupStamp(), 14, { to: paths.copy, guard: paths.session });
+      await fs.writeAtomic(paths.source, JSON.stringify({ realDir: dir, refreshedAt: nowIso() }));
+      await writeState(paths, dir);
+      await startOfflineSession(paths, dir);
+      const rel = `${paths.copy}/classes/7B-Science/attendance.csv`;
+      const before = (await fs.readTextIfExists(rel)) ?? "date,student_id,status,note\r\n";
+      await fs.writeAtomic(rel, `${before}2001-01-01,leftover,A,\r\n`);
+    });
+  }
   window.__ckDemo = {
     folderBack: async () => {},
     editOnDrive: (rel, text) => diskFS().writeAtomic(`${folder()}/${rel}`, text),
     readOnDrive: (rel) => diskFS().readTextIfExists(`${folder()}/${rel}`),
+    driveAway: async () => {
+      if (away) return;
+      dataDir = useApp.getState().dataDir ?? "";
+      away = true;
+      await diskFS().rename(dataDir, folder());
+    },
+    driveBack: async () => {
+      if (!away) return;
+      const from = folder();
+      away = false;
+      await diskFS().rename(from, dataDir);
+    },
   };
 }

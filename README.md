@@ -49,8 +49,8 @@ the light colours.
 ## Your data
 
 One folder of plain files that open in Excel or Notepad — one sub-folder per class. Saves are atomic, a backup of
-the whole folder is taken at every launch (today's all kept, plus the last of each of the 14 days before), and
-times are stored in UTC. Changes are saved on this computer at once and sent to the (synced) folder together, every
+the whole folder is taken on this computer at every launch (today's all kept, plus the last of each of the 14 days
+before; on this computer, so Drive isn't re-uploading it each time), and times are stored in UTC. Changes are saved on this computer at once and sent to the (synced) folder together, every
 2 minutes and at natural pauses (End lesson, Done, switching class, closing the app), so Google Drive isn't uploading
 after every tap. If Google Drive or OneDrive hasn't started when the app does, it waits, then carries on from its own
 copy on this computer and joins the changes back when the folder returns. See

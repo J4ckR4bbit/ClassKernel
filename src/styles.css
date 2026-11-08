@@ -1233,6 +1233,7 @@ button.icon-choice.on { background: var(--md-secondary-container); color: var(--
 
 .pref-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; }
 .pref-block h4 { margin: 14px 0 6px; }
+.send-problem code { word-break: break-all; }
 .pref-row > span { max-width: 720px; }
 .pref-row > input[type="checkbox"].switch { order: 2; margin-left: auto; }
 
@@ -1266,7 +1267,8 @@ button.send-status {
   border-color: transparent; color: var(--text-dim); white-space: nowrap;
 }
 button.send-status.waiting { color: var(--md-on-secondary-container); background: var(--md-secondary-container); }
-button.send-status.away { color: var(--away); background: var(--away-container); }
+button.send-status.quiet { color: var(--text-dim); background: transparent; opacity: 0.75; }
+button.send-status.icon-only { padding: 0; width: 32px; justify-content: center; }
 .copy-chip {
   position: fixed; top: 10px; right: 12px; z-index: var(--z-chip); display: flex; align-items: center; gap: 6px;
   padding: 4px 12px 4px 8px; border-radius: 999px; font-size: 12px;

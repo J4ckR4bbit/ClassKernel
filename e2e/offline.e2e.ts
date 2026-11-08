@@ -13,7 +13,10 @@ async function launchWithoutFolder(page: Page, waitSeconds = 60) {
   await expect(page.getByRole("heading", { name: "Waiting for your data folder…" })).toBeVisible();
 }
 
+// Quiet by design: one message, then only the small chip in the top bar.
 const banner = (page: Page) => page.locator(".folder-banner");
+const chip = (page: Page) => page.locator(".top-bar .send-status");
+const toast = (page: Page) => page.locator(".toast");
 
 /** Mark the first student on the register absent, today. */
 async function markFirstAbsent(page: Page) {
@@ -26,7 +29,9 @@ async function markFirstAbsent(page: Page) {
 test("waits for the folder, works from this computer's copy, and copies the changes back", async ({ page }) => {
   await launchWithoutFolder(page);
   await page.getByRole("button", { name: "Open this computer's copy now" }).click();
-  await expect(banner(page)).toContainText("Your data folder isn't available");
+  await expect(toast(page)).toContainText("you're working from this computer's copy");
+  await expect(chip(page)).toHaveText("This computer's copy");
+  await expect(banner(page)).toHaveCount(0);
 
   await markFirstAbsent(page);
   // A class rename can't be copied back safely, so it waits for the folder.
@@ -34,20 +39,21 @@ test("waits for the folder, works from this computer's copy, and copies the chan
   await expect(page.getByRole("button", { name: "Rename class" })).toBeDisabled();
 
   await page.evaluate(() => window.__ckDemo!.folderBack());
-  await expect(banner(page)).toContainText("This computer's changes are back in your data folder", { timeout: 15_000 });
+  await expect(toast(page)).toContainText("Your data folder is back — this computer's changes are in it", { timeout: 15_000 });
   expect(await page.evaluate((rel) => window.__ckDemo!.readOnDrive(rel), ATTENDANCE)).toMatch(/,A,/);
   await expect(page.getByRole("button", { name: "Rename class" })).toBeEnabled();
+  await expect(chip(page)).not.toHaveText("This computer's copy");
+  await expect(banner(page)).toHaveCount(0);
 
   // Still on the same class, with the register as it was left.
   await nav(page, "Attendance");
   await expect(page.locator(".att-seg").first().locator(".att-btn.A")).toHaveClass(/\bon\b/);
-  await page.getByRole("button", { name: "Dismiss" }).click();
-  await expect(banner(page)).toHaveCount(0);
 });
 
 test("opens this computer's copy by itself after the wait", async ({ page }) => {
   await launchWithoutFolder(page, 1);
-  await expect(banner(page)).toContainText("working from this computer's copy", { timeout: 10_000 });
+  await expect(chip(page)).toHaveText("This computer's copy", { timeout: 10_000 });
+  await expect(banner(page)).toHaveCount(0);
 });
 
 test("joins changes made on another computer meanwhile", async ({ page }) => {
@@ -60,7 +66,7 @@ test("joins changes made on another computer meanwhile", async ({ page }) => {
     await window.__ckDemo!.editOnDrive(rel, `${drive}2001-01-01,elsewhere,L,\r\n`);
   }, ATTENDANCE);
   await page.evaluate(() => window.__ckDemo!.folderBack());
-  await expect(banner(page)).toContainText("joined with changes made on another computer", { timeout: 15_000 });
+  await expect(toast(page)).toContainText("joined with changes made on another computer", { timeout: 15_000 });
   const joined = await page.evaluate((rel) => window.__ckDemo!.readOnDrive(rel), ATTENDANCE);
   expect(joined).toMatch(/,A,/);
   expect(joined).toContain("2001-01-01,elsewhere,L");
@@ -75,5 +81,5 @@ test("in teaching mode, waits until the lesson view is left before copying back"
   await page.evaluate(() => window.__ckDemo!.folderBack());
   await expect(page.locator(".copy-chip")).toContainText("Folder back", { timeout: 15_000 });
   await page.keyboard.press("Escape");
-  await expect(banner(page)).toContainText("This computer's changes are back in your data folder", { timeout: 15_000 });
+  await expect(toast(page)).toContainText("Your data folder is back", { timeout: 15_000 });
 });

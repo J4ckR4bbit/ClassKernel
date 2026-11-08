@@ -91,15 +91,18 @@ Leave either blank to leave it off.
 - **Data folder** shows where everything is saved. **Change data folder…** switches to another folder (for example,
   a colleague's shared folder, or a fresh one).
 - **Keep a copy on this computer** (on unless you switch it off) keeps this computer's own copy of the data, used
-  when the data folder isn't there at launch. See [If Google Drive isn't ready](11-your-data.md#if-google-drive-isnt-ready).
+  when the data folder isn't there at launch, and the automatic backups. See [If Google Drive isn't ready](11-your-data.md#if-google-drive-isnt-ready).
   While the app works from that copy, the panel shows the real folder as not available, and **My data folder is
   somewhere else…** takes the place of **Change data folder…**.
 - **Send changes to your data folder**: every **2**, **5** or **10 minutes**, **at pauses only** (End lesson, Done
   after marking, switching class, closing the app), or **with every save**. Changes are always saved on this
   computer at once; this is how often they're sent to the (synced) data folder. Every 2 minutes unless you change it;
   chosen on each computer. See [Sending changes to Google Drive](11-your-data.md#sending-changes-to-google-drive).
-- **Restore a backup** lists the newest backups, taken every time the app starts. **Restore…** puts a backup's
-  files back (a safety copy of today's data is taken first). See [Your data and backups](11-your-data.md).
+  While a send isn't getting through, a **Last problem sending to your data folder** line under it says why, in
+  the app's own words.
+- **Restore a backup** lists the newest backups, taken on this computer every time the app starts, then any older
+  ones still in the data folder. **Restore…** puts a backup's files back (a safety copy of today's data is taken
+  first). See [Automatic backups](11-your-data.md#automatic-backups).
 - The number of active and archived classes.
 
 ## Behaviour

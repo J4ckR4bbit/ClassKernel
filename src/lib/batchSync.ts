@@ -17,7 +17,7 @@
 
 import { diskFS, getFS } from "./fs";
 import { mergeFile } from "./merge";
-import { LocalPaths, SyncReport, changedFiles, noteConflictCopies, recalculateTotals, walk } from "./offline";
+import { LocalPaths, SyncReport, changedFiles, describeError, isDataFile, noteConflictCopies, recalculateTotals, walk } from "./offline";
 
 export interface SendReport extends SyncReport {
   /** Changed in both places, waiting for the next pause to be joined. */
@@ -30,7 +30,10 @@ export interface SendReport extends SyncReport {
 
 const slashes = (p: string) => p.replace(/\\/g, "/").replace(/\/+$/, "");
 
-/** The data files in the data folder, relative to it: no backups, exports or temp files. */
+/**
+ * ClassKernel's own files in the data folder, relative to it (offline.ts
+ * isDataFile): not backups or exports, and not anything else kept there.
+ */
 async function dataFiles(dir: string, prefix = ""): Promise<string[]> {
   const disk = diskFS();
   const at = prefix ? `${dir}/${prefix}` : dir;
@@ -39,11 +42,15 @@ async function dataFiles(dir: string, prefix = ""): Promise<string[]> {
   for (const e of await disk.listDir(at)) {
     const rel = prefix ? `${prefix}/${e.name}` : e.name;
     if (!prefix && (e.name === "backups" || e.name === "exports")) continue;
-    if (e.isDir) out.push(...(await dataFiles(dir, rel)));
-    else if (!e.name.endsWith(".tmp.classkernel")) out.push(rel);
+    if (e.isDir) {
+      if (!e.name.startsWith(".")) out.push(...(await dataFiles(dir, rel)));
+    } else if (isDataFile(rel)) out.push(rel);
   }
   return out;
 }
+
+/** The data folder itself can't be reached: nothing can be sent until it's back. */
+export class FolderAway extends Error {}
 
 /**
  * Send this computer's changes to the data folder. `atPause`: also join files
@@ -63,6 +70,7 @@ export async function sendChanges(paths: LocalPaths, realDir: string, stamp: str
     clashes: [],
     keptAside: [],
     notes: [],
+    failed: [],
     backupDir,
     held: [],
     pulled: [],
@@ -83,21 +91,21 @@ export async function sendChanges(paths: LocalPaths, realDir: string, stamp: str
     report.copied.push(rel);
   };
 
-  await fs.flush();
-  for (const rel of await changedFiles(paths)) {
+  /** Send one changed file, or (between pauses) leave it waiting. */
+  const sendFile = async (rel: string) => {
     const [ours, base, theirs] = await Promise.all([
       fs.readTextIfExists(`${paths.copy}/${rel}`),
       fs.readTextIfExists(baseFile(rel)),
       disk.readTextIfExists(`${dir}/${rel}`),
     ]);
-    if (ours === null) continue;
+    if (ours === null) return;
     if (theirs === base || theirs === ours || (base === null && theirs === null)) {
       await sendPlain(rel, ours, theirs);
-      continue;
+      return;
     }
     if (!atPause) {
       report.held.push(rel);
-      continue;
+      return;
     }
     const cls = rel.match(/^classes\/([^/]+)\//)?.[1];
     if (base !== null && theirs === null) {
@@ -108,7 +116,7 @@ export async function sendChanges(paths: LocalPaths, realDir: string, stamp: str
         file: rel,
         reason: cls ? `the class "${cls}" was renamed or removed on another computer` : "it was removed on another computer",
       });
-      continue;
+      return;
     }
     const result = mergeFile(rel, base, ours, theirs as string);
     await keep("drive", rel, theirs);
@@ -119,36 +127,53 @@ export async function sendChanges(paths: LocalPaths, realDir: string, stamp: str
       await fs.writeAtomic(copyFile(rel), theirs as string);
       await fs.writeAtomic(baseFile(rel), theirs as string);
       report.localChanged = true;
-      continue;
+      return;
     }
     await toFolder(rel, result.text);
     // Only if nothing was saved here meanwhile; otherwise it's joined again next time.
-    if ((await fs.readTextIfExists(copyFile(rel))) === ours) {
-      await fs.writeAtomic(copyFile(rel), result.text);
-      await fs.writeAtomic(baseFile(rel), result.text);
-    } else {
-      await fs.writeAtomic(baseFile(rel), result.text);
-    }
+    if ((await fs.readTextIfExists(copyFile(rel))) === ours) await fs.writeAtomic(copyFile(rel), result.text);
+    await fs.writeAtomic(baseFile(rel), result.text);
     report.localChanged = true;
     report.joined.push(rel);
     for (const clash of result.clashes) report.clashes.push({ file: rel, clash });
     if (cls) joinedClasses.add(cls);
     await noteConflictCopies(dir, rel, report);
-  }
+  };
+
+  /**
+   * One file that can't be read or written just now (open in Excel, or not
+   * yet downloaded by the sync app) is left for next time; the others still
+   * go. If the folder itself has gone, though, there's no point carrying on.
+   */
+  const eachFile = async (files: string[], work: (rel: string) => Promise<void>) => {
+    for (const rel of files) {
+      try {
+        await work(rel);
+      } catch (e) {
+        if (!(await disk.exists(dir))) throw new FolderAway(describeError(e));
+        report.failed.push({ file: rel, error: describeError(e) });
+      }
+    }
+  };
+
+  await fs.flush();
+  await eachFile(await changedFiles(paths), sendFile);
 
   if (atPause) {
     // Changed only in the data folder (another computer): taken in here.
     const changedHere = new Set(await changedFiles(paths));
     const inFolder = new Set(await dataFiles(dir));
-    for (const rel of inFolder) {
-      if (changedHere.has(rel)) continue;
-      const [theirs, base] = await Promise.all([disk.readTextIfExists(`${dir}/${rel}`), fs.readTextIfExists(baseFile(rel))]);
-      if (theirs === null || theirs === base) continue;
-      await fs.writeAtomic(copyFile(rel), theirs);
-      await fs.writeAtomic(baseFile(rel), theirs);
-      report.pulled.push(rel);
-      report.localChanged = true;
-    }
+    await eachFile(
+      [...inFolder].filter((rel) => !changedHere.has(rel)),
+      async (rel) => {
+        const [theirs, base] = await Promise.all([disk.readTextIfExists(`${dir}/${rel}`), fs.readTextIfExists(baseFile(rel))]);
+        if (theirs === null || theirs === base) return;
+        await fs.writeAtomic(copyFile(rel), theirs);
+        await fs.writeAtomic(baseFile(rel), theirs);
+        report.pulled.push(rel);
+        report.localChanged = true;
+      },
+    );
     // Removed from the data folder and untouched here: removed here too. Only
     // when the folder's listing looks whole: a cloud drive still catching up
     // can list next to nothing, and that must never empty this computer's copy.
@@ -168,19 +193,20 @@ export async function sendChanges(paths: LocalPaths, realDir: string, stamp: str
   for (const cls of joinedClasses) await recalculateTotals(dir, cls);
   if (joinedClasses.size > 0) {
     await fs.flush();
-    for (const rel of await changedFiles(paths)) {
+    const totals = (await changedFiles(paths)).filter((rel) => !report.failed.some((f) => f.file === rel));
+    await eachFile(totals, async (rel) => {
       const [ours, base, theirs] = await Promise.all([
         fs.readTextIfExists(`${paths.copy}/${rel}`),
         fs.readTextIfExists(baseFile(rel)),
         disk.readTextIfExists(`${dir}/${rel}`),
       ]);
       if (ours !== null && (theirs === base || theirs === ours)) await sendPlain(rel, ours, theirs);
-    }
+    });
   }
   return report;
 }
 
 /** Whether a send needs the teacher's attention (shown in the banner). */
-export function needsALook(report: SendReport): boolean {
+export function needsALook(report: SyncReport): boolean {
   return report.clashes.length > 0 || report.keptAside.length > 0 || report.notes.length > 0;
 }
