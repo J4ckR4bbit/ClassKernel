@@ -186,6 +186,32 @@ test("galvanic cell: the reading follows the half-cells and the salt bridge, que
   expect((await download).suggestedFilename()).toBe("galvanic_cell_zn_ag.png");
 });
 
+test("chemistry reference: the periodic table, its views and highlights, and an element's pop-up", async ({ page }) => {
+  await enableTools(page, ["chemistry-reference"]);
+  await openTool(page, "Chemistry reference");
+  await expect(page.locator(".pt-cell.shown")).toHaveCount(118);
+  await expect(page.locator(".pt-cell[data-z='17'] .pt-mass")).toHaveText("35,5");
+  // Iron: configuration in filling order, and ferromagnetic.
+  await page.locator(".pt-cell[data-z='26']").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d⁶");
+  await expect(dialog).toContainText("[Ar] 4s² 3d⁶");
+  await expect(dialog).toContainText("Ferromagnetic");
+  await expect(dialog).toContainText("1 538 °C");
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // Highlight the diatomic elements: seven lit, the rest dimmed.
+  await page.locator("main .chip", { hasText: "Diatomic" }).click();
+  await expect(page.locator(".pt-cell.mark-diatomic")).toHaveCount(7);
+  await expect(page.locator(".pt-cell.shown.dim")).toHaveCount(111);
+  await page.locator("main .chip", { hasText: "Diatomic" }).click();
+  // The simplified table: the first 20 and the extras.
+  await page.locator("main .seg button", { hasText: "Simplified" }).click();
+  await expect(page.locator(".pt-cell.shown")).toHaveCount(40);
+  await expect(page.locator(".pt-cell[data-z='92']")).toHaveClass(/shown/);
+  await expect(page.locator(".pt-cell[data-z='57']")).toBeDisabled();
+});
+
 test.describe("noise meter", () => {
   const startMeter = async (page: Page) => {
     await enableTools(page, ["noise-meter", "test-timer"]);

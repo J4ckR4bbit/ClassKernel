@@ -127,6 +127,15 @@ export const PLUGINS: PluginManifest[] = [
     load: () => import("./galvanic-cell/GalvanicCell").then((m) => m.default),
   },
   {
+    id: "chemistry-reference",
+    name: "Chemistry reference",
+    tagline: "The periodic table, colour-coded, with every element's details a tap away.",
+    description:
+      "An interactive periodic table for the board: the data sheet's symbols, masses and electronegativities, coloured by group (alkali metals, halogens, noble gases…), by state at room temperature or by metal / non-metal, with highlights for the diatomic, ferromagnetic and radioactive elements. A simplified view shows the first 20 elements and the ones the course keeps meeting. Tap an element for its shell diagram, Aufbau diagram, electron configuration in spdf notation, electronegativity, ionisation energies, melting and boiling points, oxidation states and notes. Show to class fills the screen. Nothing is saved to your data.",
+    icon: "table_chart",
+    load: () => import("./chemistry/ChemistryReference").then((m) => m.default),
+  },
+  {
     id: NOISE_METER_ID,
     name: "Class noise meter",
     tagline: "Set a limit; the screen warns the class when it's too loud.",
