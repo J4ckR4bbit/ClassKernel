@@ -38,5 +38,16 @@
         "type": "downloadBootstrapper"
       }
     }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY0RDIzRjU2QzA3RjMzNjAKUldSZ00zL0FWai9TWk1HR2hlRExBOHRxaXY3MEVWbVVESmNyWHE5QS83QXlFaVJ2dW44M0JPZlgK",
+      "endpoints": [
+        "https://github.com/J4ckR4bbit/ClassKernel/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

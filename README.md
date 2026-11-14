@@ -1,7 +1,7 @@
 # ClassKernel
 
 Fast, offline-first classroom management for teachers. A small Windows desktop app (Tauri 2, ~10 MB):
-**no accounts, no server, no internet**. Everything is saved as plain `.csv` and `.md` files in a folder you choose.
+**no accounts, no server, no internet** (unless you ask it to check for an update). Everything is saved as plain `.csv` and `.md` files in a folder you choose.
 
 ![The Lesson page: tap a seat to record behaviour or attendance](docs/images/lesson.png)
 
@@ -11,6 +11,11 @@ Fast, offline-first classroom management for teachers. A small Windows desktop a
 
 Download the Windows installer (`.exe`) from the [Releases](../../releases) page and run it. On first launch, pick
 a folder for your data — ideally inside OneDrive or Google Drive, so it's backed up and synced.
+
+Once installed, it updates itself when you ask: **Settings → General → Updates → Check for updates**.
+
+The teaching tools (timer, clock, graph makers, galvanic cell, periodic table…) also open in any browser, with nothing
+to install: **[ClassKernel tools](https://j4ckr4bbit.github.io/ClassKernel/)**.
 
 ## What it does
 
@@ -68,6 +73,7 @@ npm run test:e2e       # browser tests (first time: npx playwright install chrom
 npm run docs:screenshots  # retake the user guide's pictures
 npm run tauri dev      # desktop app (needs Rust)
 npm run tauri build    # Windows installer
+npm run build:tools    # the tools website, into dist-tools/
 ```
 
 React + TypeScript + Vite and Zustand on a minimal Rust (Tauri 2) backend. The screens live in `src/components/`,
