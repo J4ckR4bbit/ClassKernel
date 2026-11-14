@@ -1,0 +1,51 @@
+/* Titration simulator: controls left, the bench (burette and flask beside the pH graph) right. */
+.titration { display: grid; grid-template-columns: minmax(300px, 360px) 1fr; gap: 16px; height: 100%; }
+.titration.class-view { display: block; position: fixed; inset: 0; z-index: var(--z-class-view); background: var(--bg); padding: 16px 24px; }
+.ti-controls { overflow-y: auto; padding-right: 4px; }
+.ti-controls .panel { padding: 14px; }
+.ti-controls h3 { font-size: 14px; margin-bottom: 10px; }
+.ti-note { font-size: 12px; margin: 8px 0 0; }
+.ti-row { margin-top: 10px; align-items: center; }
+.ti-label { font-size: 13px; color: var(--text-dim); }
+.ti-field { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.ti-field select { max-width: 100%; flex: 1; }
+.ti-check { display: flex; align-items: center; gap: 9px; font-size: 13px; margin: 10px 0 8px; cursor: pointer; }
+.ti-add { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.ti-custom { display: inline-flex; gap: 6px; align-items: center; }
+.ti-run { align-items: center; }
+
+.ti-main { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; }
+.titration.class-view .ti-main { height: 100%; }
+.ti-bench { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 14px; flex: none; }
+.titration.class-view .ti-bench { height: 100%; grid-template-columns: minmax(300px, 36%) 1fr; }
+.ti-apparatus-box, .ti-graph-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; gap: 10px; align-items: center; min-height: 0; }
+.ti-apparatus { width: 100%; height: auto; max-height: 100%; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+.ti-graph { width: 100%; height: auto; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+.ti-readouts { display: flex; flex-wrap: wrap; gap: 8px 18px; width: 100%; }
+.ti-readout { display: flex; flex-direction: column; min-width: 110px; }
+.ti-readout-label { font-size: 12px; color: var(--text-dim); }
+.ti-readout-value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ti-readout-value.small-value { font-size: 15px; }
+.ti-warn { font-size: 13px; color: var(--on-warning-container); background: var(--warning-container); border-radius: var(--md-shape-s); padding: 6px 10px; width: 100%; }
+.ti-span { grid-column: 1 / -1; }
+.ti-class-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; }
+
+.ti-memo { padding: 14px 18px; }
+.ti-memo h3 { font-size: 14px; margin-bottom: 10px; }
+.ti-facts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
+.ti-facts dt { font-weight: 600; color: var(--text-dim); }
+.ti-facts dd { margin: 0; line-height: 1.5; }
+.ti-readings td { padding: 3px 8px; font-variant-numeric: tabular-nums; }
+
+/* The drop falls from the tip to the surface; the stirrer bar spins while stirring. */
+.ti-drop { animation: ti-fall 0.45s ease-in forwards; }
+@keyframes ti-fall { from { transform: translateY(0); opacity: 1; } 85% { opacity: 1; } to { transform: translateY(var(--ti-fall)); opacity: 0; } }
+.ti-stirbar.spinning { animation: ti-spin 0.3s linear infinite; }
+@keyframes ti-spin { from { transform: rotate(0deg); } to { transform: rotate(180deg); } }
+@media (prefers-reduced-motion: reduce) { .ti-drop, .ti-stirbar.spinning { animation: none; } }
+
+@media (max-width: 900px) {
+  .titration { grid-template-columns: 1fr; overflow-y: auto; }
+  .ti-controls, .ti-main { overflow: visible; }
+  .ti-bench { grid-template-columns: 1fr; }
+}

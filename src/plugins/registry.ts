@@ -136,6 +136,15 @@ export const PLUGINS: PluginManifest[] = [
     load: () => import("./chemistry/ChemistryReference").then((m) => m.default),
   },
   {
+    id: "titration",
+    name: "Titration simulator",
+    tagline: "A burette, a flask, an indicator, and the pH curve as you go.",
+    description:
+      "A titration on the board: choose what goes in the burette and the flask (HCl, HNO₃, H₂SO₄, HF, ethanoic, methanoic, oxalic, phosphoric and carbonic acids; NaOH, KOH, Ba(OH)₂, Ca(OH)₂, Mg(OH)₂, ammonia, sodium carbonate, sodium hydrogen carbonate; water), their concentrations and the flask's volume, and an indicator (methyl orange, bromothymol blue, phenolphthalein, litmus and others, or universal indicator). Run titrant in a drop at a time, by a measured volume or with the tap open; stir to mix, or let it auto-mix; watch the flask's colour and the pH graph against volume added. The memo gives the mole ratio, the equivalence volumes and pH, and which indicator suits; an Unknown mode hides the flask's concentration for the class to find. Keeps going if you leave the screen; nothing is saved.",
+    icon: "experiment",
+    load: () => import("./titration/Titration").then((m) => m.default),
+  },
+  {
     id: NOISE_METER_ID,
     name: "Class noise meter",
     tagline: "Set a limit; the screen warns the class when it's too loud.",
