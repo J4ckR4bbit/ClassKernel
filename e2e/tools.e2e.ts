@@ -154,6 +154,38 @@ test("graph tools: graph paper saves a PNG, the plotter takes readings, the moti
   await expect(choice.locator("button").nth(1)).toHaveClass(/\bon\b/);
 });
 
+test("galvanic cell: the reading follows the half-cells and the salt bridge, question mode hides it", async ({ page }) => {
+  await enableTools(page, ["galvanic-cell"]);
+  await openTool(page, "Galvanic cell animator");
+  const memo = page.locator(".gc-memo");
+  await expect(memo).toContainText("Zn(s) | Zn²⁺(aq) || Cu²⁺(aq) | Cu(s)");
+  await expect(memo).toContainText("+1,10 V");
+  // Silver instead of copper: E°cell = 0,80 − (−0,76).
+  await page.locator("main select").nth(1).selectOption("ag");
+  await expect(memo).toContainText("+1,56 V");
+  await expect(memo).toContainText("2Ag⁺(aq) + Zn(s) → 2Ag(s) + Zn²⁺(aq)");
+  // No salt bridge: the EMF stands, the voltmeter reads 0.
+  await page.getByLabel("Salt bridge in place").uncheck();
+  await expect(memo).toContainText("no salt bridge, no circuit");
+  await page.getByLabel("Salt bridge in place").check();
+  // Question mode hides the memo.
+  await page.getByLabel(/Question mode/).check();
+  await expect(memo).toHaveCount(0);
+  await expect(page.locator(".gc-hidden")).toBeVisible();
+  await page.getByLabel(/Question mode/).uncheck();
+  // Running the cell lowers the EMF; Reset puts it back.
+  await page.getByRole("button", { name: "Run the cell" }).click();
+  await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
+  await expect(memo).not.toContainText("+1,560 V", { timeout: 10_000 });
+  await page.getByRole("button", { name: "Pause" }).click();
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect(memo).toContainText("+1,560 V");
+  // A PNG of the picture.
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Save PNG…" }).click();
+  expect((await download).suggestedFilename()).toBe("galvanic_cell_zn_ag.png");
+});
+
 test.describe("noise meter", () => {
   const startMeter = async (page: Page) => {
     await enableTools(page, ["noise-meter", "test-timer"]);
