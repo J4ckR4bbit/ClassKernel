@@ -1,6 +1,7 @@
 import { CSSProperties, useEffect, useState } from "react";
 import { sendBeforeClosing, sendWhileHidden, useApp, useAppPick } from "./store/appStore";
 import { isTauri } from "./lib/fs";
+import { checkForUpdate, readCheckAtLaunch } from "./lib/updates";
 import Onboarding from "./components/Onboarding";
 import NavRail from "./components/NavRail";
 import TopAppBar from "./components/TopAppBar";
@@ -16,59 +17,11 @@ import AssessmentsView from "./components/marks/AssessmentsView";
 import ClassNotesView from "./components/ClassNotesView";
 import PluginView from "./components/PluginView";
 import SettingsView from "./components/settings/SettingsView";
-import AppDialog from "./components/AppDialog";
-import NoteEditor from "./components/notes/NoteEditor";
 import StudentNotesView from "./components/notes/StudentNotesView";
-import TimerMini from "./components/TimerMini";
-import NoiseMini from "./components/NoiseMini";
 import WaitingForFolder from "./components/WaitingForFolder";
 import EmptyState from "./components/EmptyState";
-import { CopyChip, FolderBanner, SyncOverlay } from "./components/FolderBanner";
-
-/** Toast + dialog + save-error UI shared by both shells. */
-function Overlays() {
-  const { toast, saveError, retrySave } = useAppPick("toast", "saveError", "retrySave");
-  // On the teaching room plan, keep the pop-ups clear of End lesson, which
-  // sits at the end of the lesson bar on whichever edge Settings puts it.
-  const barSide = useApp((s) => (s.focusMode && s.focusStyle === "room" ? s.userPrefs.lessonBarSide : null));
-  return (
-    <>
-      {saveError && (
-        <div className="save-error-banner" role="alert">
-          Couldn't save {saveError.label} to disk — your changes are only in memory.
-          <button onClick={() => void retrySave()}>Try again</button>
-        </div>
-      )}
-      {/* Always there, so a screen reader reads each message as it appears. */}
-      <div className="live-region" role="status">
-        {toast && (
-          <div className="toast">
-            {toast.message}
-            {toast.actionLabel && (
-              <button
-                className="toast-action"
-                onClick={() => {
-                  toast.onAction?.();
-                  useApp.setState({ toast: null });
-                }}
-              >
-                {toast.actionLabel}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-      {/* The running tools' pop-ups, stacked in the bottom-right corner. */}
-      <div className={`mini-stack no-print ${barSide ? `bar-${barSide}` : ""}`}>
-        <NoiseMini />
-        <TimerMini />
-      </div>
-      <SyncOverlay />
-      <NoteEditor />
-      <AppDialog />
-    </>
-  );
-}
+import { CopyChip, FolderBanner } from "./components/FolderBanner";
+import Overlays from "./components/Overlays";
 
 const NAV_KEY = "classkernel.navExpanded";
 
@@ -132,6 +85,27 @@ export default function App() {
       unlisten?.();
     };
   }, []);
+
+  // Once the data is open: one quiet check for a newer version, if this
+  // computer has that switched on (Settings → General → Updates). Off by
+  // default, and a failure (no internet, say) is not the teacher's problem.
+  const ready = booted && !!dataDir;
+  useEffect(() => {
+    if (!ready || !isTauri() || !readCheckAtLaunch()) return;
+    let live = true;
+    checkForUpdate()
+      .then((update) => {
+        if (!live || !update) return;
+        useApp.getState().showToast(`ClassKernel ${update.version} is available`, {
+          label: "Update",
+          run: () => useApp.getState().setView("settings"),
+        });
+      })
+      .catch((e) => console.warn("Update check failed", e));
+    return () => {
+      live = false;
+    };
+  }, [ready]);
 
   // The rail expands into a drawer with full labels and the teacher's tools;
   // remembered on this computer, since it's about this screen, not the data.

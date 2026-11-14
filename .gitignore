@@ -6,3 +6,4 @@ src-tauri/gen/schemas/
 .DS_Store
 test-results/
 playwright-report/
+dist-tools

@@ -25,6 +25,11 @@ as you need. Switch any of them on under [Settings → Tools](10-settings.md#too
 Each tool opens full-page with a **←** back to Home in the top bar. Tools are built into the app, so they work
 offline like everything else, and the graph tools save through the normal Windows *Save as* dialog.
 
+**In a browser.** Every tool except the dashboards and parent reports is also on the
+[ClassKernel tools website](https://j4ckr4bbit.github.io/ClassKernel/), for a computer without ClassKernel installed. Each tool has its own address to
+bookmark (for example `…/#/galvanic-cell`). There, pictures are saved as downloads and the test timer's presets are
+remembered by that browser; nothing is uploaded.
+
 <br clear="right">
 
 ## Test timer

@@ -66,7 +66,8 @@ export default function PluginView() {
 }
 
 // The app bar above carries the plugin's name and the way back to Home.
-function PluginPane({ plugin }: { plugin: PluginManifest }) {
+// Exported for the tools website, which shows a tool without the switch check.
+export function PluginPane({ plugin }: { plugin: PluginManifest }) {
   // lazy() wants a module; the manifest hands back the component itself.
   const View = useMemo(() => lazy(() => plugin.load().then((c) => ({ default: c }))), [plugin]);
 
