@@ -45,6 +45,7 @@ the light colours.
 | **Practical graph plotter** | Readings in; graph, line of best fit, gradient and R² out. |
 | **Motion graph builder** | x–t, v–t and a–t graphs from one journey, so they always agree. |
 | **Chemistry reference** | The periodic table, colour-coded and tap-for-details (shell and Aufbau diagrams, configurations, ionisation energies…), with more modules to follow. |
+| **Titration simulator** | A burette, a flask, the usual acids, bases and indicators, and the pH curve as the titrant runs in. |
 | **Galvanic cell animator** | An animated galvanic cell: electrons, ions, the salt bridge and a voltmeter that follows the Nernst equation, with the memo under it. |
 | **Class noise meter** | Shows the room's noise against a limit and warns the class when it's too loud. |
 

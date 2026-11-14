@@ -20,6 +20,7 @@ as you need. Switch any of them on under [Settings → Tools](10-settings.md#too
 | [Motion graph builder](#motion-graph-builder) | x–t, v–t and a–t graphs that always agree. |
 | [Galvanic cell animator](#galvanic-cell-animator) | An animated cell whose reading follows the Nernst equation. |
 | [Chemistry reference](#chemistry-reference) | The periodic table, with every element's details a tap away. |
+| [Titration simulator](#titration-simulator) | A burette, a flask, an indicator and the pH curve. |
 | [Class noise meter](#class-noise-meter) | Warns the class when it's too loud. |
 
 Each tool opens full-page with a **←** back to Home in the top bar. Tools are built into the app, so they work
@@ -216,18 +217,21 @@ their tabs are greyed out until then.
 
 **The periodic table**
 
-- The symbols, relative atomic masses and electronegativities are the **data sheet's** (Cl 35,5; Cu 63,5; masses in
-  brackets for elements with no stable isotope), so the board matches the exam paper.
+- Each block is laid out as the **data sheet** prints it — atomic number top left, electronegativity top right,
+  symbol, relative atomic mass (Cl 35,5; Cu 63,5; masses in brackets for elements with no stable isotope) — so the
+  board matches the exam paper.
 - **Colour by**: **Group** (alkali metals, alkaline earth metals, transition metals, post-transition metals,
   metalloids, non-metals, halogens, noble gases, lanthanides, actinides), **State at 25 °C** or **Metal / non-metal**.
   The colours are a colour-blind-safe set and the key always names them; tap a key entry to show only that set.
 - **Highlight**: the **diatomic** elements (H₂, N₂, O₂, F₂, Cl₂, Br₂, I₂), the **ferromagnetic** ones (Fe, Co, Ni, Gd)
   and the **radioactive** ones. Everything else fades.
-- **Full table** or **Simplified**: the first 20 elements plus Cr, Mn, Fe, Co, Ni, Cu, Zn, Br, Kr, Sr, Ag, Sn, I, Xe,
-  Ba, Pt, Au, Hg, Pb and U, in their proper places, the rest left as empty outlines.
+- **Full table** or **Simplified**: the first 20 elements in their own places with groups 3–12 collapsed to a gap,
+  so the blocks are big, and under them Cr, Mn, Fe, Co, Ni, Cu, Zn, Br, Kr, Sr, Ag, Sn, I, Xe, Ba, Pt, Au, Hg, Pb and
+  U in atomic-number order.
 - **Show to class** fills the screen; Esc or **Close** comes back.
 
-**An element's pop-up** — tap any element:
+**An element's pop-up** — tap any element. It opens with the element's data-sheet block, in type sized for the
+board:
 
 ![An element's details](../images/periodic-table-element.png)
 
@@ -245,6 +249,49 @@ and the heaviest elements show the data-sheet values and their configuration onl
 the NIST Atomic Spectra Database (ionisation energies) and the CRC Handbook (melting and boiling points), and a
 **Check** line flags the few worth confirming against a printed table. Every value sits in one editable file,
 `src/plugins/chemistry/elements.ts`, so a teacher who finds one wrong can correct it.
+
+## Titration simulator
+
+A titration on the board: a burette over a conical flask on a stirrer, the pH graph beside it, and the memo
+underneath.
+
+![The titration simulator](../images/titration.png)
+
+**Setting up**
+
+- **In the burette** and **in the flask**: pick any of the strong acids (HCl, HNO₃, H₂SO₄), weak acids (HF,
+  ethanoic, methanoic, oxalic, phosphoric, carbonic), strong bases (NaOH, KOH, Ba(OH)₂, Ca(OH)₂, Mg(OH)₂), weak bases
+  (ammonia, sodium carbonate, sodium hydrogen carbonate) or water, with a **concentration** for each and the flask's
+  **volume**. Either can go in either; **Swap burette and flask** turns the titration round. A note under each
+  solution gives its Ka or Kb and what it is used for, and the tool warns when a hydroxide is set stronger than it
+  dissolves.
+- **Indicator**: methyl orange, bromocresol green, methyl red, litmus, bromothymol blue, phenol red,
+  phenolphthalein (each with its range), universal indicator, or none.
+- **Unknown** hides the flask's concentration and the equivalence volumes, so the class has to find the end point
+  from the colour and work the concentration out.
+
+**Running it**
+
+- **Open tap** runs titrant in at the chosen rate (**Drops**, **Slow**, **Fast**) until you **Close tap** or the
+  burette is empty; or add a measured volume: **+0,05** (a drop), **+0,50**, **+1,00**, **+5,00** or any amount you
+  type.
+- With **Auto-mix** off, the drops land as a plume of their own colour — the pink flash of phenolphthalein near the
+  end point — until you **Stir**; the pH shown is the mixed value.
+- The **burette reading**, **pH**, **[H₃O⁺]**, **[OH⁻]** and the volume in the flask read out live; **Record** adds the
+  reading to a table (marked on the graph as crosses).
+- The **graph** of pH against volume added is drawn as a probe would trace it, up to the volume run in; **Show the
+  whole curve** reveals it all. The indicator's range is a band across it and the equivalence points are dashed
+  lines (unless Unknown is on).
+- **Refill & restart** empties the flask back to its sample and refills the burette. **Show to class** fills the
+  screen with the bench and the graph.
+
+**The memo** gives the set-up, the mole ratio (n(H₂SO₄) : n(NaOH) = 1 : 2 and the cₐVₐ / cᵦVᵦ relation), each
+equivalence volume with the pH there and which indicators would show it, and the recorded readings.
+
+The pH is worked out from the full charge balance of everything in the flask, so strong, weak, polyprotic and
+mixed cases all behave, including the two end points of sodium carbonate and the buffer region of a weak acid.
+Ka and Kb values are the CRC Handbook's at 25 °C; they sit in one editable file, `src/plugins/titration/chemistry.ts`.
+The titration keeps going if you leave the screen; nothing is saved.
 
 ## Class noise meter
 

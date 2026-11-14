@@ -490,7 +490,7 @@ test("tools: switching on, dashboards and parent reports", async ({ page }) => {
 
 test("teaching tools", async ({ page }) => {
   await prep(page);
-  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "galvanic-cell", "chemistry-reference", "noise-meter"]);
+  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "galvanic-cell", "chemistry-reference", "titration", "noise-meter"]);
 
   await openTool(page, "Test timer");
   await shot(page, "test-timer-setup");
@@ -557,6 +557,13 @@ test("teaching tools", async ({ page }) => {
   await page.locator(".pt-cell[data-z='26']").click();
   await shot(page, "periodic-table-element", 400);
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
+
+  await openTool(page, "Titration simulator");
+  await page.getByLabel("Solution in the flask").selectOption("ch3cooh");
+  for (let i = 0; i < 5; i++) await page.locator(".ti-add button", { hasText: "+5,00" }).click();
+  await page.locator(".ti-add button", { hasText: "+0,50" }).click();
+  await page.waitForTimeout(600);
+  await shot(page, "titration", 600);
 
   await openTool(page, "Class noise meter");
   await page.locator("main button.primary", { hasText: "Start" }).click();

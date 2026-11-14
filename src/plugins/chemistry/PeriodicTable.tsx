@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import Segmented from "../../components/Segmented";
-import { formatNumber } from "../numbers";
+import { formatFixed, formatNumber } from "../numbers";
 import {
   CATEGORY_COLOURS,
   CATEGORY_NAMES,
@@ -8,9 +8,9 @@ import {
   ELEMENTS,
   Element,
   gridPosition,
-  inSimplifiedTable,
   massInBrackets,
   metalCharacter,
+  simplifiedPosition,
 } from "./elements";
 
 export type TableView = "full" | "simplified";
@@ -27,6 +27,11 @@ const HIGHLIGHTS: Array<{ key: Highlight; label: string; test: (e: Element) => b
   { key: "ferromagnetic", label: "Ferromagnetic", test: (e) => !!e.ferromagnetic },
   { key: "radioactive", label: "Radioactive", test: (e) => !!e.radioactive },
 ];
+
+/** The electronegativity as the data sheet prints it, or nothing. */
+export function enText(e: Element): string {
+  return e.en === undefined ? "" : formatFixed(e.en, 1);
+}
 
 /** The relative atomic mass as the data sheet prints it: "35,5", "(98)". */
 export function massText(e: Element): string {
@@ -113,44 +118,55 @@ export default function PeriodicTable({
 
       <div className={`pt-grid ${view}`} role="grid" aria-label={view === "full" ? "Periodic table" : "Simplified periodic table"}>
         {ELEMENTS.map((e) => {
-          const { column, row } = gridPosition(e);
-          const shown = view === "full" || inSimplifiedTable(e);
+          const position = view === "full" ? gridPosition(e) : simplifiedPosition(e);
+          if (!position) return null;
           const marks = HIGHLIGHTS.filter((h) => highlights.has(h.key) && h.test(e)).map((h) => h.key);
           return (
             <button
               key={e.z}
-              className={`pt-cell ${shown ? "shown" : "hidden-element"} ${dimmed(e) ? "dim" : ""} ${marks.map((m) => `mark-${m}`).join(" ")} ${selected?.z === e.z ? "selected" : ""}`}
-              style={{ gridColumn: column, gridRow: row, background: shown ? cellColour(e, colourBy) : undefined }}
-              onClick={() => shown && onSelect(e)}
-              disabled={!shown}
+              className={`pt-cell shown ${dimmed(e) ? "dim" : ""} ${marks.map((m) => `mark-${m}`).join(" ")} ${selected?.z === e.z ? "selected" : ""}`}
+              style={{ gridColumn: position.column, gridRow: position.row, background: cellColour(e, colourBy) }}
+              onClick={() => onSelect(e)}
               aria-label={`${e.name}, ${e.symbol}, atomic number ${e.z}`}
-              title={shown ? `${e.name} (${e.z})` : undefined}
+              title={`${e.name} (${e.z})`}
               data-z={e.z}
             >
-              {shown && (
-                <>
-                  <span className="pt-z">{e.z}</span>
-                  <span className="pt-symbol">{e.symbol}</span>
-                  <span className="pt-name">{e.name}</span>
-                  <span className="pt-mass">{massText(e)}</span>
-                  {e.diatomic && highlights.has("diatomic") && <span className="pt-badge">₂</span>}
-                </>
-              )}
+              <span className="pt-top">
+                <span className="pt-z">{e.z}</span>
+                <span className="pt-en">{enText(e)}</span>
+              </span>
+              <span className="pt-symbol">{e.symbol}</span>
+              <span className="pt-name">{e.name}</span>
+              <span className="pt-mass">{massText(e)}</span>
+              {e.diatomic && highlights.has("diatomic") && <span className="pt-badge">₂</span>}
             </button>
           );
         })}
-        <div className="pt-placeholder" style={{ gridColumn: 3, gridRow: 6 }} aria-hidden="true">
-          57–71
-        </div>
-        <div className="pt-placeholder" style={{ gridColumn: 3, gridRow: 7 }} aria-hidden="true">
-          89–103
-        </div>
-        <div className="pt-placeholder pt-fblock-label" style={{ gridColumn: "2 / 4", gridRow: 9 }} aria-hidden="true">
-          Lanthanides
-        </div>
-        <div className="pt-placeholder pt-fblock-label" style={{ gridColumn: "2 / 4", gridRow: 10 }} aria-hidden="true">
-          Actinides
-        </div>
+        {view === "full" ? (
+          <>
+            <div className="pt-placeholder" style={{ gridColumn: 3, gridRow: 6 }} aria-hidden="true">
+              57–71
+            </div>
+            <div className="pt-placeholder" style={{ gridColumn: 3, gridRow: 7 }} aria-hidden="true">
+              89–103
+            </div>
+            <div className="pt-placeholder pt-fblock-label" style={{ gridColumn: "2 / 4", gridRow: 9 }} aria-hidden="true">
+              Lanthanides
+            </div>
+            <div className="pt-placeholder pt-fblock-label" style={{ gridColumn: "2 / 4", gridRow: 10 }} aria-hidden="true">
+              Actinides
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="pt-placeholder pt-gap-label" style={{ gridColumn: 3, gridRow: "1 / 5" }} aria-hidden="true">
+              <span>groups 3–12</span>
+            </div>
+            <div className="pt-placeholder pt-extras-label" style={{ gridColumn: "1 / 10", gridRow: 5 }} aria-hidden="true">
+              Other elements the course meets, in atomic-number order
+            </div>
+          </>
+        )}
       </div>
 
       <div className="pt-legend" aria-label="Key">

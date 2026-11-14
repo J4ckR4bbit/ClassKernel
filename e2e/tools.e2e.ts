@@ -191,6 +191,7 @@ test("chemistry reference: the periodic table, its views and highlights, and an 
   await openTool(page, "Chemistry reference");
   await expect(page.locator(".pt-cell.shown")).toHaveCount(118);
   await expect(page.locator(".pt-cell[data-z='17'] .pt-mass")).toHaveText("35,5");
+  await expect(page.locator(".pt-cell[data-z='17'] .pt-en")).toHaveText("3,0");
   // Iron: configuration in filling order, and ferromagnetic.
   await page.locator(".pt-cell[data-z='26']").click();
   const dialog = page.getByRole("dialog");
@@ -209,7 +210,36 @@ test("chemistry reference: the periodic table, its views and highlights, and an 
   await page.locator("main .seg button", { hasText: "Simplified" }).click();
   await expect(page.locator(".pt-cell.shown")).toHaveCount(40);
   await expect(page.locator(".pt-cell[data-z='92']")).toHaveClass(/shown/);
-  await expect(page.locator(".pt-cell[data-z='57']")).toBeDisabled();
+  await expect(page.locator(".pt-cell[data-z='57']")).toHaveCount(0);
+});
+
+test("titration: measured additions move the burette and the pH, the indicator turns, the memo knows the end point", async ({ page }) => {
+  await enableTools(page, ["titration"]);
+  await openTool(page, "Titration simulator");
+  const reading = page.locator(".ti-readout", { hasText: "Burette reading" }).locator(".ti-readout-value");
+  const ph = page.locator(".ti-readout", { hasText: /^pH/ }).locator(".ti-readout-value");
+  await expect(reading).toHaveText("0,00 cm³");
+  await expect(ph).toHaveText("1,00");
+  await expect(page.locator(".ti-memo")).toContainText("25,00 cm³ of NaOH, pH 7,00 at equivalence");
+  // 5 × 5 cm³ reaches the equivalence point exactly: phenolphthalein is still about to turn.
+  for (let i = 0; i < 5; i++) await page.locator(".ti-add button", { hasText: "+5,00" }).click();
+  await expect(reading).toHaveText("25,00 cm³");
+  await expect(ph).toHaveText("7,00");
+  await page.locator(".ti-add button", { hasText: "+0,50" }).click();
+  await expect(reading).toHaveText("25,50 cm³");
+  await expect(ph).toHaveText(/^1[0-2],/);
+  // Record a reading; it appears in the table.
+  await page.getByRole("button", { name: "Record" }).click();
+  await expect(page.locator(".ti-readings tbody tr")).toHaveCount(1);
+  // Refill, swap to ammonia in the flask against HCl: the memo moves the end point below 7.
+  await page.getByRole("button", { name: /Refill/ }).click();
+  await expect(reading).toHaveText("0,00 cm³");
+  await page.getByLabel("Solution in the flask").selectOption("nh3");
+  await page.getByLabel("Solution in the burette").selectOption("hcl");
+  await expect(page.locator(".ti-memo")).toContainText("pH 5,2");
+  // Unknown mode hides the equivalence.
+  await page.getByLabel(/Unknown: hide/).check();
+  await expect(page.locator(".ti-memo")).toContainText("Hidden");
 });
 
 test.describe("noise meter", () => {
