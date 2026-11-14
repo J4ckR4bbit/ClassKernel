@@ -490,7 +490,7 @@ test("tools: switching on, dashboards and parent reports", async ({ page }) => {
 
 test("teaching tools", async ({ page }) => {
   await prep(page);
-  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "galvanic-cell", "noise-meter"]);
+  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "galvanic-cell", "chemistry-reference", "noise-meter"]);
 
   await openTool(page, "Test timer");
   await shot(page, "test-timer-setup");
@@ -551,6 +551,12 @@ test("teaching tools", async ({ page }) => {
   await openTool(page, "Galvanic cell animator");
   await page.waitForTimeout(1500);
   await shot(page, "galvanic-cell", 800);
+
+  await openTool(page, "Chemistry reference");
+  await shot(page, "periodic-table", 400);
+  await page.locator(".pt-cell[data-z='26']").click();
+  await shot(page, "periodic-table-element", 400);
+  await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
 
   await openTool(page, "Class noise meter");
   await page.locator("main button.primary", { hasText: "Start" }).click();

@@ -70,5 +70,6 @@ export const ALL_TOOLS = [
   "practical-graph",
   "motion-graph",
   "galvanic-cell",
+  "chemistry-reference",
   "noise-meter",
 ];

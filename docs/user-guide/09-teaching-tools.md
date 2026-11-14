@@ -19,6 +19,7 @@ as you need. Switch any of them on under [Settings → Tools](10-settings.md#too
 | [Practical graph plotter](#practical-graph-plotter) | Readings in, graph and gradient out. |
 | [Motion graph builder](#motion-graph-builder) | x–t, v–t and a–t graphs that always agree. |
 | [Galvanic cell animator](#galvanic-cell-animator) | An animated cell whose reading follows the Nernst equation. |
+| [Chemistry reference](#chemistry-reference) | The periodic table, with every element's details a tap away. |
 | [Class noise meter](#class-noise-meter) | Warns the class when it's too loud. |
 
 Each tool opens full-page with a **←** back to Home in the top bar. Tools are built into the app, so they work
@@ -204,6 +205,46 @@ concentrations have turned a cell round compared with standard conditions, it sa
 
 **Save PNG…** saves the picture as it is — answers shown or hidden — for a worksheet or a memo. Nothing is saved to
 your data.
+
+## Chemistry reference
+
+A chemistry reference for the board, built in modules that sit as tabs across the top. The first module is the
+**periodic table**; the others (substances and their bonds, polyatomic ions, and more) follow in later versions and
+their tabs are greyed out until then.
+
+![The periodic table](../images/periodic-table.png)
+
+**The periodic table**
+
+- The symbols, relative atomic masses and electronegativities are the **data sheet's** (Cl 35,5; Cu 63,5; masses in
+  brackets for elements with no stable isotope), so the board matches the exam paper.
+- **Colour by**: **Group** (alkali metals, alkaline earth metals, transition metals, post-transition metals,
+  metalloids, non-metals, halogens, noble gases, lanthanides, actinides), **State at 25 °C** or **Metal / non-metal**.
+  The colours are a colour-blind-safe set and the key always names them; tap a key entry to show only that set.
+- **Highlight**: the **diatomic** elements (H₂, N₂, O₂, F₂, Cl₂, Br₂, I₂), the **ferromagnetic** ones (Fe, Co, Ni, Gd)
+  and the **radioactive** ones. Everything else fades.
+- **Full table** or **Simplified**: the first 20 elements plus Cr, Mn, Fe, Co, Ni, Cu, Zn, Br, Kr, Sr, Ag, Sn, I, Xe,
+  Ba, Pt, Au, Hg, Pb and U, in their proper places, the rest left as empty outlines.
+- **Show to class** fills the screen; Esc or **Close** comes back.
+
+**An element's pop-up** — tap any element:
+
+![An element's details](../images/periodic-table-element.png)
+
+- A **shell structure** (Bohr) diagram with the electrons per shell (2, 8, 14, 2), and an **Aufbau diagram** of
+  orbital boxes with arrows, filled by Hund's rule, lowest energy at the bottom.
+- The **electron configuration** in spdf notation, in filling order as the course writes it
+  (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d⁶), the noble-gas shorthand ([Ar] 4s² 3d⁶), valence and unpaired electrons. The
+  exceptions (Cr, Cu, Ag, Au…) are right.
+- Group and period, classification, state at 25 °C, **electronegativity**, the **1st, 2nd and 3rd ionisation
+  energies**, **melting and boiling points**, density, **common oxidation states** and a line of notes: what it is
+  like, what it is used for, what it does in the lab.
+
+The deeper properties are kept for hydrogen to barium and the simplified table's extras; the lanthanides, actinides
+and the heaviest elements show the data-sheet values and their configuration only. Values come from the data sheet,
+the NIST Atomic Spectra Database (ionisation energies) and the CRC Handbook (melting and boiling points), and a
+**Check** line flags the few worth confirming against a printed table. Every value sits in one editable file,
+`src/plugins/chemistry/elements.ts`, so a teacher who finds one wrong can correct it.
 
 ## Class noise meter
 
