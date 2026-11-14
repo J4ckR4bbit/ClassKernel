@@ -191,6 +191,7 @@ test("chemistry reference: the periodic table, its views and highlights, and an 
   await openTool(page, "Chemistry reference");
   await expect(page.locator(".pt-cell.shown")).toHaveCount(118);
   await expect(page.locator(".pt-cell[data-z='17'] .pt-mass")).toHaveText("35,5");
+  await expect(page.locator(".pt-cell[data-z='17'] .pt-en")).toHaveText("3,0");
   // Iron: configuration in filling order, and ferromagnetic.
   await page.locator(".pt-cell[data-z='26']").click();
   const dialog = page.getByRole("dialog");
@@ -209,7 +210,7 @@ test("chemistry reference: the periodic table, its views and highlights, and an 
   await page.locator("main .seg button", { hasText: "Simplified" }).click();
   await expect(page.locator(".pt-cell.shown")).toHaveCount(40);
   await expect(page.locator(".pt-cell[data-z='92']")).toHaveClass(/shown/);
-  await expect(page.locator(".pt-cell[data-z='57']")).toBeDisabled();
+  await expect(page.locator(".pt-cell[data-z='57']")).toHaveCount(0);
 });
 
 test("titration: measured additions move the burette and the pH, the indicator turns, the memo knows the end point", async ({ page }) => {

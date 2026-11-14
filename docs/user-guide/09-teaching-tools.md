@@ -217,18 +217,21 @@ their tabs are greyed out until then.
 
 **The periodic table**
 
-- The symbols, relative atomic masses and electronegativities are the **data sheet's** (Cl 35,5; Cu 63,5; masses in
-  brackets for elements with no stable isotope), so the board matches the exam paper.
+- Each block is laid out as the **data sheet** prints it — atomic number top left, electronegativity top right,
+  symbol, relative atomic mass (Cl 35,5; Cu 63,5; masses in brackets for elements with no stable isotope) — so the
+  board matches the exam paper.
 - **Colour by**: **Group** (alkali metals, alkaline earth metals, transition metals, post-transition metals,
   metalloids, non-metals, halogens, noble gases, lanthanides, actinides), **State at 25 °C** or **Metal / non-metal**.
   The colours are a colour-blind-safe set and the key always names them; tap a key entry to show only that set.
 - **Highlight**: the **diatomic** elements (H₂, N₂, O₂, F₂, Cl₂, Br₂, I₂), the **ferromagnetic** ones (Fe, Co, Ni, Gd)
   and the **radioactive** ones. Everything else fades.
-- **Full table** or **Simplified**: the first 20 elements plus Cr, Mn, Fe, Co, Ni, Cu, Zn, Br, Kr, Sr, Ag, Sn, I, Xe,
-  Ba, Pt, Au, Hg, Pb and U, in their proper places, the rest left as empty outlines.
+- **Full table** or **Simplified**: the first 20 elements in their own places with groups 3–12 collapsed to a gap,
+  so the blocks are big, and under them Cr, Mn, Fe, Co, Ni, Cu, Zn, Br, Kr, Sr, Ag, Sn, I, Xe, Ba, Pt, Au, Hg, Pb and
+  U in atomic-number order.
 - **Show to class** fills the screen; Esc or **Close** comes back.
 
-**An element's pop-up** — tap any element:
+**An element's pop-up** — tap any element. It opens with the element's data-sheet block, in type sized for the
+board:
 
 ![An element's details](../images/periodic-table-element.png)
 

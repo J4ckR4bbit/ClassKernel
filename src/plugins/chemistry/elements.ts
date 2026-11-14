@@ -334,7 +334,7 @@ export function elementBySymbol(symbol: string): Element | undefined {
  * The simplified table: the first 20 elements and the ones a school course
  * keeps meeting after that.
  */
-export const SIMPLIFIED_EXTRAS = ["Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Br", "Kr", "Sr", "Ag", "Sn", "I", "Xe", "Ba", "Pt", "Au", "Hg", "Pb", "U"];
+export const SIMPLIFIED_EXTRAS = ["Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Br", "Kr", "Sr", "Ag", "Sn", "I", "Xe", "Ba", "Pt", "Au", "Hg", "Pb", "U"]; // in atomic-number order
 
 export function inSimplifiedTable(e: Element): boolean {
   return e.z <= 20 || SIMPLIFIED_EXTRAS.includes(e.symbol);
@@ -346,6 +346,23 @@ export function metalCharacter(e: Element): MetalCharacter {
   if (e.category === "metalloid") return "metalloid";
   if (e.category === "nonmetal" || e.category === "halogen" || e.category === "noble") return "non-metal";
   return "metal";
+}
+
+/**
+ * The simplified table's grid: the first 20 elements in their own places with
+ * groups 3–12 collapsed to a gap (columns 1–2, a gap at 3, then 4–9 for
+ * groups 13–18), rows 1–4; the extras under them in atomic-number order,
+ * left to right, from row 6, eight to a row.
+ */
+export function simplifiedPosition(e: Element): { column: number; row: number } | null {
+  if (!inSimplifiedTable(e)) return null;
+  if (e.z <= 20) {
+    const column = e.group! <= 2 ? e.group! : e.group! - 9; // 13 → 4 … 18 → 9
+    return { column, row: e.period };
+  }
+  const index = SIMPLIFIED_EXTRAS.indexOf(e.symbol);
+  const columns = [1, 2, 4, 5, 6, 7, 8, 9];
+  return { column: columns[index % columns.length], row: 6 + Math.floor(index / columns.length) };
 }
 
 /** Grid position: column 1–18 and row 1–7 for the main body, rows 9 and 10 for the f-block. */
