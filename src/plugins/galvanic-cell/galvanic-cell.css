@@ -1,0 +1,59 @@
+/* Galvanic cell animator: controls on the left, the cell and its memo on the right. */
+.galvanic-cell { display: grid; grid-template-columns: minmax(300px, 360px) 1fr; gap: 16px; height: 100%; }
+.galvanic-cell.class-view { display: block; }
+.gc-controls { overflow-y: auto; padding-right: 4px; }
+.gc-controls .panel { padding: 14px; }
+.gc-controls h3 { font-size: 14px; margin-bottom: 10px; }
+.gc-note { font-size: 12px; margin: 6px 0 10px; }
+.gc-status { font-size: 13px; margin-top: 8px; word-break: break-all; }
+.gc-row { margin-top: 10px; align-items: center; }
+.gc-field { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.gc-field-label { flex: 1; font-size: 13px; }
+.gc-field select { max-width: 200px; }
+.gc-check { display: flex; align-items: center; gap: 9px; font-size: 13px; margin: 10px 0 8px; cursor: pointer; }
+.gc-side { padding: 8px 0 4px; border-top: 1px solid var(--border); }
+.gc-side:first-of-type { border-top: none; padding-top: 0; }
+
+/* A concentration: its value on one line, the slider under it. */
+.gc-amount { margin-bottom: 8px; }
+.gc-amount-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+.gc-amount-value { display: flex; align-items: center; gap: 6px; }
+.gc-amount-value input { width: 84px; text-align: right; font-variant-numeric: tabular-nums; }
+.gc-amount input[type="range"] { width: 100%; margin-top: 4px; }
+
+.gc-table { margin-top: 6px; font-size: 12px; }
+.gc-table td { padding: 3px 6px; }
+.gc-right { text-align: right; font-variant-numeric: tabular-nums; }
+.gc-in-use td { background: var(--accent-soft); font-weight: 600; }
+
+.gc-main { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; }
+/* Tinted, so the white picture reads as a sheet on a desk. */
+.gc-stage {
+  display: flex; align-items: center; justify-content: center;
+  padding: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+  aspect-ratio: 1000 / 620; flex: none;
+}
+.gc-canvas { display: block; max-width: 100%; max-height: 100%; background: #fff; border: 1px solid var(--border); box-shadow: 0 2px 10px rgba(29, 39, 51, 0.12); }
+
+/* Shown to the class: the picture takes the whole screen, with a small bar of buttons. */
+.gc-stage.class-view { position: fixed; inset: 0; z-index: var(--z-class-view); border-radius: 0; aspect-ratio: auto; padding: 24px 24px 72px; }
+.gc-class-bar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 10px; }
+
+.gc-analysis { padding: 14px 18px; }
+.gc-analysis h3 { font-size: 14px; margin-bottom: 10px; }
+.gc-hidden { font-size: 13px; margin: 0; }
+.gc-memo { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
+.gc-memo dt { font-weight: 600; color: var(--text-dim); }
+.gc-memo dd { margin: 0; line-height: 1.5; }
+.gc-role { font-weight: 600; }
+.gc-anode { color: var(--on-bad-container); }
+.gc-cathode { color: var(--on-good-container); }
+.gc-warn { color: var(--warn); }
+.gc-small { font-size: 12px; margin-top: 2px; }
+.gc-points { margin: 0; padding-left: 18px; }
+.gc-points li { margin-bottom: 3px; }
+
+@media (max-width: 900px) {
+  .galvanic-cell { grid-template-columns: 1fr; overflow-y: auto; }
+  .gc-controls, .gc-main { overflow: visible; }
+}

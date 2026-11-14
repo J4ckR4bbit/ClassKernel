@@ -69,5 +69,6 @@ export const ALL_TOOLS = [
   "graph-paper",
   "practical-graph",
   "motion-graph",
+  "galvanic-cell",
   "noise-meter",
 ];

@@ -18,6 +18,7 @@ as you need. Switch any of them on under [Settings → Tools](10-settings.md#too
 | [Graph paper generator](#graph-paper-generator) | Printable grids and axes at an exact size. |
 | [Practical graph plotter](#practical-graph-plotter) | Readings in, graph and gradient out. |
 | [Motion graph builder](#motion-graph-builder) | x–t, v–t and a–t graphs that always agree. |
+| [Galvanic cell animator](#galvanic-cell-animator) | An animated cell whose reading follows the Nernst equation. |
 | [Class noise meter](#class-noise-meter) | Warns the class when it's too loud. |
 
 Each tool opens full-page with a **←** back to Home in the top bar. Tools are built into the app, so they work
@@ -155,6 +156,54 @@ Describe a journey a stage at a time and get the **position–time**, **velocity
 the curve colour.
 
 **Save PNG…** saves a 300 dpi image; **Reset** goes back to the example journey.
+
+## Galvanic cell animator
+
+An animated galvanic cell for the board, for the Grade 12 electrochemistry work: two beakers, their electrodes, the
+salt bridge and the wire with a voltmeter. Electrons move along the wire from the anode to the cathode, ions move
+in the solutions and through the salt bridge, and the voltmeter reading is worked out from the standard electrode
+potentials and the **Nernst equation**, so it answers every "what happens to the reading if…" question honestly.
+
+![The galvanic cell animator](../images/galvanic-cell.png)
+
+**The half-cells**
+
+- Pick what goes in the **left** and **right** beaker from the data sheet's table of standard reduction potentials:
+  the metal / metal-ion couples from Mg to Ag, the **standard hydrogen electrode** (H⁺ / H₂ on platinum) and the
+  Fe³⁺ / Fe²⁺ couple on platinum. The half-cell with the higher electrode potential becomes the cathode; the tool
+  works that out, so either can go on either side, and **Swap sides** mirrors the picture.
+- Under each is a slider and a box for every concentration (mol·dm⁻³, from 10⁻⁴ to 2) and, for hydrogen, the gas
+  pressure (kPa). The same half-cell on both sides at different concentrations makes a **concentration cell**.
+
+**Conditions**
+
+- **Temperature** from 273 K to 373 K (E° is taken as the data sheet's value at any temperature).
+- **Salt bridge in place**: untick it and the circuit is open — the EMF is unchanged but the voltmeter reads 0 V and
+  nothing moves. Choose the **electrolyte** (KNO₃, NaNO₃, NH₄NO₃ or KCl); its ions are drawn moving through the
+  bridge, cations towards the cathode and anions towards the anode.
+- **Electrodes** small or large. The reading doesn't change — the point of offering it.
+
+**Running the cell**
+
+**Run the cell** lets it discharge: the reactant concentration falls, the product concentration rises, the anode
+thins and the cathode thickens, a coloured solution fades, and the reading drops until the reaction reaches
+equilibrium (Q = K) and the cell is **flat** at 0 V. **Speed** ×1, ×5 or ×20; **Pause** holds it; **Reset** puts
+the chosen half-cells back at standard conditions. When Windows is set to show fewer animations the particles
+stand still, but the arrows still give the directions and the reading still follows.
+
+**Question mode** hides the reading (the voltmeter shows **?**), the anode / cathode labels, the electron and ion
+directions and the memo, for the class to predict first. **Show to class** fills the screen with the picture and a
+small bar of buttons (Run, Question mode, Close — or Esc).
+
+**The memo** under the picture gives the working the way it is marked: both E° values and which is reduced, the
+two half-reactions and the balanced net equation, E°cell = E°cathode − E°anode, the cell notation (anode on the
+left, with and without the conditions), the Nernst equation with Q, RT/nF and the result (and its 0,059/n log Q
+form at 25 °C), and the points to make: electron flow, the salt bridge's job, which electrode loses or gains mass,
+the stronger oxidising and reducing agents, what happens as the cell runs and what doesn't change the EMF. If the
+concentrations have turned a cell round compared with standard conditions, it says so.
+
+**Save PNG…** saves the picture as it is — answers shown or hidden — for a worksheet or a memo. Nothing is saved to
+your data.
 
 ## Class noise meter
 

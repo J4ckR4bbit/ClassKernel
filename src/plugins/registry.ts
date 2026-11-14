@@ -118,6 +118,15 @@ export const PLUGINS: PluginManifest[] = [
     load: () => import("./motion-graph/MotionGraph").then((m) => m.default),
   },
   {
+    id: "galvanic-cell",
+    name: "Galvanic cell animator",
+    tagline: "Watch a galvanic cell work, with the reading following the Nernst equation.",
+    description:
+      "An animated galvanic cell for the board. Pick the two half-cells from the standard electrode potentials table and watch the electrons in the wire, the ions in the solutions and the salt bridge, and the voltmeter reading. Change a concentration, the temperature or the electrolyte, take the salt bridge out or make the electrodes bigger, and the reading follows the Nernst equation; Run the cell and it discharges to equilibrium. Under the picture, the memo: half-reactions, net equation, E°cell, cell notation, the Nernst working and the usual exam points. Question mode hides the answers; Show to class fills the screen. Saves a PNG of the picture; nothing is saved to your data.",
+    icon: "science",
+    load: () => import("./galvanic-cell/GalvanicCell").then((m) => m.default),
+  },
+  {
     id: NOISE_METER_ID,
     name: "Class noise meter",
     tagline: "Set a limit; the screen warns the class when it's too loud.",
