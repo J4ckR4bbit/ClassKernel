@@ -105,6 +105,16 @@ Leave either blank to leave it off.
   first). See [Automatic backups](11-your-data.md#automatic-backups).
 - The number of active and archived classes.
 
+### Updates
+
+Shows the version you have. **Check for updates** asks GitHub whether a newer one exists; if so,
+**Install version … and restart** downloads it, closes ClassKernel for a moment and opens the new version. Your
+data isn't touched, and changes waiting to go to your data folder are sent first.
+
+This is the only time ClassKernel uses the internet, and none of your data is sent. Switch on **Check for an update
+each time ClassKernel starts** (chosen on each computer, off to begin with) and a message at start-up tells you when
+there is one; its **Update** button brings you here.
+
 ## Behaviour
 
 The buttons you tap during a lesson. They are **shared by all your classes** (stored in `behaviours.csv`).

@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import ToolsApp from "./tools/ToolsApp";
 import { installMissingFolderDemo } from "./lib/demoMissingFolder";
 import { initTheme, revealWindow } from "./store/theme";
 // Roboto, bundled (the CSP allows no font CDN): the three weights the app uses,
@@ -15,11 +16,15 @@ import "./styles.css";
 
 // Before the first render, so a dark theme never starts with a white flash.
 initTheme();
-installMissingFolderDemo();
+if (import.meta.env.MODE !== "tools") installMissingFolderDemo();
+
+// `vite build --mode tools` makes the tools website instead of the app: the
+// same tools with no class data around them (src/tools/ToolsApp.tsx).
+const Root = import.meta.env.MODE === "tools" ? ToolsApp : App;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <Root />
   </React.StrictMode>,
 );
 

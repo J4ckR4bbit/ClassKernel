@@ -214,6 +214,10 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
+        // Settings → General → Updates: the only thing that uses the network,
+        // and only when asked (src/lib/updates.ts). Installers are checked
+        // against the public key in tauri.conf.json.
+        .plugin(tauri_plugin_updater::Builder::new().build())
         // The window opens hidden (tauri.conf.json) and the page shows it once
         // it has drawn in the right colours, so a dark theme doesn't flash
         // white. Should the page never get that far, show it anyway.

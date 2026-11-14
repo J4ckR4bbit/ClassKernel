@@ -6,7 +6,11 @@
 
 ClassKernel is a Windows desktop app. Download the latest installer (`.exe`) from the
 [Releases](https://github.com/J4ckR4bbit/ClassKernel/releases) page and run it. There is no account to create and
-nothing to configure, and the app never needs the internet.
+nothing to configure, and the app never needs the internet. The one exception is when you ask it to
+[check for an update](10-settings.md#updates), so a new version doesn't mean downloading the installer again.
+
+Windows may show a blue **Windows protected your PC** box the first time you run the installer, because the
+installer isn't signed with a paid certificate. Choose **More info**, then **Run anyway**.
 
 ## First launch: choose a data folder
 
