@@ -565,6 +565,9 @@ test("teaching tools", async ({ page }) => {
   await page.locator(".ion-card[data-ion='nitrate']").click();
   await shot(page, "polyatomic-ions", 400);
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
+  await page.locator("main .md-tab", { hasText: "Equations" }).click();
+  await page.locator("main .chip", { hasText: "Permanganate and iron(II)" }).click();
+  await shot(page, "equations", 400);
 
   await openTool(page, "Titration simulator");
   await page.getByLabel("Solution in the flask").selectOption("ch3cooh");

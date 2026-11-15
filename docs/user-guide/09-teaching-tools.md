@@ -210,8 +210,8 @@ your data.
 ## Chemistry reference
 
 A chemistry reference for the board, built in modules that sit as tabs across the top: the **periodic table**,
-**substances and their bonds** and the **polyatomic ions**; a fourth tab follows in a later version and is greyed
-out until then.
+**substances and their bonds**, the **polyatomic ions**, a **quiz**, the **data sheet**'s tables and an
+**equation balancer**.
 
 ![The periodic table](../images/periodic-table.png)
 
@@ -290,6 +290,35 @@ Substances live in `src/plugins/chemistry/substanceData.ts`, the enthalpy table 
   one form is drawn and the notes say so.
 
 The `syllabus` flag in `src/plugins/chemistry/ions.ts` marks the SAG table as best known; check it against your copy.
+
+**Quiz**
+
+- A question on the board with 2, 4 or 6 choices; the class answers and you tap their choice (or press A–F). The
+  right answer goes green, a wrong one red, an explanation appears, and **Next question** (or Space) moves on. A
+  running score with a Reset; **Reveal** shows the answer without choosing.
+- **Ask about**: symbol → name, name → symbol, group and period, electron configuration (up to krypton), ion →
+  name, name → ion, or molar mass (with the wrong answers a learner actually gets: a subscript missed, a mass
+  doubled). **From** the simplified table or syllabus ion table, or everything.
+
+**Data sheet**
+
+- **Reduction potentials**: Table 4A in order of E°, or 4B alphabetically, searchable. Tap two rows and the cell
+  they make is worked out: which is the cathode, the two half-reactions with their multipliers, E°cell =
+  E°cathode − E°anode, and the stronger oxidising and reducing agents.
+- **Constants** and the chemistry **formulae** as the data sheet prints them, searchable.
+
+**Equations**
+
+![The equation balancer](../images/equations.png)
+
+- Type a skeleton equation (`C3H8 + O2 -> CO2 + H2O`; plain digits become subscripts, `Cu2+` and `SO4^2-` are
+  charges, `(aq)` and the other states are kept) or pick an example. It is balanced exactly, including the charge
+  in ionic equations.
+- Under the balanced equation: the **reaction type** (synthesis, decomposition, combustion, single or double
+  displacement, precipitation, neutralisation, redox), which element is **oxidised** and which **reduced** with
+  their oxidation numbers, the **atom inventory** the class writes, the mole ratio and the **molar masses**, and the
+  **oxidation numbers** in every substance by the school rules.
+- **Question mode** shows the unbalanced equation only until you reveal it.
 
 ## Titration simulator
 

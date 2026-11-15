@@ -259,6 +259,39 @@ test("chemistry reference: polyatomic ions open a pop-up with the Lewis diagram 
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
+test("chemistry reference: quiz, data sheet and equations", async ({ page }) => {
+  await enableTools(page, ["chemistry-reference"]);
+  await openTool(page, "Chemistry reference");
+  // Quiz: four choices, tapping one reveals the answer and counts the score.
+  await page.locator("main .md-tab", { hasText: "Quiz" }).click();
+  await expect(page.locator(".quiz-option")).toHaveCount(4);
+  await page.locator(".quiz-option").first().click();
+  await expect(page.locator(".quiz-option.right")).toHaveCount(1);
+  await expect(page.locator(".quiz-score")).toContainText("/ 1");
+  await page.getByRole("button", { name: "Next question" }).click();
+  await expect(page.locator(".quiz-option.right")).toHaveCount(0);
+  // Data sheet: two rows make the Zn / Cu cell.
+  await page.locator("main .md-tab", { hasText: "Data sheet" }).click();
+  await expect(page.locator(".ds-table tbody tr")).toHaveCount(48);
+  await page.locator(".ds-table tr[data-id='zn']").click();
+  await page.locator(".ds-table tr[data-id='cu2']").click();
+  await expect(page.locator(".ds-cell")).toContainText("+1,10 V");
+  await expect(page.locator(".ds-cell")).toContainText("Zn → Zn²⁺ + 2e⁻");
+  await page.getByLabel("Search the table").fill("mno");
+  await expect(page.locator(".ds-table tbody tr")).toHaveCount(2);
+  // Equations: the propane example, then a typed one, then question mode.
+  await page.locator("main .md-tab", { hasText: "Equations" }).click();
+  await expect(page.locator(".eq-balanced")).toHaveText("C₃H₈ + 5O₂ → 3CO₂ + 4H₂O");
+  await expect(page.locator(".eq-types")).toContainText("combustion");
+  await page.locator("#eq-text").fill("Fe + O2 -> Fe2O3");
+  await expect(page.locator(".eq-balanced")).toHaveText("4Fe + 3O₂ → 2Fe₂O₃");
+  await expect(page.locator(".eq-types")).toContainText("Fe oxidised: 0 → +3");
+  await page.getByLabel(/Question mode/).check();
+  await expect(page.locator(".eq-balanced")).toHaveCount(0);
+  await page.getByRole("button", { name: /Reveal the balanced equation/ }).click();
+  await expect(page.locator(".eq-balanced")).toHaveText("4Fe + 3O₂ → 2Fe₂O₃");
+});
+
 test("titration: measured additions move the burette and the pH, the indicator turns, the memo knows the end point", async ({ page }) => {
   await enableTools(page, ["titration"]);
   await openTool(page, "Titration simulator");
