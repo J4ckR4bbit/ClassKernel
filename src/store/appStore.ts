@@ -34,6 +34,7 @@ import {
   seatedKey,
 } from "../lib/lessonState";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
+import { classNameTaken } from "../lib/classNames";
 import { enterDock, enterFullscreen, restoreWindow } from "../lib/teachingWindow";
 import { setTimeZone } from "../lib/time";
 import { applyRenames, describeRenames, shortenCodes } from "../lib/behaviourCodes";
@@ -330,7 +331,8 @@ export interface AppState {
   resolveDialog(result: boolean | string | null): void;
   retrySave(): Promise<void>;
 
-  createClass(info: ClassInfo): Promise<void>;
+  /** False when it wasn't created: the name is taken (a message says so) or it couldn't be saved (the save-error banner does). */
+  createClass(info: ClassInfo): Promise<boolean>;
   /** Every class's students, read from disk (the current class's from memory). */
   loadAllStudents(): Promise<Map<string, Student[]>>;
   /**
@@ -340,8 +342,10 @@ export interface AppState {
    */
   importRoster(classes: ClassInfo[], students: Map<string, Student[]>): Promise<void>;
   openClass(name: string): Promise<void>;
-  updateClassInfo(info: ClassInfo): Promise<void>;
-  renameClass(oldName: string, newName: string): Promise<void>;
+  /** False when it couldn't be saved (the save-error banner says so). */
+  updateClassInfo(info: ClassInfo): Promise<boolean>;
+  /** False when it wasn't renamed; a message says why. */
+  renameClass(oldName: string, newName: string): Promise<boolean>;
 
   setStudents(students: Student[]): Promise<void>;
   setAttendance(entries: AttendanceEntry[]): Promise<void>;
@@ -958,11 +962,18 @@ export const useApp = create<AppState>((set, get) => {
   },
 
   async createClass(info) {
-    const { dataDir } = get();
-    if (!dataDir) return;
-    await repo.saveClassInfo(dataDir, info);
+    const { dataDir, classes } = get();
+    if (!dataDir) return false;
+    // The name is the folder: saving over an existing class would replace its details and notes.
+    const taken = classNameTaken(info.name, classes);
+    if (taken) {
+      get().showToast(`There is already a class called ${taken.name}${taken.archived ? " (archived)" : ""}`);
+      return false;
+    }
+    if (!(await guarded("the new class", () => repo.saveClassInfo(dataDir, info)))) return false;
     set({ classes: await repo.listClasses(dataDir) });
     await get().openClass(info.name);
+    return true;
   },
 
   async loadAllStudents() {
@@ -1005,25 +1016,40 @@ export const useApp = create<AppState>((set, get) => {
 
   async updateClassInfo(info) {
     const { dataDir } = get();
-    if (!dataDir) return;
-    await repo.saveClassInfo(dataDir, info);
+    if (!dataDir) return false;
+    if (!(await guarded("the class details", () => repo.saveClassInfo(dataDir, info)))) return false;
     set({ classes: await repo.listClasses(dataDir) });
+    return true;
   },
 
   async renameClass(oldName, newName) {
     const { dataDir, classes, folderStatus } = get();
-    if (!dataDir || !newName || oldName === newName || (folderStatus && folderStatus.kind !== "batched")) return;
+    if (!dataDir || !newName || oldName === newName || (folderStatus && folderStatus.kind !== "batched")) return false;
     const info = classes.find((c) => c.name === oldName);
-    if (!info) return;
+    if (!info) return false;
+    // Its folder would be moved onto the other class's.
+    const taken = classNameTaken(newName, classes, oldName);
+    if (taken) {
+      get().showToast(`There is already a class called ${taken.name}${taken.archived ? " (archived)" : ""}`);
+      return false;
+    }
     // Moves a folder: done in the data folder itself, not sent file by file.
-    const done = await inDataFolder(async () => {
-      await repo.renameClass(dataDir, oldName, newName);
-      await repo.saveClassInfo(dataDir, { ...info, name: newName });
-      return true;
-    });
-    if (!done) return;
+    let renamed = false;
+    try {
+      await inDataFolder(async () => {
+        await repo.renameClass(dataDir, oldName, newName);
+        renamed = true;
+        await repo.saveClassInfo(dataDir, { ...info, name: newName });
+      });
+    } catch (e) {
+      console.error("Couldn't rename the class", e);
+      // The folder not moving (open in another program, say) is the teacher's to know; class.md is rewritten by the next save.
+      if (!renamed) get().showToast(`Couldn't rename the class: ${describeError(e)}`);
+    }
+    if (!renamed) return false;
     set({ classes: await repo.listClasses(dataDir) });
     if (get().currentClass === oldName) await get().openClass(newName);
+    return true;
   },
 
   async setStudents(students) {

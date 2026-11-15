@@ -64,6 +64,25 @@ test("the class menu lists the classes, closes on Escape, and creates a class", 
   await expect(page.locator(".top-bar .class-picker-name")).toHaveText("7B-Science");
 });
 
+test("a second class of the same name is refused, in the dialog and when renaming", async ({ page }) => {
+  await page.locator(".top-bar .class-picker-btn").click();
+  await page.locator(".top-bar .menu .menu-item", { hasText: "New class" }).click();
+  await page.locator(".modal input").first().fill("7b-science");
+  await page.locator(".modal button.primary").click();
+  await expect(page.locator(".toast")).toHaveText("There is already a class called 7B-Science");
+  // The dialog stays, so the name can be changed.
+  await page.locator(".modal input").first().fill("8C-Science");
+  await page.locator(".modal button.primary").click();
+  await expect(page.locator(".top-bar .class-picker-name")).toHaveText("8C-Science");
+
+  await nav(page, "Class");
+  await page.getByRole("button", { name: "Rename class" }).click();
+  await page.locator(".modal input").fill("7B-Science");
+  await page.locator(".modal button.primary").click();
+  await expect(page.locator(".toast")).toHaveText("There is already a class called 7B-Science");
+  await expect(page.locator(".top-bar .class-picker-name")).toHaveText("8C-Science");
+});
+
 test("every Settings tab opens", async ({ page }) => {
   for (const tab of ["General", "Behaviour", "Teaching mode", "Assessments", "Tools", "Export", "Students", "Room layout", "Seating rules"]) {
     await settingsTab(page, tab);
