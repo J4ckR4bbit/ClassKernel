@@ -1,11 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Main window: core APIs plus the folder-picker and save-as dialogs, and the window controls teaching mode uses (fullscreen, or a narrow always-on-top strip docked to a screen edge), the title bar's light or dark theme, and the window's background colour and showing it once the first screen is ready (it opens hidden, so a dark theme doesn't flash white), and closing it once waiting changes have been sent to the data folder. All file access goes through the app's own audited Rust commands.",
+  "description": "Main window: core APIs plus the folder-picker and save-as dialogs, and the window controls teaching mode uses (fullscreen, or a narrow always-on-top strip docked to a screen edge), the title bar's light or dark theme, and the window's background colour and showing it once the first screen is ready (it opens hidden, so a dark theme doesn't flash white), and closing it once waiting changes have been sent to the data folder; and checking for, downloading and installing a signed update when the teacher asks. All file access goes through the app's own audited Rust commands.",
   "windows": ["main"],
   "permissions": [
     "core:default",
     "dialog:default",
+    "updater:default",
     "core:window:allow-set-fullscreen",
     "core:window:allow-set-size",
     "core:window:allow-set-position",

@@ -5,6 +5,7 @@ import { dateTimeInZone, deviceTimeZone, listTimeZones } from "../../lib/time";
 import RosterSheetTools from "../RosterSheetTools";
 import Segmented from "../Segmented";
 import DataSettings from "./DataSettings";
+import UpdatesPanel from "./UpdatesPanel";
 import { useTheme } from "../../store/theme";
 import { Palette, ThemeChoice } from "../../lib/theme";
 
@@ -143,6 +144,8 @@ export default function GeneralTab() {
       <ReportSettings />
 
       <DataSettings />
+
+      <UpdatesPanel />
     </>
   );
 }

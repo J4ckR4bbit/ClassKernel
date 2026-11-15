@@ -18,6 +18,7 @@ npm run test:e2e          # browser tests: builds the app and clicks through it 
 npm run docs:screenshots  # retakes the user-guide pictures into docs/images/
 npm run tauri dev         # the full desktop app
 npm run tauri build       # the Windows installer (NSIS .exe) in src-tauri/target/release/bundle/nsis/
+npm run build:tools       # the tools website (the tools without the class pages) in dist-tools/
 node scripts/gen-icons.mjs  # regenerates the app icons
 ```
 
@@ -47,7 +48,8 @@ another computer would (`src/lib/demoMissingFolder.ts`, used by `e2e/offline.e2e
 | Storage | `src/lib/repo.ts`, `src/lib/csv.ts`, `src/lib/fs.ts` | `repo.ts` maps everything onto the `.csv` / `.md` files (see [Data file reference](data-files.md)). `fs.ts` is either the Tauri backend or an in-memory file system for demo mode, wrapped in `MirrorFS` (repeats each save in this computer's copy) and `QueuedFS` (writes to one file in order, a burst collapsed, behind the launch backup). |
 | This computer's copy | `src/lib/offline.ts`, `src/lib/merge.ts` | When the data folder isn't there at launch: the boot decision, working from the copy, and copying the changes back with a 3-way, row-by-row join (`FILE_RULES` in `repo.ts` says how each file joins). |
 | Tools | `src/plugins/` | Optional tools, compiled in and lazily loaded, switched on in Settings → Tools. See [`src/plugins/README.md`](../src/plugins/README.md) to add one. |
-| Desktop shell | `src-tauri/` | Minimal Rust (Tauri 2): `read_text`, `read_text_opt`, `write_atomic`, `write_binary`, `path_exists`, `mkdirs`, `list_dir`, `rename_path`, `snapshot_backup` (which also refreshes this computer's copy), and `copy_folder` / `remove_local` (only inside the app's own local folder), all on the blocking pool; the file operations are in `fsops.rs` with tests (`rustc --edition 2021 --test src-tauri/src/fsops.rs`). Plus the dialog plugin for folder and save-as pickers, and the single-instance plugin so a second launch focuses the open window. The window opens hidden (`tauri.conf.json`) and the page shows it once its first screen is drawn and the window is painted in the theme's colours (`store/theme.ts`), so a dark theme never flashes white; `lib.rs` shows it anyway after 4 s if the page never gets that far. A strict CSP (`default-src 'self'`); the app makes no network requests. |
+| Desktop shell | `src-tauri/` | Minimal Rust (Tauri 2): `read_text`, `read_text_opt`, `write_atomic`, `write_binary`, `path_exists`, `mkdirs`, `list_dir`, `rename_path`, `snapshot_backup` (which also refreshes this computer's copy), and `copy_folder` / `remove_local` (only inside the app's own local folder), all on the blocking pool; the file operations are in `fsops.rs` with tests (`rustc --edition 2021 --test src-tauri/src/fsops.rs`). Plus the dialog plugin for folder and save-as pickers, and the single-instance plugin so a second launch focuses the open window. The window opens hidden (`tauri.conf.json`) and the page shows it once its first screen is drawn and the window is painted in the theme's colours (`store/theme.ts`), so a dark theme never flashes white; `lib.rs` shows it anyway after 4 s if the page never gets that far. A strict CSP (`default-src 'self'`); the page makes no network requests. The updater plugin (Rust side) fetches the release list and installer from GitHub, only when asked (`lib/updates.ts`, Settings → General → Updates). |
+| Tools website | `src/tools/`, `.github/workflows/tools-site.yml` | `vite build --mode tools` renders `ToolsApp` instead of `App` (`main.tsx`): the tools whose manifest isn't marked `needsClassData`, each at its own `#/<id>` address, on the app's store started as in demo mode. Published to GitHub Pages from `main`. |
 
 Design points worth keeping:
 
@@ -59,6 +61,25 @@ Design points worth keeping:
 - **Privacy first.** Screens with individual data sit behind `PrivacyGate`, which re-arms on every navigation.
 - **Per-computer conveniences in `localStorage`**: the data-folder path, the rail state, the once-per-lesson seat
   lock, the lesson start and the picker's no-repeat list (`src/lib/lessonState.ts`).
+
+## Releases and updates
+
+Tagging `v<major>.<minor>.<patch>` builds the installer with that version and attaches it to a GitHub release.
+Installed copies find it through `latest.json` on the newest release (`scripts/latest-json.mjs` writes it), and
+only accept an installer signed with this project's update key:
+
+- The **public** key is in `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`).
+- The **private** key is the repository secret `TAURI_SIGNING_PRIVATE_KEY` (with
+  `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` if the key has one). Keep a copy somewhere safe: without it, installed
+  copies can never be updated again and everyone has to reinstall by hand. To start over, run
+  `npx tauri signer generate`, put the new public key in `tauri.conf.json` and the new private key in the secret.
+- Without the secret, CI still builds an installer (with a warning); it just can't be offered as an update.
+
+Builds from a branch are numbered `<major>.<minor>.<run number>` from the version in `tauri.conf.json`, so give a
+release a higher major or minor than that file has, or copies installed from a branch build won't see it as newer.
+
+This signing is Tauri's own and is free. It is separate from a Windows code-signing certificate, which is what
+would stop the SmartScreen warning when the installer is first run; the project doesn't have one.
 
 ## Tests
 
