@@ -20,6 +20,7 @@ as you need. Switch any of them on under [Settings → Tools](10-settings.md#too
 | [Motion graph builder](#motion-graph-builder) | x–t, v–t and a–t graphs that always agree. |
 | [Galvanic cell animator](#galvanic-cell-animator) | An animated cell whose reading follows the Nernst equation. |
 | [Chemistry reference](#chemistry-reference) | The periodic table, with every element's details a tap away. |
+| [Titration simulator](#titration-simulator) | A burette, a flask, an indicator and the pH curve. |
 | [Class noise meter](#class-noise-meter) | Warns the class when it's too loud. |
 
 Each tool opens full-page with a **←** back to Home in the top bar. Tools are built into the app, so they work
@@ -208,26 +209,29 @@ your data.
 
 ## Chemistry reference
 
-A chemistry reference for the board, built in modules that sit as tabs across the top. The first module is the
-**periodic table**; the others (substances and their bonds, polyatomic ions, and more) follow in later versions and
-their tabs are greyed out until then.
+A chemistry reference for the board, built in modules that sit as tabs across the top: the **periodic table**,
+**substances and their bonds**, the **polyatomic ions**, a **quiz**, the **data sheet**'s tables and an
+**equation balancer**.
 
 ![The periodic table](../images/periodic-table.png)
 
 **The periodic table**
 
-- The symbols, relative atomic masses and electronegativities are the **data sheet's** (Cl 35,5; Cu 63,5; masses in
-  brackets for elements with no stable isotope), so the board matches the exam paper.
+- Each block is laid out as the **data sheet** prints it — atomic number top left, electronegativity top right,
+  symbol, relative atomic mass (Cl 35,5; Cu 63,5; masses in brackets for elements with no stable isotope) — so the
+  board matches the exam paper.
 - **Colour by**: **Group** (alkali metals, alkaline earth metals, transition metals, post-transition metals,
   metalloids, non-metals, halogens, noble gases, lanthanides, actinides), **State at 25 °C** or **Metal / non-metal**.
   The colours are a colour-blind-safe set and the key always names them; tap a key entry to show only that set.
 - **Highlight**: the **diatomic** elements (H₂, N₂, O₂, F₂, Cl₂, Br₂, I₂), the **ferromagnetic** ones (Fe, Co, Ni, Gd)
   and the **radioactive** ones. Everything else fades.
-- **Full table** or **Simplified**: the first 20 elements plus Cr, Mn, Fe, Co, Ni, Cu, Zn, Br, Kr, Sr, Ag, Sn, I, Xe,
-  Ba, Pt, Au, Hg, Pb and U, in their proper places, the rest left as empty outlines.
+- **Full table** or **Simplified**: the first 20 elements in their own places with groups 3–12 collapsed to a gap,
+  so the blocks are big, and under them Cr, Mn, Fe, Co, Ni, Cu, Zn, Br, Kr, Sr, Ag, Sn, I, Xe, Ba, Pt, Au, Hg, Pb and
+  U in atomic-number order.
 - **Show to class** fills the screen; Esc or **Close** comes back.
 
-**An element's pop-up** — tap any element:
+**An element's pop-up** — tap any element. It opens with the element's data-sheet block, in type sized for the
+board:
 
 ![An element's details](../images/periodic-table-element.png)
 
@@ -245,6 +249,119 @@ and the heaviest elements show the data-sheet values and their configuration onl
 the NIST Atomic Spectra Database (ionisation energies) and the CRC Handbook (melting and boiling points), and a
 **Check** line flags the few worth confirming against a printed table. Every value sits in one editable file,
 `src/plugins/chemistry/elements.ts`, so a teacher who finds one wrong can correct it.
+
+**Substances & bonds**
+
+![Substances and bonds](../images/substances.png)
+
+- **Inorganic**: the elements (H₂, O₂, O₃, N₂, the halogens, carbon, copper, sodium), oxides, acids (HCl, H₂SO₄,
+  HNO₃, H₃PO₄, H₂CO₃…), bases, salts (NaCl to KMnO₄ and K₂Cr₂O₇) and the other molecules the course meets (water,
+  H₂O₂, ammonia, H₂S). **Organic**: the first three members of the alkanes, alkenes, alkynes, alcohols (both
+  propanols), carboxylic acids and the common esters, each with its functional group, condensed formula and boiling
+  point. Filter by group with the chips; tap a card.
+- The chosen substance shows its **structural formula** (drawn as the textbook does, chains left to right and
+  branches at right angles), the **molar mass** from the data sheet, its bonding and state, and whether the molecule
+  as a whole is **polar**. An ionic substance shows its **ions**, polyatomic ones drawn in brackets with their charge.
+- **Show δ+ and δ−** puts the partial charges on each polar bond; **Show electronegativities** prints each atom's
+  value under it.
+- The **bond table** lists every bond type with how many there are, the **average bond enthalpy** (kJ·mol⁻¹), the
+  electronegativity difference and its type (non-polar covalent up to 0,4, polar covalent up to 2,1, ionic above),
+  and the energy to break every bond in a mole — the numbers a ΔH-from-bond-enthalpies question needs. A salt
+  adds a row for its ionic lattice.
+
+Bond enthalpies are the CRC Handbook's averages and the notes say where a particular compound differs (C=O in CO₂).
+Substances live in `src/plugins/chemistry/substanceData.ts`, the enthalpy table and polarity limits at the top of
+`src/plugins/chemistry/bonds.ts`, the polyatomic ions in `src/plugins/chemistry/ions.ts`.
+
+**Polyatomic ions**
+
+![A polyatomic ion's pop-up](../images/polyatomic-ions.png)
+
+- The ions as cards grouped by charge — the cations, then the 1−, 2− and 3− anions — with the SAG's table of
+  common polyatomic ions marked and the extras that come up in practicals (thiocyanate, iodate, manganate…) edged
+  with a dash. Filter to the **Syllabus table**, the cations or one charge.
+- Tap an ion for its pop-up: the formula and charge, its molar mass and valence electron count; a **Lewis diagram**
+  with the lone pairs as dots and the **formal charge** circled on the atoms that carry it (they add up to the ion's
+  charge: +1 on the N of nitrate, −1 on two of its oxygens, none on the sulfur of sulfate), or the bonds alone;
+  what it **comes from** (its acid), where it is **found** (the common salts), the **solubility rule** for its
+  salts, its **colour** and **test** where the course has one, and notes.
+- The Lewis diagram is worked out from the electron count, so the diagram and the charges always agree with the
+  structure drawn. Where resonance spreads a double bond over several equal bonds (nitrate, carbonate, ethanoate),
+  one form is drawn and the notes say so.
+
+The `syllabus` flag in `src/plugins/chemistry/ions.ts` marks the SAG table as best known; check it against your copy.
+
+**Quiz**
+
+- A question on the board with 2, 4 or 6 choices; the class answers and you tap their choice (or press A–F). The
+  right answer goes green, a wrong one red, an explanation appears, and **Next question** (or Space) moves on. A
+  running score with a Reset; **Reveal** shows the answer without choosing.
+- **Ask about**: symbol → name, name → symbol, group and period, electron configuration (up to krypton), ion →
+  name, name → ion, or molar mass (with the wrong answers a learner actually gets: a subscript missed, a mass
+  doubled). **From** the simplified table or syllabus ion table, or everything.
+
+**Data sheet**
+
+- **Reduction potentials**: Table 4A in order of E°, or 4B alphabetically, searchable. Tap two rows and the cell
+  they make is worked out: which is the cathode, the two half-reactions with their multipliers, E°cell =
+  E°cathode − E°anode, and the stronger oxidising and reducing agents.
+- **Constants** and the chemistry **formulae** as the data sheet prints them, searchable.
+
+**Equations**
+
+![The equation balancer](../images/equations.png)
+
+- Type a skeleton equation (`C3H8 + O2 -> CO2 + H2O`; plain digits become subscripts, `Cu2+` and `SO4^2-` are
+  charges, `(aq)` and the other states are kept) or pick an example. It is balanced exactly, including the charge
+  in ionic equations.
+- Under the balanced equation: the **reaction type** (synthesis, decomposition, combustion, single or double
+  displacement, precipitation, neutralisation, redox), which element is **oxidised** and which **reduced** with
+  their oxidation numbers, the **atom inventory** the class writes, the mole ratio and the **molar masses**, and the
+  **oxidation numbers** in every substance by the school rules.
+- **Question mode** shows the unbalanced equation only until you reveal it.
+
+## Titration simulator
+
+A titration on the board: a burette over a conical flask on a stirrer, the pH graph beside it, and the memo
+underneath.
+
+![The titration simulator](../images/titration.png)
+
+**Setting up**
+
+- **In the burette** and **in the flask**: pick any of the strong acids (HCl, HNO₃, H₂SO₄), weak acids (HF,
+  ethanoic, methanoic, oxalic, phosphoric, carbonic), strong bases (NaOH, KOH, Ba(OH)₂, Ca(OH)₂, Mg(OH)₂), weak bases
+  (ammonia, sodium carbonate, sodium hydrogen carbonate) or water, with a **concentration** for each and the flask's
+  **volume**. Either can go in either; **Swap burette and flask** turns the titration round. A note under each
+  solution gives its Ka or Kb and what it is used for, and the tool warns when a hydroxide is set stronger than it
+  dissolves.
+- **Indicator**: methyl orange, bromocresol green, methyl red, litmus, bromothymol blue, phenol red,
+  phenolphthalein (each with its range), universal indicator, or none.
+- **Unknown** hides the flask's concentration and the equivalence volumes, so the class has to find the end point
+  from the colour and work the concentration out.
+
+**Running it**
+
+- **Open tap** runs titrant in at the chosen rate (**Drops**, **Slow**, **Fast**) until you **Close tap** or the
+  burette is empty; or add a measured volume: **+0,05** (a drop), **+0,50**, **+1,00**, **+5,00** or any amount you
+  type.
+- With **Auto-mix** off, the drops land as a plume of their own colour — the pink flash of phenolphthalein near the
+  end point — until you **Stir**; the pH shown is the mixed value.
+- The **burette reading**, **pH**, **[H₃O⁺]**, **[OH⁻]** and the volume in the flask read out live; **Record** adds the
+  reading to a table (marked on the graph as crosses).
+- The **graph** of pH against volume added is drawn as a probe would trace it, up to the volume run in; **Show the
+  whole curve** reveals it all. The indicator's range is a band across it and the equivalence points are dashed
+  lines (unless Unknown is on).
+- **Refill & restart** empties the flask back to its sample and refills the burette. **Show to class** fills the
+  screen with the bench and the graph.
+
+**The memo** gives the set-up, the mole ratio (n(H₂SO₄) : n(NaOH) = 1 : 2 and the cₐVₐ / cᵦVᵦ relation), each
+equivalence volume with the pH there and which indicators would show it, and the recorded readings.
+
+The pH is worked out from the full charge balance of everything in the flask, so strong, weak, polyprotic and
+mixed cases all behave, including the two end points of sodium carbonate and the buffer region of a weak acid.
+Ka and Kb values are the CRC Handbook's at 25 °C; they sit in one editable file, `src/plugins/titration/chemistry.ts`.
+The titration keeps going if you leave the screen; nothing is saved.
 
 ## Class noise meter
 

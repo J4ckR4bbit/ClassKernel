@@ -131,9 +131,18 @@ export const PLUGINS: PluginManifest[] = [
     name: "Chemistry reference",
     tagline: "The periodic table, colour-coded, with every element's details a tap away.",
     description:
-      "An interactive periodic table for the board: the data sheet's symbols, masses and electronegativities, coloured by group (alkali metals, halogens, noble gases…), by state at room temperature or by metal / non-metal, with highlights for the diatomic, ferromagnetic and radioactive elements. A simplified view shows the first 20 elements and the ones the course keeps meeting. Tap an element for its shell diagram, Aufbau diagram, electron configuration in spdf notation, electronegativity, ionisation energies, melting and boiling points, oxidation states and notes. Show to class fills the screen. Nothing is saved to your data.",
+      "An interactive periodic table for the board: the data sheet's symbols, masses and electronegativities, coloured by group (alkali metals, halogens, noble gases…), by state at room temperature or by metal / non-metal, with highlights for the diatomic, ferromagnetic and radioactive elements. A simplified view shows the first 20 elements and the ones the course keeps meeting. Tap an element for its shell diagram, Aufbau diagram, electron configuration in spdf notation, electronegativity, ionisation energies, melting and boiling points, oxidation states and notes. A second tab, Substances & bonds, draws the common inorganic and organic substances with their bonds, average bond enthalpies and δ+ / δ− polarity; a third, Polyatomic ions, lists the syllabus table and the usual extras with Lewis diagrams, formal charges, the salts they form and their solubility. Then a Quiz on all of it, the data sheet's tables (tap two half-reactions to make a cell) and an equation balancer with reaction types and oxidation numbers. Show to class fills the screen. Nothing is saved to your data.",
     icon: "table_chart",
     load: () => import("./chemistry/ChemistryReference").then((m) => m.default),
+  },
+  {
+    id: "titration",
+    name: "Titration simulator",
+    tagline: "A burette, a flask, an indicator, and the pH curve as you go.",
+    description:
+      "A titration on the board: choose what goes in the burette and the flask (HCl, HNO₃, H₂SO₄, HF, ethanoic, methanoic, oxalic, phosphoric and carbonic acids; NaOH, KOH, Ba(OH)₂, Ca(OH)₂, Mg(OH)₂, ammonia, sodium carbonate, sodium hydrogen carbonate; water), their concentrations and the flask's volume, and an indicator (methyl orange, bromothymol blue, phenolphthalein, litmus and others, or universal indicator). Run titrant in a drop at a time, by a measured volume or with the tap open; stir to mix, or let it auto-mix; watch the flask's colour and the pH graph against volume added. The memo gives the mole ratio, the equivalence volumes and pH, and which indicator suits; an Unknown mode hides the flask's concentration for the class to find. Keeps going if you leave the screen; nothing is saved.",
+    icon: "experiment",
+    load: () => import("./titration/Titration").then((m) => m.default),
   },
   {
     id: NOISE_METER_ID,

@@ -5,15 +5,22 @@ import { enterFullscreen, restoreWindow } from "../../lib/teachingWindow";
 import { Element } from "./elements";
 import ElementDialog from "./ElementDialog";
 import PeriodicTable, { TableView } from "./PeriodicTable";
+import Substances from "./Substances";
+import Ions from "./IonsView";
+import QuizView from "./QuizView";
+import DataSheetView from "./DataSheetView";
+import EquationsView from "./EquationsView";
 import "./chemistry.css";
 
-type Module = "elements" | "substances" | "ions" | "more";
+type Module = "elements" | "substances" | "ions" | "quiz" | "datasheet" | "equations";
 
 const MODULES: Array<{ key: Module; label: string; ready: boolean }> = [
   { key: "elements", label: "Periodic table", ready: true },
-  { key: "substances", label: "Substances & bonds", ready: false },
-  { key: "ions", label: "Polyatomic ions", ready: false },
-  { key: "more", label: "More", ready: false },
+  { key: "substances", label: "Substances & bonds", ready: true },
+  { key: "ions", label: "Polyatomic ions", ready: true },
+  { key: "quiz", label: "Quiz", ready: true },
+  { key: "datasheet", label: "Data sheet", ready: true },
+  { key: "equations", label: "Equations", ready: true },
 ];
 
 /**
@@ -95,6 +102,71 @@ export default function ChemistryReference() {
             )}
           </div>
           <PeriodicTable view={view} onSelect={setSelected} selected={selected} />
+        </div>
+      )}
+
+      {module === "substances" && (
+        <div className="chem-module">
+          <div className="chem-bar">
+            <span className="muted chem-hint">Pick a substance to see its structure, its bonds and their enthalpies, and which way each bond is polarised.</span>
+            <span className="grow" />
+            {classView ? (
+              <button onClick={closeClassView} title="Back (Esc)">
+                <Icon name="close" size={20} /> Close
+              </button>
+            ) : (
+              <button onClick={openClassView} title="Fill the screen so the class can see it">
+                <Icon name="co_present" size={20} /> Show to class
+              </button>
+            )}
+          </div>
+          <Substances classView={classView} />
+        </div>
+      )}
+
+      {module === "ions" && (
+        <div className="chem-module">
+          <div className="chem-bar">
+            <span className="muted chem-hint">The polyatomic ions, by charge. Tap one for its Lewis diagram and where it turns up.</span>
+            <span className="grow" />
+            {classView ? (
+              <button onClick={closeClassView} title="Back (Esc)">
+                <Icon name="close" size={20} /> Close
+              </button>
+            ) : (
+              <button onClick={openClassView} title="Fill the screen so the class can see it">
+                <Icon name="co_present" size={20} /> Show to class
+              </button>
+            )}
+          </div>
+          <Ions classView={classView} />
+        </div>
+      )}
+
+      {(module === "quiz" || module === "datasheet" || module === "equations") && (
+        <div className="chem-module">
+          <div className="chem-bar">
+            <span className="muted chem-hint">
+              {module === "quiz"
+                ? "A question for the class; tap the answer they give. A–F and Space on the keyboard work too."
+                : module === "datasheet"
+                  ? "The data sheet's tables. Tap two half-reactions to make a cell."
+                  : "Balance an equation, see the inventory and the reaction type, or hide the answer for the class."}
+            </span>
+            <span className="grow" />
+            {classView ? (
+              <button onClick={closeClassView} title="Back (Esc)">
+                <Icon name="close" size={20} /> Close
+              </button>
+            ) : (
+              <button onClick={openClassView} title="Fill the screen so the class can see it">
+                <Icon name="co_present" size={20} /> Show to class
+              </button>
+            )}
+          </div>
+          {module === "quiz" && <QuizView classView={classView} />}
+          {module === "datasheet" && <DataSheetView classView={classView} />}
+          {module === "equations" && <EquationsView classView={classView} />}
         </div>
       )}
 

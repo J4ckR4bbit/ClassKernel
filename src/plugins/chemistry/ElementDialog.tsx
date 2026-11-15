@@ -1,8 +1,21 @@
+import Icon from "../../components/Icon";
 import Modal from "../../components/Modal";
 import { formatNumber } from "../numbers";
 import { CATEGORY_COLOURS, CATEGORY_NAMES, Element, massInBrackets, metalCharacter } from "./elements";
 import { configuration, orbitalBoxes, shells, shorthandNotation, spdfNotation, unpairedElectrons, valenceElectrons } from "./electrons";
-import { massText } from "./PeriodicTable";
+import { enText, massText } from "./PeriodicTable";
+
+/** An element's block as the data sheet prints it: number top left, electronegativity top right, symbol, mass. */
+export function DataSheetBlock({ element, size = 120 }: { element: Element; size?: number }) {
+  return (
+    <span className="chem-block" style={{ width: size, height: size * 1.05, background: CATEGORY_COLOURS[element.category], fontSize: size / 10 }} aria-hidden="true">
+      <span className="chem-block-z">{element.z}</span>
+      <span className="chem-block-en">{enText(element)}</span>
+      <span className="chem-block-symbol">{element.symbol}</span>
+      <span className="chem-block-mass">{massText(element)}</span>
+    </span>
+  );
+}
 
 const STATE_WORD: Record<Element["state"], string> = { solid: "Solid", liquid: "Liquid", gas: "Gas", unknown: "Not known" };
 
@@ -82,24 +95,27 @@ export default function ElementDialog({ element, onClose }: { element: Element; 
       onClose={onClose}
       title={
         <span className="chem-title">
-          <span className="chem-title-symbol" style={{ background: CATEGORY_COLOURS[e.category] }}>
-            {e.symbol}
-          </span>
+          <DataSheetBlock element={e} />
           <span>
             {e.name}
             <span className="chem-title-sub">
               Atomic number {e.z} · Relative atomic mass {massText(e)}
               {massInBrackets(e) ? " (longest-lived isotope)" : ""}
+              {e.en !== undefined ? ` · Electronegativity ${enText(e)}` : ""}
             </span>
           </span>
         </span>
       }
     >
+      {/* First in the dialog, so focus lands at the top rather than on the Close button at the bottom. */}
+      <button className="icon-only chem-close" onClick={onClose} title="Back to the table (Esc)" aria-label="Back to the table">
+        <Icon name="close" size={22} />
+      </button>
       <div className="chem-element">
         <div className="chem-element-diagrams">
           <div className="chem-diagram">
             <h4>Shell structure</h4>
-            <BohrDiagram element={e} />
+            <BohrDiagram element={e} size={260} />
             <div className="chem-shells">{shells(orbitals).join(" , ")}</div>
           </div>
           <div className="chem-diagram">

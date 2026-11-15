@@ -10,6 +10,7 @@ import {
   inSimplifiedTable,
   massInBrackets,
   metalCharacter,
+  simplifiedPosition,
 } from "./elements";
 
 describe("the element table", () => {
@@ -58,6 +59,21 @@ describe("the element table", () => {
     expect(gridPosition(elementBySymbol("La")!)).toEqual({ column: 4, row: 9 });
     expect(gridPosition(elementBySymbol("Lu")!)).toEqual({ column: 18, row: 9 });
     expect(gridPosition(elementBySymbol("U")!)).toEqual({ column: 7, row: 10 });
+  });
+
+  it("lays the simplified table out compactly: first 20 in place, the extras in order below", () => {
+    expect(simplifiedPosition(elementBySymbol("H")!)).toEqual({ column: 1, row: 1 });
+    expect(simplifiedPosition(elementBySymbol("He")!)).toEqual({ column: 9, row: 1 });
+    expect(simplifiedPosition(elementBySymbol("B")!)).toEqual({ column: 4, row: 2 });
+    expect(simplifiedPosition(elementBySymbol("Ca")!)).toEqual({ column: 2, row: 4 });
+    expect(simplifiedPosition(elementBySymbol("Cr")!)).toEqual({ column: 1, row: 6 });
+    expect(simplifiedPosition(elementBySymbol("Kr")!)).toEqual({ column: 1, row: 7 });
+    expect(simplifiedPosition(elementBySymbol("U")!)).toEqual({ column: 5, row: 8 });
+    expect(simplifiedPosition(elementBySymbol("Sc")!)).toBeNull();
+    const extras = SIMPLIFIED_EXTRAS.map((s) => elementBySymbol(s)!.z);
+    for (let i = 1; i < extras.length; i++) expect(extras[i]).toBeGreaterThan(extras[i - 1]);
+    const cells = new Set(ELEMENTS.filter(inSimplifiedTable).map((e) => JSON.stringify(simplifiedPosition(e))));
+    expect(cells.size).toBe(40);
   });
 
   it("sorts the categories as the legend expects", () => {
