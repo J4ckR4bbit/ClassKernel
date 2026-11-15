@@ -239,6 +239,26 @@ test("chemistry reference: substances show their bonds, enthalpies and polarity"
   await expect(page.locator(".sub-total")).toContainText("3 153");
 });
 
+test("chemistry reference: polyatomic ions open a pop-up with the Lewis diagram and the solubility rule", async ({ page }) => {
+  await enableTools(page, ["chemistry-reference"]);
+  await openTool(page, "Chemistry reference");
+  await page.locator("main .md-tab", { hasText: "Polyatomic ions" }).click();
+  await expect(page.locator(".ion-card")).toHaveCount(32);
+  await page.locator("main .chip", { hasText: "Syllabus table" }).click();
+  await expect(page.locator(".ion-card.extra")).toHaveCount(0);
+  await page.locator(".ion-card[data-ion='sulfate']").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Sulfate");
+  await expect(dialog).toContainText("32 valence electrons");
+  await expect(dialog).toContainText("white precipitate of BaSO₄");
+  // Two oxygens carry the −1 formal charge, the sulfur none.
+  await expect(dialog.locator(".mol text", { hasText: /^−$/ })).toHaveCount(2);
+  await dialog.locator(".seg button", { hasText: "Bonds only" }).click();
+  await expect(dialog.locator(".mol text", { hasText: /^−$/ })).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
 test("titration: measured additions move the burette and the pH, the indicator turns, the memo knows the end point", async ({ page }) => {
   await enableTools(page, ["titration"]);
   await openTool(page, "Titration simulator");

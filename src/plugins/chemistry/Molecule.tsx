@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { formatFixed } from "../numbers";
-import { Molecule as Placed, Shape, layoutMolecule, parseStructure, polarity } from "./bonds";
+import { Molecule as Placed, Shape, layoutMolecule, lewisStructure, parseStructure, polarity } from "./bonds";
 import { elementBySymbol } from "./elements";
 
 /** Colours by element, the usual classroom set. */
@@ -31,6 +31,8 @@ export interface MoleculeProps {
   scale?: number;
   /** A charge to print at the top right, for an ion. */
   charge?: string;
+  /** Lewis diagram: lone pairs as dots and formal charges on the atoms; needs the ion's charge as a number. */
+  lewis?: { charge: number };
 }
 
 /**
@@ -38,8 +40,9 @@ export interface MoleculeProps {
  * bonds as one, two or three lines, and the δ+ / δ− of each polar bond
  * beside the atoms that carry them.
  */
-export default function Molecule({ structure, shape, showDeltas, showEN, scale = 54, charge }: MoleculeProps) {
+export default function Molecule({ structure, shape, showDeltas, showEN, scale = 54, charge, lewis }: MoleculeProps) {
   const placed: Placed = useMemo(() => layoutMolecule(parseStructure(structure), shape), [structure, shape]);
+  const lewisData = useMemo(() => (lewis ? lewisStructure(placed, lewis.charge) : null), [placed, lewis]);
   const r = 15;
   const pad = 34;
   const xs = placed.atoms.map((a) => a.x * scale);
@@ -129,6 +132,49 @@ export default function Molecule({ structure, shape, showDeltas, showEN, scale =
           )}
         </g>
       ))}
+      {lewisData &&
+        placed.atoms.map((a, i) => {
+          // Lone pairs go in the widest gaps between the atom's bonds: of eight
+          // directions, the ones farthest from any bond, up first on a tie.
+          const bondAngles: number[] = [];
+          for (const b of placed.bonds) {
+            if (b.from !== i && b.to !== i) continue;
+            const other = b.from === i ? b.to : b.from;
+            bondAngles.push(Math.atan2(py(other) - py(i), px(other) - px(i)));
+          }
+          const candidates = [-90, 90, 180, 0, -45, -135, 45, 135].map((deg) => (deg * Math.PI) / 180);
+          const gap = (a: number) => Math.min(...bondAngles.map((b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)))), Math.PI);
+          const ranked = candidates.map((a, k) => ({ a, k, g: gap(a) })).sort((x, y) => y.g - x.g || x.k - y.k);
+          const pairs = lewisData.lonePairs[i];
+          const slots = ranked.filter((c) => c.g > Math.PI / 4 + 0.01).map((c) => c.a);
+          const dots: Array<{ x: number; y: number }> = [];
+          for (let k = 0; k < pairs; k++) {
+            const angle = slots.length ? slots[k % slots.length] : (k * Math.PI) / 2;
+            const ring = Math.floor(k / Math.max(1, slots.length)) * 7;
+            const cx = px(i) + Math.cos(angle) * (r + 6 + ring);
+            const cy = py(i) + Math.sin(angle) * (r + 6 + ring);
+            const tx = -Math.sin(angle) * 4;
+            const ty = Math.cos(angle) * 4;
+            dots.push({ x: cx + tx, y: cy + ty }, { x: cx - tx, y: cy - ty });
+          }
+          const fc = lewisData.formalCharges[i];
+          return (
+            <g key={`lewis-${a.id}`}>
+              {dots.map((d, k) => (
+                <circle key={k} cx={d.x} cy={d.y} r={2.4} fill="#1d2733" />
+              ))}
+              {fc !== 0 && (
+                <g>
+                  <circle cx={px(i) + r + 2} cy={py(i) - r - 2} r={8} fill="#fff" stroke="#1d2733" strokeWidth={1.2} />
+                  <text x={px(i) + r + 2} y={py(i) - r - 1} textAnchor="middle" dominantBaseline="middle" fontSize={10} fontWeight={700} fill="#1d2733">
+                    {Math.abs(fc) === 1 ? "" : Math.abs(fc)}
+                    {fc > 0 ? "+" : "−"}
+                  </text>
+                </g>
+              )}
+            </g>
+          );
+        })}
       {deltas.map((d, i) => (
         <text key={i} x={d.x} y={d.y} textAnchor="middle" dominantBaseline="middle" fontSize={13} fontWeight={700} fill={d.text === "δ−" ? "#c0392b" : "#1f4fd1"}>
           {d.text}

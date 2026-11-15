@@ -340,3 +340,69 @@ export function structureComposition(root: AtomNode): Map<string, number> {
   walk(root);
   return out;
 }
+
+// ---- Lewis structures ----------------------------------------------------------
+
+/** Valence electrons an atom brings: its group number's last digit for the main groups, the group for Mn and Cr, 2 for Zn, Cd and Hg. */
+export function valenceElectrons(symbol: string): number {
+  const e = elementBySymbol(symbol);
+  if (!e || e.group === null) return 0;
+  if (e.group <= 2) return e.group;
+  if (e.group >= 13) return e.group - 10;
+  if (e.group === 12) return 2;
+  return e.group;
+}
+
+export interface LewisStructure {
+  /** Lone pairs on each atom, by atom id. */
+  lonePairs: number[];
+  /** Formal charge on each atom, by atom id. */
+  formalCharges: number[];
+  totalValenceElectrons: number;
+}
+
+/**
+ * Lone pairs and formal charges for a drawn structure carrying `charge`:
+ * count the valence electrons, take out the bonding pairs, give the
+ * outer atoms their octets (the most electronegative first), then the
+ * inner atoms theirs, and leave anything over on the central atoms
+ * (an expanded octet, as on the Cl of chlorate). Formal charge is then
+ * valence − lone-pair electrons − bonds.
+ */
+export function lewisStructure(molecule: Molecule, charge: number): LewisStructure {
+  const bondsOf = molecule.atoms.map(() => 0);
+  const degree = molecule.atoms.map(() => 0);
+  for (const b of molecule.bonds) {
+    bondsOf[b.from] += b.order;
+    bondsOf[b.to] += b.order;
+    degree[b.from]++;
+    degree[b.to]++;
+  }
+  const total = molecule.atoms.reduce((sum, a) => sum + valenceElectrons(a.element), 0) - charge;
+  let remaining = total - 2 * molecule.bonds.reduce((s, b) => s + b.order, 0);
+  const nonbonding = molecule.atoms.map(() => 0);
+  const need = molecule.atoms.map((a, i) => (a.element === "H" || a.element === "He" ? 0 : Math.max(0, 8 - 2 * bondsOf[i])));
+  const en = (i: number) => elementBySymbol(molecule.atoms[i].element)?.en ?? 0;
+  const order = molecule.atoms
+    .map((_, i) => i)
+    .sort((a, b) => (degree[a] === 1 ? 0 : 1) - (degree[b] === 1 ? 0 : 1) || en(b) - en(a));
+  for (const i of order) {
+    const give = Math.min(need[i], remaining);
+    nonbonding[i] += give;
+    remaining -= give;
+  }
+  // Anything left sits on the atoms with the most bonds (the centres).
+  if (remaining > 0) {
+    const centres = molecule.atoms.map((_, i) => i).filter((i) => degree[i] > 1 && molecule.atoms[i].element !== "H");
+    const target = centres.length ? centres : [0];
+    const each = Math.floor(remaining / target.length / 2) * 2;
+    for (const i of target) {
+      const give = Math.min(each, remaining);
+      nonbonding[i] += give;
+      remaining -= give;
+    }
+    if (remaining > 0) nonbonding[target[0]] += remaining;
+  }
+  const formalCharges = molecule.atoms.map((a, i) => valenceElectrons(a.element) - nonbonding[i] - bondsOf[i]);
+  return { lonePairs: nonbonding.map((e) => Math.floor(e / 2)), formalCharges, totalValenceElectrons: total };
+}

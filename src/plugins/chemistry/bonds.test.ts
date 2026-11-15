@@ -4,6 +4,7 @@ import {
   bondKey,
   composition,
   layoutMolecule,
+  lewisStructure,
   molarMass,
   parseStructure,
   polarity,
@@ -102,5 +103,46 @@ describe("formulas", () => {
     expect(molarMass("CuSO₄")).toBe(159.6);
     expect(molarMass("Ca(OH)₂")).toBe(74.1);
     expect(molarMass("CH₃COOH")).toBe(60);
+  });
+});
+
+describe("Lewis structures", () => {
+  const lewis = (structure: string, charge: number, shape?: "bent") => {
+    const m = layoutMolecule(parseStructure(structure), shape);
+    const l = lewisStructure(m, charge);
+    const by = (el: string) => m.atoms.map((a, i) => (a.element === el ? i : -1)).filter((i) => i >= 0);
+    return { m, l, by };
+  };
+
+  it("gives water two lone pairs on oxygen and no formal charges", () => {
+    const { l, by } = lewis("OH2", 0, "bent");
+    expect(l.totalValenceElectrons).toBe(8);
+    expect(l.lonePairs[by("O")[0]]).toBe(2);
+    expect(l.formalCharges.every((c) => c === 0)).toBe(true);
+  });
+
+  it("puts the charges where the course puts them: NH₄⁺ on N, OH⁻ on O, NO₃⁻ +1 on N and −1 on two O", () => {
+    expect(lewis("NH4", 1).l.formalCharges).toEqual([1, 0, 0, 0, 0]);
+    const hydroxide = lewis("O-H", -1);
+    expect(hydroxide.l.formalCharges[0]).toBe(-1);
+    expect(hydroxide.l.lonePairs[0]).toBe(3);
+    const nitrate = lewis("O-N(=O)-O", -1);
+    const nIndex = nitrate.by("N")[0];
+    expect(nitrate.l.formalCharges[nIndex]).toBe(1);
+    expect(nitrate.l.formalCharges.filter((c) => c === -1).length).toBe(2);
+    expect(nitrate.l.totalValenceElectrons).toBe(24);
+  });
+
+  it("handles expanded octets: sulfate's S and chlorate's Cl carry no charge", () => {
+    const sulfate = lewis("O-S(=O)(=O)-O", -2);
+    expect(sulfate.l.formalCharges[sulfate.by("S")[0]]).toBe(0);
+    expect(sulfate.l.formalCharges.reduce((a, b) => a + b, 0)).toBe(-2);
+    const chlorate = lewis("O-Cl(=O)=O", -1);
+    const cl = chlorate.by("Cl")[0];
+    expect(chlorate.l.formalCharges[cl]).toBe(0);
+    expect(chlorate.l.lonePairs[cl]).toBe(1);
+    const cyanide = lewis("C#N", -1);
+    expect(cyanide.l.formalCharges).toEqual([-1, 0]);
+    expect(cyanide.l.lonePairs).toEqual([1, 1]);
   });
 });

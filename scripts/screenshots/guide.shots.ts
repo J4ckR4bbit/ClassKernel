@@ -561,6 +561,10 @@ test("teaching tools", async ({ page }) => {
   await page.locator("main .seg button", { hasText: /^Organic$/ }).click();
   await page.getByRole("option", { name: "CH₃COOH Ethanoic acid", exact: true }).click();
   await shot(page, "substances", 400);
+  await page.locator("main .md-tab", { hasText: "Polyatomic ions" }).click();
+  await page.locator(".ion-card[data-ion='nitrate']").click();
+  await shot(page, "polyatomic-ions", 400);
+  await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
 
   await openTool(page, "Titration simulator");
   await page.getByLabel("Solution in the flask").selectOption("ch3cooh");

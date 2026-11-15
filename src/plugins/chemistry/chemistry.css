@@ -133,3 +133,33 @@
 .sub.class-view .sub-formula { font-size: 48px; }
 .sub.class-view .sub-bonds { font-size: 18px; }
 @media (max-width: 900px) { .sub { grid-template-columns: 1fr; } .sub-list { overflow: visible; } }
+
+/* Polyatomic ions: cards by charge, a pop-up per ion. */
+.ions { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; flex: 1; }
+.ion-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.ion-group h3 { font-size: 15px; margin: 0 0 8px; color: var(--text-dim); }
+.ion-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ion-card { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 10px 12px; min-height: 0; border-radius: var(--md-shape-s); text-align: left; line-height: 1.2; border: 2px solid transparent; }
+.ion-card.positive { background: #fdebe3; color: #1d2733; }
+.ion-card.negative { background: #e4eefb; color: #1d2733; }
+.ion-card.extra { border-style: dashed; border-color: rgba(29, 39, 51, 0.35); }
+.ion-card:hover { box-shadow: var(--shadow); }
+.ion-card-formula { font-size: 22px; font-weight: 700; }
+.ion-card-formula sup { font-size: 13px; }
+.ion-card-name { font-size: 13px; color: var(--text-dim); white-space: normal; }
+.ions.class-view .ion-cards { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.ions.class-view .ion-card-formula { font-size: 30px; }
+.ions.class-view .ion-card-name { font-size: 16px; }
+.ion-small { font-size: 13px; margin: 0; }
+.ion-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 96px; height: 76px; padding: 0 14px; border-radius: var(--md-shape-m); font-size: 30px; font-weight: 700; border: 2px solid #1d2733; color: #1d2733; }
+.ion-badge sup { font-size: 16px; }
+.ion-badge.positive { background: #fdebe3; } .ion-badge.negative { background: #e4eefb; }
+.ion-body { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 20px; }
+.ion-diagram-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ion-drawing { display: flex; justify-content: center; padding: 14px 0 6px; }
+.ion-bracket svg { max-width: 100%; height: auto; }
+.ion-bracket { padding-right: 10px; margin-right: 26px; }
+.ion-bracket .sub-ion-charge { right: -30px; top: -12px; font-size: 20px; background: none; }
+.ion-facts th { width: 170px; }
+.ion-list { margin: 0; padding-left: 18px; }
+@media (max-width: 760px) { .ion-body { grid-template-columns: 1fr; } }

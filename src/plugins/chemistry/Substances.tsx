@@ -2,18 +2,12 @@ import { useMemo, useState } from "react";
 import Segmented from "../../components/Segmented";
 import { formatFixed, formatNumber } from "../numbers";
 import { IONIC_MIN, NON_POLAR_MAX, layoutMolecule, molarMass, parseStructure, polarity, summariseBonds, totalBondEnthalpy } from "./bonds";
-import { ionById } from "./ions";
+import { chargeText, ionById } from "./ions";
 import Molecule from "./Molecule";
 import { INORGANIC_GROUPS, ORGANIC_GROUPS, SUBSTANCES, Section, Substance, parseMonatomicIon } from "./substanceData";
 import { elementBySymbol } from "./elements";
 
 const STATE_WORD = { solid: "Solid", liquid: "Liquid", gas: "Gas", unknown: "—" };
-
-/** "+2" / "−1" for a monatomic ion's charge, as printed. */
-function chargeText(charge: number): string {
-  const magnitude = Math.abs(charge) === 1 ? "" : String(Math.abs(charge));
-  return `${magnitude}${charge > 0 ? "+" : "−"}`;
-}
 
 /** One ion of an ionic substance: a polyatomic one drawn, a monatomic one as a labelled disc. */
 function IonBlock({ ion, count, showDeltas, showEN }: { ion: string; count: number; showDeltas: boolean; showEN: boolean }) {

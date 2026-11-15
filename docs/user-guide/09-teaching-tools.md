@@ -209,8 +209,8 @@ your data.
 
 ## Chemistry reference
 
-A chemistry reference for the board, built in modules that sit as tabs across the top: the **periodic table** and
-**substances and their bonds** so far; polyatomic ions and more follow in later versions and their tabs are greyed
+A chemistry reference for the board, built in modules that sit as tabs across the top: the **periodic table**,
+**substances and their bonds** and the **polyatomic ions**; a fourth tab follows in a later version and is greyed
 out until then.
 
 ![The periodic table](../images/periodic-table.png)
@@ -272,6 +272,24 @@ the NIST Atomic Spectra Database (ionisation energies) and the CRC Handbook (mel
 Bond enthalpies are the CRC Handbook's averages and the notes say where a particular compound differs (C=O in CO₂).
 Substances live in `src/plugins/chemistry/substanceData.ts`, the enthalpy table and polarity limits at the top of
 `src/plugins/chemistry/bonds.ts`, the polyatomic ions in `src/plugins/chemistry/ions.ts`.
+
+**Polyatomic ions**
+
+![A polyatomic ion's pop-up](../images/polyatomic-ions.png)
+
+- The ions as cards grouped by charge — the cations, then the 1−, 2− and 3− anions — with the SAG's table of
+  common polyatomic ions marked and the extras that come up in practicals (thiocyanate, iodate, manganate…) edged
+  with a dash. Filter to the **Syllabus table**, the cations or one charge.
+- Tap an ion for its pop-up: the formula and charge, its molar mass and valence electron count; a **Lewis diagram**
+  with the lone pairs as dots and the **formal charge** circled on the atoms that carry it (they add up to the ion's
+  charge: +1 on the N of nitrate, −1 on two of its oxygens, none on the sulfur of sulfate), or the bonds alone;
+  what it **comes from** (its acid), where it is **found** (the common salts), the **solubility rule** for its
+  salts, its **colour** and **test** where the course has one, and notes.
+- The Lewis diagram is worked out from the electron count, so the diagram and the charges always agree with the
+  structure drawn. Where resonance spreads a double bond over several equal bonds (nitrate, carbonate, ethanoate),
+  one form is drawn and the notes say so.
+
+The `syllabus` flag in `src/plugins/chemistry/ions.ts` marks the SAG table as best known; check it against your copy.
 
 ## Titration simulator
 

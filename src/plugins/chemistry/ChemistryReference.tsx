@@ -6,6 +6,7 @@ import { Element } from "./elements";
 import ElementDialog from "./ElementDialog";
 import PeriodicTable, { TableView } from "./PeriodicTable";
 import Substances from "./Substances";
+import Ions from "./IonsView";
 import "./chemistry.css";
 
 type Module = "elements" | "substances" | "ions" | "more";
@@ -13,7 +14,7 @@ type Module = "elements" | "substances" | "ions" | "more";
 const MODULES: Array<{ key: Module; label: string; ready: boolean }> = [
   { key: "elements", label: "Periodic table", ready: true },
   { key: "substances", label: "Substances & bonds", ready: true },
-  { key: "ions", label: "Polyatomic ions", ready: false },
+  { key: "ions", label: "Polyatomic ions", ready: true },
   { key: "more", label: "More", ready: false },
 ];
 
@@ -115,6 +116,25 @@ export default function ChemistryReference() {
             )}
           </div>
           <Substances classView={classView} />
+        </div>
+      )}
+
+      {module === "ions" && (
+        <div className="chem-module">
+          <div className="chem-bar">
+            <span className="muted chem-hint">The polyatomic ions, by charge. Tap one for its Lewis diagram and where it turns up.</span>
+            <span className="grow" />
+            {classView ? (
+              <button onClick={closeClassView} title="Back (Esc)">
+                <Icon name="close" size={20} /> Close
+              </button>
+            ) : (
+              <button onClick={openClassView} title="Fill the screen so the class can see it">
+                <Icon name="co_present" size={20} /> Show to class
+              </button>
+            )}
+          </div>
+          <Ions classView={classView} />
         </div>
       )}
 

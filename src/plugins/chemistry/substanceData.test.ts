@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { composition, layoutMolecule, molarMass, parseStructure, structureComposition, summariseBonds } from "./bonds";
+import { composition, layoutMolecule, lewisStructure, molarMass, parseStructure, structureComposition, summariseBonds } from "./bonds";
 import { elementBySymbol } from "./elements";
 import { POLYATOMIC_IONS, ionById } from "./ions";
 import { INORGANIC_GROUPS, ORGANIC_GROUPS, SUBSTANCES, parseMonatomicIon } from "./substanceData";
@@ -81,6 +81,18 @@ describe("the polyatomic ions", () => {
       expect(ion.charge).not.toBe(0);
     }
     expect(ionById("sulfate").charge).toBe(-2);
+  });
+
+  it("have Lewis diagrams whose formal charges add up to the ion's charge, and the fields the pop-up shows", () => {
+    for (const ion of POLYATOMIC_IONS) {
+      const m = layoutMolecule(parseStructure(ion.structure), ion.shape);
+      const l = lewisStructure(m, ion.charge);
+      expect(l.formalCharges.reduce((a, b) => a + b, 0), `${ion.id}: formal charges`).toBe(ion.charge);
+      expect(l.lonePairs.every((p) => p >= 0)).toBe(true);
+      expect(ion.occurs.length, `${ion.id}: where it occurs`).toBeGreaterThan(0);
+      expect(ion.notes.length).toBeGreaterThan(20);
+    }
+    expect(POLYATOMIC_IONS.filter((i) => i.syllabus).length).toBeGreaterThanOrEqual(20);
     expect(parseMonatomicIon("Fe³⁺")).toEqual({ symbol: "Fe", charge: 3 });
     expect(parseMonatomicIon("O²⁻")).toEqual({ symbol: "O", charge: -2 });
     expect(parseMonatomicIon("sulfate")).toBeNull();
