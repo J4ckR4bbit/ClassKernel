@@ -34,7 +34,10 @@ jobs:
   # an installer from being built.
   browser-tests:
     name: Browser tests
-    runs-on: ubuntu-latest
+    # Not ubuntu-latest: the Playwright this repo pins (package.json) installs
+    # its browser only on the Ubuntu releases it knows, and 24.04 is the newest
+    # of those. Move this on when Playwright is next upgraded.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
