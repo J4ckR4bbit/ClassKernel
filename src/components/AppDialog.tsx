@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useAppPick } from "../store/appStore";
+import { useMemo, useState } from "react";
+import { DialogRequest, useAppPick } from "../store/appStore";
 import Modal from "./Modal";
 
 let opened = 0;
@@ -12,21 +12,21 @@ let opened = 0;
  */
 export default function AppDialog() {
   const { dialog, resolveDialog } = useAppPick("dialog", "resolveDialog");
-  const [text, setText] = useState("");
-
-  useEffect(() => {
-    if (dialog?.kind === "prompt") setText(dialog.initial ?? "");
-  }, [dialog]);
-
-  // A dialog that follows straight on from another is a new one, so focus moves to it.
+  // A dialog that follows straight on from another is a new one: focus moves
+  // to it, and a prompt starts from its own text, never the last one's (which
+  // may have been a PIN).
   const instance = useMemo(() => (dialog ? ++opened : 0), [dialog]);
-
   if (!dialog) return null;
-  const cancel = () => resolveDialog(dialog.kind === "confirm" ? false : null);
-  const ok = () => resolveDialog(dialog.kind === "confirm" ? true : text.trim());
+  return <OpenDialog key={instance} dialog={dialog} resolve={resolveDialog} />;
+}
+
+function OpenDialog({ dialog, resolve }: { dialog: DialogRequest; resolve: (result: boolean | string | null) => void }) {
+  const [text, setText] = useState(dialog.initial ?? "");
+  const cancel = () => resolve(dialog.kind === "confirm" ? false : null);
+  const ok = () => resolve(dialog.kind === "confirm" ? true : text.trim());
 
   return (
-    <Modal key={instance} title={dialog.title} onClose={cancel}>
+    <Modal title={dialog.title} onClose={cancel}>
       {dialog.body && <p className="muted dialog-body">{dialog.body}</p>}
       {dialog.kind === "prompt" && (
         <input
