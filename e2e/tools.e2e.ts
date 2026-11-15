@@ -213,6 +213,32 @@ test("chemistry reference: the periodic table, its views and highlights, and an 
   await expect(page.locator(".pt-cell[data-z='57']")).toHaveCount(0);
 });
 
+test("chemistry reference: substances show their bonds, enthalpies and polarity", async ({ page }) => {
+  await enableTools(page, ["chemistry-reference"]);
+  await openTool(page, "Chemistry reference");
+  await page.locator("main .md-tab", { hasText: "Substances & bonds" }).click();
+  const detail = page.locator(".sub-detail");
+  await expect(detail).toContainText("Water");
+  await expect(detail).toContainText("18 g·mol⁻¹");
+  await expect(page.locator(".sub-bonds")).toContainText("O–H");
+  await expect(page.locator(".sub-bonds")).toContainText("464");
+  await expect(page.locator(".mol text", { hasText: "δ−" })).toHaveCount(1);
+  await expect(page.locator(".mol text", { hasText: "δ+" })).toHaveCount(2);
+  await page.getByLabel("Show δ+ and δ−").uncheck();
+  await expect(page.locator(".mol text", { hasText: "δ−" })).toHaveCount(0);
+  // An ionic salt: ions drawn, the lattice row.
+  await page.getByRole("option", { name: "CuSO₄ Copper(II) sulfate", exact: true }).click();
+  await expect(detail).toContainText("159,6 g·mol⁻¹");
+  await expect(page.locator(".sub-bonds")).toContainText("Ionic bond (lattice)");
+  await expect(page.locator(".sub-ion-bracket")).toHaveCount(1);
+  // Organic: ethanoic acid's bonds and the total.
+  await page.locator("main .seg button", { hasText: /^Organic$/ }).click();
+  await page.locator("main .chip", { hasText: "Carboxylic acids" }).click();
+  await page.getByRole("option", { name: "CH₃COOH Ethanoic acid", exact: true }).click();
+  await expect(detail).toContainText("60 g·mol⁻¹");
+  await expect(page.locator(".sub-total")).toContainText("3 153");
+});
+
 test("titration: measured additions move the burette and the pH, the indicator turns, the memo knows the end point", async ({ page }) => {
   await enableTools(page, ["titration"]);
   await openTool(page, "Titration simulator");

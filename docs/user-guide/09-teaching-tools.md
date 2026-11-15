@@ -209,9 +209,9 @@ your data.
 
 ## Chemistry reference
 
-A chemistry reference for the board, built in modules that sit as tabs across the top. The first module is the
-**periodic table**; the others (substances and their bonds, polyatomic ions, and more) follow in later versions and
-their tabs are greyed out until then.
+A chemistry reference for the board, built in modules that sit as tabs across the top: the **periodic table** and
+**substances and their bonds** so far; polyatomic ions and more follow in later versions and their tabs are greyed
+out until then.
 
 ![The periodic table](../images/periodic-table.png)
 
@@ -249,6 +249,29 @@ and the heaviest elements show the data-sheet values and their configuration onl
 the NIST Atomic Spectra Database (ionisation energies) and the CRC Handbook (melting and boiling points), and a
 **Check** line flags the few worth confirming against a printed table. Every value sits in one editable file,
 `src/plugins/chemistry/elements.ts`, so a teacher who finds one wrong can correct it.
+
+**Substances & bonds**
+
+![Substances and bonds](../images/substances.png)
+
+- **Inorganic**: the elements (H₂, O₂, O₃, N₂, the halogens, carbon, copper, sodium), oxides, acids (HCl, H₂SO₄,
+  HNO₃, H₃PO₄, H₂CO₃…), bases, salts (NaCl to KMnO₄ and K₂Cr₂O₇) and the other molecules the course meets (water,
+  H₂O₂, ammonia, H₂S). **Organic**: the first three members of the alkanes, alkenes, alkynes, alcohols (both
+  propanols), carboxylic acids and the common esters, each with its functional group, condensed formula and boiling
+  point. Filter by group with the chips; tap a card.
+- The chosen substance shows its **structural formula** (drawn as the textbook does, chains left to right and
+  branches at right angles), the **molar mass** from the data sheet, its bonding and state, and whether the molecule
+  as a whole is **polar**. An ionic substance shows its **ions**, polyatomic ones drawn in brackets with their charge.
+- **Show δ+ and δ−** puts the partial charges on each polar bond; **Show electronegativities** prints each atom's
+  value under it.
+- The **bond table** lists every bond type with how many there are, the **average bond enthalpy** (kJ·mol⁻¹), the
+  electronegativity difference and its type (non-polar covalent up to 0,4, polar covalent up to 2,1, ionic above),
+  and the energy to break every bond in a mole — the numbers a ΔH-from-bond-enthalpies question needs. A salt
+  adds a row for its ionic lattice.
+
+Bond enthalpies are the CRC Handbook's averages and the notes say where a particular compound differs (C=O in CO₂).
+Substances live in `src/plugins/chemistry/substanceData.ts`, the enthalpy table and polarity limits at the top of
+`src/plugins/chemistry/bonds.ts`, the polyatomic ions in `src/plugins/chemistry/ions.ts`.
 
 ## Titration simulator
 

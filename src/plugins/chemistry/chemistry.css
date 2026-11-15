@@ -90,3 +90,46 @@
   .chem-element { grid-template-columns: 1fr; }
   .chem-element-diagrams { flex-direction: row; flex-wrap: wrap; }
 }
+
+/* Substances & bonds: the list left, the chosen substance right. */
+.sub { display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: 16px; min-height: 0; flex: 1; }
+.sub.class-view { grid-template-columns: 1fr; }
+.sub-list { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; }
+.sub-groups { display: flex; flex-wrap: wrap; gap: 6px; }
+.sub-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+.sub-card { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; min-height: 0; border-radius: var(--md-shape-s); text-align: left; line-height: 1.2; }
+.sub-card.on { background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; }
+.sub-card-formula { font-size: 17px; font-weight: 700; color: var(--text); }
+.sub-card-name { font-size: 12px; color: var(--text-dim); white-space: normal; }
+.sub-detail { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; overflow-y: auto; min-height: 0; font-size: 15px; }
+.sub-head { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: flex-start; margin-bottom: 12px; }
+.sub-formula { font-size: 34px; font-weight: 700; line-height: 1.1; }
+.sub-name { font-size: 18px; color: var(--text-dim); }
+.sub-head-facts { display: flex; flex-direction: column; gap: 3px; font-size: 15px; padding-top: 6px; }
+.sub-structure { background: var(--field); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; }
+.sub-toggles { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 6px; }
+.sub-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.sub-drawing { display: flex; justify-content: center; overflow-x: auto; }
+.sub-drawing svg { max-width: 100%; height: auto; }
+.sub-ions { display: flex; flex-wrap: wrap; gap: 18px 32px; align-items: center; justify-content: center; padding: 10px 0; }
+.sub-ion { display: flex; align-items: center; gap: 10px; }
+.sub-ion-count { font-size: 20px; color: var(--text-dim); }
+.sub-ion-disc { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: #dfe4ea; border: 2px solid #1d2733; font-size: 22px; font-weight: 700; color: #1d2733; }
+.sub-ion-disc sup { font-size: 13px; margin-left: 1px; }
+.sub-ion-bracket { position: relative; display: inline-flex; padding: 4px 22px 4px 8px; border-left: 2px solid #1d2733; border-right: 2px solid #1d2733; }
+.sub-ion-bracket::before, .sub-ion-bracket::after { content: ""; position: absolute; width: 10px; top: 0; bottom: 0; border-top: 2px solid #1d2733; border-bottom: 2px solid #1d2733; }
+.sub-ion-bracket::before { left: 0; } .sub-ion-bracket::after { right: 0; }
+.sub-ion-bracket svg { max-width: 100%; height: auto; }
+.sub-ion-charge { position: absolute; top: -6px; right: -4px; font-size: 16px; font-weight: 700; background: var(--field); padding: 0 3px; }
+.sub-ion-name, .sub-ion-en { font-size: 13px; color: var(--text-dim); }
+.sub-polar { margin: 8px 0 0; font-size: 15px; }
+.sub-bonds { margin-bottom: 12px; font-size: 15px; }
+.sub-bonds td, .sub-bonds th { padding: 6px 10px; }
+.sub-num { text-align: right; font-variant-numeric: tabular-nums; }
+.sub-total td { font-weight: 600; border-top: 2px solid var(--border); }
+.sub-note { margin: 0 0 8px; line-height: 1.5; }
+.sub-small { font-size: 12px; margin: 0; }
+.sub.class-view .sub-detail { font-size: 19px; }
+.sub.class-view .sub-formula { font-size: 48px; }
+.sub.class-view .sub-bonds { font-size: 18px; }
+@media (max-width: 900px) { .sub { grid-template-columns: 1fr; } .sub-list { overflow: visible; } }

@@ -557,6 +557,10 @@ test("teaching tools", async ({ page }) => {
   await page.locator(".pt-cell[data-z='26']").click();
   await shot(page, "periodic-table-element", 400);
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
+  await page.locator("main .md-tab", { hasText: "Substances & bonds" }).click();
+  await page.locator("main .seg button", { hasText: /^Organic$/ }).click();
+  await page.getByRole("option", { name: "CH₃COOH Ethanoic acid", exact: true }).click();
+  await shot(page, "substances", 400);
 
   await openTool(page, "Titration simulator");
   await page.getByLabel("Solution in the flask").selectOption("ch3cooh");
