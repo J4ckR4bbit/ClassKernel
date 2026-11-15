@@ -91,7 +91,7 @@ Two columns, `key` and `value`:
 | `exam_weights` | The examinations' share (%) of the weighted mark per grade, `;`-separated, e.g. `10=60;12=75`. A grade not listed is 50. |
 | `topic_links` | Grades that use another grade's topic list, `;`-separated, e.g. `11=10;12=10` (G11 and G12 use G10's list in `topics.csv`). |
 | `report_school`, `report_teacher` | Parent-report header |
-| `plugins_enabled` | Switched-on tools, `;`-separated ids: `class-dashboards`, `parent-reports`, `test-timer`, `clock`, `stopwatch`, `graph-paper`, `practical-graph`, `motion-graph`, `noise-meter` |
+| `plugins_enabled` | Switched-on tools, `;`-separated ids: `class-dashboards`, `parent-reports`, `test-timer`, `clock`, `stopwatch`, `graph-paper`, `practical-graph`, `motion-graph`, `galvanic-cell`, `chemistry-reference`, `titration`, `noise-meter` |
 
 ### `note_sections.csv`
 

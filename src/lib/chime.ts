@@ -5,7 +5,7 @@
 let audioCtx: AudioContext | null = null;
 export function chime(pattern: number) {
   try {
-    audioCtx = audioCtx || new (window.AudioContext || (window as any).webkitAudioContext)();
+    audioCtx ??= new AudioContext();
     const ctx = audioCtx;
     for (let i = 0; i < pattern; i++) {
       const t = ctx.currentTime + i * 0.22;

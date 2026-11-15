@@ -125,7 +125,7 @@ describe("MirrorFS", () => {
     const disk = new MemFS();
     void disk.mkdirs("G:/Drive/CK");
     const mirror = new MirrorFS(disk);
-    mirror.useFolder("G:\\Drive\\CK", "/this-computer/local-copy");
+    mirror.setFolder("G:\\Drive\\CK", "/this-computer/local-copy");
     return { disk, fs: new QueuedFS(mirror), mirror };
   };
 
@@ -154,7 +154,7 @@ describe("MirrorFS", () => {
   it("refuses to save into a data folder that has gone, instead of re-creating it", async () => {
     const disk = new MemFS();
     const mirror = new MirrorFS(disk);
-    mirror.useFolder("G:/Drive/CK", "/this-computer/local-copy");
+    mirror.setFolder("G:/Drive/CK", "/this-computer/local-copy");
     const fs = new QueuedFS(mirror);
     await expect(fs.writeAtomic("G:/Drive/CK/classes/10A/marks.csv", "m")).rejects.toThrow(/isn't available/);
     expect(await disk.exists("G:/Drive/CK")).toBe(false);
@@ -162,7 +162,7 @@ describe("MirrorFS", () => {
 
   it("stops copying once mirroring is switched off", async () => {
     const { disk, fs, mirror } = setup();
-    mirror.useFolder("G:/Drive/CK", null);
+    mirror.setFolder("G:/Drive/CK", null);
     await fs.writeAtomic("G:/Drive/CK/a.csv", "x");
     expect(await disk.readTextIfExists("/this-computer/local-copy/a.csv")).toBeNull();
   });

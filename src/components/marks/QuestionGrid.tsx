@@ -151,10 +151,12 @@ export default function QuestionGrid({
     const enterAcross = userPrefs.markGridEnter === "across";
     if (e.key === "Enter") {
       e.preventDefault();
-      enterAcross ? moveAcross(r, c, e.shiftKey) : moveDown(r, c, e.shiftKey);
+      if (enterAcross) moveAcross(r, c, e.shiftKey);
+      else moveDown(r, c, e.shiftKey);
     } else if (e.key === "Tab") {
       e.preventDefault();
-      enterAcross ? moveDown(r, c, e.shiftKey) : moveAcross(r, c, e.shiftKey);
+      if (enterAcross) moveDown(r, c, e.shiftKey);
+      else moveAcross(r, c, e.shiftKey);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       moveDown(r, c);

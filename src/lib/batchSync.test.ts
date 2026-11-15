@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { MemFS, getFS, onWorkWrite, setFS, useFolder } from "./fs";
+import { MemFS, getFS, onWorkWrite, setFS, setFolder } from "./fs";
 import { stringifyCsv } from "./csv";
 import * as repo from "./repo";
 import { LocalPaths, changedFiles, localPaths, startOfflineSession } from "./offline";
@@ -36,7 +36,7 @@ beforeEach(async () => {
   await startOfflineSession(paths, REAL);
   writes = 0;
   onWorkWrite(() => writes++);
-  useFolder(REAL, null, paths.copy);
+  setFolder(REAL, null, paths.copy);
 });
 
 /** What the data folder itself holds (not the app's view of it). */

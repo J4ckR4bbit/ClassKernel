@@ -149,10 +149,6 @@ export const SUBSTANCES: Substance[] = [
   organic({ id: "ethyl-propanoate", formula: "C₂H₅COOC₂H₅", name: "Ethyl propanoate", group: "Esters", state: "liquid", structure: "CH3-CH2-C(=O)-O-CH2-CH3", condensed: "CH₃CH₂COOCH₂CH₃", functionalGroup: "Ester –COO–", boiling: 99, notes: "Pineapple smell; from propanoic acid and ethanol." }),
 ];
 
-export function substanceById(id: string): Substance | undefined {
-  return SUBSTANCES.find((s) => s.id === id);
-}
-
 export const INORGANIC_GROUPS = ["Element", "Oxide", "Acid", "Base", "Salt", "Other molecule"];
 export const ORGANIC_GROUPS = ["Alkanes", "Alkenes", "Alkynes", "Alcohols", "Carboxylic acids", "Esters"];
 

@@ -7,7 +7,7 @@ export default function Onboarding() {
   const [manualPath, setManualPath] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const useManual = async () => {
+  const openTypedFolder = async () => {
     if (!manualPath.trim()) return;
     setBusy(true);
     try {
@@ -40,9 +40,9 @@ export default function Onboarding() {
             placeholder="…or type a folder path, e.g. C:\Users\you\OneDrive\ClassroomData"
             value={manualPath}
             onChange={(e) => setManualPath(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && void useManual()}
+            onKeyDown={(e) => e.key === "Enter" && void openTypedFolder()}
           />
-          <button disabled={busy || !manualPath.trim()} onClick={() => void useManual()}>
+          <button disabled={busy || !manualPath.trim()} onClick={() => void openTypedFolder()}>
             Use folder
           </button>
         </div>
