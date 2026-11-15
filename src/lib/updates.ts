@@ -34,11 +34,19 @@ export interface FoundUpdate {
   /** The release's notes; may be empty. */
   notes: string;
   /**
-   * Download and install it. `onProgress` gets the share downloaded (0–1), or
-   * null while the size isn't known. The installer then closes the app and
-   * opens the new version.
+   * Fetch the installer and check its signature. The app carries on as usual
+   * meanwhile. `onProgress` gets the share downloaded (0–1), or null while
+   * the size isn't known.
    */
-  install(onProgress: (share: number | null) => void): Promise<void>;
+  download(onProgress: (share: number | null) => void): Promise<void>;
+  /**
+   * Run the downloaded installer. On Windows this ends the app at once (the
+   * installer closes it, installs and opens the new version), so everything
+   * that must be on disk has to be there before this is called.
+   */
+  install(): Promise<void>;
+  /** Let go of it without installing (it holds a little memory on the Rust side until then). */
+  dismiss(): void;
 }
 
 /** The share of a download that has arrived, or null when its size is unknown. */
@@ -76,10 +84,10 @@ export async function checkForUpdate(): Promise<FoundUpdate | null> {
   return {
     version: update.version,
     notes: (update.body ?? "").trim(),
-    async install(onProgress) {
+    async download(onProgress) {
       let received = 0;
       let total: number | undefined;
-      await update.downloadAndInstall((event) => {
+      await update.download((event) => {
         if (event.event === "Started") {
           total = event.data.contentLength;
           onProgress(downloadShare(0, total));
@@ -91,5 +99,7 @@ export async function checkForUpdate(): Promise<FoundUpdate | null> {
         }
       });
     },
+    install: () => update.install(),
+    dismiss: () => void update.close().catch(() => {}),
   };
 }

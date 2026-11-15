@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { sendBeforeClosing } from "../../store/appStore";
-import { isTauri } from "../../lib/fs";
+import { useApp } from "../../store/appStore";
+import { getFS, isTauri } from "../../lib/fs";
 import { FoundUpdate, appVersion, checkForUpdate, explainUpdateError, readCheckAtLaunch, saveCheckAtLaunch } from "../../lib/updates";
 import Icon from "../Icon";
 
@@ -9,7 +9,8 @@ type Status =
   | { kind: "checking" }
   | { kind: "latest" }
   | { kind: "found"; update: FoundUpdate }
-  | { kind: "installing"; update: FoundUpdate; share: number | null }
+  | { kind: "downloading"; update: FoundUpdate; share: number | null }
+  | { kind: "installing" }
   | { kind: "failed"; message: string };
 
 /** Settings › General › Updates: this version, a check for a newer one, and installing it. Desktop app only. */
@@ -26,6 +27,7 @@ export default function UpdatesPanel() {
   if (!isTauri()) return null;
 
   const check = async () => {
+    if (status.kind === "found") status.update.dismiss();
     setStatus({ kind: "checking" });
     try {
       const update = await checkForUpdate();
@@ -37,18 +39,30 @@ export default function UpdatesPanel() {
   };
 
   const install = async (update: FoundUpdate) => {
-    setStatus({ kind: "installing", update, share: null });
+    setStatus({ kind: "downloading", update, share: null });
     try {
-      // As when closing the window: send what's waiting to the data folder first, for up to ten seconds.
-      await Promise.race([sendBeforeClosing().catch(() => {}), new Promise((resolve) => setTimeout(resolve, 10_000))]);
-      await update.install((share) => setStatus({ kind: "installing", update, share }));
+      // The slow part first, while the app is still working normally.
+      await update.download((share) => setStatus({ kind: "downloading", update, share }));
+      setStatus({ kind: "installing" });
+      // The installer ends the app without the usual goodbye, so first send
+      // what's waiting to the data folder and save straight to it from here
+      // on (for up to ten seconds; if the folder can't be reached, the changes
+      // stay marked on this computer and the next launch sends them). Unlike
+      // the send made when the window closes, this leaves the app in a state
+      // it can carry on from if the installer then fails to start.
+      const settle = async () => {
+        await useApp.getState().stopBatching();
+        await getFS().flush();
+      };
+      await Promise.race([settle().catch((e) => console.warn("Couldn't send everything before updating", e)), new Promise((resolve) => setTimeout(resolve, 10_000))]);
+      await update.install();
     } catch (e) {
       console.warn("Update failed", e);
       setStatus({ kind: "failed", message: explainUpdateError(e) });
     }
   };
 
-  const busy = status.kind === "checking" || status.kind === "installing";
+  const busy = status.kind === "checking" || status.kind === "downloading" || status.kind === "installing";
 
   return (
     <div className="panel" id="updates">
@@ -84,12 +98,11 @@ export default function UpdatesPanel() {
         {status.kind === "latest" && "You have the latest version."}
         {status.kind === "found" &&
           `Version ${status.update.version} is available. Installing closes ClassKernel for a moment and opens it again; your data isn't touched.`}
-        {status.kind === "installing" &&
+        {status.kind === "downloading" &&
           (status.share === null
             ? `Downloading version ${status.update.version}…`
-            : status.share < 1
-              ? `Downloading version ${status.update.version}: ${Math.round(status.share * 100)} %`
-              : "Installing. ClassKernel will close and open again…")}
+            : `Downloading version ${status.update.version}: ${Math.round(status.share * 100)} %`)}
+        {status.kind === "installing" && "Installing. ClassKernel will close and open again…"}
         {status.kind === "failed" && status.message}
       </p>
       {status.kind === "found" && status.update.notes && <pre className="update-notes">{status.update.notes}</pre>}

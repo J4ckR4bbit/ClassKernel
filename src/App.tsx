@@ -95,7 +95,10 @@ export default function App() {
     let live = true;
     checkForUpdate()
       .then((update) => {
-        if (!live || !update) return;
+        if (!update) return;
+        // Only the news is wanted here; Settings checks again before installing.
+        update.dismiss();
+        if (!live) return;
         useApp.getState().showToast(`ClassKernel ${update.version} is available`, {
           label: "Update",
           run: () => useApp.getState().setView("settings"),
