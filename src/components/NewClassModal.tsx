@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { safeClassName } from "../lib/classNames";
 import { ClassInfo } from "../lib/types";
 import Modal from "./Modal";
 
@@ -7,7 +8,8 @@ export default function NewClassModal({
   onCreate,
 }: {
   onClose: () => void;
-  onCreate: (info: ClassInfo) => Promise<void>;
+  /** Resolves false when the class wasn't created (the app says why); the dialog then stays open. */
+  onCreate: (info: ClassInfo) => Promise<boolean>;
 }) {
   const [name, setName] = useState("");
   const [year, setYear] = useState("");
@@ -15,12 +17,11 @@ export default function NewClassModal({
   const [room, setRoom] = useState("");
 
   // Class name doubles as its folder name — keep it filesystem-safe.
-  const safeName = name.replace(/[<>:"/\\|?*]/g, "").trim();
+  const safeName = safeClassName(name);
 
   const submit = async () => {
     if (!safeName) return;
-    await onCreate({ name: safeName, year, subject, room, notes: "", archived: false, color: "" });
-    onClose();
+    if (await onCreate({ name: safeName, year, subject, room, notes: "", archived: false, color: "" })) onClose();
   };
 
   return (

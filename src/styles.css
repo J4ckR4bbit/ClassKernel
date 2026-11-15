@@ -1298,6 +1298,17 @@ button.send-status.icon-only { padding: 0; width: 32px; justify-content: center;
   display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none;
 }
 .mini-stack > * { pointer-events: auto; }
+/* While a pop-up is up, a page scrolls far enough to bring its last rows out
+   from under it (the last switch in Settings → Tools sat beneath the noise
+   meter's pop-up, which is how that tool couldn't be switched off while it
+   ran). A pop-up is 104 px tall, 16 px from the edge, 10 px from the next.
+   Pages that fill the pane and scroll inside themselves are left alone. */
+@media screen {
+  body:has(.mini-stack > *) { --mini-clear: 124px; }
+  body:has(.mini-stack > * + *) { --mini-clear: 238px; }
+  body:has(.mini-stack > *) .main-pane:not(:has(> .layout-designer, > .settings-view, > .marking-view, .plugin-view)),
+  body:has(.mini-stack > *) .settings-body:not(:has(> .layout-designer)) { padding-bottom: calc(20px + var(--mini-clear)); }
+}
 /* Teaching mode: End lesson is at the bottom of a right-hand bar, or the right
    end of a bottom bar, so the pop-ups move out of its way. */
 .mini-stack.bar-right { right: auto; left: 16px; align-items: flex-start; }

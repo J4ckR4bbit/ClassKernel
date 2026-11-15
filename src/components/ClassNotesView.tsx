@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { marked } from "marked";
 import { NEEDS_DATA_FOLDER, useAppPick, useWorkingFromCopy } from "../store/appStore";
 import { BEHAVIOUR_COLOURS } from "../lib/behaviourColours";
+import { safeClassName } from "../lib/classNames";
 
 /** Class details + free-form markdown notes (stored as class.md). */
 export default function ClassNotesView() {
@@ -31,27 +32,23 @@ export default function ClassNotesView() {
   if (!info) return null;
 
   const save = async () => {
-    await updateClassInfo({ ...info, year, subject, room, notes });
-    showToast("Class details saved");
+    if (await updateClassInfo({ ...info, year, subject, room, notes })) showToast("Class details saved");
   };
 
   const rename = async () => {
-    const next = (
-      await promptDialog({ title: "Rename class", body: "Also renames the class's folder on disk.", initial: info.name })
-    )?.trim();
+    const typed = await promptDialog({ title: "Rename class", body: "Also renames the class's folder on disk.", initial: info.name });
+    const next = safeClassName(typed ?? "");
     if (!next || next === info.name) return;
-    await renameClass(info.name, next.replace(/[<>:"/\\|?*]/g, ""));
-    showToast("Class renamed");
+    if (await renameClass(info.name, next)) showToast("Class renamed");
   };
 
   // The colour saves straight away, like a toggle; the text fields wait for Save.
   const setColour = async (color: string) => {
-    await updateClassInfo({ ...info, color });
-    showToast(color ? "Class colour saved" : "Class colour removed");
+    if (await updateClassInfo({ ...info, color })) showToast(color ? "Class colour saved" : "Class colour removed");
   };
 
   const toggleArchive = async () => {
-    await updateClassInfo({ ...info, archived: !info.archived });
+    if (!(await updateClassInfo({ ...info, archived: !info.archived }))) return;
     showToast(info.archived ? "Class restored" : "Class archived (now under Archived in the class menu)");
   };
 

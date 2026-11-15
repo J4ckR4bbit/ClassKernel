@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { backupStamp, nowIso, today } from "../lib/id";
-import { getFS, isTauri, onWorkWrite, useFolder } from "../lib/fs";
+import { getFS, isTauri, onWorkWrite, setFolder } from "../lib/fs";
 import { FolderAway, needsALook, sendChanges } from "../lib/batchSync";
 import * as repo from "../lib/repo";
 import {
@@ -34,6 +34,7 @@ import {
   seatedKey,
 } from "../lib/lessonState";
 import { PIN_HINT, hashPin, isValidPin, pinMatches } from "../lib/pin";
+import { classNameTaken } from "../lib/classNames";
 import { enterDock, enterFullscreen, restoreWindow } from "../lib/teachingWindow";
 import { setTimeZone } from "../lib/time";
 import { applyRenames, describeRenames, shortenCodes } from "../lib/behaviourCodes";
@@ -330,7 +331,8 @@ export interface AppState {
   resolveDialog(result: boolean | string | null): void;
   retrySave(): Promise<void>;
 
-  createClass(info: ClassInfo): Promise<void>;
+  /** False when it wasn't created: the name is taken (a message says so) or it couldn't be saved (the save-error banner does). */
+  createClass(info: ClassInfo): Promise<boolean>;
   /** Every class's students, read from disk (the current class's from memory). */
   loadAllStudents(): Promise<Map<string, Student[]>>;
   /**
@@ -340,8 +342,10 @@ export interface AppState {
    */
   importRoster(classes: ClassInfo[], students: Map<string, Student[]>): Promise<void>;
   openClass(name: string): Promise<void>;
-  updateClassInfo(info: ClassInfo): Promise<void>;
-  renameClass(oldName: string, newName: string): Promise<void>;
+  /** False when it couldn't be saved (the save-error banner says so). */
+  updateClassInfo(info: ClassInfo): Promise<boolean>;
+  /** False when it wasn't renamed; a message says why. */
+  renameClass(oldName: string, newName: string): Promise<boolean>;
 
   setStudents(students: Student[]): Promise<void>;
   setAttendance(entries: AttendanceEntry[]): Promise<void>;
@@ -604,7 +608,7 @@ export const useApp = create<AppState>((set, get) => {
         // They go to this folder (it may have moved, say to another drive letter).
         if (!sameFolder(waiting.realDir, path)) await fs.writeAtomic(paths.session, JSON.stringify({ ...waiting, realDir: path }));
         void writeState(paths, path).catch((e) => console.warn("Couldn't record the data folder", e));
-        useFolder(path, null, paths.copy);
+        setFolder(path, null, paths.copy);
         // Today's backup of the folder; the marker keeps it from refreshing the copy.
         void fs
           .snapshot(path, backupStamp(), repo.BACKUP_DAYS_TO_KEEP, { to: paths.copy, guard: paths.session }, backupsFor(paths))
@@ -619,7 +623,7 @@ export const useApp = create<AppState>((set, get) => {
         void writeState(paths, path).catch((e) => console.warn("Couldn't record the data folder", e));
         // Saves made from now on wait for the snapshot (QueuedFS), so they are
         // mirrored on top of the refreshed copy, never under it.
-        useFolder(path, keep ? paths.copy : null);
+        setFolder(path, keep ? paths.copy : null);
         // Copied in the background while the classes load, refreshing this
         // computer's copy in the same pass; it is the folder as it was opened.
         copyFresh = fs
@@ -636,11 +640,11 @@ export const useApp = create<AppState>((set, get) => {
             return false;
           });
       } else {
-        useFolder(path, null);
+        setFolder(path, null);
       }
     } else {
       // The copy is its own root and is never mirrored, snapshotted or remembered as the data folder.
-      useFolder(path, null);
+      setFolder(path, null);
     }
     const { classes, behaviourCodes, layoutTemplates, topics, cognitiveLevels, userPrefs, timerPresets, noteSections } =
       await loadAppWide(path);
@@ -762,7 +766,7 @@ export const useApp = create<AppState>((set, get) => {
     if (on) {
       if (dataDir) await get().openFolder(dataDir, { kind: "data", keepClass: true });
     } else {
-      useFolder(dataDir, null);
+      setFolder(dataDir, null);
       if (!(await readSession(paths))) await getFS().removeLocal(paths.copy);
       // Its backups hold the same student information: they go too, and from
       // now on the launch backups are made in the data folder again.
@@ -958,11 +962,18 @@ export const useApp = create<AppState>((set, get) => {
   },
 
   async createClass(info) {
-    const { dataDir } = get();
-    if (!dataDir) return;
-    await repo.saveClassInfo(dataDir, info);
+    const { dataDir, classes } = get();
+    if (!dataDir) return false;
+    // The name is the folder: saving over an existing class would replace its details and notes.
+    const taken = classNameTaken(info.name, classes);
+    if (taken) {
+      get().showToast(`There is already a class called ${taken.name}${taken.archived ? " (archived)" : ""}`);
+      return false;
+    }
+    if (!(await guarded("the new class", () => repo.saveClassInfo(dataDir, info)))) return false;
     set({ classes: await repo.listClasses(dataDir) });
     await get().openClass(info.name);
+    return true;
   },
 
   async loadAllStudents() {
@@ -1005,25 +1016,40 @@ export const useApp = create<AppState>((set, get) => {
 
   async updateClassInfo(info) {
     const { dataDir } = get();
-    if (!dataDir) return;
-    await repo.saveClassInfo(dataDir, info);
+    if (!dataDir) return false;
+    if (!(await guarded("the class details", () => repo.saveClassInfo(dataDir, info)))) return false;
     set({ classes: await repo.listClasses(dataDir) });
+    return true;
   },
 
   async renameClass(oldName, newName) {
     const { dataDir, classes, folderStatus } = get();
-    if (!dataDir || !newName || oldName === newName || (folderStatus && folderStatus.kind !== "batched")) return;
+    if (!dataDir || !newName || oldName === newName || (folderStatus && folderStatus.kind !== "batched")) return false;
     const info = classes.find((c) => c.name === oldName);
-    if (!info) return;
+    if (!info) return false;
+    // Its folder would be moved onto the other class's.
+    const taken = classNameTaken(newName, classes, oldName);
+    if (taken) {
+      get().showToast(`There is already a class called ${taken.name}${taken.archived ? " (archived)" : ""}`);
+      return false;
+    }
     // Moves a folder: done in the data folder itself, not sent file by file.
-    const done = await inDataFolder(async () => {
-      await repo.renameClass(dataDir, oldName, newName);
-      await repo.saveClassInfo(dataDir, { ...info, name: newName });
-      return true;
-    });
-    if (!done) return;
+    let renamed = false;
+    try {
+      await inDataFolder(async () => {
+        await repo.renameClass(dataDir, oldName, newName);
+        renamed = true;
+        await repo.saveClassInfo(dataDir, { ...info, name: newName });
+      });
+    } catch (e) {
+      console.error("Couldn't rename the class", e);
+      // The folder not moving (open in another program, say) is the teacher's to know; class.md is rewritten by the next save.
+      if (!renamed) get().showToast(`Couldn't rename the class: ${describeError(e)}`);
+    }
+    if (!renamed) return false;
     set({ classes: await repo.listClasses(dataDir) });
     if (get().currentClass === oldName) await get().openClass(newName);
+    return true;
   },
 
   async setStudents(students) {
@@ -1419,7 +1445,7 @@ async function startBatching(realDir: string): Promise<void> {
   await startOfflineSession(paths, realDir);
   unsent = false;
   watchSaves(true);
-  useFolder(realDir, null, paths.copy);
+  setFolder(realDir, null, paths.copy);
   useApp.setState({ folderStatus: batchedStart(realDir, false) });
   armSendTimer();
 }
@@ -1532,7 +1558,7 @@ async function stopBatchingNow(): Promise<boolean> {
   // From here saves go straight to the folder (and its copy). Anything saved
   // in the moment between is sent across now.
   watchSaves(false);
-  useFolder(s.realDir, keepLocalCopy() ? paths.copy : null);
+  setFolder(s.realDir, keepLocalCopy() ? paths.copy : null);
   try {
     const late = await sendChanges(paths, s.realDir, backupStamp(), false);
     if (late.held.length) console.warn("Changed in both places while switching; kept in this computer's copy", late.held);

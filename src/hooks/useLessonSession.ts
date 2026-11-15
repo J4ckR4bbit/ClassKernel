@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useApp, useLessonRunning, useAppPick } from "../store/appStore";
 import { newId, nowIso, today } from "../lib/id";
 import {
@@ -11,7 +11,7 @@ import {
   studentName,
 } from "../lib/types";
 import { eventsOnDate, formatDuration, visitSeconds } from "../lib/stats";
-import { lessonStartKey, lessonStartedMessage } from "../lib/lessonState";
+import { lessonStartKey, lessonStartedMessage, readLessonStart } from "../lib/lessonState";
 import { deskDisplayLabels } from "../lib/tables";
 import { pickedKey } from "../components/StudentPicker";
 import type { SeatBadge } from "../components/RoomCanvas";
@@ -88,10 +88,12 @@ export function useLessonSession() {
 
   // "This lesson" is everything logged since the last End-lesson reset (or the
   // start of today if a lesson has never been ended for this class).
-  const [lessonStart, setLessonStart] = useState<string | null>(null);
-  useEffect(() => {
-    setLessonStart(currentClass ? localStorage.getItem(lessonStartKey(currentClass)) : null);
-  }, [currentClass]);
+  // Read as the class opens rather than a moment after it, so the seats never
+  // show the whole day's points first; a lesson ended on this screen counts
+  // from then on even if this computer couldn't store it.
+  const stored = useMemo(() => (currentClass ? readLessonStart(currentClass) : null), [currentClass]);
+  const [ended, setEnded] = useState<{ className: string; at: string } | null>(null);
+  const lessonStart = ended && ended.className === currentClass ? ended.at : stored;
 
   const byId = useMemo(() => new Map(students.map((s) => [s.id, s])), [students]);
   const lessonEvents = useMemo(
@@ -244,13 +246,17 @@ export function useLessonSession() {
       };
     });
     await addLessonRecords(records);
-    localStorage.setItem(lessonStartKey(currentClass), timestamp);
-    localStorage.removeItem(pickedKey(currentClass));
+    try {
+      localStorage.setItem(lessonStartKey(currentClass), timestamp);
+      localStorage.removeItem(pickedKey(currentClass));
+    } catch {
+      // The lesson is still ended on this screen (below); only the next launch won't know.
+    }
     // A new lesson may have its seats assigned again, and starts with no note drafts.
     unlockSeating();
     clearNoteDrafts();
     stopLesson();
-    setLessonStart(timestamp);
+    setEnded({ className: currentClass, at: timestamp });
     showToast(`Lesson ended — saved ${records.length} seat records to history`);
     // The end of a lesson is a natural pause: what it recorded goes to the data folder now.
     naturalPause();

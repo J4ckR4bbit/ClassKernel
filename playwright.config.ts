@@ -1,7 +1,8 @@
 import { defineConfig } from "@playwright/test";
 
 // Browser tests: the built app in demo mode (no desktop backend, data in
-// memory, a fresh demo class on every page load), clicked through in Chromium.
+// memory, a fresh demo class on every page load), clicked through in Chromium,
+// and the tools website (tools-site.e2e.ts) on a second port.
 // Run with `npm run test:e2e`; the first time, `npx playwright install chromium`.
 // The unit tests (`npm test`) are separate and don't need a browser.
 export default defineConfig({
@@ -21,10 +22,18 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  webServer: {
-    command: "npm run build && npx vite preview --port 4173 --strictPort",
-    url: "http://localhost:4173",
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  webServer: [
+    {
+      command: "npm run build && npx vite preview --port 4173 --strictPort",
+      url: "http://localhost:4173",
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+    {
+      command: "npm run build:tools && npx vite preview --mode tools --outDir dist-tools --port 4174 --strictPort",
+      url: "http://localhost:4174",
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+  ],
 });

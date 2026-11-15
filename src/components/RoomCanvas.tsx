@@ -289,7 +289,7 @@ function SeatView({
     if (first) lines.push({ text: first, size: 13 * fontScale, className: "seat-name" });
     if (last) lines.push({ text: last, size: 10 * fontScale, className: "seat-surname" });
     if (hasPoints) {
-      const pts = content!.points as number;
+      const pts = content.points as number;
       lines.push({
         text: pts > 0 ? `+${pts}` : `${pts}`,
         size: 11 * fontScale,

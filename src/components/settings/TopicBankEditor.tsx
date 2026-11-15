@@ -153,7 +153,7 @@ export default function TopicBankEditor({ grades }: { grades: string[] }) {
   const removeSubtopic = (area: string, subtopic: string) => {
     let next = topics.filter((t) => !(t.grade === list && t.area === area && t.subtopic === subtopic));
     if (!next.some((t) => t.grade === list && t.area === area)) {
-      next = [...next, { grade: list, area, subtopic: "", short: "" } as TopicEntry];
+      next = [...next, { grade: list, area, subtopic: "", short: "" }];
     }
     void setTopics(next);
   };

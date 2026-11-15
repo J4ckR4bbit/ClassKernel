@@ -282,11 +282,6 @@ export interface TimerPreset {
   chime: boolean;
 }
 
-export const DEFAULT_TIMER_PRESETS: TimerPreset[] = [
-  { name: "Essay (10 read · 40 write)", readingMinutes: 10, writingMinutes: 40, display: "circle", chime: true },
-  { name: "Comprehension (5 read · 25 write)", readingMinutes: 5, writingMinutes: 25, display: "hourglass", chime: true },
-];
-
 /** How student names are shown on seat tiles on class-facing screens. */
 export type SeatNameStyle = "full" | "firstInitial" | "first";
 

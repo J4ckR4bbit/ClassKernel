@@ -135,6 +135,8 @@ test("graph tools: graph paper saves a PNG, the plotter takes readings, the moti
 
   await openTool(page, "Practical graph plotter");
   const remove = page.getByRole("button", { name: "Remove this reading" });
+  // The tool loads on demand: count its rows once they are there.
+  await expect(remove.first()).toBeVisible();
   const before = await remove.count();
   // Typing in the spare bottom row adds a new spare row under it.
   const rows = page.locator("main tbody tr");

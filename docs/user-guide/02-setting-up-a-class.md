@@ -13,7 +13,7 @@ Press **New class** on Home, or open the class menu (top right) and choose **New
 
 | Field | Notes |
 | --- | --- |
-| **Name** | Required. Also the name of the class's folder on disk, so characters Windows doesn't allow in file names (`< > : " / \ \| ? *`) are left out. |
+| **Name** | Required. Also the name of the class's folder on disk, so characters Windows doesn't allow in file names (`< > : " / \ \| ? *`) are left out, as are spaces and full stops at the end. Two classes can't have the same name, whatever its capitals (`10a` is taken once there is a `10A`, archived or not). |
 | **Grade** | The grade the class is in, as a number: `8`, `10`, `12`. It picks the topic list used when you tag test questions (see [Marks](07-marks.md)) and the grade's weighting, and shows as *G08*, *G10* and so on. Type just the grade: not the year (`2026`) and not a leading zero (`08`), or the class won't match the grade's topic list. |
 | **Subject**, **Room** | Shown on the class's Home card and in the class menu. |
 
@@ -30,8 +30,8 @@ page.)
 | --- | --- |
 | **Grade / Subject / Room** | Edit, then press **Save**. Type the grade as a plain number, e.g. `10` (see [Create a class](#create-a-class)). |
 | **Colour** | Pick a swatch (saves at once) or **None**. The colour shows as a band on the Home card, a dot in the class menu, and a line under the top bar on the class's pages. |
-| **Notes box** | Free notes in Markdown (headings with `#`, lists with `-`, links, …). They save when you click away. Tick **show preview** to see them formatted on the right. |
-| **Rename class** | Renames the class and its folder on disk. |
+| **Notes box** | Free notes in Markdown (headings with `#`, lists with `-`, links, …). They save when you click away. Tick **show preview** to see them formatted on the right; a link there opens in your browser. |
+| **Rename class** | Renames the class and its folder on disk. A name another class already has is refused. |
 | **Archive class** | Hides the class from Home and moves it under **Archived** in the class menu. Nothing is deleted; open it from the menu and press **Restore** to bring it back. |
 
 ## Students

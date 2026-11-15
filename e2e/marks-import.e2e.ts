@@ -15,7 +15,7 @@ async function openView(page: Page, title: string) {
 /** Download the template from the open page and read its sheets back. */
 async function downloadTemplate(page: Page) {
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Template" }).click()]);
-  const sheets = await readXlsx(new Uint8Array(readFileSync((await download.path())!)));
+  const sheets = await readXlsx(new Uint8Array(readFileSync(await download.path())));
   return { name: download.suggestedFilename(), sheets };
 }
 

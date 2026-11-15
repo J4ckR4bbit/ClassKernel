@@ -125,7 +125,7 @@ export default function LayoutDesigner() {
     if (!svg) return;
     // Capture on the canvas so a fast finger/mouse can't escape the drag.
     svg.setPointerCapture(e.pointerId);
-    const { x, y } = svgPointFromClient(svg as unknown as SVGSVGElement, e.clientX, e.clientY);
+    const { x, y } = svgPointFromClient(svg, e.clientX, e.clientY);
     const desk = shown.find((d) => d.id === deskId)!;
     drag.current = { kind: "desk", deskId, offsetX: x - desk.x, offsetY: y - desk.y, moved: false };
     setSelected(deskId);
@@ -138,7 +138,7 @@ export default function LayoutDesigner() {
     const svg = (e.target as Element).closest("svg");
     if (!svg) return;
     svg.setPointerCapture(e.pointerId);
-    const { x, y } = svgPointFromClient(svg as unknown as SVGSVGElement, e.clientX, e.clientY);
+    const { x, y } = svgPointFromClient(svg, e.clientX, e.clientY);
     drag.current =
       mode === "crop-move" ? { kind: "crop-move", offsetX: x - crop.x, offsetY: y - crop.y } : { kind: "crop-resize" };
     setCropDraft(crop);

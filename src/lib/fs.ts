@@ -213,6 +213,12 @@ export class MemFS implements AppFS {
         this.files.set(t + k.slice(f.length), v);
       }
     }
+    for (const [k, v] of [...this.blobs.entries()]) {
+      if (k === f || k.startsWith(f + "/")) {
+        this.blobs.delete(k);
+        this.blobs.set(t + k.slice(f.length), v);
+      }
+    }
     for (const d of [...this.dirs]) {
       if (d === f || d.startsWith(f + "/")) {
         this.dirs.delete(d);
@@ -287,7 +293,7 @@ export class MirrorFS implements AppFS {
   constructor(readonly inner: AppFS) {}
 
   /** The open data folder, where to mirror it (null: don't), and where to work instead of it (null: in it). */
-  useFolder(root: string | null, mirrorTo: string | null, workIn: string | null = null): void {
+  setFolder(root: string | null, mirrorTo: string | null, workIn: string | null = null): void {
     this.root = root === null ? null : slashes(root);
     this.mirrorTo = mirrorTo === null ? null : slashes(mirrorTo);
     this.workIn = workIn === null ? null : slashes(workIn);
@@ -546,9 +552,9 @@ export function setFS(fs: AppFS): void {
  * goes missing), where to keep this computer's copy of it (null: nowhere),
  * and, while changes are sent in batches, to work in that copy instead.
  */
-export function useFolder(root: string | null, mirrorTo: string | null, workIn: string | null = null): void {
+export function setFolder(root: string | null, mirrorTo: string | null, workIn: string | null = null): void {
   getFS();
-  mirror?.useFolder(root, mirrorTo, workIn);
+  mirror?.setFolder(root, mirrorTo, workIn);
 }
 
 /** Be told of each save while working in this computer's copy (null: stop). */

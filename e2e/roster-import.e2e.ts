@@ -9,7 +9,7 @@ import { buildXlsx } from "../src/lib/xlsx";
 
 async function downloadWorkbook(page: Page) {
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Template" }).click()]);
-  return { name: download.suggestedFilename(), sheets: await readXlsx(new Uint8Array(readFileSync((await download.path())!))) };
+  return { name: download.suggestedFilename(), sheets: await readXlsx(new Uint8Array(readFileSync(await download.path()))) };
 }
 
 /** Write the (edited) sheets back to an .xlsx, as a teacher saving in Excel would. */

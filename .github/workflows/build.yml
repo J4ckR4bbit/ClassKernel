@@ -19,6 +19,41 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      # The Rust side's own logic (file operations, backup pruning, outside
+      # links) is kept free of Tauri so its tests compile in seconds.
+      - name: Rust tests
+        run: |
+          set -euo pipefail
+          for module in fsops backup_policy links; do
+            rustc --edition 2021 --test "src-tauri/src/$module.rs" -o "$RUNNER_TEMP/$module"
+            "$RUNNER_TEMP/$module"
+          done
+
+  # The app and the tools website clicked through in Chromium. Beside the
+  # installer rather than before it, so a test that needs a look never stops
+  # an installer from being built.
+  browser-tests:
+    name: Browser tests
+    # Not ubuntu-latest: the Playwright this repo pins (package.json) installs
+    # its browser only on the Ubuntu releases it knows, and 24.04 is the newest
+    # of those. Move this on when Playwright is next upgraded.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Keep what a failed test saw
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-test-results
+          path: test-results
+          if-no-files-found: ignore
 
   windows-installer:
     name: Windows installer (NSIS)

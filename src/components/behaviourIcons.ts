@@ -368,6 +368,3 @@ export const BEHAVIOUR_ICON_GROUPS: Array<{ name: string; icons: string[] }> = [
     ],
   },
 ];
-
-/** Whether a name is one of the behaviour icons (an unknown one, from a newer build, draws nothing). */
-export const isBehaviourIcon = (name: string): boolean => name in BEHAVIOUR_ICON_PATHS;

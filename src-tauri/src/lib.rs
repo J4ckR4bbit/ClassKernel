@@ -10,6 +10,7 @@
 
 mod backup_policy;
 mod fsops;
+mod links;
 
 use fsops::{copy_tree, err, is_within, prune_extra, write_via_temp};
 use serde::Serialize;
@@ -214,6 +215,21 @@ pub fn run() {
             }
         }))
         .plugin(tauri_plugin_dialog::init())
+        // A link in a class's notes opens in the computer's browser, never in
+        // this window (see links.rs).
+        .plugin(
+            tauri::plugin::Builder::<tauri::Wry>::new("links")
+                .on_navigation(|_webview, url| {
+                    if !links::is_external(url.scheme(), url.host_str()) {
+                        return true;
+                    }
+                    if let Err(e) = open::that_detached(url.as_str()) {
+                        eprintln!("Couldn't open {url}: {e}");
+                    }
+                    false
+                })
+                .build(),
+        )
         // Settings → General → Updates: the only thing that uses the network,
         // and only when asked (src/lib/updates.ts). Installers are checked
         // against the public key in tauri.conf.json.

@@ -1,5 +1,5 @@
 import { KeyboardEvent, ReactNode } from "react";
-import { AttendanceStatus, BehaviourCode } from "../lib/types";
+import { BehaviourCode } from "../lib/types";
 import { IconGlyph, IconName } from "./Icon";
 import { BehaviourIconGlyph } from "./BehaviourIcon";
 import { behaviourText } from "./BehaviourButton";
@@ -144,7 +144,7 @@ export default function StudentRing({
               label={ATTENDANCE_WORDS[code]}
               className={`ring-att ${code} ${on ? "on" : ""}`}
               pressed={on}
-              onPress={() => onAttendance(code as AttendanceStatus)}
+              onPress={() => onAttendance(code)}
             >
               <text x={m.x} y={m.y} className="ring-letter" dominantBaseline="central">
                 {code}
