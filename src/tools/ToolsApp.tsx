@@ -40,7 +40,9 @@ export default function ToolsApp() {
   const setThemeChoice = useTheme((t) => t.setChoice);
   const [ready, setReady] = useState(false);
 
-  // Start the store, switch every tool on, and bring back this browser's timer presets.
+  // Start the store, switch every tool on, bring back this browser's timer
+  // presets, and open the tool the address names (a bookmark, a shared link),
+  // all before the first screen, so the address is never rewritten on the way in.
   useEffect(() => {
     let live = true;
     void (async () => {
@@ -51,12 +53,14 @@ export default function ToolsApp() {
         userPrefs: { ...s.userPrefs, enabledPlugins: TOOLS.map((t) => t.id) },
         ...(presets ? { timerPresets: presets } : {}),
       }));
+      const linked = toolFromHash(location.hash, TOOLS);
+      if (linked) openPlugin(linked);
       setReady(true);
     })();
     return () => {
       live = false;
     };
-  }, [boot]);
+  }, [boot, openPlugin]);
 
   // There is no data folder here, so the test timer's presets stay in this browser.
   useEffect(() => {
@@ -71,8 +75,8 @@ export default function ToolsApp() {
     });
   }, [ready]);
 
-  // The address follows the open tool, and the open tool follows the address
-  // (a bookmark, a shared link, the browser's Back).
+  // The open tool follows the address (the browser's Back and Forward, an
+  // address typed by hand), and the address follows the open tool.
   useEffect(() => {
     if (!ready) return;
     const follow = () => {
@@ -80,7 +84,6 @@ export default function ToolsApp() {
       if (id) openPlugin(id);
       else setView("home");
     };
-    follow();
     window.addEventListener("hashchange", follow);
     return () => window.removeEventListener("hashchange", follow);
   }, [ready, openPlugin, setView]);
