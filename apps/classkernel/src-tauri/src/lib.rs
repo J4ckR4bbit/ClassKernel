@@ -10,7 +10,9 @@
 
 mod backup_policy;
 mod fsops;
+mod launch;
 mod links;
+mod windows_app;
 
 use fsops::{copy_tree, err, is_within, prune_extra, write_via_temp};
 use serde::Serialize;
@@ -206,13 +208,11 @@ async fn remove_local(app: tauri::AppHandle, path: String) -> Result<(), String>
 pub fn run() {
     tauri::Builder::default()
         // First, so a second launch (say, during the wait for Google Drive)
-        // brings the open window forward instead of starting another copy.
-        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.unminimize();
-                let _ = window.set_focus();
-            }
+        // brings the open window forward instead of starting another copy, or
+        // opens the window it asked for (ClassKernel, or Science with
+        // --science; see windows_app.rs).
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            windows_app::on_second_launch(app, argv);
         }))
         .plugin(tauri_plugin_dialog::init())
         // A link in a class's notes opens in the computer's browser, never in
@@ -234,17 +234,14 @@ pub fn run() {
         // and only when asked (src/lib/updates.ts). Installers are checked
         // against the public key in tauri.conf.json.
         .plugin(tauri_plugin_updater::Builder::new().build())
-        // The window opens hidden (tauri.conf.json) and the page shows it once
-        // it has drawn in the right colours, so a dark theme doesn't flash
-        // white. Should the page never get that far, show it anyway.
+        // The command line says which window to open: ClassKernel, or only
+        // ClassKernel Science with --science (windows_app.rs).
         .setup(|app| {
-            if let Some(window) = app.get_webview_window("main") {
-                std::thread::spawn(move || {
-                    std::thread::sleep(std::time::Duration::from_secs(4));
-                    if !window.is_visible().unwrap_or(true) {
-                        let _ = window.show();
-                    }
-                });
+            let args: Vec<String> = std::env::args().collect();
+            if windows_app::wants_science(&args) {
+                windows_app::open_science(app.handle())?;
+            } else {
+                windows_app::open_main(app.handle())?;
             }
             Ok(())
         })
@@ -259,7 +256,8 @@ pub fn run() {
             rename_path,
             snapshot_backup,
             copy_folder,
-            remove_local
+            remove_local,
+            windows_app::open_science_window
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

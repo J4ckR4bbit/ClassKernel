@@ -1192,3 +1192,5 @@ button.formf-tick.on { background: var(--md-primary); border-color: var(--md-pri
   border-top: 1px solid var(--md-outline-variant);
 }
 .science-row .muted { font-size: 13px; margin-top: 2px; }
+/* The website's address, in the desktop app's Settings row: one tap selects it to copy. */
+.science-address { user-select: all; color: var(--text); white-space: nowrap; }

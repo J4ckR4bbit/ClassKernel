@@ -26,7 +26,7 @@ jobs:
       - name: Rust tests
         run: |
           set -euo pipefail
-          for module in fsops backup_policy links; do
+          for module in fsops backup_policy links launch; do
             rustc --edition 2021 --test "apps/classkernel/src-tauri/src/$module.rs" -o "$RUNNER_TEMP/$module"
             "$RUNNER_TEMP/$module"
           done

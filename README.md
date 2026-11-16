@@ -3,9 +3,10 @@
 Two apps for teachers, from one repository:
 
 - **ClassKernel** — fast, offline-first classroom management (below).
-- **[ClassKernel Science](https://j4ckr4bbit.github.io/ClassKernel/)** — science teaching tools for the board, as a
-  website: a chemistry reference, a titration simulator, a galvanic cell animator, graph plotters and graph paper.
-  Nothing to install. [Its guide →](docs/science/README.md)
+- **ClassKernel Science** — science teaching tools for the board: a chemistry reference, a titration simulator, a
+  galvanic cell animator, graph plotters and graph paper. It comes with ClassKernel, in a window of its own (the
+  installer offers it its own shortcuts), and as a website for any computer:
+  **[j4ckr4bbit.github.io/ClassKernel](https://j4ckr4bbit.github.io/ClassKernel/)**. [Its guide →](docs/science/README.md)
 
 ClassKernel is fast, offline-first classroom management for teachers. A small Windows desktop app (Tauri 2, ~10 MB):
 **no accounts, no server, no internet** (unless you ask it to check for an update). Everything is saved as plain `.csv` and `.md` files in a folder you choose.
@@ -21,8 +22,8 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 
 Once installed, it updates itself when you ask: **Settings → General → Updates → Check for updates**.
 
-The science tools are a website of their own, **[ClassKernel Science](https://j4ckr4bbit.github.io/ClassKernel/)**;
-ClassKernel opens it from Home and Settings → Tools.
+The installer also offers **ClassKernel Science**, the science tools, in a window of its own with its own Start menu
+and desktop shortcuts. ClassKernel opens it from Home and Settings → Tools either way.
 
 ## What it does
 

@@ -1,6 +1,8 @@
 // ClassKernel Science: the science teaching tools (chemistry reference,
-// titration, galvanic cell, the graph tools) as a website of their own
-// (apps/science). ClassKernel links to it from Home and Settings → Tools.
+// titration, galvanic cell, the graph tools), apps/science. In the desktop app
+// it opens in a window of its own (src-tauri/src/windows_app.rs); it's also a
+// website, for computers without ClassKernel, which the browser demo opens.
+// ClassKernel opens it from Home and Settings → Tools.
 
 import { isTauri } from "./fs";
 
@@ -50,14 +52,21 @@ export function dismissScienceNotice(): void {
   }
 }
 
+/** Whether Science opens in a window of its own (the desktop app) rather than the browser. */
+export function scienceInOwnWindow(): boolean {
+  return isTauri();
+}
+
 /**
- * Open the website in the computer's browser. In the desktop app, a page that
- * leads out of the app is handed to the browser instead of replacing
- * ClassKernel in its window (src-tauri/src/links.rs); in the browser demo it
- * opens in a new tab.
+ * Open ClassKernel Science: its own window in the desktop app (or bring it
+ * forward), the website in a new tab in the browser demo.
  */
-export function openScienceSite(toolId?: string): void {
-  const url = scienceUrl(toolId);
-  if (isTauri()) window.location.assign(url);
-  else window.open(url, "_blank", "noopener,noreferrer");
+export function openScience(): void {
+  if (scienceInOwnWindow()) {
+    void import("@tauri-apps/api/core")
+      .then(({ invoke }) => invoke("open_science_window"))
+      .catch((e) => console.error("Couldn't open ClassKernel Science", e));
+  } else {
+    window.open(scienceUrl(), "_blank", "noopener,noreferrer");
+  }
 }

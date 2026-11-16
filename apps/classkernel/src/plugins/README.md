@@ -133,5 +133,5 @@ const outcome = await savePluginFile({
 | `src/components/PluginView.tsx` | Lazy loading, the error boundary, the chrome. |
 | `src/components/settings/PluginSettings.tsx` | The Tools tab in Settings, where they are switched on. |
 | `src/components/HomeView.tsx` | The Tools section listing the enabled ones, then the ClassKernel Science card. |
-| `src/lib/science.ts` | The link to ClassKernel Science, and the ids of the tools that moved there. |
+| `src/lib/science.ts` | Opening ClassKernel Science (its own window, or the website in the browser demo), and the ids of the tools that moved there. |
 | `settings.csv` (`plugins_enabled`) | The teacher's choice, as a `;`-separated list of ids. |

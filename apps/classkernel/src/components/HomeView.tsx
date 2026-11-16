@@ -3,7 +3,7 @@ import { View, useAppPick } from "../store/appStore";
 import { ClassInfo } from "../lib/types";
 import { gradeLabel } from "../lib/format";
 import { enabledPlugins } from "../plugins/registry";
-import { dismissScienceNotice, movedToolNames, openScienceSite, scienceNoticeDismissed } from "../lib/science";
+import { dismissScienceNotice, movedToolNames, openScience, scienceInOwnWindow, scienceNoticeDismissed } from "../lib/science";
 import NewClassModal from "./NewClassModal";
 import Icon from "@classkernel/ui/Icon";
 
@@ -23,7 +23,8 @@ function initials(name: string): string {
  * Below the classes sits Tools: the plugins this teacher has switched on
  * (Settings → Tools). Class-independent extras live here and in the
  * expanded navigation drawer, never among the class's own pages. The last
- * card opens ClassKernel Science, the science tools' website, in the browser.
+ * card opens ClassKernel Science, the science tools: a window of its own in
+ * the desktop app, the website in the browser demo.
  */
 export default function HomeView() {
   const { classes, currentClass, openClass, setView, createClass, userPrefs, openPlugin } = useAppPick(
@@ -107,11 +108,14 @@ export default function HomeView() {
       {moved.length > 0 && (
         <div className="panel science-moved" role="status">
           <p className="lead">
-            <b>{listNames(moved)}</b> {moved.length === 1 ? "has" : "have"} moved to <b>ClassKernel Science</b>, a
-            website with all the science tools. Open it from the last card under Tools; it needs the internet.
+            <b>{listNames(moved)}</b> {moved.length === 1 ? "has" : "have"} moved to <b>ClassKernel Science</b>, with all
+            the science tools.{" "}
+            {scienceInOwnWindow()
+              ? "It opens in a window of its own, from the last card under Tools."
+              : "It's a website: open it from the last card under Tools. It needs the internet."}
           </p>
           <div className="row">
-            <button className="primary" onClick={() => openScienceSite()}>
+            <button className="primary" onClick={() => openScience()}>
               <Icon name="open_in_new" size={18} /> Open ClassKernel Science
             </button>
             <button
@@ -157,10 +161,10 @@ function listNames(names: string[]): string {
   return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
-/** Opens ClassKernel Science, the science tools' website, in the computer's browser. */
+/** Opens ClassKernel Science, the science tools, in its own window (or the website, in the browser demo). */
 export function ScienceCard() {
   return (
-    <button className="tool-card science-card" onClick={() => openScienceSite()}>
+    <button className="tool-card science-card" onClick={() => openScience()}>
       <span className="tool-icon" aria-hidden>
         <Icon name="science" size={26} />
       </span>
@@ -169,7 +173,8 @@ export function ScienceCard() {
           ClassKernel Science <Icon name="open_in_new" size={16} />
         </b>
         <span className="muted">
-          Chemistry reference, titration, galvanic cell, graph plotters and graph paper. Opens in your browser.
+          Chemistry reference, titration, galvanic cell, graph plotters and graph paper.{" "}
+          {scienceInOwnWindow() ? "Opens in its own window." : "Opens in your browser."}
         </span>
       </span>
     </button>

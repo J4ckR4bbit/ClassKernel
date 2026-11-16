@@ -16,6 +16,16 @@ test("switched-on tools appear on Home and in the navigation drawer", async ({ p
   await expect(page.locator(".nav-tools .nav-item")).toHaveCount(ALL_TOOLS.length);
 });
 
+test("the desktop app carries its own copy of ClassKernel Science, for the Science window", async ({ page }) => {
+  // What src-tauri/src/windows_app.rs opens: science/index.html in the app's own pages.
+  await page.goto("/science/index.html");
+  await expect(page).toHaveTitle("ClassKernel Science");
+  await expect(page.locator(".tool-card")).toHaveCount(6);
+  await page.locator(".tool-card", { hasText: "Titration simulator" }).click();
+  await expect(page.locator(".top-bar-title")).toHaveText("Titration simulator");
+  await expect(page.locator(".plugin-loading")).toHaveCount(0);
+});
+
 test("ClassKernel Science opens from Home and from Settings → Tools, in a new tab", async ({ page }) => {
   // Answered here, so the test never reaches the internet.
   await page.context().route(`${SCIENCE_SITE}**`, (route) => route.fulfill({ contentType: "text/html", body: "<title>Science</title>" }));

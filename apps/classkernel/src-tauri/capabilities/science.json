@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "science",
+  "description": "ClassKernel Science's window (the science teaching tools, src/windows_app.rs): core APIs, the save-as dialog for the pictures its tools make (written through the app's own write_binary command), filling the screen for Show to class, the title bar's light or dark theme, and showing the window once its first screen is ready (it opens hidden, so a dark theme doesn't flash white). No updater, no folder picker and nothing else of ClassKernel's.",
+  "windows": ["science"],
+  "permissions": [
+    "core:default",
+    "dialog:allow-save",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-set-theme",
+    "core:window:allow-show"
+  ]
+}

@@ -1,6 +1,6 @@
 import { useAppPick } from "../../store/appStore";
 import { PLUGINS, togglePluginId } from "../../plugins/registry";
-import { openScienceSite } from "../../lib/science";
+import { SCIENCE_SITE_URL, openScience, scienceInOwnWindow } from "../../lib/science";
 import Icon from "@classkernel/ui/Icon";
 
 /**
@@ -68,12 +68,19 @@ export default function PluginSettings() {
         <span className="grow">
           <b>Science tools</b>
           <div className="muted">
-            The chemistry reference, titration simulator, galvanic cell animator, graph plotters and graph paper are a
-            website of their own, <b>ClassKernel Science</b>, so they open on any computer with nothing to install.
-            It opens in your browser and needs the internet.
+            The chemistry reference, titration simulator, galvanic cell animator, graph plotters and graph paper are{" "}
+            <b>ClassKernel Science</b>,{" "}
+            {scienceInOwnWindow() ? (
+              <>
+                which opens in a window of its own. They're also a website, for a computer without ClassKernel:{" "}
+                <span className="science-address">{SCIENCE_SITE_URL.replace(/^https:\/\//, "")}</span>
+              </>
+            ) : (
+              "a website of their own, so they open on any computer with nothing to install. It opens in your browser and needs the internet."
+            )}
           </div>
         </span>
-        <button className="small" onClick={() => openScienceSite()}>
+        <button className="small" onClick={() => openScience()}>
           <Icon name="open_in_new" size={18} /> Open
         </button>
       </div>

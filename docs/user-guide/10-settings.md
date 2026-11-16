@@ -213,8 +213,9 @@ While the dashboards are switched off there is no dashboard anywhere in the app,
 one. The tools themselves are described in [Teaching tools](09-teaching-tools.md) and
 [Dashboards and parent reports](08-dashboards-and-reports.md).
 
-At the foot of the list, **Science tools → Open** opens [ClassKernel Science](../science/README.md), the website the
-chemistry reference, titration simulator, galvanic cell animator and graph tools moved to, in your browser.
+At the foot of the list, **Science tools → Open** opens [ClassKernel Science](../science/README.md) — the chemistry
+reference, titration simulator, galvanic cell animator and graph tools — in a window of its own. The row also gives
+the address of its website, for a computer without ClassKernel.
 
 ## Export
 

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import {
   PAGE_BACKGROUND,
+  PALETTE_KEY,
   Palette,
   Theme,
   ThemeChoice,
@@ -10,6 +11,7 @@ import {
   savePalette,
   saveThemeChoice,
   systemDarkQuery,
+  THEME_KEY,
 } from "@classkernel/ui/theme";
 import { isTauri } from "../lib/fs";
 
@@ -98,6 +100,15 @@ export function initTheme(): void {
     if (choice !== "system") return;
     const theme = resolveTheme(choice, e.matches);
     useTheme.setState({ theme });
+    apply(choice, theme, palette);
+  });
+  // Changed in the ClassKernel Science window, which shares this setting.
+  window.addEventListener("storage", (e) => {
+    if (e.key !== THEME_KEY && e.key !== PALETTE_KEY) return;
+    const choice = readThemeChoice();
+    const palette = readPalette();
+    const theme = resolveTheme(choice, !!query?.matches);
+    useTheme.setState({ choice, theme, palette });
     apply(choice, theme, palette);
   });
 }

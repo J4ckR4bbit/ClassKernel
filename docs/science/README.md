@@ -2,13 +2,18 @@
 
 [← ClassKernel documentation](../README.md)
 
-**ClassKernel Science** is a website of science teaching tools for the board:
-**[j4ckr4bbit.github.io/ClassKernel](https://j4ckr4bbit.github.io/ClassKernel/)**. It opens in any browser, on any
-computer, with nothing to install. It's free, and nothing is uploaded or saved online: pictures you save are
-downloaded to that computer.
+**ClassKernel Science** is a set of science teaching tools for the board. It comes two ways:
 
-These tools used to be inside ClassKernel. ClassKernel now opens the website from the last card under **Tools** on
-Home, and from **Settings → Tools**.
+- **With ClassKernel, in a window of its own.** ClassKernel's installer asks whether to also install ClassKernel
+  Science; say yes and it gets its own Start menu and desktop shortcuts, its own icon and its own button on the
+  taskbar, so it opens like an app of its own — without opening ClassKernel. Either way, the last card under
+  **Tools** on ClassKernel's Home (and **Settings → Tools**) opens it. It works offline, pictures are saved with the
+  Windows *Save as* dialog, and it follows ClassKernel's Light / Dark and colour-scheme choice.
+- **As a website**, for a computer without ClassKernel:
+  **[j4ckr4bbit.github.io/ClassKernel](https://j4ckr4bbit.github.io/ClassKernel/)**. It opens in any browser with
+  nothing to install. Nothing is uploaded or saved online: pictures you save are downloaded to that computer.
+
+These tools used to be inside ClassKernel's own window, switched on in Settings → Tools.
 
 ![ClassKernel Science's list of tools](../images/science-home.png)
 
@@ -21,10 +26,10 @@ Home, and from **Settings → Tools**.
 | [Motion graph builder](#motion-graph-builder) | x–t, v–t and a–t graphs that always agree. |
 | [Graph paper generator](#graph-paper-generator) | Printable grids and axes at an exact size. |
 
-Tap a tool's card to open it; **←** in the top bar goes back to the list. Each tool has an address of its own to
-bookmark or share with a class (for example `…/#/galvanic-cell`), and the browser's Back and Forward move between
-the list and the tool. **Show to class** fills the screen, for the board. Light, Dark or *Match this device* is
-chosen at the foot of the list and remembered by that browser.
+Tap a tool's card to open it; **←** in the top bar goes back to the list. **Show to class** fills the screen, for
+the board. Light, Dark or *Match this device* is chosen at the foot of the list (in the desktop app, it's the same
+setting as ClassKernel's). On the website, each tool has an address of its own to bookmark or share with a class
+(for example `…/#/galvanic-cell`), and the browser's Back and Forward move between the list and the tool.
 
 ## Chemistry reference
 

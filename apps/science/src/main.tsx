@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { initTheme } from "./theme";
+import { initTheme, revealWindow } from "./theme";
 import "@classkernel/ui/fonts";
 import "@classkernel/ui/base.css";
 import "./styles.css";
@@ -14,3 +14,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <App />
   </React.StrictMode>,
 );
+
+// In the desktop app, after React has drawn the first screen (a timer rather
+// than an animation frame: frames don't run in a window that is still hidden).
+setTimeout(() => void revealWindow(), 0);

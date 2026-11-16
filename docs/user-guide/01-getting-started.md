@@ -9,6 +9,11 @@ ClassKernel is a Windows desktop app. Download the latest installer (`.exe`) fro
 nothing to configure, and the app never needs the internet. The one exception is when you ask it to
 [check for an update](10-settings.md#updates), so a new version doesn't mean downloading the installer again.
 
+Part-way through, the installer asks whether to **also install ClassKernel Science**, the science teaching tools
+(a chemistry reference, a titration simulator, a galvanic cell, graph plotters and graph paper). Say **Yes** and it
+gets its own Start menu and desktop shortcuts and opens like an app of its own; say **No** and you can still open it
+from **Tools** on ClassKernel's Home. See [ClassKernel Science](../science/README.md).
+
 Windows may show a blue **Windows protected your PC** box the first time you run the installer, because the
 installer isn't signed with a paid certificate. Choose **More info**, then **Run anyway**.
 
@@ -92,8 +97,8 @@ A class with a colour (set on its [Class](02-setting-up-a-class.md#the-class-pag
 shows it along the top of its card and in the circle with its initials.
 
 Below the classes is the **Tools** section: the tools you've switched on under **Settings → Tools** (a short note
-until there are any), then a card for **ClassKernel Science**, the science tools' website, which opens in your
-browser. See [Teaching tools](09-teaching-tools.md).
+until there are any), then a card for **ClassKernel Science**, the science tools, which opens in a window of its own. See
+[Teaching tools](09-teaching-tools.md).
 
 ## Privacy on the big screen
 

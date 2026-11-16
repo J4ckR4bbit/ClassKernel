@@ -1,6 +1,8 @@
 // Generates the app icons (PNGs + multi-size .ico) with no native tooling —
 // pixels are rendered in JS and PNG-encoded with Node's built-in zlib.
-// Design: green rounded tile, whiteboard bar up top, 2x3 grid of white desks.
+// ClassKernel: green rounded tile, whiteboard bar up top, 2x3 grid of white desks.
+// ClassKernel Science (science.png / science.ico, its window and shortcuts):
+// a blue tile with a white conical flask, green liquid in it.
 // Usage: node scripts/gen-icons.mjs
 
 import { deflateSync } from "node:zlib";
@@ -75,6 +77,65 @@ function roundRectCoverage(px, py, x, y, w, h, r) {
   return hit / 9;
 }
 
+// Coverage of a polygon (points in pixels), supersampled 3x3 per pixel.
+function polygonCoverage(px, py, points) {
+  let hit = 0;
+  for (let sy = 0; sy < 3; sy++) {
+    for (let sx = 0; sx < 3; sx++) {
+      const qx = px + (sx + 0.5) / 3;
+      const qy = py + (sy + 0.5) / 3;
+      let inside = false;
+      for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+        const [xi, yi] = points[i];
+        const [xj, yj] = points[j];
+        if (yi > qy !== yj > qy && qx < ((xj - xi) * (qy - yi)) / (yj - yi) + xi) inside = !inside;
+      }
+      if (inside) hit++;
+    }
+  }
+  return hit / 9;
+}
+
+/** Paint shapes (rounded rects, or polygons) over a transparent square, in order. */
+function paint(size, shapes) {
+  const img = Buffer.alloc(size * size * 4); // transparent
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      let cr = 0, cg = 0, cb = 0, ca = 0;
+      for (const shape of shapes) {
+        const [R, G, B, A] = shape.colour;
+        const cov = shape.points
+          ? polygonCoverage(x, y, shape.points.map(([u, v]) => [u * size, v * size]))
+          : roundRectCoverage(x, y, shape.x * size, shape.y * size, shape.w * size, shape.h * size, shape.r * size);
+        if (cov <= 0) continue;
+        const a = (A / 255) * cov;
+        cr = R * a + cr * (1 - a);
+        cg = G * a + cg * (1 - a);
+        cb = B * a + cb * (1 - a);
+        ca = a + ca * (1 - a);
+      }
+      const i = (y * size + x) * 4;
+      img[i] = Math.round(cr);
+      img[i + 1] = Math.round(cg);
+      img[i + 2] = Math.round(cb);
+      img[i + 3] = Math.round(ca * 255);
+    }
+  }
+  return encodePng(img, size, size);
+}
+
+function renderScience(size) {
+  const white = [255, 255, 255, 255];
+  return paint(size, [
+    { x: 0.02, y: 0.02, w: 0.96, h: 0.96, r: 0.2, colour: [43, 95, 138, 255] }, // tile #2b5f8a
+    { x: 0.36, y: 0.14, w: 0.28, h: 0.07, r: 0.03, colour: white }, // rim
+    { x: 0.42, y: 0.18, w: 0.16, h: 0.26, r: 0.0, colour: white }, // neck
+    // the flask's body, then the liquid in its lower part
+    { points: [[0.42, 0.42], [0.58, 0.42], [0.82, 0.8], [0.78, 0.86], [0.22, 0.86], [0.18, 0.8]], colour: white },
+    { points: [[0.334, 0.6], [0.666, 0.6], [0.77, 0.78], [0.74, 0.81], [0.26, 0.81], [0.23, 0.78]], colour: [175, 242, 196, 255] },
+  ]);
+}
+
 function render(size) {
   const img = Buffer.alloc(size * size * 4); // transparent
   const shapes = [
@@ -144,5 +205,12 @@ writeFileSync(join(OUT, "icon.png"), pngs[512]);
 writeFileSync(
   join(OUT, "icon.ico"),
   encodeIco([16, 32, 48, 256].map((size) => ({ size, png: pngs[size] }))),
+);
+
+const science = Object.fromEntries([16, 32, 48, 256].map((s) => [s, renderScience(s)]));
+writeFileSync(join(OUT, "science.png"), science[256]);
+writeFileSync(
+  join(OUT, "science.ico"),
+  encodeIco([16, 32, 48, 256].map((size) => ({ size, png: science[size] }))),
 );
 console.log(`Icons written to ${OUT}`);

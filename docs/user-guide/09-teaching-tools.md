@@ -21,10 +21,11 @@ Each tool opens full-page with a **←** back to Home in the top bar. Tools are 
 offline like everything else.
 
 **The science tools** — the chemistry reference, titration simulator, galvanic cell animator, practical graph
-plotter, motion graph builder and graph paper generator — are a website of their own,
-**[ClassKernel Science](../science/README.md)**, so they open on any computer with nothing to install. The last card
-under **Tools** on Home (and **Open** beside *Science tools* in Settings → Tools) opens it in your browser; it needs
-the internet.
+plotter, motion graph builder and graph paper generator — are
+**[ClassKernel Science](../science/README.md)**, which opens in a window of its own. The last card under **Tools**
+on Home (and **Open** beside *Science tools* in Settings → Tools) opens it, or brings it forward if it's open; it
+works offline like the rest of ClassKernel. If you said yes to it when installing, it also has its own Start menu
+and desktop shortcuts. It's also a website, for a computer without ClassKernel.
 
 <br clear="right">
 

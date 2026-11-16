@@ -4,7 +4,7 @@ ClassKernel is an offline classroom manager for teachers: the register, seating 
 the seating plan, behaviour, marks, dashboards and parent reports, plus optional classroom tools. Everything is
 saved as plain files in a folder you choose.
 
-Its science teaching tools are a website of their own, **ClassKernel Science** — see
+Its science teaching tools are **ClassKernel Science**, in a window of their own (and a website) — see
 [its guide](science/README.md).
 
 ![ClassKernel's Home page](images/home.png)
@@ -25,8 +25,9 @@ Its science teaching tools are a website of their own, **ClassKernel Science** �
 
 ## ClassKernel Science
 
-[ClassKernel Science](science/README.md) — the science tools as a website, nothing to install: chemistry reference,
-titration simulator, galvanic cell animator, practical graph plotter, motion graph builder, graph paper generator.
+[ClassKernel Science](science/README.md) — the science tools, in their own window beside ClassKernel or as a website:
+chemistry reference, titration simulator, galvanic cell animator, practical graph plotter, motion graph builder,
+graph paper generator.
 
 ## Quick start
 

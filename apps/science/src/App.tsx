@@ -3,12 +3,14 @@ import Icon from "@classkernel/ui/Icon";
 import Segmented from "@classkernel/ui/Segmented";
 import { ThemeChoice } from "@classkernel/ui/theme";
 import { TOOLS, ToolManifest, toolById } from "./catalogue";
+import { inDesktopApp } from "./lib/desktop";
 import { toolFromHash, toolHash } from "./routing";
 import { useTheme } from "./theme";
 import { Toasts } from "./toast";
 
-// ClassKernel Science: the science teaching tools, in any browser, with no
-// installer and nothing saved online. Each tool has an address of its own
+// ClassKernel Science: the science teaching tools, in any browser with no
+// installer and nothing saved online, or in a window of its own in the
+// ClassKernel desktop app. Each tool has an address of its own
 // (…/#/galvanic-cell) to bookmark or share, and the browser's Back and Forward
 // move between the list and the tool.
 
@@ -107,8 +109,9 @@ export default function App() {
           ) : (
             <>
               <p className="muted lead">
-                Science teaching tools for the board, to open on any computer. Nothing is uploaded or saved online;
-                pictures you save are downloaded to this device.
+                {inDesktopApp()
+                  ? "Science teaching tools for the board. Pictures you save go wherever you choose."
+                  : "Science teaching tools for the board, to open on any computer. Nothing is uploaded or saved online; pictures you save are downloaded to this device."}
               </p>
               <div className="home-grid">
                 {TOOLS.map((t) => (

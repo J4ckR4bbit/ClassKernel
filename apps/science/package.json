@@ -11,10 +11,13 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "docs:screenshots": "playwright test -c scripts/screenshots/playwright.config.ts"
+    "docs:screenshots": "playwright test -c scripts/screenshots/playwright.config.ts",
+    "build:desktop": "tsc && vite build --outDir ../classkernel/dist/science --emptyOutDir"
   },
   "dependencies": {
     "@classkernel/ui": "*",
+    "@tauri-apps/api": "^2.12.1",
+    "@tauri-apps/plugin-dialog": "^2.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^5.0.3"
