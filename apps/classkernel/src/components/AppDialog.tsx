@@ -1,0 +1,64 @@
+import { useMemo, useState } from "react";
+import { DialogRequest, useAppPick } from "../store/appStore";
+import Modal from "@classkernel/ui/Modal";
+
+let opened = 0;
+
+/**
+ * The app's confirm/prompt modal, driven by `confirmDialog` / `promptDialog`
+ * on the store. Replaces window.confirm/window.prompt, which render as tiny
+ * OS dialogs a touch panel user can barely hit (and which some WebViews
+ * suppress entirely).
+ */
+export default function AppDialog() {
+  const { dialog, resolveDialog } = useAppPick("dialog", "resolveDialog");
+  // A dialog that follows straight on from another is a new one: focus moves
+  // to it, and a prompt starts from its own text, never the last one's (which
+  // may have been a PIN).
+  const instance = useMemo(() => (dialog ? ++opened : 0), [dialog]);
+  if (!dialog) return null;
+  return <OpenDialog key={instance} dialog={dialog} resolve={resolveDialog} />;
+}
+
+function OpenDialog({ dialog, resolve }: { dialog: DialogRequest; resolve: (result: boolean | string | null) => void }) {
+  const [text, setText] = useState(dialog.initial ?? "");
+  const cancel = () => resolve(dialog.kind === "confirm" ? false : null);
+  const ok = () => resolve(dialog.kind === "confirm" ? true : text.trim());
+
+  return (
+    <Modal title={dialog.title} onClose={cancel}>
+      {dialog.body && <p className="muted dialog-body">{dialog.body}</p>}
+      {dialog.kind === "prompt" && (
+        <input
+          autoFocus
+          value={text}
+          placeholder={dialog.placeholder}
+          maxLength={dialog.maxLength}
+          {...(dialog.secret
+            ? { type: "password", inputMode: "numeric" as const, autoComplete: "off", className: "pin-input" }
+            : {})}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter") return;
+            // Closing hands focus back to the button that opened the dialog while
+            // this key press is still going; left alone, it would press that
+            // button too and open the dialog again.
+            e.preventDefault();
+            if (text.trim()) ok();
+          }}
+        />
+      )}
+      <div className="actions">
+        <button onClick={cancel}>Cancel</button>
+        <button
+          autoFocus={dialog.kind === "confirm"}
+          className={dialog.danger ? "danger" : "primary"}
+          disabled={dialog.kind === "prompt" && !text.trim()}
+          onClick={ok}
+        >
+          {dialog.confirmLabel ?? "OK"}
+        </button>
+      </div>
+    </Modal>
+  );
+}

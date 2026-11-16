@@ -1,8 +1,11 @@
 # ClassKernel documentation
 
 ClassKernel is an offline classroom manager for teachers: the register, seating plans, a live lesson you run from
-the seating plan, behaviour, marks, dashboards and parent reports, plus optional teaching tools. Everything is
+the seating plan, behaviour, marks, dashboards and parent reports, plus optional classroom tools. Everything is
 saved as plain files in a folder you choose.
+
+Its science teaching tools are a website of their own, **ClassKernel Science** — see
+[its guide](science/README.md).
 
 ![ClassKernel's Home page](images/home.png)
 
@@ -16,9 +19,14 @@ saved as plain files in a folder you choose.
 6. [Behaviour log and notes](user-guide/06-behaviour-log.md) — filter and correct behaviour entries, the Outside log; quick notes, detailed notes in sections, Form F
 7. [Marks](user-guide/07-marks.md) — assessments, quick marking, the per-question grid, the calculator, viewing results, the markbook, weighting, marks from a spreadsheet, levels and symbols
 8. [Dashboards and parent reports](user-guide/08-dashboards-and-reports.md) — class and student dashboards, seating insights, printed reports
-9. [Teaching tools](user-guide/09-teaching-tools.md) — test timer, clock, stopwatch, graph paper, practical graphs, motion graphs, galvanic cell, chemistry reference, titration, noise meter
+9. [Teaching tools](user-guide/09-teaching-tools.md) — test timer, clock, stopwatch, noise meter, and where the science tools went
 10. [Settings](user-guide/10-settings.md) — every tab (General, Behaviour, Teaching mode, Assessments, Tools, Export, and the class's Students, Room layout and Seating rules), and the spreadsheet export
 11. [Your data and backups](user-guide/11-your-data.md) — where data lives, syncing, sending changes to Google Drive in batches, backups and restore, if Google Drive isn't ready, troubleshooting
+
+## ClassKernel Science
+
+[ClassKernel Science](science/README.md) — the science tools as a website, nothing to install: chemistry reference,
+titration simulator, galvanic cell animator, practical graph plotter, motion graph builder, graph paper generator.
 
 ## Quick start
 
@@ -34,4 +42,4 @@ saved as plain files in a folder you choose.
 
 - [Data file reference](data-files.md) — every file in the data folder, column by column
 - [Development](development.md) — building, testing, architecture, retaking the screenshots
-- [Adding a tool](../src/plugins/README.md) — how the optional tools (plugins) are written
+- [Adding a tool](../apps/classkernel/src/plugins/README.md) — how ClassKernel's optional tools (plugins) are written, and where a science tool goes instead

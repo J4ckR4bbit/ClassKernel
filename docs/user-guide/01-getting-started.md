@@ -91,8 +91,9 @@ Home shows every active class as a card.
 A class with a colour (set on its [Class](02-setting-up-a-class.md#the-class-page-details-colour-and-notes) page)
 shows it along the top of its card and in the circle with its initials.
 
-Below the classes is the **Tools** section. It stays empty, with a short note, until you switch tools on under
-**Settings → Tools**.
+Below the classes is the **Tools** section: the tools you've switched on under **Settings → Tools** (a short note
+until there are any), then a card for **ClassKernel Science**, the science tools' website, which opens in your
+browser. See [Teaching tools](09-teaching-tools.md).
 
 ## Privacy on the big screen
 

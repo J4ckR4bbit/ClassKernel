@@ -16,6 +16,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # One install for the whole repository (npm workspaces); then both apps
+      # and the shared package are tested, type-checked and built.
       - run: npm ci
       - run: npm test
       - run: npm run build
@@ -25,11 +27,11 @@ jobs:
         run: |
           set -euo pipefail
           for module in fsops backup_policy links; do
-            rustc --edition 2021 --test "src-tauri/src/$module.rs" -o "$RUNNER_TEMP/$module"
+            rustc --edition 2021 --test "apps/classkernel/src-tauri/src/$module.rs" -o "$RUNNER_TEMP/$module"
             "$RUNNER_TEMP/$module"
           done
 
-  # The app and the tools website clicked through in Chromium. Beside the
+  # ClassKernel and ClassKernel Science clicked through in Chromium. Beside the
   # installer rather than before it, so a test that needs a look never stops
   # an installer from being built.
   browser-tests:
@@ -52,7 +54,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: browser-test-results
-          path: test-results
+          path: apps/*/test-results
           if-no-files-found: ignore
 
   windows-installer:
@@ -68,11 +70,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: apps/classkernel/src-tauri
       - run: npm ci
       - name: Work out the version to build
         id: version
         shell: bash
+        working-directory: apps/classkernel
         run: |
           set -euo pipefail
           base=$(node -p "require('./src-tauri/tauri.conf.json').version")
@@ -98,33 +101,34 @@ jobs:
       # it the installer is still built, it just can't be offered as an update.
       - name: Build Tauri app
         shell: bash
+        working-directory: apps/classkernel
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           if [[ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
-            npx tauri build --config src-tauri/tauri.updater.conf.json
+            npm run tauri -- build --config src-tauri/tauri.updater.conf.json
           else
             echo "::warning::No TAURI_SIGNING_PRIVATE_KEY secret: this installer can't be offered as an update (see docs/development.md)."
             unset TAURI_SIGNING_PRIVATE_KEY TAURI_SIGNING_PRIVATE_KEY_PASSWORD
-            npx tauri build
+            npm run tauri -- build
           fi
       # What installed copies read to find a newer version (releases only).
       - name: Write the update file
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
-        run: node scripts/latest-json.mjs "${{ steps.version.outputs.version }}" src-tauri/target/release/bundle/nsis "$GITHUB_REPOSITORY" latest.json
+        run: node apps/classkernel/scripts/latest-json.mjs "${{ steps.version.outputs.version }}" apps/classkernel/src-tauri/target/release/bundle/nsis "$GITHUB_REPOSITORY" latest.json
       - name: Upload installer
         uses: actions/upload-artifact@v7
         with:
           name: classkernel-${{ steps.version.outputs.version }}-windows-installer
-          path: src-tauri/target/release/bundle/nsis/*.exe
+          path: apps/classkernel/src-tauri/target/release/bundle/nsis/*.exe
           if-no-files-found: error
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            src-tauri/target/release/bundle/nsis/*.exe
+            apps/classkernel/src-tauri/target/release/bundle/nsis/*.exe
             latest.json

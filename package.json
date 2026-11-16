@@ -1,35 +1,24 @@
 {
-  "name": "classkernel",
+  "name": "classkernel-workspace",
   "private": true,
-  "version": "0.1.0",
-  "description": "Fast, offline-first classroom management for teachers. All data in portable .md/.csv files.",
+  "description": "ClassKernel (classroom management, a Windows desktop app) and ClassKernel Science (science teaching tools, a website), with the look they share.",
   "type": "module",
+  "workspaces": [
+    "packages/ui",
+    "apps/classkernel",
+    "apps/science"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "build:tools": "tsc && vite build --mode tools",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:e2e": "playwright test",
-    "docs:screenshots": "playwright test -c scripts/screenshots/playwright.config.ts",
-    "tauri": "tauri"
-  },
-  "dependencies": {
-    "@fontsource/roboto": "^5.3.0",
-    "@tauri-apps/api": "^2.12.1",
-    "@tauri-apps/plugin-dialog": "^2.8.1",
-    "@tauri-apps/plugin-updater": "^2.14.1",
-    "marked": "^15.0.0",
-    "papaparse": "^5.4.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "recharts": "^2.15.0",
-    "zustand": "^5.0.3"
+    "dev": "npm run dev -w classkernel",
+    "dev:science": "npm run dev -w classkernel-science",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test:e2e": "npm run test:e2e --workspaces --if-present",
+    "tauri": "npm run tauri -w classkernel --"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
-    "@tauri-apps/cli": "^2.12.1",
-    "@types/papaparse": "^5.3.15",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",

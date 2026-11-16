@@ -1,0 +1,22 @@
+{
+  "name": "classkernel-science",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Science teaching tools for the board, as a website: chemistry reference, titration, galvanic cell, graph plotters, graph paper.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "typecheck": "tsc",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "docs:screenshots": "playwright test -c scripts/screenshots/playwright.config.ts"
+  },
+  "dependencies": {
+    "@classkernel/ui": "*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.3"
+  }
+}

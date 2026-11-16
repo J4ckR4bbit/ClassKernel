@@ -1,0 +1,7 @@
+/* The website's own few styles, on top of the look it shares with ClassKernel
+   (packages/ui/src/styles/base.css). Each tool's styles sit beside it in
+   src/tools/<tool>/. */
+
+/* No navigation rail beside the page, so the sheet has no rounded corner. */
+.science-site .main-pane { border-top-left-radius: 0; }
+.science-site-foot { display: flex; justify-content: flex-end; margin-top: 24px; }

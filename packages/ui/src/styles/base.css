@@ -1,0 +1,567 @@
+/* The look ClassKernel and ClassKernel Science share. It follows Material
+   Design 3: a tonal colour scheme grown from one seed, pill-shaped buttons and
+   quiet outlined cards. Two colour schemes: green (the default, below) and navy
+   and gold (data-palette="navy", after the dark theme).
+
+   Only what both apps use lives here: the colour roles, buttons, fields,
+   cards, tables, dialogs, tabs, segmented buttons, the toast and the tool
+   frame. Each app adds its own sheet on top (apps/<app>/src/styles.css). */
+
+:root {
+  /* Material 3 colour roles, generated from the ClassKernel green #2c6e49
+     (tonal-spot scheme, light) with Google's material-color-utilities. */
+  --md-primary: #2b6a46;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #aff2c4;
+  --md-on-primary-container: #0c5130;
+  --md-secondary: #4f6354;
+  --md-on-secondary: #ffffff;
+  --md-secondary-container: #d1e8d5;
+  --md-on-secondary-container: #374b3d;
+  --md-tertiary: #3b6470;
+  --md-tertiary-container: #bfe9f8;
+  --md-on-tertiary-container: #214c58;
+  --md-error: #ba1a1a;
+  --md-on-error: #ffffff;
+  --md-error-container: #ffdad6;
+  --md-on-error-container: #93000a;
+  --md-surface: #f6fbf4;
+  --md-on-surface: #181d19;
+  --md-on-surface-variant: #414942;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f0f5ee;
+  --md-surface-container: #eaefe8;
+  --md-surface-container-high: #e5eae2;
+  --md-surface-container-highest: #dfe4dd;
+  --md-outline: #717971;
+  --md-outline-variant: #c0c9c0;
+  --md-inverse-surface: #2c322d;
+  --md-inverse-on-surface: #edf2eb;
+  --md-inverse-primary: #94d5a9;
+
+  /* Shape and elevation */
+  --md-shape-xs: 4px;
+  --md-shape-s: 8px;
+  --md-shape-m: 12px;
+  --md-shape-l: 16px;
+  --md-shape-xl: 28px;
+  --md-elev-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --md-elev-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --md-elev-3: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 8px 3px rgba(0, 0, 0, 0.15);
+
+  /* Stacking order, lowest first: pop-ups on a page, the full-screen views
+     over it, the running tools' cards, then dialogs (above all of those), then
+     the messages that must show even over a dialog. */
+  --z-popover: 30;
+  --z-class-view: 45;
+  --z-picker: 60;
+  --z-menu: 70;
+  --z-chip: 80;
+  --z-mini: 90;
+  --z-modal: 100;
+  --z-banner: 110;
+  --z-toast: 120;
+  --z-blocking: 200;
+  --z-report: 2000;
+
+  /* Meanings rather than colours: each is used for the same thing everywhere,
+     and is the one place a dark theme would change it. Printed reports keep
+     their own fixed colours, since paper is always white. */
+  --on-fill: #ffffff;                /* text on a behaviour colour or a filled status */
+  --field: var(--md-surface-container-lowest); /* a cell to type in, a seat, a gauge */
+  --att-absent: #b83b3b;
+  --att-late: #e8b04b;
+  --on-att-late: #3a2c07;
+  --att-excused: #5c6d7b;
+  --away: #7a5208;                   /* late, or out of the room */
+  --away-container: #fdf0dd;
+  --away-outline: #d9b36a;
+  --away-outline-strong: #b9821b;
+  --warning-container: #fdf0d9;
+  --on-warning-container: #6b4a00;
+  --alarm: #c0392b;                  /* time's up; too loud */
+  --alarm-dark: #7d1f15;
+  --alarm-soft: #fbe5e2;
+  --zone-ok: #2e9e5b;                /* the noise meter's zones */
+  --zone-ok-soft: #e6f4ec;
+  --zone-warn: #d9901a;
+  --zone-warn-soft: #fdf3e1;
+  --select-highlight: #ffd84d;       /* a seat picked for batch entry */
+  --select-stroke: var(--accent);
+  --grid-line: #eef1f4;              /* the room designer's grid */
+  --on-alarm: #fbe5e2;               /* small text on an alarm-red fill */
+  --zone-loud: #c0392b;              /* the noise meter's "too loud" ink */
+  --alarm-still: #f6c7c1;            /* the alarm without its flash (less motion) */
+  --ink-strong: #1d2733;             /* the noise meter's limit line and its label */
+  --seat-ink: #16202b;               /* names on seats */
+  --seat-ink-2: #3a4652;
+  --on-tint: #414942;                /* text on a colour the teacher chose (desks) */
+  --tint-s: 85%;                     /* the marks tables' rank and position tints */
+  --tint-l: 92%;
+  --row-hover: #f3f7f2;
+  --tag-warn: #ffddb3;
+  --on-tag-warn: #2a1800;
+  --good-container: #e3f0e8;         /* seating insights: pairs that work, and don't */
+  --good-outline: #9cc7ac;
+  --on-good-container: #1f6b3f;
+  --bad-container: #f7e0dd;
+  --bad-outline: #d9a59c;
+  --on-bad-container: #9c2f1f;
+  --chart-grid: #e5eae2;             /* dashboards (parent reports keep their own, for paper) */
+  --chart-ink: #414942;
+  --nav-indicator: var(--md-secondary-container); /* the navigation's "you are here" */
+  --on-nav-indicator: var(--md-on-secondary-container);
+  --report-accent: #2c6e49;          /* a parent report's headings and rules (paper: light in any theme) */
+  --report-accent-soft: #eef5f0;
+  --teacher-desk: #dcebe2;           /* the teacher's desk on the room plan, a pale tint of the scheme's colour */
+  --teacher-desk-outline: #5d8b70;
+
+  /* The app's original names, now pointing at the roles above, so every view
+     and plugin takes on the scheme without being rewritten. */
+  --bg: var(--md-surface);
+  --panel: var(--md-surface-container-lowest);
+  --border: var(--md-outline-variant);
+  --text: var(--md-on-surface);
+  --text-dim: var(--md-on-surface-variant);
+  --accent: var(--md-primary);
+  --accent-soft: var(--md-secondary-container);
+  --danger: var(--md-error);
+  --warn: #8a5a00;
+  /* Marking: the student being marked, and students whose marks are all in. */
+  --mark-current: #fff1a8;
+  --mark-done: #e2e4e2;
+  --radius: var(--md-shape-m);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+
+  /* Type: whole-pixel sizes only, and the three bundled Roboto weights (400,
+     500, 700; anything heavier draws as 700 anyway). Corners: the --md-shape
+     steps, or half the height for a pill. */
+  color-scheme: light;
+  font-family: Roboto, "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.43;
+  letter-spacing: 0.1px;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+
+/* Dark: Material 3 roles from the same seed (#2c6e49, tonal spot, dark), and a
+   dark value for each meaning above. Screen only, so anything printed — the
+   seating plan, parent reports — comes out in the light colours on white. */
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --md-primary: #94d5a9;
+    --md-on-primary: #00391f;
+    --md-primary-container: #0c5130;
+    --md-on-primary-container: #aff2c4;
+    --md-secondary: #b5ccba;
+    --md-on-secondary: #213528;
+    --md-secondary-container: #374b3d;
+    --md-on-secondary-container: #d1e8d5;
+    --md-tertiary: #a3cddb;
+    --md-tertiary-container: #214c58;
+    --md-on-tertiary-container: #bfe9f8;
+    --md-error: #ffb4ab;
+    --md-on-error: #690005;
+    --md-error-container: #93000a;
+    --md-on-error-container: #ffdad6;
+    --md-surface: #0f1511;
+    --md-on-surface: #dfe4dd;
+    --md-on-surface-variant: #c0c9c0;
+    --md-surface-container-lowest: #0a0f0c;
+    --md-surface-container-low: #181d19;
+    --md-surface-container: #1c211d;
+    --md-surface-container-high: #262b27;
+    --md-surface-container-highest: #313631;
+    --md-outline: #8a938b;
+    --md-outline-variant: #414942;
+    --md-inverse-surface: #dfe4dd;
+    --md-inverse-on-surface: #2c322d;
+    --md-inverse-primary: #2b6a46;
+
+    /* Cards sit above the page in dark too: one step lighter, not darker. */
+    --panel: var(--md-surface-container-low);
+    --field: var(--md-surface-container);
+    --away: #f0bf6b;
+    --away-container: #3d2e0f;
+    --away-outline: #8a6a2a;
+    --away-outline-strong: #c9963a;
+    --warning-container: #3d2e0f;
+    --on-warning-container: #ffddb3;
+    --warn: #f0bf6b;
+    --alarm-soft: #3a1612;
+    --alarm-still: #5a1d16;
+    --zone-ok: #5fd38f;
+    --zone-ok-soft: #10261a;
+    --zone-warn: #f0b04a;
+    --zone-warn-soft: #2e2410;
+    --zone-loud: #ff8a7a;
+    --select-highlight: #6e5c00;
+    --select-stroke: #ffd84d;
+    --grid-line: #232923;
+    --ink-strong: #e1e5de;
+    --seat-ink: var(--md-on-surface);
+    --seat-ink-2: var(--md-on-surface-variant);
+    --tint-s: 35%;
+    --tint-l: 24%;
+    --row-hover: #1f251f;
+    --mark-current: #4d4515;
+    --mark-done: #2a302b;
+    --tag-warn: #4a3200;
+    --on-tag-warn: #ffddb3;
+    --good-container: #0c5130;
+    --good-outline: #2b6a46;
+    --on-good-container: #aff2c4;
+    --bad-container: #5c1a12;
+    --bad-outline: #93000a;
+    --on-bad-container: #ffdad6;
+    --chart-grid: #313631;
+    --chart-ink: #c0c9c0;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Navy and gold: St Benedict's College's colours, from the school's website
+   (navy #323276, gold #D1AD53). Tonal-spot roles from material-color-utilities
+   with navy as primary, an antique gold (chroma 24) as secondary, the crest's
+   light blue as tertiary, and cool blue-grey neutrals (hue 255). Primary is
+   the school's own navy, darker than the generated tone 40; text on the gold
+   containers is navy; and the navigation's "you are here" is the school's gold
+   itself. Only the roles and the greys built on them change: the meanings
+   above (absent, late, good, bad, ...) keep their colours. */
+:root[data-palette="navy"] {
+  --md-primary: #323276;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #e2dfff;
+  --md-on-primary-container: #3f3f83;
+  --md-secondary: #6f5c2e;
+  --md-on-secondary: #ffffff;
+  --md-secondary-container: #fae0a6;
+  --md-on-secondary-container: #323276;
+  --md-tertiary: #106681;
+  --md-tertiary-container: #bce9ff;
+  --md-on-tertiary-container: #004d63;
+  --md-surface: #f9f9fe;
+  --md-on-surface: #191c1f;
+  --md-on-surface-variant: #42474f;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f3f3f8;
+  --md-surface-container: #ededf2;
+  --md-surface-container-high: #e7e8ed;
+  --md-surface-container-highest: #e2e2e7;
+  --md-outline: #727780;
+  --md-outline-variant: #c2c7d1;
+  --md-inverse-surface: #2e3034;
+  --md-inverse-on-surface: #f0f0f5;
+  --md-inverse-primary: #c1c1ff;
+
+  --nav-indicator: #d1ad53;
+  --on-nav-indicator: #323276;
+  /* Seats take the navy tint, not the gold, so a seat picked for batch entry
+     (highlighter yellow) still stands out from the rest. */
+  --accent-soft: var(--md-primary-container);
+  --on-tint: #42474f;
+  --row-hover: #f3f3f8;
+  --chart-grid: #e7e8ed;
+  --chart-ink: #42474f;
+  --report-accent: #323276;
+  --report-accent-soft: #f2efff;
+  --teacher-desk: #e8e5ff;
+  --teacher-desk-outline: #6f70b8;
+}
+
+/* Navy and gold in the dark. Sets again everything the block above shares
+   with the green dark theme, which it would otherwise override. */
+@media screen {
+  :root[data-palette="navy"][data-theme="dark"] {
+    --md-primary: #c1c1ff;
+    --md-on-primary: #28276b;
+    --md-primary-container: #3f3f83;
+    --md-on-primary-container: #e2dfff;
+    --md-secondary: #ddc48c;
+    --md-on-secondary: #3d2e04;
+    --md-secondary-container: #564519;
+    --md-on-secondary-container: #fae0a6;
+    --md-tertiary: #8ad0ef;
+    --md-tertiary-container: #004d63;
+    --md-on-tertiary-container: #bce9ff;
+    --md-surface: #111317;
+    --md-on-surface: #e2e2e7;
+    --md-on-surface-variant: #c2c7d1;
+    --md-surface-container-lowest: #0c0e12;
+    --md-surface-container-low: #191c1f;
+    --md-surface-container: #1e2023;
+    --md-surface-container-high: #282a2e;
+    --md-surface-container-highest: #333539;
+    --md-outline: #8c919a;
+    --md-outline-variant: #42474f;
+    --md-inverse-surface: #e2e2e7;
+    --md-inverse-on-surface: #2e3034;
+    --md-inverse-primary: #323276;
+
+    --row-hover: #1e2023;
+    --mark-done: #282a2e;
+    --grid-line: #232529;
+    --chart-grid: #333539;
+    --chart-ink: #c2c7d1;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--md-surface-container); }
+h1, h2, h3, h4, h5 { font-weight: 500; letter-spacing: 0; }
+.icon { flex-shrink: 0; display: inline-block; vertical-align: middle; }
+
+/* ---------- buttons ----------
+   Plain <button> is the outlined button; .primary is filled, .tonal the
+   secondary-container fill, .text has no outline. All pill-shaped, and every
+   one at least 40 px tall for touch. A state layer (::before) tints on hover
+   and press the way Material does, whatever the button's own colour. */
+button {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; font-weight: 500; letter-spacing: 0.1px; line-height: 20px;
+  border: 1px solid var(--md-outline); background: transparent; color: var(--md-primary);
+  border-radius: 20px; padding: 0 16px; min-height: 40px;
+  cursor: pointer; transition: box-shadow 0.15s, background-color 0.15s;
+}
+button::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; background: currentColor; opacity: 0;
+  transition: opacity 0.15s; pointer-events: none;
+}
+button:hover:not(:disabled)::before { opacity: 0.08; }
+button:active:not(:disabled)::before { opacity: 0.12; }
+button:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+button.primary { background: var(--md-primary); border-color: var(--md-primary); color: var(--md-on-primary); }
+button.primary:hover:not(:disabled) { box-shadow: var(--md-elev-1); }
+button.tonal { background: var(--md-secondary-container); border-color: transparent; color: var(--md-on-secondary-container); }
+button.text { border-color: transparent; padding: 0 12px; }
+button.danger { color: var(--md-error); }
+button.primary.danger { background: var(--md-error); border-color: var(--md-error); color: var(--md-on-error); }
+button.small { white-space: nowrap; padding: 0 12px; font-size: 13px; min-height: 32px; min-width: 32px; border-radius: var(--md-shape-l); gap: 6px; }
+/* A small button holding only an icon (delete ✕ and the like) is a round one. */
+button.small.icon-only { padding: 0; width: 32px; }
+button:disabled { cursor: default; color: color-mix(in srgb, var(--md-on-surface) 38%, transparent); border-color: color-mix(in srgb, var(--md-on-surface) 12%, transparent); }
+button.primary:disabled, button.tonal:disabled { background: color-mix(in srgb, var(--md-on-surface) 12%, transparent); border-color: transparent; }
+/* A round button holding just an icon. */
+.icon-btn {
+  width: 40px; height: 40px; min-height: 40px; padding: 0; border: none; border-radius: 50%;
+  color: var(--md-on-surface-variant); flex-shrink: 0;
+}
+
+/* ---------- text fields ----------
+   Outlined fields, dense (40 px) rather than the 56 px spec: this app puts a
+   lot of them in tables. */
+input, select, textarea {
+  font: inherit; letter-spacing: 0.25px;
+  border: 1px solid var(--md-outline); border-radius: var(--md-shape-xs);
+  padding: 8px 12px; background: var(--md-surface-container-lowest); color: var(--text);
+}
+input:hover, select:hover, textarea:hover { border-color: var(--md-on-surface); }
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--md-primary); box-shadow: inset 0 0 0 1px var(--md-primary);
+}
+input, select { min-height: 40px; }
+select {
+  appearance: none; padding-right: 36px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960' fill='%23414942'%3E%3Cpath d='M480-360 280-560h400L480-360Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center; background-size: 22px;
+}
+input:disabled, select:disabled, textarea:disabled { opacity: 0.5; }
+input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-height: 0; padding: 0; accent-color: var(--md-primary); cursor: pointer; box-shadow: none; }
+input[type="color"] { min-height: 36px; padding: 2px; }
+input[type="range"] { accent-color: var(--md-primary); padding: 0; border: none; background: none; box-shadow: none; }
+
+/* Switches: a checkbox with class="switch", for settings that are on or off. */
+input[type="checkbox"].switch {
+  appearance: none; position: relative; flex-shrink: 0; margin: 0;
+  width: 52px; height: 32px; border-radius: var(--md-shape-l); cursor: pointer;
+  border: 2px solid var(--md-outline); background: var(--md-surface-container-highest);
+  transition: background-color 0.2s, border-color 0.2s;
+}
+input[type="checkbox"].switch::before {
+  content: ""; position: absolute; top: 50%; left: 6px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--md-outline); transform: translateY(-50%); transition: left 0.2s, width 0.2s, height 0.2s, background-color 0.2s;
+}
+input[type="checkbox"].switch:checked { background: var(--md-primary); border-color: var(--md-primary); }
+input[type="checkbox"].switch:checked::before { left: 22px; width: 24px; height: 24px; background: var(--md-on-primary); }
+input[type="checkbox"].switch:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; }
+
+.boot-screen { display: grid; place-items: center; height: 100%; color: var(--text-dim); }
+.boot-screen .panel { border: none; border-radius: var(--md-shape-xl); padding: 28px; box-shadow: var(--md-elev-1); color: var(--text); }
+.boot-screen h2 { margin-top: 0; font-size: 24px; font-weight: 400; }
+
+/* ---------- shell ----------
+   The rail and top bar sit on the tinted surface; the page is a lighter sheet
+   with a rounded corner, and its cards are white. */
+.app-shell { display: flex; height: 100%; }
+.app-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.main-pane {
+  flex: 1; min-height: 0; overflow: auto; padding: 20px 24px;
+  background: var(--md-surface); border-top-left-radius: var(--md-shape-xl);
+}
+
+/* Top app bar: page title, then the class picker on the right. */
+.top-bar { display: flex; align-items: center; gap: 8px; min-height: 64px; padding: 8px 16px 8px 20px; }
+.top-bar-title { margin: 0; font-size: 22px; font-weight: 400; line-height: 28px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Snackbar */
+/* Fixed makes its own stack, so it carries the toast's place in the order. */
+.live-region { position: fixed; z-index: var(--z-toast); }
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  min-height: 48px; padding: 6px 8px 6px 16px; max-width: min(90vw, 640px);
+  display: flex; align-items: center; gap: 12px;
+  background: var(--md-inverse-surface); color: var(--md-inverse-on-surface);
+  border-radius: var(--md-shape-xs); box-shadow: var(--md-elev-3); z-index: var(--z-toast);
+  animation: toast-in 0.2s ease-out;
+}
+.toast-action { border: none; color: var(--md-inverse-primary); min-height: 44px; padding: 0 16px; font-weight: 700; }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+/* ---------- common ---------- */
+/* A page's own toolbar: its controls, under the app bar's title. */
+.view-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; min-height: 40px; }
+.spacer { flex: 1; }
+/* Cards: outlined and flat, as Material's outlined card. */
+.panel {
+  background: var(--panel); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m);
+  padding: 16px 20px; margin-bottom: 16px;
+}
+.panel h3 { margin-top: 0; font-size: 16px; font-weight: 500; line-height: 24px; }
+.muted { color: var(--text-dim); }
+/* The explanation straight under a heading, and the note that closes a panel. */
+p.lead { margin-top: 0; }
+p.tail { margin-bottom: 0; }
+/* Add buttons under a table. */
+.row.button-row { margin-top: 10px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.row.nowrap { flex-wrap: nowrap; }
+.row.nowrap > * { flex-shrink: 0; white-space: nowrap; }
+.grow { flex: 1; }
+.tag {
+  display: inline-flex; align-items: center; background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+  border-radius: var(--md-shape-s); padding: 1px 8px; font-size: 12px; font-weight: 500; margin-right: 4px;
+}
+.tag.warn { background: var(--tag-warn); color: var(--on-tag-warn); }
+
+table.data {
+  width: 100%; border-collapse: separate; border-spacing: 0; background: var(--panel);
+  border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); overflow: hidden;
+}
+table.data th, table.data td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--md-outline-variant); }
+table.data th {
+  background: var(--md-surface-container-low); font-weight: 500; font-size: 13px; color: var(--text-dim);
+  letter-spacing: 0.4px; position: sticky; top: 0; z-index: 2;
+}
+table.data tbody tr:hover td { background: color-mix(in srgb, var(--md-primary) 4%, transparent); }
+table.data tr:last-child td { border-bottom: none; }
+/* Shrinks to its columns, so a name and the buttons for it stay close
+   together on a wide screen instead of 800 px apart. */
+table.data.fit { width: auto; min-width: min(100%, 560px); }
+/* A wide table scrolls sideways rather than being cut off at the frame. */
+.table-scroll { overflow-x: auto; }
+/* Inside a card, the card is the frame. */
+.panel > table.data { border: none; border-radius: 0; }
+
+/* Dialogs */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.32); display: grid; place-items: center; z-index: var(--z-modal); animation: fade-in 0.15s ease-out; }
+.modal {
+  background: var(--md-surface-container-high); border-radius: var(--md-shape-xl); padding: 24px;
+  min-width: 380px; max-width: min(90vw, 640px); max-height: 85vh; overflow: auto; box-shadow: var(--md-elev-3);
+  animation: dialog-in 0.2s ease-out;
+}
+.modal:focus { outline: none; }
+.modal h2 { margin: 0 0 16px; font-size: 24px; font-weight: 400; line-height: 32px; }
+.modal input, .modal select, .modal textarea { background: var(--md-surface-container-high); }
+.form-grid { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; margin: 12px 0; }
+.form-grid > label { color: var(--text-dim); }
+.modal .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+.modal .actions button:not(.primary):not(.danger) { border-color: transparent; }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes dialog-in { from { opacity: 0; transform: scale(0.96); } }
+
+/* Tabs (Marks, Settings): Material primary tabs */
+/* Tabs that don't fit wrap onto a second row rather than hiding off the edge
+   (there is no scrollbar to show they're there), e.g. at a larger display size. */
+.md-tabs {
+  display: flex; gap: 0; flex-wrap: wrap; align-items: stretch;
+  border-bottom: 1px solid var(--md-outline-variant); margin: -8px 0 20px;
+}
+.md-tab {
+  position: relative; border: none; border-radius: 0; min-height: 48px; padding: 0 16px;
+  color: var(--text-dim); font-weight: 500; gap: 8px; flex-shrink: 0; white-space: nowrap;
+}
+.md-tab.active { color: var(--md-primary); }
+.md-tab.active::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px;
+  border-radius: 3px 3px 0 0; background: var(--md-primary);
+}
+.md-tab-divider { width: 1px; flex-shrink: 0; margin: 12px 8px; background: var(--md-outline-variant); }
+
+/* Segmented buttons (components/Segmented.tsx): one choice out of a few. */
+.seg { display: inline-flex; flex-wrap: nowrap; max-width: 100%; }
+.seg-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.seg button {
+  margin-left: -1px; border-radius: 0; border-color: var(--md-outline); color: var(--text);
+  min-height: 40px; padding: 0 16px; gap: 6px; white-space: nowrap;
+}
+.seg button:first-child { margin-left: 0; border-radius: 20px 0 0 20px; }
+.seg button:last-child { border-radius: 0 20px 20px 0; }
+.seg button:only-child { border-radius: 20px; }
+.seg button.on { z-index: 1; background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+.seg.small button { min-height: 32px; padding: 0 12px; font-size: 13px; }
+.seg.small button:first-child { border-radius: var(--md-shape-l) 0 0 16px; }
+.seg.small button:last-child { border-radius: 0 16px 16px 0; }
+
+
+/* Filter chips: 32 px, 8 px corners; selected ones fill with the secondary container. */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 14px;
+  background: transparent; border: 1px solid var(--md-outline); border-radius: var(--md-shape-s);
+  font-size: 13px; font-weight: 500; color: var(--md-on-surface-variant); cursor: pointer; user-select: none;
+}
+.chip.selected { background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; }
+.chip.selected::after { content: ""; order: -1; width: 14px; height: 8px; margin: -3px 0 0 -2px; border: solid currentColor; border-width: 0 0 2px 2px; transform: rotate(-45deg); }
+
+.print-only { display: none; }
+
+/* ---------- tools: their cards, and the frame a tool fills ---------- */
+/* Cards in a grid: the classes and tools on ClassKernel's Home, the tools on the website. */
+.home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.tool-card {
+  justify-content: flex-start; align-items: center; gap: 16px; min-height: 80px; padding: 16px;
+  background: var(--md-surface-container-low); border: none; border-radius: var(--md-shape-m);
+  text-align: left; font-size: 14px; font-weight: 400; color: var(--text);
+}
+.tool-icon {
+  width: 48px; height: 48px; flex-shrink: 0; border-radius: var(--md-shape-m); display: grid; place-items: center;
+  background: var(--md-tertiary-container); color: var(--md-on-tertiary-container);
+}
+.tool-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tool-text b { font-weight: 500; font-size: 15px; }
+.tool-text .muted { font-size: 13px; line-height: 18px; }
+
+/* A plugin fills the pane and decides how to use it. */
+.plugin-view { display: flex; flex-direction: column; height: 100%; }
+/* Anything above it in the pane (the demo banner) takes its height off the
+   plugin rather than pushing it off the bottom. Without :has() the plugin is
+   simply the full pane height, which only over-runs while the banner shows. */
+.main-pane:has(.plugin-view) { display: flex; flex-direction: column; }
+.main-pane:has(.plugin-view) .plugin-view { flex: 1; min-height: 0; height: auto; }
+.plugin-body { flex: 1; min-height: 0; }
+.plugin-loading { display: grid; place-items: center; height: 100%; }
+
+.field-label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-dim); font-size: 13px; }
+.field-hint { margin-top: -6px; }
+
+/* Printing: in the light colours, without the bars and buttons around a page. */
+@media print {
+  .top-bar, .md-tabs, .no-print, .toast { display: none !important; }
+  .print-only { display: block; }
+  body { background: #fff; }
+  .main-pane { padding: 0; background: #fff; border-radius: 0; }
+}

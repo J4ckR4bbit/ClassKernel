@@ -1,0 +1,1194 @@
+/* ClassKernel's own styles, on top of the look it shares with ClassKernel
+   Science (packages/ui/src/styles/base.css, imported first in main.tsx):
+   the navigation rail, the class pages, teaching mode, marking, reports. */
+
+.demo-banner {
+  background: var(--md-tertiary-container); color: var(--md-on-tertiary-container);
+  border-radius: var(--md-shape-s); padding: 8px 14px; margin-bottom: 16px; font-size: 13px;
+}
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  height: 80%; text-align: center; color: var(--text-dim);
+}
+.empty-state h2 { margin: 8px 0 0; font-size: 22px; font-weight: 400; color: var(--text); }
+/* The one row of a table (or list) with nothing in it yet. In the wide mark
+   grids it sits at the start, where it's in view without scrolling. */
+.empty-row { text-align: center; padding: 24px; color: var(--text-dim); }
+.empty-row.start { text-align: left; padding: 16px; }
+
+/* Navigation rail: 80 px of icons with short labels; expanded, a 280 px drawer. */
+.nav-rail {
+  width: 80px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+  padding: 12px 0 16px; gap: 4px; overflow: hidden;
+  background: var(--md-surface-container);
+}
+/* The places and tools scroll in here when they don't fit; Settings stays put
+   below, and a soft shadow at an edge shows there is more that way. */
+.nav-scroll {
+  flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; gap: 4px; padding: 4px 0;
+  overflow-y: auto; overflow-x: hidden; scrollbar-width: thin;
+  --nav-shade: color-mix(in srgb, var(--md-on-surface) 16%, transparent);
+  background:
+    linear-gradient(var(--md-surface-container) 40%, transparent) top / 100% 24px no-repeat local,
+    linear-gradient(transparent, var(--md-surface-container) 60%) bottom / 100% 24px no-repeat local,
+    radial-gradient(farthest-side at 50% 0, var(--nav-shade), transparent) top / 100% 10px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, var(--nav-shade), transparent) bottom / 100% 10px no-repeat scroll;
+}
+.nav-foot { flex: none; position: relative; z-index: 1; padding-top: 12px; background: var(--md-surface-container); }
+/* (4 px less below than the 8 it looks: the list under it keeps 4 px for focus rings.) */
+.nav-head { display: flex; align-items: center; gap: 12px; height: 56px; margin-bottom: 4px; }
+.nav-brand { font-size: 18px; font-weight: 500; color: var(--text); line-height: 1.2; white-space: nowrap; }
+.nav-brand small { display: block; font-size: 12px; font-weight: 400; color: var(--text-dim); letter-spacing: 0.4px; }
+.nav-items { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 72px; min-height: 0; padding: 0; border: none; border-radius: 0; background: none;
+  color: var(--md-on-surface-variant); overflow: visible;
+}
+.nav-item::before { display: none; }
+.nav-indicator {
+  position: relative; display: grid; place-items: center; width: 56px; height: 32px; border-radius: var(--md-shape-l);
+  transition: background-color 0.2s;
+}
+.nav-item:hover .nav-indicator { background: color-mix(in srgb, var(--md-on-surface-variant) 8%, transparent); }
+.nav-item.active .nav-indicator { background: var(--nav-indicator); color: var(--on-nav-indicator); }
+.nav-label { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; line-height: 16px; text-align: center; }
+.nav-item.active .nav-label { color: var(--text); font-weight: 700; }
+.nav-item:focus-visible { outline: none; }
+.nav-item:focus-visible .nav-indicator { outline: 3px solid var(--md-primary); outline-offset: 1px; }
+.nav-section { display: none; }
+
+.nav-rail.expanded { width: 280px; align-items: stretch; padding: 12px 12px 16px; }
+.nav-rail.expanded .nav-head { padding: 0 4px; }
+.nav-rail.expanded .nav-items { align-items: stretch; gap: 0; }
+.nav-rail.expanded .nav-item {
+  flex-direction: row; justify-content: flex-start; gap: 12px; width: 100%; height: 56px; padding: 0 16px; border-radius: var(--md-shape-xl);
+}
+.nav-rail.expanded .nav-item:hover { background: color-mix(in srgb, var(--md-on-surface-variant) 8%, transparent); }
+.nav-rail.expanded .nav-item.active { background: var(--nav-indicator); color: var(--on-nav-indicator); }
+.nav-rail.expanded .nav-indicator { width: 24px; height: 24px; background: none !important; }
+.nav-rail.expanded .nav-label { font-size: 14px; letter-spacing: 0.1px; text-align: left; }
+.nav-rail.expanded .nav-item.active .nav-label { font-weight: 700; color: inherit; }
+.nav-rail.expanded .nav-tools { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--md-outline-variant); }
+.nav-rail.expanded .nav-section {
+  display: block; padding: 10px 16px 6px; font-size: 14px; font-weight: 500; color: var(--text-dim);
+}
+
+.top-bar-parent, .top-bar-sep, .top-bar-detail { color: var(--text-dim); }
+.top-bar-sep { margin: 0 8px; }
+.top-bar-detail { font-size: 16px; }
+.class-picker { position: relative; }
+.class-picker-btn {
+  height: 40px; padding: 0 8px 0 14px; gap: 8px; max-width: 360px;
+  border: none; background: var(--md-surface-container-highest); color: var(--text);
+}
+.class-picker-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.class-picker-room { color: var(--text-dim); font-weight: 400; white-space: nowrap; }
+/* In a side panel (the report preview): full width, the menu opening in place. */
+.class-picker.in-panel .class-picker-btn { width: 100%; max-width: none; justify-content: flex-start; border-radius: var(--md-shape-xs); }
+.class-picker.in-panel .class-picker-name { flex: 1; text-align: left; }
+.class-picker.in-panel .menu { position: static; min-width: 0; max-width: none; margin-top: 4px; box-shadow: none; border: 1px solid var(--md-outline-variant); }
+
+/* Menus (the class picker) */
+.menu {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: var(--z-menu);
+  min-width: 260px; max-width: 360px; max-height: min(70vh, 520px); overflow-y: auto; padding: 8px 0;
+  background: var(--md-surface-container); border-radius: var(--md-shape-xs); box-shadow: var(--md-elev-2);
+}
+.menu-label { padding: 8px 16px 4px; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; color: var(--text-dim); }
+.menu-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 4px 12px;
+  border: none; border-radius: 0; justify-content: flex-start; text-align: left;
+  color: var(--text); font-weight: 400;
+}
+.menu-item.selected { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+.menu-check { width: 24px; display: grid; place-items: center; color: var(--text-dim); }
+.menu-item.selected .menu-check { color: inherit; }
+.menu-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.menu-text small { font-size: 12px; color: var(--text-dim); }
+.menu-divider { height: 1px; margin: 8px 0; background: var(--md-outline-variant); }
+
+/* In the docked strip the lesson buttons are at the foot: the toast goes on top. */
+.strip-mode .toast { top: 8px; bottom: auto; left: 6px; right: 6px; transform: none; max-width: none; animation-name: toast-in-top; }
+@keyframes toast-in-top { from { opacity: 0; transform: translateY(-8px); } }
+
+/* A behaviour named in its button's colour (the log); lightened to read on dark. */
+.tag.behaviour-tag { background: color-mix(in srgb, var(--tag) 13%, transparent); color: var(--tag); }
+@media screen {
+  :root[data-theme="dark"] .tag.behaviour-tag { background: color-mix(in srgb, var(--tag) 30%, transparent); color: color-mix(in srgb, var(--tag) 35%, white); }
+}
+
+/* The Marks list: titles get room, dates, numbers and headings never break. */
+.marks-list th, .marks-list td.nowrap { white-space: nowrap; }
+table.data.marks-list th, table.data.marks-list td { padding-left: 8px; padding-right: 8px; }
+.marks-list td:first-child { min-width: 180px; }
+/* Editable cells look editable without needing a hover (touch has none). */
+table.data td input { width: 100%; border-color: var(--md-outline-variant); background: var(--md-surface-container-lowest); padding: 5px 8px; min-height: 36px; }
+table.data td input:hover { border-color: var(--md-outline); }
+table.data td.drag-handle { width: 26px; text-align: center; color: var(--text-dim); cursor: grab; user-select: none; touch-action: none; }
+table.data td.drag-handle:active { cursor: grabbing; }
+table.data tr.dragging { opacity: 0.4; }
+table.data tr.drag-over td { box-shadow: inset 0 2px 0 var(--accent); }
+table.data td input.code-input { font-weight: 700; text-transform: uppercase; }
+.topic-area { margin-bottom: 16px; }
+.topic-share { margin-left: 12px; }
+.topic-shared-note {
+  display: flex; align-items: center; gap: 6px; margin: 0 0 12px; padding: 6px 10px; border-radius: var(--md-shape-s);
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container); font-size: 13px;
+}
+.topic-table { margin-top: 6px; }
+.topic-table .topic-add-row td { background: var(--md-surface-container-low); }
+.topic-table .topic-add-row input::placeholder { color: var(--text-dim); }
+
+/* ---------- attendance ---------- */
+.att-btn { width: 44px; height: 40px; min-height: 40px; padding: 0; font-weight: 700; border-radius: var(--md-shape-s); color: var(--text); border-color: var(--md-outline-variant); }
+.att-btn.P.on { background: var(--md-primary); border-color: var(--md-primary); color: var(--on-fill); }
+.att-btn.A.on { background: var(--att-absent); border-color: var(--att-absent); color: var(--on-fill); }
+.att-btn.L.on { background: var(--att-late); border-color: var(--away-outline-strong); color: var(--on-att-late); }
+.att-btn.E.on { background: var(--att-excused); border-color: var(--att-excused); color: var(--on-fill); }
+/* The four codes as one Material segmented button, so they never wrap. */
+.att-seg { display: inline-flex; flex-wrap: nowrap; }
+.att-seg .att-btn { width: 48px; border-radius: 0; margin-left: -1px; border-color: var(--md-outline); }
+.att-seg .att-btn:first-child { margin-left: 0; border-radius: 20px 0 0 20px; }
+.att-seg .att-btn:last-child { border-radius: 0 20px 20px 0; }
+.att-seg .att-btn.on { z-index: 1; }
+.att-legend { font-size: 13px; color: var(--text-dim); margin: -6px 0 10px; }
+.att-summary { display: flex; gap: 16px; font-size: 13px; color: var(--text-dim); }
+
+/* ---------- layout designer / seating ---------- */
+.canvas-wrap { background: var(--panel); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); overflow: auto; position: relative; }
+/* A swipe over the plan scrolls the page; only the room designer, where desks are dragged, takes it. */
+.room-canvas { display: block; touch-action: manipulation; user-select: none; }
+.room-canvas.editable { touch-action: none; }
+.room-canvas .desk { cursor: grab; }
+.room-canvas .desk.selected .desk-body { stroke: var(--accent); stroke-width: 2.5; }
+.desk-body { fill: var(--md-surface-container-high); stroke: var(--md-outline); stroke-width: 1.5; rx: 6px; }
+.desk-body.teacher { fill: var(--teacher-desk); stroke: var(--teacher-desk-outline); }
+.desk-body.door { fill: #c9a35c; stroke: #a07f38; }
+.desk-body.window { fill: #cfe4f2; stroke: #7aa7c4; }
+.desk-label { font-size: 11px; fill: var(--text-dim); text-anchor: middle; pointer-events: none; }
+/* The fixed-colour furniture keeps a dark label in either theme. */
+.desk-body.teacher + .desk-label, .desk-body.door + .desk-label, .desk-body.window + .desk-label { fill: var(--on-tint); }
+.room-grid-line { stroke: var(--grid-line); }
+.seat-square { fill: var(--field); stroke: var(--md-outline-variant); stroke-width: 1.5; }
+.seat-square.occupied { fill: var(--accent-soft); stroke: var(--accent); }
+.seat-square.drop-target { stroke: var(--accent); stroke-width: 3; stroke-dasharray: 5 4; }
+.seat-name { font-size: 13px; text-anchor: middle; fill: var(--seat-ink); pointer-events: none; font-weight: 700; }
+.seat-surname { font-size: 10px; text-anchor: middle; fill: var(--seat-ink-2); pointer-events: none; font-weight: 500; }
+.seat-points { font-size: 11px; text-anchor: middle; font-weight: 700; pointer-events: none; }
+/* Dark enough to read on the seat's tint (about 5:1 on the green, 9:1 on the navy; WCAG AA). */
+.seat-points.pos { fill: var(--md-primary); }
+.seat-points.neg { fill: var(--md-error); }
+.seat-points.zero { fill: var(--md-on-surface-variant); }
+.seat-badge { font-size: 12px; text-anchor: middle; font-weight: 700; pointer-events: none; }
+.seat-badge.absent { fill: var(--md-error); }
+.seat-badge.late { fill: var(--away); }
+.seat-badge.excused { fill: var(--md-on-surface-variant); }
+.seat-badge.out { fill: var(--away); }
+/* Batch entry: a picked seat is filled highlighter-yellow with a heavy border
+   and a tick, so it can't be mistaken for an ordinary seat at a glance. */
+.seat-square.batch-selected { fill: var(--select-highlight); stroke: var(--select-stroke); stroke-width: 4; }
+/* A seat reached with the keyboard shows a thick ring, like a focused button. */
+.room-canvas .seat:focus { outline: none; }
+.room-canvas .seat:focus-visible .seat-square { stroke: var(--md-primary); stroke-width: 4; }
+.seat-check { font-size: 16px; text-anchor: middle; fill: var(--accent); font-weight: 700; pointer-events: none; }
+.desk-body.label-block { fill: #fdf3cf; stroke: #d9c470; }
+.label-block-text { font-size: 14px; font-weight: 700; fill: #4c4018; text-anchor: middle; pointer-events: none; }
+.crop-rect { fill: color-mix(in srgb, var(--accent) 5%, transparent); stroke: var(--accent); stroke-width: 2; stroke-dasharray: 8 6; cursor: move; }
+.crop-handle { fill: var(--accent); cursor: nwse-resize; }
+.front-marker { fill: var(--md-outline); font-size: 11px; letter-spacing: 2px; text-anchor: middle; }
+
+.swatch-row { display: inline-flex; align-items: center; gap: 6px; padding: 0 2px; }
+.swatch { width: 30px; height: 30px; min-height: 30px; padding: 0; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--md-on-surface) 18%, transparent); }
+.swatch:hover { border-color: var(--accent); transform: scale(1.08); }
+.swatch.on { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--field); }
+.bh-swatches { flex-wrap: wrap; gap: 4px; max-width: 290px; }
+.bh-swatches .swatch { width: 24px; height: 24px; min-height: 24px; }
+.bh-label-input { color: var(--on-fill); font-weight: 700; border-color: transparent; }
+/* The behaviour table lets the icon picker hang out of it; its corners are rounded by hand instead. */
+table.data.bh-table { overflow: visible; }
+table.data.bh-table thead th:first-child { border-top-left-radius: var(--md-shape-m); }
+table.data.bh-table thead th:last-child { border-top-right-radius: var(--md-shape-m); }
+button.small.icon-pick { width: 44px; padding: 0; color: var(--text); }
+.popover-panel.icon-picker { width: 344px; max-height: min(60vh, 460px); z-index: var(--z-menu); }
+.icon-group { width: 100%; }
+.icon-grid { display: grid; grid-template-columns: repeat(8, 36px); gap: 2px; }
+button.icon-choice { width: 36px; height: 36px; min-height: 36px; padding: 0; border-radius: var(--md-shape-s); border-color: transparent; color: var(--text); }
+button.icon-choice.on { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+.bh-label-input:focus { outline-color: var(--text); }
+
+.stepper { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--md-outline); border-radius: 20px; padding: 2px; background: var(--panel); }
+.stepper .stepper-label { font-size: 12px; color: var(--text-dim); padding: 0 4px; }
+.stepper > span:not(.stepper-label) { min-width: 40px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.stepper button { padding: 0 12px; min-height: 34px; border: none; background: transparent; font-weight: 700; color: var(--text); border-radius: 17px; }
+.template-chip { display: inline-flex; align-items: center; gap: 4px; }
+.template-chip button:first-child { font-weight: 700; }
+
+/* The room designer fills the page: its toolbar and the Add column hold
+   still, and the room scrolls and zooms in its own view below them. */
+.main-pane:has(> .layout-designer) { display: flex; flex-direction: column; overflow: hidden; }
+.settings-body:has(> .layout-designer) { display: flex; flex-direction: column; }
+.layout-designer { flex: 1; min-height: 360px; display: flex; flex-direction: column; gap: 8px; }
+.layout-toolbar { flex: none; display: flex; flex-direction: column; gap: 6px; }
+.layout-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-height: 32px; }
+.layout-row select { min-height: 32px; padding: 4px 30px 4px 10px; font-size: 13px; background-position: right 6px center; background-size: 20px; }
+.layout-row input.desk-label-input { width: 140px; min-height: 32px; padding: 4px 10px; font-size: 13px; }
+.layout-row .swatch-row { gap: 4px; padding: 0; }
+.layout-row .swatch { width: 24px; height: 24px; min-height: 24px; }
+.layout-row input[type="color"] { width: 30px; height: 28px; min-height: 28px; padding: 1px; }
+.layout-row .stepper button { min-height: 26px; padding: 0 9px; }
+.layout-row .stepper > span:not(.stepper-label) { min-width: 32px; }
+.layout-caption { font-size: 12px; }
+.layout-hint { font-size: 13px; }
+.layout-sep { width: 1px; align-self: stretch; margin: 4px 2px; background: var(--md-outline-variant); }
+.layout-designer button.small.on, .popover-anchor > button.on { background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; }
+/* "Default" colour: the seat's own, shown as a struck-through swatch. */
+.swatch.none {
+  background:
+    linear-gradient(to top right, transparent calc(50% - 1px), var(--md-error) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    var(--field);
+}
+.popover-anchor { position: relative; }
+.popover-panel {
+  position: absolute; left: 0; top: calc(100% + 4px); z-index: var(--z-menu);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  min-width: 220px; max-height: min(60vh, 420px); overflow-y: auto; padding: 10px 12px;
+  background: var(--md-surface-container); border-radius: var(--md-shape-xs); box-shadow: var(--md-elev-2);
+}
+.popover-label { font-size: 12px; font-weight: 500; color: var(--text-dim); padding-top: 2px; }
+.popover-count {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; font-size: 11px; line-height: 18px; text-align: center;
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+.layout-work { flex: 1; min-height: 0; display: flex; gap: 6px; }
+/* A column of Add buttons beside the room (which has width to spare); it scrolls on a very short screen. */
+.layout-add { flex: none; display: flex; flex-direction: column; gap: 4px; min-height: 0; padding: 5px; margin: -5px 0 -5px -5px; }
+.layout-add-buttons { min-height: 0; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; padding: 5px; margin: -5px; }
+.layout-add-buttons button { flex: none; justify-content: flex-start; padding: 0 12px 0 6px; gap: 4px; }
+.layout-frame {
+  position: relative; flex: 1; min-width: 0; min-height: 0; overflow: hidden;
+  border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); background: var(--md-surface-container-low);
+}
+.layout-viewport { position: absolute; inset: 0; overflow: auto; touch-action: none; overscroll-behavior: contain; }
+.layout-viewport:focus { outline: none; }
+.layout-viewport:focus-visible { outline: 3px solid var(--md-primary); outline-offset: -3px; }
+.layout-viewport.hand, .layout-viewport.hand * { cursor: grab !important; }
+.layout-viewport.panning, .layout-viewport.panning * { cursor: grabbing !important; }
+.layout-stage { display: grid; place-items: center; width: max-content; min-width: 100%; min-height: 100%; padding: 12px; }
+.layout-stage > .canvas-wrap { overflow: visible; border-radius: 4px; box-shadow: var(--md-elev-1); }
+.zoom-controls {
+  position: absolute; right: 10px; bottom: 10px; display: flex; align-items: center; gap: 2px; padding: 3px;
+  border-radius: 20px; background: var(--md-surface-container-high); box-shadow: var(--md-elev-2);
+}
+.zoom-controls button { border-color: transparent; }
+.zoom-controls .zoom-level { min-width: 56px; font-variant-numeric: tabular-nums; }
+
+.seating-canvas { position: relative; }
+.seating-canvas.shuffling .seat-square { transition: none; }
+.seating-canvas.shuffling .seat-name, .seating-canvas.shuffling .seat-surname { animation: seat-flicker 0.18s linear infinite; }
+@keyframes seat-flicker { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .seating-canvas.shuffling .seat-name, .seating-canvas.shuffling .seat-surname { animation: none; }
+}
+.shuffle-overlay {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  background: var(--md-inverse-surface); color: var(--md-inverse-on-surface); border-radius: var(--md-shape-s); padding: 8px 18px;
+  font-weight: 700; box-shadow: var(--shadow); pointer-events: none; letter-spacing: 0.3px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.roster-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---------- teaching (focus) mode ---------- */
+.focus-shell { height: 100%; overflow: auto; background: var(--md-surface); padding: 10px 14px; display: flex; flex-direction: column; }
+.focus-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.focus-canvas-wrap { width: 100%; margin: 0 auto; flex: 1; min-height: 0; }
+/* Cap the scaled room by viewport height; the SVG letterboxes, never distorts. */
+.focus-shell .room-canvas { max-height: calc(100vh - 74px); margin: 0 auto; }
+
+/* The lesson buttons sit on the edge chosen in Settings, so they stay within
+   reach whichever side of the board the teacher stands on. */
+.focus-layout { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.focus-layout.bar-bottom { flex-direction: column-reverse; }
+.focus-layout.bar-bottom > .focus-bar { margin: 10px 0 0; }
+/* Keep the plan next to the bar rather than stranded above the spare space. */
+.focus-layout.bar-bottom > .focus-canvas-wrap { display: flex; flex-direction: column; justify-content: flex-end; }
+.focus-layout.bar-left { flex-direction: row; }
+.focus-layout.bar-right { flex-direction: row-reverse; }
+.focus-layout.bar-left > .focus-bar,
+.focus-layout.bar-right > .focus-bar {
+  flex-direction: column; align-items: stretch; flex-wrap: nowrap;
+  margin: 0 10px 0 0; overflow-y: auto;
+}
+.focus-layout.bar-right > .focus-bar { margin: 0 0 0 10px; }
+.focus-layout.bar-left > .focus-canvas-wrap,
+.focus-layout.bar-right > .focus-canvas-wrap { width: auto; min-width: 0; }
+.focus-layout.bar-left > .focus-bar > .spacer,
+.focus-layout.bar-right > .focus-bar > .spacer { flex: 1; min-height: 8px; }
+/* A side bar leaves the full height for the room. */
+.focus-layout.bar-left .room-canvas,
+.focus-layout.bar-right .room-canvas { max-height: calc(100vh - 20px); }
+.seating-canvas .room-canvas { max-height: calc(100vh - 230px); margin: 0 auto; }
+/* Teaching mode: the plan fills whatever the bars, the batch panel and the
+   bathroom list leave, however tall they grow; the SVG letterboxes inside. */
+.focus-canvas-wrap { display: flex; flex-direction: column; }
+.focus-canvas-wrap > .canvas-wrap.fill { flex: 1; min-height: 0; overflow: hidden; }
+.canvas-wrap.fill > .room-canvas { max-height: none; }
+
+/* ---------- lesson view ---------- */
+/* Big, touch-sized lesson actions. On the Live lesson page they run in a row
+   from the left (nearest the hand); End lesson is pushed to the far right. */
+.lesson-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 56px; padding: 10px 20px; border-radius: var(--md-shape-l);
+  font-size: 16px; font-weight: 500; white-space: nowrap;
+  background: var(--md-surface-container-low); border-color: var(--md-outline-variant); color: var(--md-on-surface);
+}
+.lesson-btn > .icon { color: var(--md-primary); }
+.lesson-btn.danger > .icon { color: inherit; }
+.lesson-btn.danger { background: var(--md-error-container); border-color: transparent; color: var(--md-on-error-container); }
+.lesson-btn.start { background: var(--md-primary-container); border-color: transparent; color: var(--md-on-primary-container); }
+.lesson-btn.start > .icon { color: inherit; }
+.lesson-head { margin-bottom: 8px; }
+.lesson-head select { min-height: 44px; font-size: 15px; }
+.lesson-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.lesson-divider { align-self: stretch; width: 1px; margin: 6px 4px; background: var(--border); }
+
+/* Teaching-mode button bar, in groups. Across the top/bottom the groups sit in
+   a row; down a side they stack as labelled sections with full-width buttons. */
+.focus-bar .bar-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.focus-bar .bar-group-label { display: none; }
+.focus-bar .bar-count { font-size: 13px; }
+.focus-layout.bar-left > .focus-bar,
+.focus-layout.bar-right > .focus-bar { width: 250px; max-width: 250px; gap: 14px; }
+.focus-layout.bar-left > .focus-bar .bar-group,
+.focus-layout.bar-right > .focus-bar .bar-group { flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 6px; }
+.focus-layout.bar-left > .focus-bar .bar-group-label,
+.focus-layout.bar-right > .focus-bar .bar-group-label {
+  display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-dim);
+}
+.focus-layout.bar-left > .focus-bar .lesson-btn,
+.focus-layout.bar-right > .focus-bar .lesson-btn { width: 100%; justify-content: flex-start; }
+.focus-layout.bar-left > .focus-bar select,
+.focus-layout.bar-right > .focus-bar select { min-height: 44px; }
+.behaviour-popover {
+  position: absolute; background: var(--md-surface-container); border-radius: var(--md-shape-m);
+  box-shadow: var(--md-elev-2); padding: 12px; z-index: var(--z-popover); width: 300px;
+  /* Never taller than the room plan it sits on: a long button list scrolls. */
+  max-height: calc(100% - 8px); overflow-y: auto; overscroll-behavior: contain;
+}
+.sa-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.sa-head h4 { flex: 1; margin: 4px 0 0; font-size: 20px; line-height: 28px; font-weight: 500; }
+.sa-head .icon-only { flex: none; }
+.bh-group { display: flex; flex-direction: column; margin-top: 10px; }
+.bh-group + .bh-group { border-top: 1px solid var(--border); padding-top: 10px; }
+.bh-group-label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+.behaviour-popover .att-legend { margin: 4px 0 8px; }
+.bh-btn { display: flex; justify-content: flex-start; width: 100%; text-align: left; margin-bottom: 6px; border-radius: var(--md-shape-s); color: var(--on-fill); border: none; padding: 9px 12px; }
+
+/* The list pop-up's OUTSIDE and Note side by side. */
+.sa-row { display: flex; gap: 6px; }
+.sa-row .bathroom-btn { flex: 1; }
+.note-btn {
+  flex: none; margin-bottom: 8px; border-radius: var(--md-shape-s); padding: 9px 12px; min-height: 0;
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; font-weight: 700;
+}
+.note-btn.draft { border: 2px dashed var(--md-on-secondary-container); }
+
+/* Grid pop-up: a near-square of tiles, four across. */
+.behaviour-popover.grid { width: 336px; }
+.sg-top { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.sg-att { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.sg-att .att-btn { width: auto; height: 34px; min-height: 34px; border-radius: var(--md-shape-xs); }
+.sg-big {
+  flex-direction: column; gap: 2px; min-height: 71px; padding: 4px; border-radius: var(--md-shape-s); font-weight: 700; font-size: 13px;
+  letter-spacing: 0.5px; font-variant-numeric: tabular-nums;
+}
+.sg-outside { background: var(--away-container); border: 1px solid var(--away-outline); color: var(--away); }
+.sg-outside.out { background: var(--away); border-color: var(--away); color: var(--on-fill); }
+.sg-note { background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; }
+.sg-note.draft { border: 2px dashed var(--md-on-secondary-container); }
+.sg-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.sg-tiles + .sg-tiles { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.sg-tile {
+  flex-direction: column; gap: 0; min-height: 70px; padding: 4px 2px; border: none; border-radius: var(--md-shape-s);
+  color: var(--on-fill); line-height: 1.1;
+}
+.sg-code { font-size: 19px; font-weight: 800; letter-spacing: 0.5px; }
+.sg-points { font-size: 11px; font-weight: 500; opacity: 0.9; font-variant-numeric: tabular-nums; }
+
+/* Round pop-up: rings around the tapped seat. Only the rings take taps; the
+   corners of their square let a tap through to the seat beneath. */
+.ring-anchor { z-index: var(--z-popover); pointer-events: none; }
+.student-ring { position: relative; pointer-events: none; animation: ring-in 0.14s ease-out; }
+@keyframes ring-in { from { opacity: 0; transform: scale(0.9); } }
+@media (prefers-reduced-motion: reduce) { .student-ring { animation: none; } }
+.student-ring svg { display: block; overflow: visible; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.28)); }
+.ring-back { fill: var(--md-surface-container); }
+.ring-name {
+  position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -4px); pointer-events: auto;
+  padding: 3px 12px; border-radius: 14px; white-space: nowrap; font-weight: 700; font-size: 15px;
+  background: var(--md-inverse-surface); color: var(--md-inverse-on-surface); box-shadow: var(--md-elev-1);
+}
+.ring-seg { pointer-events: auto; cursor: pointer; outline: none; }
+.ring-seg > path { stroke: none; transition: filter 0.1s; }
+.ring-seg:hover > path { filter: brightness(1.08); }
+.ring-seg:active > path { filter: brightness(0.92); }
+.ring-seg:focus-visible > path { stroke: var(--md-primary); stroke-width: 3px; }
+.ring-seg text { text-anchor: middle; pointer-events: none; font-weight: 700; }
+.ring-icon { fill: currentColor; }
+.ring-letter { font-size: 17px; }
+.ring-word { font-size: 10.5px; letter-spacing: 0.6px; }
+.ring-code { font-size: 15px; font-weight: 800; letter-spacing: 0.4px; }
+.ring-att > path { fill: var(--md-surface-container-high); }
+.ring-att { color: var(--text); fill: var(--text); }
+.ring-att.on.P > path { fill: var(--md-primary); }
+.ring-att.on.A > path { fill: var(--att-absent); }
+.ring-att.on.E > path { fill: var(--att-excused); }
+.ring-att.on.P, .ring-att.on.A, .ring-att.on.E { fill: var(--on-fill); }
+.ring-att.on.L > path { fill: var(--att-late); }
+.ring-att.on.L { fill: var(--on-att-late); }
+.ring-outside > path { fill: var(--away-container); }
+.ring-outside { color: var(--away); fill: var(--away); }
+.ring-outside.out > path { fill: var(--away); }
+.ring-outside.out { color: var(--on-fill); fill: var(--on-fill); }
+.ring-note > path { fill: var(--md-secondary-container); }
+.ring-note { color: var(--md-on-secondary-container); fill: var(--md-on-secondary-container); }
+.ring-note.draft > path { stroke: var(--md-on-secondary-container); stroke-width: 2px; stroke-dasharray: 5 4; }
+.ring-behaviour .ring-on-fill { color: var(--on-fill); fill: var(--on-fill); }
+.ring-close > path { fill: var(--md-surface-container-highest); }
+.ring-close { color: var(--text); }
+
+/* bathroom timer */
+.bathroom-btn {
+  display: flex; justify-content: flex-start; width: 100%; text-align: left; margin-bottom: 8px; border-radius: var(--md-shape-s);
+  background: var(--away-container); border: 1px solid var(--away-outline); color: var(--away); padding: 9px 12px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bathroom-btn:hover { border-color: var(--away-outline-strong); }
+.bathroom-btn.out { background: var(--away); border-color: var(--away); color: var(--on-fill); }
+.bathroom-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.bathroom-bar-label { display: inline-flex; align-items: center; gap: 4px; }
+.focus-bar .bathroom-bar { margin: 0; }
+.strip-out { display: flex; flex-direction: column; gap: 6px; }
+.strip-out .bathroom-chip { justify-content: flex-start; min-height: 44px; width: 100%; }
+.bathroom-chip { display: inline-flex; align-items: center; gap: 4px; }
+.bathroom-chip {
+  background: var(--away-container); border-color: var(--away-outline); color: var(--away);
+  font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.bathroom-chip:hover { border-color: var(--away-outline-strong); }
+
+/* ---------- marking ---------- */
+.mark-grid input.mark-input { width: 70px; text-align: right; }
+.quick-mark-row { display: flex; align-items: center; gap: 10px; padding: 2px 10px; border-bottom: 1px solid var(--border); }
+.quick-mark-row input { min-height: 30px; padding: 3px 10px; }
+.quick-mark-row.active { background: var(--md-secondary-container); }
+/* The name carries the position tint (blue at the top of the list to red at the bottom). */
+.quick-mark-row .name { width: 220px; padding: 3px 8px; border-radius: 6px; }
+.quick-mark-row.done { background: var(--mark-done); }
+.quick-mark-row:focus-within { background: var(--mark-current); }
+
+/* ---------- home ---------- */
+.home-section { display: flex; align-items: center; gap: 12px; margin: 4px 0 12px; }
+.home-section h2 { margin: 0; font-size: 16px; font-weight: 500; line-height: 24px; color: var(--text); }
+.home-section + .home-grid, .home-section + .panel { margin-bottom: 28px; }
+.class-card {
+  background: var(--md-surface-container-low); border-radius: var(--md-shape-m);
+  padding: 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.class-card.current { box-shadow: inset 0 0 0 2px var(--md-primary); }
+.class-card-head { display: flex; align-items: flex-start; gap: 12px; }
+.class-card-avatar {
+  width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center;
+  background: var(--md-primary-container); color: var(--md-on-primary-container); font-weight: 500; font-size: 16px;
+}
+.class-card-head h3 { margin: 0; font-size: 16px; font-weight: 500; line-height: 24px; }
+.class-card-head .muted { font-size: 13px; }
+/* Seating and Marks side by side, with Lesson the big button across the bottom. */
+.class-card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.class-card-lesson { grid-column: 1 / -1; }
+.class-card-open { align-self: flex-start; }
+
+/* ---------- settings ---------- */
+/* The tabs hold still at the top; only the open tab scrolls, under them, with
+   its scrollbar at the page's edge. */
+.main-pane:has(> .settings-view) { display: flex; flex-direction: column; overflow: hidden; }
+.settings-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.settings-head { flex: none; }
+.settings-head .md-tabs { margin-bottom: 16px; }
+.settings-body { flex: 1; min-height: 0; overflow: auto; margin: 0 -24px -20px; padding: 4px 24px 20px; }
+.settings-for { margin: -4px 0 12px; font-size: 13px; }
+
+/* ---------- dashboard ---------- */
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+.stat-tiles { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.stat-tile { background: var(--md-surface-container-low); border-radius: var(--md-shape-m); padding: 14px 20px; min-width: 140px; }
+.stat-tile .value { font-size: 28px; font-weight: 400; line-height: 36px; }
+.stat-tile .label { font-size: 12px; font-weight: 500; letter-spacing: 0.5px; color: var(--text-dim); }
+.stat-tile .value.good { color: var(--accent); }
+.stat-tile .value.bad { color: var(--danger); }
+/* Slim chips on one line (the marking grid), leaving the room for the students. */
+.stat-tiles.compact { gap: 8px; margin-bottom: 8px; }
+.stat-tiles.compact .stat-tile { display: flex; align-items: baseline; gap: 6px; padding: 2px 12px; min-width: 0; border-radius: 14px; }
+.stat-tiles.compact .stat-tile .value { font-size: 14px; font-weight: 700; line-height: 22px; }
+.stat-tiles.compact .stat-tile .label { letter-spacing: 0.2px; }
+.section-heading { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 500; margin: 24px 0 12px; }
+.section-heading .icon { color: var(--md-on-surface-variant); }
+.desk-pill { display: inline-block; background: var(--md-surface-container-high); border: 1px solid var(--border); border-radius: var(--md-shape-m); padding: 2px 9px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.desk-pill.good { background: var(--good-container); border-color: var(--good-outline); color: var(--on-good-container); }
+.desk-pill.bad { background: var(--bad-container); border-color: var(--bad-outline); color: var(--on-bad-container); }
+
+/* importing marks from a template: what was skipped, and a file made for another test */
+.import-preview { max-width: 640px; }
+.import-preview h3 { font-size: 14px; margin: 12px 0 6px; }
+.import-problems { max-height: 220px; overflow: auto; margin: 0; padding-left: 20px; font-size: 13px; }
+.import-problems li { margin: 2px 0; }
+.import-changes { max-height: 200px; overflow: auto; margin: 8px 0 0; padding-left: 20px; font-size: 13px; }
+.import-changes:empty { display: none; }
+.import-absent summary { cursor: pointer; font-size: 13px; color: var(--text-dim); }
+.import-warning { display: flex; gap: 8px; align-items: flex-start; padding: 8px 12px; border-radius: var(--md-shape-xs); background: var(--warning-container); color: var(--on-warning-container); }
+
+/* an assessment's weight, typed in its row on the Marks page */
+.weight-input, table.data td input.weight-input { width: 60px; min-height: 32px; padding: 3px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- multi-question marking grid ---------- */
+.mark-grid-wrap { overflow-x: auto; border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); background: var(--panel); width: fit-content; max-width: 100%; }
+.mark-grid { border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.mark-grid th, .mark-grid td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); padding: 4px 6px; text-align: center; white-space: nowrap; }
+.mark-grid tbody td { padding-top: 2px; padding-bottom: 2px; }
+.mark-grid thead th { background: var(--md-surface-container-low); font-weight: 700; font-size: 12px; vertical-align: top; }
+.mark-grid .q-sub { font-weight: 400; color: var(--text-dim); font-size: 11px; }
+.mark-grid .topic-row th { background: var(--md-surface-container-low); color: var(--text-dim); font-weight: 500; font-size: 11px; }
+.mark-grid .col-no { width: 40px; min-width: 40px; }
+.mark-grid .col-name { width: 116px; min-width: 116px; text-align: left; }
+.mark-grid .col-q { width: 48px; min-width: 48px; }
+.mark-grid .col-total { width: 54px; min-width: 54px; font-variant-numeric: tabular-nums; }
+.mark-grid tbody td.col-name { font-size: 13px; }
+.mark-grid tbody tr:hover td { background: var(--row-hover); }
+
+/* frozen columns: names on the left, totals on the right */
+.mark-grid .sticky-left, .mark-grid .sticky-right { position: sticky; background: var(--panel); z-index: 1; }
+.mark-grid thead .sticky-left, .mark-grid thead .sticky-right { background: var(--md-surface-container-low); z-index: 3; }
+.mark-grid .topic-row .sticky-left { background: var(--md-surface-container-low); }
+.mark-grid tbody tr:hover .sticky-left, .mark-grid tbody tr:hover .sticky-right { background: var(--row-hover); }
+/* Grey once every question has a mark; yellow for the student being marked (wins). */
+.mark-grid tbody tr.done td, .mark-grid tbody tr.done:hover td { background: var(--mark-done); }
+.mark-grid tbody tr:focus-within td, .mark-grid tbody tr:focus-within:hover td { background: var(--mark-current); }
+.mark-grid .sticky-left { left: 0; }
+.mark-grid .sticky-left.second { left: 40px; }
+.mark-grid .sticky-left.third { left: 156px; }
+.mark-grid .sticky-left.third { border-right: 2px solid var(--border); }
+.mark-grid .sticky-right { right: 0; }
+.mark-grid .sticky-right.second { right: 54px; }
+.mark-grid .sticky-right.third { right: 108px; }
+.mark-grid .sticky-right.fourth { right: 162px; }
+.mark-grid .sticky-right.fourth, .mark-grid .sticky-right.divider { border-left: 2px solid var(--border); }
+/* The per-question grid's comment column takes the right edge; the totals move in by its width. */
+.mark-grid .col-comment-btn { width: 40px; min-width: 40px; padding: 2px; }
+.mark-grid.with-comment .sticky-right { right: 40px; }
+.mark-grid.with-comment .sticky-right.comment { right: 0; }
+.mark-grid.with-comment .sticky-right.second { right: 94px; }
+.mark-grid.with-comment .sticky-right.third { right: 148px; }
+.mark-grid.with-comment .sticky-right.fourth { right: 202px; }
+.mark-grid button.comment-btn { width: 32px; min-width: 32px; min-height: 30px; height: 30px; border-color: transparent; color: var(--text-dim); }
+.mark-grid button.comment-btn.has-comment { color: var(--md-primary); }
+.mark-comment-modal textarea { width: 100%; resize: vertical; }
+.mark-comment-text { white-space: pre-wrap; margin: 0; }
+.mark-grid tfoot .avg-row th, .mark-grid tfoot .avg-row td { background: var(--md-surface-container-low); color: var(--text-dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+.mark-grid tfoot .sticky-left { background: var(--md-surface-container-low); text-align: left; }
+
+.mark-grid .grid-input { width: 100%; border: 1px solid var(--md-outline-variant); background: var(--field); padding: 3px 2px; min-height: 28px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; border-radius: var(--md-shape-xs); }
+.mark-grid .grid-input:hover { border-color: var(--accent); }
+.mark-grid .grid-input:focus { border-color: var(--accent); background: var(--field); outline: none; }
+.mark-grid .grid-input.over { color: var(--danger); font-weight: 700; }
+
+/* read-only marks (View on a test, and the markbook): plain numbers, a little more air than the input rows */
+.mark-grid.read-only tbody td { padding-top: 4px; padding-bottom: 4px; font-variant-numeric: tabular-nums; }
+.mark-grid .col-comment { min-width: 220px; text-align: left; white-space: normal; }
+.mark-grid .col-test { width: 88px; min-width: 88px; max-width: 88px; }
+/* markbook: five pinned columns on the right (Informal, Exam, Mark, level, Rank), a little wider; a taller first heading row for two-line titles and the share */
+.markbook .col-total { width: 62px; min-width: 62px; }
+.markbook .sticky-right.second { right: 62px; }
+.markbook .sticky-right.third { right: 124px; }
+.markbook .sticky-right.fourth { right: 186px; }
+.markbook .sticky-right.fifth { right: 248px; }
+.markbook .sticky-right.plain { border-left: none; }
+.markbook td.final { font-weight: 700; }
+.mark-grid.markbook thead tr:first-child th { height: 58px; }
+.mark-grid.markbook thead .topic-row th { top: 58px; }
+.mark-grid .test-link { display: block; width: 100%; text-align: center; }
+.mark-grid .test-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; white-space: normal; overflow-wrap: anywhere; font-size: 12px; line-height: 15px; }
+
+/* ---------- marking screens: the page holds still, only the students scroll ----------
+   The title, stat chips and the grid's heading rows stay at the top, the
+   average rows at the bottom. The read-only marks pages use the same layout. */
+.main-pane:has(> .marking-view) { display: flex; flex-direction: column; overflow: hidden; }
+.marking-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.marking-view > * { flex-shrink: 0; }
+.marking-view > .mark-grid-wrap, .marking-view > .quick-mark-list { flex: 1 1 auto; min-height: 0; overflow: auto; }
+/* While marking: the list or grid, with the calculator beside it when it's showing. */
+.marking-view > .marking-body { flex: 1 1 auto; min-height: 0; display: flex; gap: 16px; }
+.marking-body > .mark-grid-wrap, .marking-body > .quick-mark-list { min-height: 0; min-width: 0; overflow: auto; }
+.marking-body > .quick-mark-list { flex: 1 1 auto; }
+.quick-mark-list { padding: 0; margin-bottom: 0; }
+
+/* The calculator beside the marks (Calculator in the marking toolbar). */
+.mark-calc { flex: none; align-self: flex-start; width: 232px; max-height: 100%; overflow-y: auto; margin-bottom: 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.mark-calc-head { display: flex; align-items: center; justify-content: space-between; }
+.mark-calc-head h3 { margin: 0; }
+.calc-display { width: 100%; font-size: 20px; text-align: right; font-variant-numeric: tabular-nums; }
+.calc-answer { min-height: 20px; text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
+.calc-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.calc-keys button { padding: 0; font-size: 17px; border-radius: var(--md-shape-m); }
+.calc-target { font-size: 12px; line-height: 16px; overflow-wrap: anywhere; }
+.mark-grid thead th { position: sticky; z-index: 2; }
+.mark-grid thead tr:first-child th { top: 0; height: 44px; }
+.mark-grid thead .topic-row th { top: 44px; }
+.mark-grid tfoot th, .mark-grid tfoot td { position: sticky; z-index: 2; height: 28px; }
+.mark-grid tfoot tr:last-child > * { bottom: 0; }
+.mark-grid tfoot tr:first-child:not(:last-child) > * { bottom: 28px; }
+.mark-grid thead .sticky-left, .mark-grid thead .sticky-right, .mark-grid tfoot .sticky-left, .mark-grid tfoot .sticky-right { z-index: 3; }
+
+/* ---------- print ---------- */
+@media print {
+  .nav-rail, .top-bar, .md-tabs, .view-header button, .view-header select, .palette, .demo-banner, .no-print, .toast, .save-error-banner { display: none !important; }
+  .print-only { display: block; }
+  body { background: #fff; }
+  .main-pane { padding: 0; background: #fff; border-radius: 0; }
+  .canvas-wrap { border: none; overflow: visible; }
+  /* The seating plan fills a landscape A4 page under its heading. */
+  .seating-page { page: seating; }
+  .seating-page h2.print-only { margin: 0 0 6mm; font-size: 18px; font-weight: 500; }
+  .seating-page .room-canvas { max-height: 170mm; width: 100%; }
+}
+@page seating { size: A4 landscape; margin: 10mm; }
+
+.update-notes {
+  margin: 8px 0 0; padding: 12px 16px; max-height: 200px; overflow: auto; white-space: pre-wrap;
+  font: inherit; font-size: 13px; background: var(--md-surface-container-low); border-radius: var(--md-shape-s);
+}
+
+.plugin-list { list-style: none; margin: 0; padding: 0; }
+.plugin-row {
+  display: flex; align-items: center; gap: 12px; padding: 14px 0;
+  border-top: 1px solid var(--md-outline-variant);
+}
+.plugin-row:first-child { border-top: none; }
+.plugin-toggle { display: flex; align-items: center; gap: 16px; flex: 1; cursor: pointer; }
+.plugin-icon {
+  width: 40px; height: 40px; flex-shrink: 0; border-radius: var(--md-shape-m); display: grid; place-items: center;
+  background: var(--md-tertiary-container); color: var(--md-on-tertiary-container);
+}
+.plugin-row .muted { font-size: 13px; margin-top: 2px; }
+
+/* ---------- privacy ---------- */
+.privacy-gate {
+  background: var(--md-surface-container-low); border-radius: var(--md-shape-l);
+  padding: 48px 24px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 40vh; justify-content: center;
+}
+.privacy-gate p { margin: 0; font-size: 15px; }
+.privacy-gate-icon {
+  width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+.privacy-gate-btn { font-size: 16px; padding: 12px 26px; }
+
+.pref-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; }
+.pref-block h4 { margin: 14px 0 6px; }
+.send-problem code { word-break: break-all; }
+.pref-row > span { max-width: 720px; }
+.pref-row > input[type="checkbox"].switch { order: 2; margin-left: auto; }
+
+/* ---------- dialogs / overlays ---------- */
+.dialog-body { margin-top: 0; max-width: 460px; }
+.save-error-banner {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  background: var(--md-error-container); color: var(--md-on-error-container); border-radius: var(--md-shape-s);
+  padding: 8px 8px 8px 16px; z-index: var(--z-banner); display: flex; align-items: center; gap: 14px; box-shadow: var(--md-elev-2);
+  max-width: 90vw;
+}
+.save-error-banner button { min-height: 34px; }
+
+/* ---------- working from this computer's copy (see FolderBanner.tsx) ---------- */
+.folder-banner {
+  display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 10px 12px 10px 14px;
+  border-radius: var(--md-shape-m); background: var(--md-tertiary-container); color: var(--md-on-tertiary-container);
+  font-size: 14px; line-height: 1.45;
+}
+.folder-banner > .icon { flex: none; margin-top: 1px; }
+.folder-banner.done { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+.folder-banner.attention { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
+.folder-banner code { background: color-mix(in srgb, var(--md-on-surface) 8%, transparent); }
+.folder-banner .muted { color: inherit; opacity: 0.8; margin-top: 4px; }
+.folder-banner > button { flex: none; }
+.sync-notes { margin: 6px 0 0; padding-left: 20px; }
+.sync-notes li { margin: 2px 0; }
+/* The top bar's chip while changes are sent to the data folder in batches. */
+button.send-status {
+  min-height: 32px; padding: 0 12px 0 8px; gap: 6px; font-size: 13px; font-weight: 500; border-radius: 16px;
+  border-color: transparent; color: var(--text-dim); white-space: nowrap;
+}
+button.send-status.waiting { color: var(--md-on-secondary-container); background: var(--md-secondary-container); }
+button.send-status.quiet { color: var(--text-dim); background: transparent; opacity: 0.75; }
+button.send-status.icon-only { padding: 0; width: 32px; justify-content: center; }
+.copy-chip {
+  position: fixed; top: 10px; right: 12px; z-index: var(--z-chip); display: flex; align-items: center; gap: 6px;
+  padding: 4px 12px 4px 8px; border-radius: 999px; font-size: 12px;
+  background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); box-shadow: var(--md-elev-1);
+}
+.strip-mode .copy-chip { top: auto; bottom: 8px; left: 8px; right: 8px; justify-content: center; }
+.sync-overlay {
+  position: fixed; inset: 0; z-index: var(--z-blocking); display: grid; place-items: center; background: rgba(24, 29, 25, 0.45);
+}
+.sync-overlay .panel { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px 32px; text-align: center; }
+.sync-overlay .panel p { margin: 0; font-size: 16px; }
+.waiting-panel { max-width: 560px; }
+.waiting-panel h2 { display: flex; align-items: center; gap: 10px; }
+.waiting-panel code { word-break: break-all; }
+
+/* ---------- tool pop-ups (bottom right, on any screen) ---------- */
+/* The test timer and the noise meter, stacked when both are running. */
+.mini-stack {
+  position: fixed; right: 16px; bottom: 16px; z-index: var(--z-mini);
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none;
+}
+.mini-stack > * { pointer-events: auto; }
+/* While a pop-up is up, a page scrolls far enough to bring its last rows out
+   from under it (the last switch in Settings → Tools sat beneath the noise
+   meter's pop-up, which is how that tool couldn't be switched off while it
+   ran). A pop-up is 104 px tall, 16 px from the edge, 10 px from the next.
+   Pages that fill the pane and scroll inside themselves are left alone. */
+@media screen {
+  body:has(.mini-stack > *) { --mini-clear: 124px; }
+  body:has(.mini-stack > * + *) { --mini-clear: 238px; }
+  body:has(.mini-stack > *) .main-pane:not(:has(> .layout-designer, > .settings-view, > .marking-view, .plugin-view)),
+  body:has(.mini-stack > *) .settings-body:not(:has(> .layout-designer)) { padding-bottom: calc(20px + var(--mini-clear)); }
+}
+/* Teaching mode: End lesson is at the bottom of a right-hand bar, or the right
+   end of a bottom bar, so the pop-ups move out of its way. */
+.mini-stack.bar-right { right: auto; left: 16px; align-items: flex-start; }
+.mini-stack.bar-bottom { bottom: 96px; }
+/* Tall enough that each of the two action buttons is a 44 px target. */
+.timer-mini, .noise-mini { min-height: 104px; }
+.timer-mini-body.static, .noise-mini-body.static { cursor: default; }
+.timer-mini {
+  --tm-colour: #1F497D;
+  display: flex; align-items: stretch; gap: 6px; padding: 6px;
+  width: min(270px, calc(100vw - 32px));
+  background: var(--panel); border: 3px solid var(--tm-colour); border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(20, 30, 40, 0.25);
+}
+.timer-mini-body {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0;
+  border: none; background: transparent; padding: 4px 8px; text-align: left; min-height: 0; border-radius: 10px; color: var(--text);
+}
+.timer-mini-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--tm-colour); }
+.timer-mini-time { font-size: 34px; font-weight: 700; line-height: 1.05; color: var(--tm-colour); font-variant-numeric: tabular-nums; }
+.timer-mini-sub { font-size: 12px; color: var(--text-dim); }
+.timer-mini-actions { display: flex; flex-direction: column; gap: 6px; }
+.timer-mini-actions button { min-width: 48px; min-height: 0; flex: 1; font-size: 18px; padding: 4px 8px; border-radius: 10px; border-color: var(--md-outline-variant); color: var(--text); }
+/* Time's up: red, gently pulsing, and it stays until tapped. */
+.timer-mini.done { background: var(--alarm); border-color: var(--alarm-dark); animation: tm-pulse 1.4s ease-in-out infinite; }
+.timer-mini.done .timer-mini-label { font-size: 22px; color: var(--on-fill); }
+.timer-mini.done .timer-mini-sub { color: var(--on-alarm); }
+@keyframes tm-pulse { 50% { box-shadow: 0 0 0 10px rgba(192, 57, 43, 0.25), 0 8px 28px rgba(20, 30, 40, 0.25); } }
+@media (prefers-reduced-motion: reduce) { .timer-mini.done { animation: none; } }
+.timer-mini.inline { position: static; width: auto; flex-shrink: 0; box-shadow: none; }
+
+/* The noise meter pop-up: the meter's zone colours, flashing red during the alarm. */
+.noise-mini {
+  --nm-colour: var(--zone-ok); --nm-soft: var(--zone-ok-soft);
+  display: flex; align-items: stretch; gap: 6px; padding: 6px;
+  width: min(270px, calc(100vw - 32px));
+  background: var(--nm-soft); border: 3px solid var(--nm-colour); border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(20, 30, 40, 0.25);
+  transition: background 0.4s, border-color 0.4s;
+}
+.noise-mini.zone-warn { --nm-colour: var(--zone-warn); --nm-soft: var(--zone-warn-soft); }
+.noise-mini.zone-loud { --nm-colour: var(--zone-loud); --nm-soft: var(--alarm-soft); }
+.noise-mini-body {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0;
+  border: none; background: transparent; padding: 4px 8px; text-align: left; min-height: 0; border-radius: 10px; color: var(--text);
+}
+.noise-mini-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--nm-colour); }
+.noise-mini-pct { font-size: 34px; font-weight: 700; line-height: 1.05; color: var(--nm-colour); font-variant-numeric: tabular-nums; }
+.noise-mini-pct small { font-size: 0.5em; margin-left: 2px; }
+.noise-mini-sub { font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.noise-mini-actions { display: flex; flex-direction: column; gap: 6px; }
+.noise-mini-actions button { min-width: 48px; min-height: 0; flex: 1; padding: 4px 8px; border-radius: 10px; border-color: var(--md-outline-variant); color: var(--text); background: var(--panel); }
+.noise-mini.alarm { background: var(--alarm); border-color: var(--alarm-dark); animation: tm-pulse 1.4s ease-in-out infinite; }
+.noise-mini.alarm .noise-mini-label, .noise-mini.alarm .noise-mini-pct { color: var(--on-fill); }
+.noise-mini.alarm .noise-mini-sub { color: var(--on-alarm); }
+@media (prefers-reduced-motion: reduce) { .noise-mini.alarm { animation: none; } }
+.noise-mini.inline { width: auto; flex-shrink: 0; box-shadow: none; }
+
+/* ---------- random-student picker ---------- */
+.picker-overlay {
+  position: fixed; inset: 0; background: rgba(10, 20, 30, 0.78); z-index: var(--z-picker);
+  display: grid; place-items: center;
+}
+.picker-card {
+  background: var(--md-surface-container-high); border-radius: var(--md-shape-xl); padding: 40px 56px; text-align: center;
+  display: flex; flex-direction: column; gap: 20px; align-items: center; max-width: 92vw;
+}
+.picker-name { font-size: clamp(40px, 8vw, 110px); font-weight: 700; line-height: 1.1; min-height: 1.2em; color: var(--text-dim); overflow-wrap: anywhere; }
+/* In the narrow docked strip a long name still fits, big enough to read across the room. */
+.strip-mode .picker-name { font-size: clamp(30px, 13vw, 72px); }
+.picker-name.settled { color: var(--accent); }
+.picker-tally { display: flex; align-items: baseline; gap: 18px; font-size: 22px; font-weight: 700; }
+.picker-tally .yes { color: var(--accent); }
+.picker-tally .no { color: var(--danger); }
+.picker-tally .muted { font-size: 15px; font-weight: 400; }
+/* Answering / not answering is the common case, so those two get big buttons. */
+.picker-answer { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.picker-answer button { font-size: 16px; font-weight: 500; min-height: 52px; padding: 0 24px; border: none; border-radius: var(--md-shape-l); color: var(--on-fill); }
+.picker-answer .picker-other { border: 1px solid var(--border); background: var(--panel); color: var(--text); font-weight: 500; }
+.picker-more { display: grid; grid-template-columns: repeat(2, minmax(190px, 1fr)); gap: 8px; width: 100%; }
+.picker-more .bh-btn { margin-bottom: 0; }
+.picker-actions { display: flex; gap: 12px; }
+.picker-actions .primary { font-size: 16px; padding: 12px 26px; }
+.picker-options { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; color: var(--text-dim); }
+.picker-options label { display: flex; align-items: center; gap: 10px; cursor: pointer; min-height: 44px; padding: 0 10px; }
+.picker-options input[type="checkbox"] { width: 24px; height: 24px; }
+
+/* ---------- misc ---------- */
+.pair-chip { display: inline-flex; align-items: center; gap: 4px; margin: 0 8px 8px 0; }
+.pair-chip .tag { margin-right: 0; font-size: 13px; padding: 6px 10px; border-radius: 14px; }
+.backup-list { list-style: none; margin: 8px 0 0; padding: 0; max-width: 420px; }
+.backup-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 0; border-top: 1px solid var(--border); }
+
+/* ---------- batch entry ---------- */
+.batch-panel {
+  background: var(--md-surface-container-low); border: 2px solid var(--accent); border-radius: var(--md-shape-m);
+  padding: 10px 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;
+}
+.batch-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.batch-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+.batch-items .bh-btn { margin-bottom: 0; min-height: 44px; }
+.batch-banner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.batch-tag { background: var(--accent); color: var(--on-fill); font-weight: 700; letter-spacing: 1px; font-size: 12px; padding: 4px 8px; border-radius: 6px; }
+.batch-item { font-weight: 700; padding: 6px 12px; border-radius: 6px; color: var(--on-fill); }
+.batch-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.batch-count { color: var(--text-dim); }
+.batch-count.on { color: var(--accent); font-weight: 700; font-size: 15px; }
+/* In a side bar or the strip everything stacks in one column. */
+.batch-strip .batch-items { grid-template-columns: 1fr; }
+.batch-strip .batch-actions .spacer { display: none; }
+.batch-strip .batch-count { flex-basis: 100%; }
+.batch-strip .batch-actions button { flex: 1; }
+.focus-bar .batch-panel { margin: 0; }
+.seating-canvas.batching .room-canvas { outline: 3px dashed var(--accent); outline-offset: 4px; border-radius: 6px; }
+
+/* ---------- teaching strip (docked side panel) ---------- */
+.focus-shell.strip-mode { padding: 0; overflow: hidden; }
+.strip-shell { display: flex; height: 100%; min-height: 0; }
+.strip-shell.dock-right { flex-direction: row-reverse; }
+.strip {
+  position: relative; display: flex; flex-direction: column; gap: 8px; min-height: 0; height: 100%;
+  width: clamp(240px, 18vw, 340px); flex-shrink: 0; padding: 10px;
+  background: var(--md-surface-container-low); box-shadow: var(--md-elev-1);
+}
+.strip-rest { flex: 1; }
+/* In the desktop app the window *is* the strip. */
+@media (max-width: 420px) {
+  .strip { width: 100%; box-shadow: none; }
+  .strip-rest { display: none; }
+}
+.strip-head { display: flex; flex-direction: column; gap: 4px; }
+/* A long class name wraps rather than being cut off. */
+.strip-class { font-size: 16px; line-height: 1.25; overflow-wrap: anywhere; }
+.strip-head-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.strip-count { font-size: 12px; }
+.strip-head-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.strip-head-actions button.small.icon-only { width: 44px; min-height: 44px; }
+/* Exit stands apart from the other buttons, so it isn't hit instead of Full screen. */
+.strip-head-actions .strip-exit { margin-left: auto; }
+.strip-head-row { flex-wrap: wrap; }
+.strip-plan { width: 100%; }
+.strip-tables { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 2px; }
+/* Each table is a card tinted in its own colour, with a stronger stripe and
+   title in the same hue; the student rows stay white so names read clearly. */
+.strip-table {
+  --tbl-bg: var(--md-surface-container-high); --tbl-accent: var(--text-dim);
+  background: var(--tbl-bg); border-left: 6px solid var(--tbl-accent);
+  border-radius: 10px; padding: 7px 8px 3px; box-shadow: var(--shadow);
+}
+.strip-table h5 {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700;
+  color: var(--tbl-accent);
+}
+.strip-table-count {
+  min-width: 22px; padding: 1px 7px; border-radius: 10px; text-align: center; letter-spacing: 0;
+  background: var(--tbl-accent); color: var(--tbl-bg); font-size: 12px;
+}
+.strip-table .strip-student { background: var(--field); border-color: color-mix(in srgb, var(--md-on-surface) 10%, transparent); }
+.strip-table .strip-check { color: var(--tbl-accent); }
+.strip-swatches { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 0 0 7px; }
+.strip-swatches .swatch { width: 36px; height: 36px; min-height: 36px; }
+.strip-swatches input[type="color"] { width: 34px; height: 28px; padding: 1px; }
+.strip-swatches button.small { min-height: 28px; padding: 2px 8px; }
+.strip-colour-hint {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 13px; color: var(--text-dim); padding: 2px 2px 0;
+}
+.strip-student {
+  display: flex; align-items: center; justify-content: flex-start; gap: 8px; width: 100%; text-align: left;
+  min-height: 44px; margin-bottom: 4px; padding: 6px 10px; border-left: 4px solid transparent;
+  border-radius: var(--md-shape-s); font-size: 15px; font-weight: 400; color: var(--text);
+}
+.strip-check { width: 1.1em; text-align: center; color: var(--text-dim); font-weight: 700; }
+.strip-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.strip-student.absent .strip-name { color: var(--text-dim); text-decoration: line-through; }
+.strip-badge { display: inline-flex; align-items: center; font-weight: 700; font-size: 13px; }
+.strip-badge.absent { color: var(--md-error); }
+.strip-badge.late, .strip-badge.out { color: var(--away); }
+.strip-badge.excused { color: var(--md-on-surface-variant); }
+.strip-points { font-weight: 700; font-size: 13px; }
+.strip-points.pos { color: var(--md-primary); }
+.strip-points.neg { color: var(--md-error); }
+.strip-tables.batching .strip-student { border-style: dashed; border-left-style: solid; }
+.strip-student.selected, .strip-table .strip-student.selected {
+  background: var(--select-highlight); border-color: var(--accent); border-left-color: var(--accent); border-style: solid;
+}
+.strip-student.selected .strip-check, .strip-table .strip-student.selected .strip-check { color: var(--accent); font-size: 18px; }
+.strip-foot { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
+.strip-foot button { min-height: 48px; justify-content: flex-start; }
+.strip-foot .lesson-btn { padding: 8px 14px; font-size: 15px; }
+.strip-sheet {
+  position: absolute; left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 80%; overflow-y: auto; z-index: var(--z-popover);
+}
+.strip-mode .batch-panel { margin-bottom: 0; }
+.strip-sheet.grid { width: auto; }
+
+/* Narrow windows (the docked strip): dialogs and the picker fit the column. */
+@media (max-width: 420px) {
+  .modal { min-width: 0; width: calc(100vw - 16px); padding: 14px; }
+  .picker-card { padding: 20px 12px; gap: 12px; }
+  .picker-more { grid-template-columns: 1fr; }
+}
+.pin-input { font-size: 22px; letter-spacing: 6px; text-align: center; }
+
+/* ---------- class colours ---------- */
+.class-card.coloured { border-top: 6px solid var(--class-colour); }
+/* Every class colour is deep enough to carry white text (src/lib/behaviourColours.ts). */
+.class-card.coloured .class-card-avatar { background: var(--class-colour); color: var(--on-fill); }
+.class-dot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 0; box-shadow: 0 0 0 1px var(--md-outline-variant); }
+.class-dot.none { background: transparent; box-shadow: inset 0 0 0 1px var(--md-outline); }
+.top-bar { border-bottom: 3px solid var(--class-colour, transparent); }
+.class-colour-row { margin-top: 10px; }
+
+/* ---------- dashboards ---------- */
+/* The written summary: a filled card in the secondary container. */
+.summary-card {
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+  border-radius: var(--md-shape-m); padding: 16px 20px; margin-bottom: 16px;
+}
+.summary-card h3 { margin: 0 0 6px; font-size: 16px; font-weight: 500; line-height: 24px; }
+.summary-card .muted { color: inherit; opacity: 0.8; }
+.dash-class .panel h3, .dash-student .panel h3 { display: flex; align-items: center; gap: 8px; }
+.dash-class .panel h3 .icon, .dash-student .panel h3 .icon { color: var(--md-on-surface-variant); }
+.people-list.warn h3 .icon { color: var(--warn); }
+.people-list.good h3 .icon { color: var(--md-primary); }
+.summary-card ul { margin: 0; padding-left: 20px; line-height: 1.55; }
+.people-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.people-list { margin-bottom: 0; border-top: 4px solid var(--border); }
+.people-list.warn { border-top-color: var(--warn); }
+.people-list.good { border-top-color: var(--accent); }
+.people-list h3 { margin: 0 0 2px; font-size: 15px; }
+.people-hint { margin: 0 0 6px; font-size: 12px; }
+.people-list ol { margin: 6px 0 0; padding-left: 20px; }
+.people-list li { margin: 4px 0; }
+.people-list li .muted { display: block; font-size: 12px; }
+.link-btn { background: none; border: none; padding: 0; min-height: 0; color: var(--accent); font-weight: 700; text-align: left; }
+.link-btn:hover { text-decoration: underline; }
+.student-pick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.student-pick select { min-height: 40px; font-size: 15px; }
+.student-name { margin: 0 6px 0 10px; font-size: 22px; font-weight: 400; }
+.student-notes { display: flex; align-items: flex-start; gap: 6px; margin: 0 0 12px; }
+.dash-wide { grid-column: 1 / -1; overflow-x: auto; }
+table.data .num { text-align: right; white-space: nowrap; }
+table.data td.pos, .event-points.pos { color: var(--accent); font-weight: 700; }
+table.data td.neg, .event-points.neg { color: var(--danger); font-weight: 700; }
+.event-list { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; }
+.event-list li { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.event-list li:last-child { border-bottom: none; }
+.event-list .grow { flex: 1; }
+.event-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.answer-bar { display: flex; height: 30px; border-radius: 6px; overflow: hidden; gap: 2px; margin: 4px 0 8px; }
+.answer-bar span { display: flex; align-items: center; justify-content: center; color: var(--on-fill); font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+.answer-bar .answered { background: #4338ca; }
+.answer-bar .missed { background: #4a5868; }
+
+/* ---------- parent reports (preview on screen, A4 pages in print) ---------- */
+.report-portal { position: fixed; inset: 0; z-index: var(--z-report); display: flex; background: var(--md-surface-container-highest); }
+.report-options { width: 290px; flex: none; background: var(--md-surface-container-low); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.report-options h2 { margin: 0 0 4px; font-size: 22px; font-weight: 400; line-height: 28px; }
+.report-options h3 { margin: 16px 0 4px; font-size: 14px; font-weight: 500; letter-spacing: 0.1px; color: var(--text-dim); }
+.report-options select { width: 100%; min-height: 40px; }
+.report-options .muted { margin: 0; font-size: 13px; }
+.report-field { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.report-field input { width: 160px; }
+.report-check { display: flex; align-items: center; gap: 8px; min-height: 36px; cursor: pointer; }
+.report-check input { width: 20px; height: 20px; }
+.report-hint { margin-top: 12px !important; }
+.report-actions { margin-top: auto; padding-top: 16px; display: flex; gap: 8px; }
+.report-actions button { flex: 1; min-height: 44px; }
+.report-pages { flex: 1; overflow-y: auto; padding: 24px; }
+
+.report-page {
+  page: report; /* the A4 portrait @page below; other printouts keep their own */
+  width: 210mm; min-height: 297mm; margin: 0 auto 24px; padding: 14mm; background: #fff; color: #1d2733;
+  box-shadow: 0 2px 10px rgba(20, 30, 40, 0.18); font-size: 12px; line-height: 1.4; display: flex; flex-direction: column;
+}
+.report-page h1 { margin: 0; font-size: 22px; }
+.report-page h2 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--report-accent); }
+.report-page h3 { margin: 0 0 4px; font-size: 13px; }
+.report-page p { margin: 4px 0; }
+.report-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-bottom: 6px; border-bottom: 2px solid var(--report-accent); margin-bottom: 8px; }
+.report-school { font-size: 12px; font-weight: 700; color: #5c6b7a; text-transform: uppercase; letter-spacing: 0.06em; }
+.report-class { color: #5c6b7a; }
+.report-meta { text-align: right; color: #5c6b7a; font-size: 12px; }
+.report-summary { background: var(--report-accent-soft); border-left: 4px solid var(--report-accent); padding: 6px 12px; margin-bottom: 8px; break-inside: avoid; }
+.report-summary ul { margin: 0; padding-left: 18px; }
+.report-section { margin-bottom: 8px; break-inside: avoid; }
+.report-two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.report-table { width: 100%; border-collapse: collapse; }
+.report-table th, .report-table td { padding: 2px 6px; border-bottom: 1px solid #dfe3e8; text-align: left; vertical-align: top; }
+.report-table th { font-size: 11px; color: #5c6b7a; font-weight: 700; }
+.report-table .num { text-align: right; white-space: nowrap; }
+.report-chart { margin-top: 6px; }
+.report-bar { height: 5px; background: #eef1f4; border-radius: 3px; margin-top: 2px; }
+.report-bar span { display: block; height: 100%; background: #2e9455; border-radius: 3px; }
+.report-tally { list-style: none; margin: 0; padding: 0; }
+.report-tally li { display: flex; justify-content: space-between; border-bottom: 1px dotted #c9d0d8; padding: 2px 0; }
+.report-muted { color: #5c6b7a; }
+.report-edit { width: 100%; font: inherit; padding: 6px 8px; border: 1px dashed #8a97a5; border-radius: 6px; background: #fbfcfd; resize: vertical; }
+.report-comment-print { display: none; white-space: pre-wrap; }
+.report-lines span { display: block; height: 20px; border-bottom: 1px solid #b8c1cb; }
+.report-notes { margin-top: auto; }
+.report-printed { font-size: 11px; color: #8a97a5; }
+
+@page report { size: A4 portrait; margin: 10mm 12mm; }
+
+@media print {
+  body.report-open #root { display: none !important; }
+  /* The whole document uses the report's A4 page, so nothing outside the
+     pages (like the chart library's measuring span) starts a page of its own. */
+  html:has(body.report-open), body.report-open { height: auto !important; background: #fff; page: report; }
+  body.report-open > :not(.report-portal) { display: none !important; }
+  .report-portal { position: static; display: block; background: none; }
+  .report-options, .report-edit { display: none !important; }
+  .report-pages { padding: 0; overflow: visible; }
+  /* At least a full page so the meeting notes sit at the bottom; a long report flows onto a second page rather than being cut off. */
+  .report-page { width: auto; min-height: 270mm; margin: 0; padding: 0; box-shadow: none; break-after: page; }
+  .report-page:last-child { break-after: auto; }
+  .report-comment-print { display: block; }
+  .report-summary, .report-bar span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+.report-empty { background: var(--panel); border-radius: var(--md-shape-m); padding: 24px; max-width: 210mm; margin: 0 auto; }
+
+/* ---------- notes: the note boxes, the Notes page, Form F ---------- */
+.modal.note-modal { width: min(92vw, 560px); }
+.modal.note-modal.wide { width: min(94vw, 760px); max-width: min(94vw, 760px); }
+.note-toolbar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.note-toolbar > :first-child { flex: 1; }
+.note-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-dim); }
+.note-field select, .note-field input { color: var(--text); }
+.note-size { display: inline-flex; gap: 4px; margin-left: auto; }
+.note-text, .note-section textarea { width: 100%; resize: vertical; line-height: 1.4; }
+.note-hint { margin: -4px 0 12px; font-size: 13px; }
+.note-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+button.note-tag.on { background: var(--md-primary); color: var(--md-on-primary); border-color: var(--md-primary); }
+.modal .actions .spacer { flex: 1; }
+.modal .actions button.note-escape { color: var(--md-error); }
+.note-sections { display: flex; flex-direction: column; gap: 10px; max-height: 52vh; overflow-y: auto; padding-right: 4px; }
+.note-section { display: flex; flex-direction: column; gap: 4px; font-weight: 500; font-size: 14px; }
+.lesson-btn.has-draft { border-style: dashed; }
+
+.notes-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+.notes-filters input[type="search"] { width: 180px; }
+.note-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.note-card { background: var(--panel); border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-m); padding: 10px 14px; }
+.note-card.detailed { border-left: 4px solid var(--md-primary); }
+.note-card.formF { border-left: 4px solid var(--md-tertiary, var(--md-primary)); }
+.note-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.note-when { color: var(--text-dim); font-size: 13px; font-variant-numeric: tabular-nums; }
+.tag.note-kind { margin: 0; }
+.note-tag-list { margin-top: 6px; }
+.note-text-shown { white-space: pre-wrap; margin: 6px 0 0; }
+.note-sections-shown { margin: 6px 0 0; display: grid; gap: 6px; }
+.note-sections-shown div { display: grid; grid-template-columns: 140px 1fr; gap: 10px; }
+.note-sections-shown dt { color: var(--text-dim); font-weight: 500; }
+.note-sections-shown dd { margin: 0; white-space: pre-wrap; }
+.note-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
+.note-group { margin: 0; }
+.note-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.note-group li { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: start; }
+.note-group .note-text-shown { margin: 0; }
+.note-settings { margin-top: 24px; }
+.note-settings h4 { margin: 18px 0 6px; }
+.note-settings table input { width: 260px; }
+
+/* Form F in its box: the details as a two-column form, then the checklist. */
+.formf-details { display: grid; gap: 8px; margin-bottom: 12px; }
+.formf-row { display: grid; grid-template-columns: 220px 1fr; gap: 12px; align-items: center; font-size: 14px; }
+.formf-modal .note-section { margin-bottom: 12px; }
+.formf-checklist { margin-top: 4px; }
+.formf-checklist td, .formf-checklist th { padding: 6px 10px; }
+.formf-checklist .formf-answer { width: 64px; text-align: center; }
+.formf-checklist input { width: 100%; }
+button.formf-tick { width: 34px; height: 34px; min-height: 34px; border-radius: var(--md-shape-xs); }
+button.formf-tick.on { background: var(--md-primary); border-color: var(--md-primary); color: var(--md-on-primary); }
+
+/* Form F laid out to print: A4 pages on a grey desk, with a bar to print or close. */
+.formf-portal {
+  position: fixed; inset: 0; z-index: var(--z-modal); display: flex; flex-direction: column;
+  background: var(--md-surface-container-highest);
+}
+.formf-bar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--md-surface-container); box-shadow: var(--md-elev-1); }
+.formf-pages { flex: 1; overflow: auto; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.formf-page {
+  width: 210mm; min-height: 297mm; padding: 16mm 18mm; background: #fff; color: #111; box-shadow: var(--md-elev-2);
+  font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt;
+}
+.formf-running { font-size: 8.5pt; margin: 0 0 6mm; letter-spacing: 0.2px; }
+.formf-page h1 { font-size: 16pt; margin: 0 0 4mm; font-weight: 700; }
+.formf-page h2 { font-size: 13pt; margin: 0 0 8mm; font-weight: 700; text-align: center; padding: 0 20mm; }
+.formf-table { width: 100%; border-collapse: collapse; margin-bottom: 7mm; }
+.formf-table th, .formf-table td { border: 1px solid #333; padding: 3mm 3mm; text-align: left; vertical-align: top; font-weight: 400; }
+.formf-table > tbody > tr > th { width: 42%; }
+.formf-ticks th:not(:first-child), .formf-ticks td { width: 13%; text-align: center; font-weight: 700; }
+.formf-ticks thead th { font-weight: 700; }
+.formf-ticks td { font-size: 14pt; }
+.formf-ticks td.formf-percent { font-size: inherit; font-weight: 400; text-align: left; }
+.formf-question { margin: 0 0 3mm; }
+.formf-box { border: 1px solid #333; min-height: 55mm; padding: 3mm; white-space: pre-wrap; }
+.formf-sign { display: flex; gap: 10mm; margin-top: 18mm; }
+.formf-sign span { display: flex; align-items: flex-end; gap: 2mm; flex: 1; }
+.formf-sign i { flex: 1; border-bottom: 1px solid #333; font-style: normal; min-height: 7mm; padding-left: 2mm; }
+
+@page formf { size: A4 portrait; margin: 0; }
+@media print {
+  body.formf-open #root { display: none !important; }
+  html:has(body.formf-open), body.formf-open { height: auto !important; background: #fff; page: formf; }
+  body.formf-open > :not(.formf-portal) { display: none !important; }
+  .formf-portal { position: static; display: block; background: none; }
+  .formf-bar { display: none !important; }
+  .formf-pages { padding: 0; overflow: visible; display: block; }
+  .formf-page { box-shadow: none; margin: 0; break-after: page; }
+  .formf-page:last-child { break-after: auto; }
+}
+
+/* ---------- ClassKernel Science (Home and Settings → Tools) ---------- */
+/* The website's card: the little "opens outside" arrow sits after the name. */
+.science-card .tool-text b { display: inline-flex; align-items: center; gap: 6px; }
+.science-card .tool-text b .icon { color: var(--text-dim); }
+.science-moved { background: var(--md-secondary-container); color: var(--md-on-secondary-container); border-color: transparent; }
+.science-row {
+  display: flex; align-items: center; gap: 16px; margin-top: 8px; padding-top: 14px;
+  border-top: 1px solid var(--md-outline-variant);
+}
+.science-row .muted { font-size: 13px; margin-top: 2px; }

@@ -1,0 +1,29 @@
+{
+  "name": "@classkernel/ui",
+  "private": true,
+  "version": "0.0.0",
+  "description": "The look and the small pieces ClassKernel and ClassKernel Science share.",
+  "type": "module",
+  "exports": {
+    "./Icon": "./src/Icon.tsx",
+    "./Segmented": "./src/Segmented.tsx",
+    "./Modal": "./src/Modal.tsx",
+    "./motion": "./src/motion.ts",
+    "./theme": "./src/theme.ts",
+    "./numbers": "./src/numbers.ts",
+    "./download": "./src/download.ts",
+    "./fonts": "./src/fonts.ts",
+    "./base.css": "./src/styles/base.css",
+    "./tool-layout.css": "./src/styles/tool-layout.css"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@fontsource/roboto": "^5.3.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1"
+  }
+}

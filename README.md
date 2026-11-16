@@ -1,6 +1,13 @@
 # ClassKernel
 
-Fast, offline-first classroom management for teachers. A small Windows desktop app (Tauri 2, ~10 MB):
+Two apps for teachers, from one repository:
+
+- **ClassKernel** — fast, offline-first classroom management (below).
+- **[ClassKernel Science](https://j4ckr4bbit.github.io/ClassKernel/)** — science teaching tools for the board, as a
+  website: a chemistry reference, a titration simulator, a galvanic cell animator, graph plotters and graph paper.
+  Nothing to install. [Its guide →](docs/science/README.md)
+
+ClassKernel is fast, offline-first classroom management for teachers. A small Windows desktop app (Tauri 2, ~10 MB):
 **no accounts, no server, no internet** (unless you ask it to check for an update). Everything is saved as plain `.csv` and `.md` files in a folder you choose.
 
 ![The Lesson page: tap a seat to record behaviour or attendance](docs/images/lesson.png)
@@ -14,8 +21,8 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 
 Once installed, it updates itself when you ask: **Settings → General → Updates → Check for updates**.
 
-The teaching tools (timer, clock, graph makers, galvanic cell, periodic table…) also open in any browser, with nothing
-to install: **[ClassKernel tools](https://j4ckr4bbit.github.io/ClassKernel/)**.
+The science tools are a website of their own, **[ClassKernel Science](https://j4ckr4bbit.github.io/ClassKernel/)**;
+ClassKernel opens it from Home and Settings → Tools.
 
 ## What it does
 
@@ -29,7 +36,7 @@ to install: **[ClassKernel tools](https://j4ckr4bbit.github.io/ClassKernel/)**.
 | **Notes** | Quick notes from lessons (tagged; Submit, Draft or Escape), detailed notes in sections (*Work ethic*, *Behaviour*, *Assessment*…), and the IEB's **Form F** teacher comment, printed ready to sign. One student's notes can be read by section. |
 | **Marks** | Tests as a single mark or per question (tagged by topic and cognitive level), keyboard-first mark entry with a calculator beside it, a read-only **View** and a class **Markbook** (each named in the top bar, with its Back), informal / examination **weighting**, and spreadsheet **templates** to fill in and import. SA levels or symbols. |
 | **Class** | Class details, colour and Markdown notes. |
-| **Settings** | **General** (privacy mode, display size, Light / Dark / Match Windows and green or St Benedict's navy-and-gold colours, time zone, the parent-report header, classes and students from a spreadsheet, the data folder and backups), **Behaviour** (your behaviour buttons, each with a three-character code and an icon), **Teaching mode** (including the student pop-up style), **Assessments** (topic bank by grade — grades can share one list — cognitive levels, weighting), **Tools** and **.xlsx Export**. For the class chosen in the top bar: **Students** (with Adam numbers), the **room-layout designer** and **seating rules**. |
+| **Settings** | **General** (privacy mode, display size, Light / Dark / Match Windows and green or St Benedict's navy-and-gold colours, time zone, the parent-report header, classes and students from a spreadsheet, the data folder and backups), **Behaviour** (your behaviour buttons, each with a three-character code and an icon), **Teaching mode** (including the student pop-up style), **Assessments** (topic bank by grade — grades can share one list — cognitive levels, weighting), **Tools** (with the link to ClassKernel Science) and **.xlsx Export**. For the class chosen in the top bar: **Students** (with Adam numbers), the **room-layout designer** and **seating rules**. |
 
 Made for a classroom touch panel: large buttons, a **privacy mode** that keeps marks and notes covered on the big
 screen, and seats and dialogs that also work from the keyboard and with a screen reader. When Windows is set
@@ -46,12 +53,6 @@ the light colours.
 | **Test timer** | Full-screen countdown with reading and writing phases; keeps running as a pop-up. |
 | **Clock** | Full-screen analog or flip clock, any time zone. |
 | **Stopwatch** | LED-style lab stopwatch with laps. |
-| **Graph paper generator** | Grids and axes at an exact mm size, saved as a 300 dpi PNG. |
-| **Practical graph plotter** | Readings in; graph, line of best fit, gradient and R² out. |
-| **Motion graph builder** | x–t, v–t and a–t graphs from one journey, so they always agree. |
-| **Chemistry reference** | The periodic table, colour-coded and tap-for-details (shell and Aufbau diagrams, configurations, ionisation energies…), common substances with their structures, bond enthalpies and polarity, the polyatomic ions with Lewis diagrams, a quiz, the data sheet's tables and an equation balancer. |
-| **Titration simulator** | A burette, a flask, the usual acids, bases and indicators, and the pH curve as the titrant runs in. |
-| **Galvanic cell animator** | An animated galvanic cell: electrons, ions, the salt bridge and a voltmeter that follows the Nernst equation, with the memo under it. |
 | **Class noise meter** | Shows the room's noise against a limit and warns the class when it's too loud. |
 
 ## Your data
@@ -68,16 +69,17 @@ copy on this computer and joins the changes back when the folder returns. See
 
 ```bash
 npm install
-npm run dev            # UI in a browser with an in-memory demo class
-npm test               # unit tests
+npm run dev            # ClassKernel in a browser with an in-memory demo class
+npm run dev:science    # ClassKernel Science in a browser
+npm test               # unit tests, both apps and the shared package
 npm run test:e2e       # browser tests (first time: npx playwright install chromium)
-npm run docs:screenshots  # retake the user guide's pictures
-npm run tauri dev      # desktop app (needs Rust)
-npm run tauri build    # Windows installer
-npm run build:tools    # the tools website, into dist-tools/
+npm run build          # both apps
+npm run tauri dev      # ClassKernel's desktop app (needs Rust)
+npm run tauri build    # ClassKernel's Windows installer
 ```
 
-React + TypeScript + Vite and Zustand on a minimal Rust (Tauri 2) backend. The screens live in `src/components/`,
-with Settings and Marks each in a folder of their own (one file per tab or screen). CI runs the tests and builds the
-installer on every push; tagging `v*` publishes a release. See [Development](docs/development.md), and
-[`src/plugins/README.md`](src/plugins/README.md) to add a tool.
+React + TypeScript + Vite, as npm workspaces: `apps/classkernel/` (Zustand on a minimal Rust / Tauri 2 backend),
+`apps/science/` (a static website) and `packages/ui/` (the look and the small pieces both share). CI runs the tests
+and builds the installer on every push; tagging `v*` publishes a ClassKernel release, and every push to `main`
+publishes the website. See [Development](docs/development.md), and
+[`apps/classkernel/src/plugins/README.md`](apps/classkernel/src/plugins/README.md) to add a tool.

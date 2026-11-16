@@ -44,8 +44,7 @@ Every setting saves as soon as you change it.
   default.
   - It's chosen **on each computer separately**, so the classroom board can stay light while your laptop is dark.
     It isn't saved in your data folder.
-  - Printing is always in the light colours (the seating plan, parent reports), and the graph tools' sheets and
-    saved pictures stay white.
+  - Printing is always in the light colours (the seating plan, parent reports).
 - **Colour scheme: Green / Navy and gold.** Navy and gold are St Benedict's College's colours: navy buttons and
   links, the school's gold marking where you are in the navigation, and navy seats on the room plan. Green is the
   default.
@@ -213,6 +212,9 @@ has an **Open** button here. Switching one off removes it again and leaves the r
 While the dashboards are switched off there is no dashboard anywhere in the app, and student names don't link to
 one. The tools themselves are described in [Teaching tools](09-teaching-tools.md) and
 [Dashboards and parent reports](08-dashboards-and-reports.md).
+
+At the foot of the list, **Science tools → Open** opens [ClassKernel Science](../science/README.md), the website the
+chemistry reference, titration simulator, galvanic cell animator and graph tools moved to, in your browser.
 
 ## Export
 
