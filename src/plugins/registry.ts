@@ -126,6 +126,15 @@ export const PLUGINS: PluginManifest[] = [
     load: () => import("./motion-graph/MotionGraph").then((m) => m.default),
   },
   {
+    id: "circuit-builder",
+    name: "Circuit builder",
+    tagline: "Build an exam-style circuit, switch it on and read the meters.",
+    description:
+      "Draw a circuit the way the exam papers do — black-and-white IEC symbols on a grid: cells and batteries (with internal resistance), resistors, lamps, rheostats, ammeters, voltmeters, switches, fuses and diodes — or start from an example (series and parallel lamps, internal resistance, two switches, a rheostat, diodes, a fuse, meters connected wrongly). Run it and every ammeter and voltmeter shows its reading, each lamp glows with the power it uses, and the current moves round the wires (conventional or electron flow). Tap a switch to open or close it, slide the rheostat, change any value and watch the readings follow. Under the circuit, the memo: each meter, the cell's terminal voltage and lost volts, and V, I and P for every part. Question mode hides the readings; Show to class fills the screen. Saves the diagram as a 300 dpi PNG for a paper, with or without the readings, and the circuit itself as a file to open again. Nothing is saved to your data; this computer remembers the circuit you were last working on.",
+    icon: "electrical_services",
+    load: () => import("./circuit-builder/CircuitBuilder").then((m) => m.default),
+  },
+  {
     id: "galvanic-cell",
     name: "Galvanic cell animator",
     tagline: "Watch a galvanic cell work, with the reading following the Nernst equation.",

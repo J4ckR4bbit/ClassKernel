@@ -156,6 +156,113 @@ test("graph tools: graph paper saves a PNG, the plotter takes readings, the moti
   await expect(choice.locator("button").nth(1)).toHaveClass(/\bon\b/);
 });
 
+test.describe("circuit builder", () => {
+  // While building, the canvas shows the whole grid: 24 × 16 steps across its width and height.
+  const at = async (page: Page, gx: number, gy: number) => {
+    const b = (await page.locator(".cb-canvas").boundingBox())!;
+    return { x: b.x + ((gx * 40) / 960) * b.width, y: b.y + ((gy * 40) / 640) * b.height };
+  };
+  const tap = async (page: Page, gx: number, gy: number) => {
+    const p = await at(page, gx, gy);
+    await page.mouse.click(p.x, p.y);
+  };
+  const wire = async (page: Page, points: Array<[number, number]>) => {
+    const start = await at(page, ...points[0]);
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    for (const pt of points.slice(1)) {
+      const p = await at(page, ...pt);
+      await page.mouse.move(p.x, p.y, { steps: 6 });
+    }
+    await page.mouse.up();
+  };
+  const meterRow = (page: Page, label: RegExp) => page.locator(".cb-memo tbody tr", { has: page.locator("td", { hasText: label }) }).first();
+
+  test.beforeEach(async ({ page }) => {
+    await enableTools(page, ["circuit-builder"]);
+    await openTool(page, "Circuit builder");
+  });
+
+  test("build a circuit from parts and wire, run it and read the ammeter", async ({ page }) => {
+    await page.getByRole("button", { name: "Build", exact: true }).click();
+    await page.getByRole("button", { name: "Clear" }).click();
+    await expect(page.locator(".cb-memo")).toContainText("Switch to Run");
+    const place = async (name: string, gx: number, gy: number) => {
+      await page.locator(".cb-palette-btn", { hasText: name }).click();
+      await tap(page, gx, gy);
+    };
+    await place("Cell", 6, 4);
+    await place("Resistor", 12, 4);
+    await page.getByRole("button", { name: "Down", exact: true }).click();
+    await place("Lamp", 15, 7);
+    await page.getByRole("button", { name: "Across", exact: true }).click();
+    await place("Ammeter", 10, 10);
+    await wire(page, [[7, 4], [11, 4]]);
+    await wire(page, [[13, 4], [15, 4], [15, 6]]);
+    await wire(page, [[15, 8], [15, 10], [11, 10]]);
+    // Not joined up yet: a loose end is reported.
+    await expect(page.locator(".cb-warnings")).toContainText("joined to nothing");
+    await wire(page, [[9, 10], [3, 10], [3, 4], [5, 4]]);
+    await expect(page.locator(".cb-warnings")).toHaveCount(0);
+    // 12 V across 8 Ω and a 4 Ω lamp: 1 A.
+    await tap(page, 12, 4);
+    await page.getByLabel("Resistance in Ω").fill("8");
+    await tap(page, 6, 4);
+    await page.getByLabel("emf in V").fill("12");
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    await expect(meterRow(page, /^A1$/)).toContainText("1,00 A");
+    await expect(page.locator(".cb-memo")).toContainText("External resistance");
+    await expect(page.locator(".cb-memo")).toContainText("12,00 Ω");
+    // Undo takes back the last change (the emf), and the current follows: 6 V / 12 Ω.
+    await page.getByRole("button", { name: "Undo" }).first().click();
+    await expect(meterRow(page, /^A1$/)).toContainText("0,50 A");
+  });
+
+  test("an example: closing S2 puts R3 in parallel and the readings follow; question mode hides them", async ({ page }) => {
+    await page.getByLabel("Example circuit").selectOption("two-switches");
+    await expect(page.locator(".cb-memo")).toContainText("The memo");
+    await expect(meterRow(page, /^A$/)).toContainText("1,00 A");
+    await expect(meterRow(page, /^V1$/)).toContainText("4,00 V");
+    await expect(meterRow(page, /^V2$/)).toContainText("6,00 V");
+    // Select S2 on the full grid (Build), then close it from its panel.
+    await page.getByRole("button", { name: "Build", exact: true }).click();
+    await tap(page, 15, 12);
+    await page.locator(".cb-part .seg button", { hasText: "Closed" }).click();
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    await expect(meterRow(page, /^A$/)).toContainText("1,50 A");
+    await expect(meterRow(page, /^V1$/)).toContainText("6,00 V");
+    await expect(meterRow(page, /^V2$/)).toContainText("3,00 V");
+    await page.getByLabel(/Question mode/).check();
+    await expect(page.locator(".cb-memo table")).toHaveCount(0);
+    await expect(page.locator(".cb-hidden")).toContainText("hidden");
+    await page.getByLabel(/Question mode/).uncheck();
+    // The picture for a paper.
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Save PNG…" }).click();
+    expect((await download).suggestedFilename()).toBe("circuit.png");
+  });
+
+  test("a fuse blows on overload, stays blown, and is replaced from its panel", async ({ page }) => {
+    await page.getByLabel("Example circuit").selectOption("fuse");
+    await expect(page.locator(".cb-warnings")).toHaveCount(0);
+    await page.getByRole("button", { name: "Build", exact: true }).click();
+    await tap(page, 14, 12);
+    await page.locator(".cb-part .seg button", { hasText: "Closed" }).click();
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    await expect(page.locator(".cb-warnings")).toContainText("has blown");
+    await expect(page.locator(".cb-memo")).toContainText("blown");
+    // Open S3 again: the fuse stays blown until it is replaced.
+    await page.getByRole("button", { name: "Build", exact: true }).click();
+    await tap(page, 14, 12);
+    await page.locator(".cb-part .seg button", { hasText: "Open" }).click();
+    await expect(page.locator(".cb-warnings")).toContainText("has blown");
+    await tap(page, 12, 3);
+    await page.getByRole("button", { name: "Replace the fuse" }).click();
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    await expect(page.locator(".cb-warnings")).toHaveCount(0);
+  });
+});
+
 test("galvanic cell: the reading follows the half-cells and the salt bridge, question mode hides it", async ({ page }) => {
   await enableTools(page, ["galvanic-cell"]);
   await openTool(page, "Galvanic cell animator");

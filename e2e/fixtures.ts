@@ -69,6 +69,7 @@ export const ALL_TOOLS = [
   "graph-paper",
   "practical-graph",
   "motion-graph",
+  "circuit-builder",
   "galvanic-cell",
   "chemistry-reference",
   "titration",
