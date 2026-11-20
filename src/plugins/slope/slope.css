@@ -1,0 +1,60 @@
+/* Block on a slope: controls on the left; the sketch, the free-body diagrams, the v–t graph and the memo on the right. */
+.slope-sim { display: grid; grid-template-columns: minmax(300px, 360px) 1fr; gap: 16px; height: 100%; }
+.slope-sim.class-view { display: block; }
+.sl-controls { overflow-y: auto; padding-right: 4px; }
+.sl-controls .panel { padding: 14px; }
+.sl-controls h3, .sl-main h3 { font-size: 14px; margin-bottom: 10px; }
+.sl-note { font-size: 12px; margin: 8px 0 0; }
+.sl-status { font-size: 13px; margin-top: 8px; word-break: break-all; }
+.sl-row { margin-top: 10px; align-items: center; }
+.sl-seg { margin-bottom: 10px; }
+.sl-select { width: 100%; }
+.sl-field { margin-bottom: 8px; }
+.sl-field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sl-field-label { flex: 1; font-size: 13px; }
+.sl-number { display: flex; align-items: center; gap: 6px; }
+.sl-number input { width: 84px; text-align: right; font-variant-numeric: tabular-nums; }
+.sl-number input.sl-bad { border-color: var(--md-error); }
+.sl-field input[type="range"] { width: 100%; margin-top: 4px; }
+.sl-check { display: flex; align-items: center; gap: 9px; font-size: 13px; margin: 8px 0; cursor: pointer; }
+.sl-inline { min-height: 0; padding: 0 4px; font-size: 12px; text-decoration: underline; }
+.sl-warn { font-size: 13px; color: var(--on-warning-container); background: var(--warning-container); border-radius: var(--md-shape-s); padding: 6px 10px; margin: 6px 0 0; }
+.sl-banner { font-size: 14px; font-weight: 600; color: var(--on-good-container); background: var(--good-container); border-radius: var(--md-shape-s); padding: 6px 12px; margin: 0; }
+
+.sl-main { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; }
+/* The board: tinted, so the white pictures read as sheets on a desk. */
+.sl-board { display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); flex: none; }
+/* Each canvas is sized from its box in script (sizeCanvas), keeping its picture's shape. */
+.sl-sketch, .sl-fbd, .sl-graph { display: block; background: #fff; border: 1px solid var(--border); border-radius: 6px; }
+.sl-sketch { box-shadow: 0 2px 10px rgba(29, 39, 51, 0.12); }
+.sl-sketch-box, .sl-fbd-box { min-width: 0; min-height: 0; display: flex; justify-content: center; }
+.sl-readouts { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: flex-end; }
+.sl-readout { display: flex; flex-direction: column; min-width: 92px; }
+.sl-readout-label { font-size: 12px; color: var(--text-dim); }
+.sl-readout-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sl-readout-value.small-value { font-size: 15px; font-weight: 600; }
+.sl-state { flex: 1; min-width: 220px; }
+
+/* Shown to the class: the sketch with its readings on the left, the free-body diagrams stacked on the right. */
+.sl-board.class-view {
+  position: fixed; inset: 0; z-index: var(--z-class-view); border-radius: 0; padding: 20px 24px 76px;
+  display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; gap: 14px;
+}
+.sl-board.class-view .sl-sketch-box { grid-column: 1; grid-row: 1; align-items: center; }
+.sl-board.class-view .sl-readouts { grid-column: 1; grid-row: 2; }
+.sl-board.class-view .sl-banner, .sl-board.class-view .sl-warn { grid-column: 1; grid-row: 3; }
+.sl-board.class-view .sl-fbd-box { grid-column: 2; grid-row: 1 / 4; align-items: flex-start; }
+.sl-board.class-view .sl-readout-value { font-size: 26px; }
+.sl-class-bar { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap; z-index: calc(var(--z-class-view) + 1); }
+
+.sl-memo { padding: 14px 18px; }
+.sl-hidden { font-size: 13px; margin: 0; }
+.sl-steps { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
+.sl-steps dt { font-weight: 600; color: var(--text-dim); }
+.sl-steps dd { margin: 0; line-height: 1.55; }
+.sl-graph-panel { padding: 14px 18px; }
+
+@media (max-width: 900px) {
+  .slope-sim { grid-template-columns: 1fr; overflow-y: auto; }
+  .sl-controls, .sl-main { overflow: visible; }
+}

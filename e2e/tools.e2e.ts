@@ -156,6 +156,65 @@ test("graph tools: graph paper saves a PNG, the plotter takes readings, the moti
   await expect(choice.locator("button").nth(1)).toHaveClass(/\bon\b/);
 });
 
+test.describe("block on a slope", () => {
+  test.beforeEach(async ({ page }) => {
+    await enableTools(page, ["slope-simulator"]);
+    await openTool(page, "Block on a slope");
+  });
+  const state = (page: Page) => page.locator(".sl-state .sl-readout-value");
+  const velocity = (page: Page) => page.locator(".sl-readout", { hasText: "v (up +)" }).locator(".sl-readout-value");
+
+  test("at rest: static friction holds the block, and running it changes nothing", async ({ page }) => {
+    await page.getByLabel("Example").selectOption("rest");
+    await expect(state(page)).toHaveText("At rest: static friction holds it");
+    await expect(page.locator(".sl-memo")).toContainText("static friction holds the block: Ff = 24,85 N up the slope");
+    await expect(page.locator(".sl-memo")).toContainText("θ = tan⁻¹(0,6) = 31,0°");
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    await page.waitForTimeout(600);
+    await expect(velocity(page)).toHaveText("0,00 m·s⁻¹");
+  });
+
+  test("slides down a rough slope and speeds up; question mode hides the numbers", async ({ page }) => {
+    await page.getByLabel("Example").selectOption("slides");
+    await expect(page.locator(".sl-readout", { hasText: "a (up +)" })).toContainText("−2,81 m·s⁻²");
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    await expect(state(page)).toHaveText("Sliding down the slope, speeding up");
+    await expect(velocity(page)).toHaveText(/^−/);
+    await page.getByRole("button", { name: "Pause" }).click();
+    await page.getByLabel(/Question mode/).check();
+    await expect(velocity(page)).toHaveText("?");
+    await expect(page.locator(".sl-steps")).toHaveCount(0);
+  });
+
+  test("tilt the slope until the block slips at tan θ = μₛ", async ({ page }) => {
+    await page.getByLabel("Example").selectOption("tilt");
+    await page.getByRole("button", { name: "Tilt until it slips" }).click();
+    await expect(page.locator(".sl-banner")).toContainText("It slipped at θ = 24,2°", { timeout: 15_000 });
+    await expect(page.locator(".sl-banner")).toContainText("0,45 = μₛ");
+  });
+
+  test("a hanging mass pulls the block up; cut the string and it falls freely", async ({ page }) => {
+    await page.getByLabel("Example").selectOption("pulley");
+    await expect(page.locator(".sl-memo")).toContainText("T = m₂(g − a) = (3)(9,8 − 3,80) = 17,99 N");
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    await page.getByRole("button", { name: "Cut the string" }).click();
+    await expect(page.getByRole("button", { name: "String cut" })).toBeDisabled();
+    await page.getByRole("button", { name: "Pause" }).click();
+    await expect(page.locator(".sl-memo")).toContainText("The string is cut: the hanging mass falls freely");
+  });
+
+  test("an applied force at an angle; the sketch and the diagrams save as PNGs", async ({ page }) => {
+    await page.getByLabel("Example").selectOption("pulled-angle");
+    await expect(page.locator(".sl-memo")).toContainText("FN = Fg⊥ − F sin 20° = 35,53 − 13,68 = 21,85 N");
+    const sketch = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Save the sketch…" }).click();
+    expect((await sketch).suggestedFilename()).toBe("slope_25deg.png");
+    const diagrams = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Save the diagrams…" }).click();
+    expect((await diagrams).suggestedFilename()).toBe("slope_free_body_diagrams.png");
+  });
+});
+
 test.describe("circuit builder", () => {
   // While building, the canvas shows the whole grid: 24 × 16 steps across its width and height.
   const at = async (page: Page, gx: number, gy: number) => {

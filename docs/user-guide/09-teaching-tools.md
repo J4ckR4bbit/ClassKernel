@@ -18,6 +18,7 @@ as you need. Switch any of them on under [Settings → Tools](10-settings.md#too
 | [Graph paper generator](#graph-paper-generator) | Printable grids and axes at an exact size. |
 | [Practical graph plotter](#practical-graph-plotter) | Readings in, graph and gradient out. |
 | [Motion graph builder](#motion-graph-builder) | x–t, v–t and a–t graphs that always agree. |
+| [Block on a slope](#block-on-a-slope) | Will it slide? A slope question run, with its free-body diagrams. |
 | [Circuit builder](#circuit-builder) | Build an exam-style circuit, run it and read the meters. |
 | [Galvanic cell animator](#galvanic-cell-animator) | An animated cell whose reading follows the Nernst equation. |
 | [Chemistry reference](#chemistry-reference) | The periodic table, with every element's details a tap away. |
@@ -164,6 +165,61 @@ Describe a journey a stage at a time and get the **position–time**, **velocity
 the curve colour.
 
 **Save PNG…** saves a 300 dpi image; **Reset** goes back to the example journey.
+
+## Block on a slope
+
+An inclined-plane question on the board: set it up, ask the class whether the block will move, then run it. The
+block stays put while static friction can hold it, or slides — speeding up, slowing down, stopping — exactly as
+F<sub>net</sub> = ma says, with its free-body diagrams beside it.
+
+![Block on a slope: the sketch, the readings and the free-body diagrams](../images/slope-simulator.png)
+
+**Setting it up**
+
+- **Block on its own** or **With a hanging mass** (a light string over a frictionless pulley at the top of the slope).
+- The **angle** θ, the block's **mass** (and the hanging mass), **μₛ** and **μₖ**, or **Frictionless**. Numbers take a
+  comma or a point.
+- An **applied force F** (block on its own): its size, up or down the slope, and its **angle to the slope** —
+  positive tilts it away from the surface (a pull, drawn from the front of the block), negative into it (a push,
+  drawn onto the back); **Make it horizontal** sets a horizontal push.
+- **The start**: where the block starts on the slope, its **starting velocity** (up the slope positive — give it a
+  push) and the slope's length.
+
+**Running it**
+
+- **Run**, **Pause**, **Reset**, at full, half or quarter speed. The readings show t, the displacement, v and a (up the
+  slope positive) and what the block is doing ("At rest: static friction holds it", "Moving up the slope, slowing
+  down"…). A block that comes to rest is checked again: it stays if static friction can hold it, or slides back.
+- **Tilt until it slips** raises the angle slowly from where it is until the block slides, and says where: with
+  nothing but its weight, the normal force and friction, at tan θ = μₛ — whatever the mass.
+- **Cut the string** (with a hanging mass), mid-run: the block carries on alone and the hanging mass falls freely.
+- The run stops at the bottom or top of the slope, when the hanging mass reaches the floor or the pulley, or after
+  the block has been at rest for two seconds.
+
+**The free-body diagrams**, drawn the way the SAG asks: the block as a dot, every force an arrow pointing away from
+it, **drawn to scale** so the relative sizes are right. *The block* shows the forces as they act; *Resolved along the
+slope* adds the weight's components F<sub>g</sub> sin θ and F<sub>g</sub> cos θ as dashed arrows (and an angled F's
+components), on dashed axes along and across the slope; with a pulley, a third shows the hanging mass. Label them
+with the data-sheet **symbols** (F<sub>g</sub>, F<sub>N</sub>, F<sub>f</sub>, and F and T as the question names them) or in
+**words** (weight, normal force, static or kinetic friction, applied force, tension), with or without their sizes in N.
+Friction at rest is drawn as large as it needs to be, not at its maximum.
+
+**The memo** under the graph works the current moment: F<sub>g</sub> = mg; the components of the weight; the normal
+force from equilibrium across the slope; F<sub>fs</sub>(max) = μₛF<sub>N</sub> and whether it holds the block (and how
+much static friction acts) or kinetic friction μₖF<sub>N</sub> acts against the motion; Newton's second law for the block
+— or for each body with a hanging mass, giving a and T — and, while it slows, where it comes to rest
+(Δx = v² / 2a). The **velocity–time graph** traces the run.
+
+**Examples**, the shapes the papers use, with fresh values: at rest on a rough slope; sliding down a rough slope; a
+frictionless slope; tilt it until it slips; given a push up the slope (it stops and slides back); pulled up at an
+angle; pushed up at constant velocity (F<sub>net</sub> = 0); pulled up by a hanging mass; a hanging mass held by friction;
+cut the string.
+
+**Question mode** hides every number, the memo and the sizes on the diagrams; **Show to class** fills the screen
+with the sketch and the readings beside the diagrams. **Save the sketch…** saves the situation as a black-and-white
+300 dpi PNG for a question paper (F and the angles labelled; with question mode on, F without its size), and **Save
+the diagrams…** the free-body diagrams for a memo. g = 9,8 m·s⁻². The set-up is remembered on this computer;
+nothing is saved to your data.
 
 ## Circuit builder
 
