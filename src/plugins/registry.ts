@@ -126,6 +126,15 @@ export const PLUGINS: PluginManifest[] = [
     load: () => import("./motion-graph/MotionGraph").then((m) => m.default),
   },
   {
+    id: "slope-simulator",
+    name: "Block on a slope",
+    tagline: "Will it slide? A block on a slope, with its free-body diagrams.",
+    description:
+      "Set up an inclined-plane question — the block's mass, the angle, μₛ and μₖ (or frictionless), an applied force parallel to the slope or at an angle to it, a starting push, or a hanging mass over a pulley at the top — and run it: the block stays put while static friction can hold it, or slides, speeds up, slows down and stops, exactly as Fnet = ma says. Tilt the slope until it slips (tan θ = μₛ) or cut the string mid-run. Beside the picture, the free-body diagrams drawn the IEB way (a dot, arrows away from it, to scale, labelled Fg, FN, Ff or in words) with the weight resolved along the slope; under it a velocity–time graph and the memo: the components of the weight, the normal force, static or kinetic friction and why, Newton's second law for each body and where it stops. Examples follow the papers' slope questions. Question mode hides the numbers; Show to class fills the screen. Saves the sketch and the diagrams as 300 dpi PNGs; nothing is saved to your data.",
+    icon: "signal_cellular_0_bar",
+    load: () => import("./slope/SlopeSimulator").then((m) => m.default),
+  },
+  {
     id: "circuit-builder",
     name: "Circuit builder",
     tagline: "Build an exam-style circuit, switch it on and read the meters.",
