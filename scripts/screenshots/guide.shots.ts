@@ -490,7 +490,7 @@ test("tools: switching on, dashboards and parent reports", async ({ page }) => {
 
 test("teaching tools", async ({ page }) => {
   await prep(page);
-  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "galvanic-cell", "chemistry-reference", "titration", "noise-meter"]);
+  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "circuit-builder", "galvanic-cell", "chemistry-reference", "titration", "noise-meter"]);
 
   await openTool(page, "Test timer");
   await shot(page, "test-timer-setup");
@@ -547,6 +547,11 @@ test("teaching tools", async ({ page }) => {
 
   await openTool(page, "Motion graph builder");
   await shot(page, "motion-graph", 800);
+
+  await openTool(page, "Circuit builder");
+  await page.getByLabel("Example circuit").selectOption("series-parallel-lamps");
+  await toTop(page, ".cb-controls");
+  await shot(page, "circuit-builder", 1200);
 
   await openTool(page, "Galvanic cell animator");
   await page.waitForTimeout(1500);

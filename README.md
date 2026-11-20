@@ -14,7 +14,7 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 
 Once installed, it updates itself when you ask: **Settings → General → Updates → Check for updates**.
 
-The teaching tools (timer, clock, graph makers, galvanic cell, periodic table…) also open in any browser, with nothing
+The teaching tools (timer, clock, graph makers, circuit builder, galvanic cell, periodic table…) also open in any browser, with nothing
 to install: **[ClassKernel tools](https://j4ckr4bbit.github.io/ClassKernel/)**.
 
 ## What it does
@@ -49,6 +49,7 @@ the light colours.
 | **Graph paper generator** | Grids and axes at an exact mm size, saved as a 300 dpi PNG. |
 | **Practical graph plotter** | Readings in; graph, line of best fit, gradient and R² out. |
 | **Motion graph builder** | x–t, v–t and a–t graphs from one journey, so they always agree. |
+| **Circuit builder** | Exam-style circuits (IEC symbols) built on a grid and run: the meters read, the lamps glow with their power, the current moves; saved as a 300 dpi PNG for a paper. |
 | **Chemistry reference** | The periodic table, colour-coded and tap-for-details (shell and Aufbau diagrams, configurations, ionisation energies…), common substances with their structures, bond enthalpies and polarity, the polyatomic ions with Lewis diagrams, a quiz, the data sheet's tables and an equation balancer. |
 | **Titration simulator** | A burette, a flask, the usual acids, bases and indicators, and the pH curve as the titrant runs in. |
 | **Galvanic cell animator** | An animated galvanic cell: electrons, ions, the salt bridge and a voltmeter that follows the Nernst equation, with the memo under it. |

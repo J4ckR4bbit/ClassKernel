@@ -18,6 +18,7 @@ as you need. Switch any of them on under [Settings → Tools](10-settings.md#too
 | [Graph paper generator](#graph-paper-generator) | Printable grids and axes at an exact size. |
 | [Practical graph plotter](#practical-graph-plotter) | Readings in, graph and gradient out. |
 | [Motion graph builder](#motion-graph-builder) | x–t, v–t and a–t graphs that always agree. |
+| [Circuit builder](#circuit-builder) | Build an exam-style circuit, run it and read the meters. |
 | [Galvanic cell animator](#galvanic-cell-animator) | An animated cell whose reading follows the Nernst equation. |
 | [Chemistry reference](#chemistry-reference) | The periodic table, with every element's details a tap away. |
 | [Titration simulator](#titration-simulator) | A burette, a flask, an indicator and the pH curve. |
@@ -163,6 +164,65 @@ Describe a journey a stage at a time and get the **position–time**, **velocity
 the curve colour.
 
 **Save PNG…** saves a 300 dpi image; **Reset** goes back to the example journey.
+
+## Circuit builder
+
+Draw a circuit the way the exam papers do — black and white, the IEC symbols, wires at right angles — then run it:
+the ammeters and voltmeters show their readings, each lamp glows with the power it uses, and the current moves round
+the wires.
+
+![The circuit builder running: the ammeter reads and each lamp glows with its power](../images/circuit-builder.png)
+
+**Building** (the **Build** button)
+
+- **Parts**: cell or battery (emf and internal resistance; 1 to 4 cells drawn, the long plate is +), resistor, lamp,
+  rheostat, ammeter, voltmeter, switch, fuse and diode. Lamps are drawn as a circle with a cross, resistors as plain
+  rectangles.
+- Tap a part, then tap the grid to place it (**Across** or **Down**; drag before you let go to move it). Drop a part
+  on a wire and it cuts itself in.
+- **Wires**: drag from a part's end or any point on a wire, round corners as you go. Where three wires meet there is
+  a junction dot; a wire end or terminal joined to nothing is circled in red.
+- **Select** a part to move it (drag), **Turn** it (R), put its **label** on the other side or **Delete** it (Del);
+  tap a wire to select it up to the next junction. **Erase** removes whatever you drag over. **Ctrl+Z** undoes,
+  **Ctrl+Y** redoes; the arrows move the whole circuit.
+- The selected part's panel sets its label (digits after a letter print as a subscript: R1 → R₁), its value and
+  whether the value is printed beside it (12 Ω, emf = 12 V; r = 1 Ω, 2 A).
+
+**Running** (the **Run** button)
+
+- The circuit zooms to fill the space. Each meter shows its reading in a box beside it, to 2 decimal places or 3
+  significant figures.
+- **Tap a switch** to open or close it. Tap any other part to change its value: slide a rheostat and watch the
+  current, the brightness and the terminal voltage follow.
+- A lamp's glow follows its power, P = I²R, against **A lamp glows fully at … W**. That stays fixed while you open and
+  close switches, so a lamp that dims really is using less power; **Set it to the brightest lamp now** rescales it.
+- A **fuse** blows when the current is over its rating and stays blown until you tap it to replace it.
+- **Show the current moving** animates conventional current (orange dots, + to −) or, ticked, electron flow (blue,
+  − to +), faster where the current is bigger. With fewer animations set in Windows, arrows show the direction
+  instead.
+- **Question mode** turns every reading into “?” for the class to predict; **Show to class** fills the screen.
+
+**The memo** under the circuit: every meter's reading; for each cell the current, the terminal voltage worked as
+V = ε − Ir with the lost volts, the external resistance V ÷ I and the power; and R, V, I and P for every other part,
+with each lamp's brightness, each switch, fuse and diode's state. Warnings name a short circuit, a blown fuse, loose
+ends or a missing cell.
+
+**Examples** — the shapes the papers keep using, with fresh values: series lamps with an ammeter and a voltmeter
+(G08–G09); lamps in series and parallel with a switch (G09); parallel resistors with an ammeter per branch (G09–G10);
+internal resistance — emf, terminal voltage and lost volts (G12); two switches (G11–G12); a rheostat and a lamp
+(G11); diodes (G12); a fuse in the main line (G08); and meters connected the wrong way round (a voltmeter in
+series, an ammeter across a lamp). Loading one replaces the circuit; Undo brings yours back.
+
+**The physics** is the exam's: ideal meters (an ammeter has no resistance, a voltmeter infinite), ohmic lamps,
+ideal diodes (they conduct only along the arrow, with no voltage drop) and plain wire with no resistance — so a wire
+across a part shorts it out, and a voltmeter in series reads the emf while nothing flows. The circuit is solved by
+nodal analysis; a cell with no internal resistance and nothing but wire across it is reported as a short circuit
+(the current shows as ∞).
+
+**Saving**: **Save PNG…** saves the diagram cropped to the circuit at 300 dpi (a lamp comes out about 9 mm across, as
+on a printed paper), without the grid, the glow or the current — tick *Put the meter readings in the picture* for a
+memo version. **Save circuit…** writes the circuit to a small `.json` file and **Open circuit…** reads one back. This
+computer remembers the circuit you were working on; nothing goes into your data folder.
 
 ## Galvanic cell animator
 
