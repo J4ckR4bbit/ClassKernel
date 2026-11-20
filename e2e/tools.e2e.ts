@@ -215,6 +215,56 @@ test.describe("block on a slope", () => {
   });
 });
 
+test.describe("generator", () => {
+  test.beforeEach(async ({ page }) => {
+    await enableTools(page, ["generator"]);
+    await openTool(page, "Generator");
+  });
+  const readout = (page: Page, label: string) => page.locator(".gen-readout", { hasText: label }).locator(".gen-readout-value");
+
+  test("turned steadily, the graphs fill one sweep and it stops; the notes give the peak emf", async ({ page }) => {
+    await expect(readout(page, "θ (B to the normal)")).toHaveText("90°");
+    await expect(page.locator(".gen-notes")).toContainText("NBAω = (100)(0,5)(0,02)(2π × 1) = 6,28 V");
+    await page.getByRole("button", { name: "Turn it" }).click();
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+    // Two seconds across the graphs at 1 rev·s⁻¹: two whole turns, back where it started.
+    await expect(page.getByRole("button", { name: "Turn it" })).toBeVisible({ timeout: 8_000 });
+    await expect(readout(page, "θ (B to the normal)")).toHaveText("90°");
+  });
+
+  test("compare at half speed keeps the first graphs, dashed", async ({ page }) => {
+    // Nothing drawn yet, nothing to compare with.
+    await expect(page.getByRole("button", { name: "Compare at half speed" })).toBeDisabled();
+    await page.getByRole("button", { name: "Turn it" }).click();
+    await expect(page.getByRole("button", { name: "Turn it" })).toBeVisible({ timeout: 8_000 });
+    await page.getByRole("button", { name: "Compare at half speed" }).click();
+    await expect(page.locator(".gen-controls")).toContainText("Dashed: the graphs at 1 rev·s⁻¹.");
+    await expect(page.getByLabel("Speed in rev·s⁻¹")).toHaveValue("0,5");
+    await expect(page.locator(".gen-notes")).toContainText("3,14 V at 0,5 rev·s⁻¹");
+  });
+
+  test("a DC generator, turned by hand on the crank", async ({ page }) => {
+    await page.getByRole("button", { name: "DC: commutator" }).click();
+    await expect(page.locator(".gen-notes")).toContainText("The split ring swaps the coil's connections");
+    const box = (await page.locator(".gen-app").boundingBox())!;
+    const cx = box.x + (812 / 1000) * box.width;
+    const cy = box.y + (262 / 600) * box.height;
+    const r = (96 / 1000) * box.width;
+    await page.mouse.move(cx, cy + r);
+    await page.mouse.down();
+    for (let i = 0; i <= 30; i++) {
+      const a = Math.PI / 2 + (i / 30) * Math.PI;
+      await page.mouse.move(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+      await page.waitForTimeout(16);
+    }
+    await page.mouse.up();
+    await expect(readout(page, "θ (B to the normal)")).not.toHaveText("90°");
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Save the graphs…" }).click();
+    expect((await download).suggestedFilename()).toBe("dc_generator_graphs.png");
+  });
+});
+
 test.describe("circuit builder", () => {
   // While building, the canvas shows the whole grid: 24 × 16 steps across its width and height.
   const at = async (page: Page, gx: number, gy: number) => {

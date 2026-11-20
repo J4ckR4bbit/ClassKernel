@@ -1,0 +1,52 @@
+/* Generator: controls on the left; the generator, its graphs and the notes on the right. */
+.generator { display: grid; grid-template-columns: minmax(300px, 360px) 1fr; gap: 16px; height: 100%; }
+.generator.class-view { display: block; }
+.gen-controls { overflow-y: auto; padding-right: 4px; }
+.gen-controls .panel { padding: 14px; }
+.gen-controls h3, .gen-main h3 { font-size: 14px; margin-bottom: 10px; }
+.gen-note { font-size: 12px; margin: 8px 0; }
+.gen-status { font-size: 13px; margin-top: 8px; word-break: break-all; }
+.gen-row { margin-top: 10px; align-items: center; }
+.gen-seg { margin-bottom: 10px; }
+.gen-start-label { display: block; margin-bottom: 6px; }
+.gen-field { margin-bottom: 8px; }
+.gen-field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gen-field-label { flex: 1; font-size: 13px; }
+.gen-number { display: flex; align-items: center; gap: 6px; }
+.gen-number input { width: 84px; text-align: right; font-variant-numeric: tabular-nums; }
+.gen-number input.gen-bad { border-color: var(--md-error); }
+.gen-field input[type="range"] { width: 100%; margin-top: 4px; }
+.gen-check { display: flex; align-items: center; gap: 9px; font-size: 13px; margin: 8px 0; cursor: pointer; }
+
+.gen-main { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; }
+/* The board: tinted, so the white pictures read as sheets on a desk. Canvases are sized from their boxes in script. */
+.gen-board { display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); flex: none; }
+.gen-app-box, .gen-graph-box { min-width: 0; min-height: 0; display: flex; justify-content: center; }
+.gen-app, .gen-graph { display: block; background: #fff; border: 1px solid var(--border); border-radius: 6px; }
+.gen-app { box-shadow: 0 2px 10px rgba(29, 39, 51, 0.12); touch-action: none; user-select: none; }
+.gen-readouts { display: flex; flex-wrap: wrap; gap: 6px 26px; }
+.gen-readout { display: flex; flex-direction: column; min-width: 110px; }
+.gen-readout-label { font-size: 12px; color: var(--text-dim); }
+.gen-readout-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Shown to the class: the generator and the graphs side by side, filling the screen. */
+.gen-board.class-view {
+  position: fixed; inset: 0; z-index: var(--z-class-view); border-radius: 0; padding: 20px 24px 76px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 14px;
+}
+.gen-board.class-view .gen-app-box { grid-column: 1; grid-row: 1; align-items: center; }
+.gen-board.class-view .gen-graph-box { grid-column: 2; grid-row: 1; align-items: center; }
+.gen-board.class-view .gen-readouts { grid-column: 1 / 3; grid-row: 2; justify-content: center; }
+.gen-board.class-view .gen-readout-value { font-size: 26px; }
+.gen-class-bar { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap; z-index: calc(var(--z-class-view) + 1); }
+
+.gen-notes { padding: 14px 18px; }
+.gen-now { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+.gen-facts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
+.gen-facts dt { font-weight: 600; color: var(--text-dim); }
+.gen-facts dd { margin: 0; line-height: 1.55; }
+
+@media (max-width: 900px) {
+  .generator { grid-template-columns: 1fr; overflow-y: auto; }
+  .gen-controls, .gen-main { overflow: visible; }
+}

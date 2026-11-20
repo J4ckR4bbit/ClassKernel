@@ -490,7 +490,7 @@ test("tools: switching on, dashboards and parent reports", async ({ page }) => {
 
 test("teaching tools", async ({ page }) => {
   await prep(page);
-  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "slope-simulator", "circuit-builder", "galvanic-cell", "chemistry-reference", "titration", "noise-meter"]);
+  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "slope-simulator", "generator", "circuit-builder", "galvanic-cell", "chemistry-reference", "titration", "noise-meter"]);
 
   await openTool(page, "Test timer");
   await shot(page, "test-timer-setup");
@@ -552,6 +552,15 @@ test("teaching tools", async ({ page }) => {
   await page.getByLabel("Example").selectOption("pulled-angle");
   await toTop(page, ".sl-controls");
   await shot(page, "slope-simulator", 800);
+
+  await openTool(page, "Generator");
+  await page.getByRole("button", { name: "Turn it" }).click();
+  await expect(page.getByRole("button", { name: "Turn it" })).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("button", { name: "Compare at half speed" }).click();
+  await expect(page.getByRole("button", { name: "Turn it" })).toBeVisible({ timeout: 10_000 });
+  await toTop(page, ".gen-controls");
+  await page.locator(".gen-main").evaluate((e) => (e.scrollTop = 330));
+  await shot(page, "generator", 400);
 
   await openTool(page, "Circuit builder");
   await page.getByLabel("Example circuit").selectOption("series-parallel-lamps");

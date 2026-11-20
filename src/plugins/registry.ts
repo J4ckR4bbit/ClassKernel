@@ -135,6 +135,15 @@ export const PLUGINS: PluginManifest[] = [
     load: () => import("./slope/SlopeSimulator").then((m) => m.default),
   },
   {
+    id: "generator",
+    name: "Generator",
+    tagline: "Turn the coil and watch Φ, ΔΦ/Δt and the emf drawn against time.",
+    description:
+      "An AC generator with slip rings, or a DC one with a split-ring commutator, drawn the way the papers draw it: a coil between N and S, brushes to the terminals X and Y and a centre-zero meter, with a view along the axis showing the coil, the normal, θ and the induced current (⊙ / ⊗). Turn it steadily at a chosen speed and direction, or drag the crank to turn it by hand — fast, slow, backwards or not at all — and the flux (Φ = BA cos θ), the rate of change of flux and the emf (emf = −N ΔΦ/Δt) are drawn against time as it turns, with the moments the coil is perpendicular or parallel to the field marked. Keep a set of graphs dashed and compare — Compare at half speed does it in one go: half the peak, twice the period. Notes beside it give Faraday's and Lenz's laws in the SAG's words. Saves the generator and the graphs as 300 dpi PNGs; nothing is saved to your data.",
+    icon: "wind_power",
+    load: () => import("./generator/GeneratorView").then((m) => m.default),
+  },
+  {
     id: "circuit-builder",
     name: "Circuit builder",
     tagline: "Build an exam-style circuit, switch it on and read the meters.",

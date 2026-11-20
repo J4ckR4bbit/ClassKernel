@@ -70,6 +70,7 @@ export const ALL_TOOLS = [
   "practical-graph",
   "motion-graph",
   "slope-simulator",
+  "generator",
   "circuit-builder",
   "galvanic-cell",
   "chemistry-reference",
