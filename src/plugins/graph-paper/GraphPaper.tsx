@@ -6,7 +6,7 @@ import { formatNumber } from "../numbers";
 import {
   DEFAULT_GRAPH_PAPER,
   GraphPaperSettings,
-  XAxisPosition,
+  Quadrants,
   computeLayout,
   describeSize,
   drawOnCanvas,
@@ -138,7 +138,7 @@ export default function GraphPaper() {
   const setYAxis = (on: boolean) =>
     setV((prev) => ({ ...prev, yAxisLine: on, ...(on ? {} : { yArrowTop: false, yArrowBottom: false }) }));
   const setXAxis = (on: boolean) =>
-    setV((prev) => ({ ...prev, xAxisLine: on, ...(on ? {} : { xArrowRight: false }) }));
+    setV((prev) => ({ ...prev, xAxisLine: on, ...(on ? {} : { xArrowRight: false, xArrowLeft: false }) }));
 
   const save = async () => {
     const canvas = canvasRef.current;
@@ -215,18 +215,21 @@ export default function GraphPaper() {
 
         <div className="panel">
           <h3>Axes &amp; arrows</h3>
+          <label className="gp-field">
+            <span className="gp-field-label">Quadrants</span>
+            <select value={v.quadrants} onChange={(e) => set("quadrants", e.target.value as Quadrants)}>
+              <option value="first">Quadrant 1 only</option>
+              <option value="top">Quadrants 1 &amp; 2 (top half)</option>
+              <option value="right">Quadrants 1 &amp; 4 (right half)</option>
+              <option value="all">All four quadrants</option>
+            </select>
+          </label>
           <CheckField label="Dark line on the y-axis" checked={v.yAxisLine} onChange={setYAxis} />
           <CheckField label="Arrow at the top" checked={v.yArrowTop} onChange={(on) => set("yArrowTop", on)} disabled={!v.yAxisLine} indent />
           <CheckField label="Arrow at the bottom" checked={v.yArrowBottom} onChange={(on) => set("yArrowBottom", on)} disabled={!v.yAxisLine} indent />
           <CheckField label="Dark line on the x-axis" checked={v.xAxisLine} onChange={setXAxis} />
           <CheckField label="Arrow at the right" checked={v.xArrowRight} onChange={(on) => set("xArrowRight", on)} disabled={!v.xAxisLine} indent />
-          <label className="gp-field">
-            <span className="gp-field-label">x-axis position</span>
-            <select value={v.xAxisPosition} onChange={(e) => set("xAxisPosition", e.target.value as XAxisPosition)}>
-              <option value="bottom">Bottom — quadrant 1</option>
-              <option value="middle">Middle — quadrants 1 &amp; 4</option>
-            </select>
-          </label>
+          <CheckField label="Arrow at the left" checked={v.xArrowLeft} onChange={(on) => set("xArrowLeft", on)} disabled={!v.xAxisLine} indent />
           <NumberField label="Arrowhead size" suffix="mm" value={v.arrowSize} onChange={(n) => set("arrowSize", n)} min={0.5} max={30} step={0.05} />
         </div>
 

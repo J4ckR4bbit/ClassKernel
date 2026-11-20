@@ -19,6 +19,7 @@ const PLAIN: Partial<GraphPaperSettings> = {
   yArrowBottom: false,
   xAxisLine: false,
   xArrowRight: false,
+  xArrowLeft: false,
   xTicks: false,
   yTicks: false,
 };
@@ -43,7 +44,8 @@ describe("graph paper defaults", () => {
       yArrowBottom: false,
       xAxisLine: true,
       xArrowRight: true,
-      xAxisPosition: "bottom",
+      xArrowLeft: false,
+      quadrants: "first",
       arrowSize: 2,
       xTicks: true,
       xTickLen: 1,
@@ -90,13 +92,63 @@ describe("graph paper geometry", () => {
     expect(manual.majorWh).toBeCloseTo(PX_PER_MM / 2, 5);
   });
 
-  it("puts the x-axis on the bottom gridline, or halfway up for two quadrants", () => {
-    const bottom = computeLayout(settings({ xAxisLine: true }));
-    expect(bottom.xAxisBottom).toBe(true);
-    expect(bottom.xAxisY).toBe(bottom.gridH - bottom.edgeH);
+  it("crosses the axes bottom-left for quadrant 1", () => {
+    const first = computeLayout(settings({ xAxisLine: true, yAxisLine: true }));
+    expect(first.xAxisBottom).toBe(true);
+    expect(first.yAxisLeft).toBe(true);
+    expect(first.xAxisY).toBe(first.gridH - first.edgeH);
+    expect(first.yAxisX).toBe(first.edgeV);
+  });
 
-    const middle = computeLayout(settings({ xAxisLine: true, xAxisPosition: "middle" }));
-    expect(middle.xAxisY).toBeCloseTo(Math.round(4 * middle.pxY), 0); // 8 blocks up → row 4
+  it("moves the x-axis halfway up for quadrants 1 & 4, and the y-axis halfway across for 1 & 2", () => {
+    const right = computeLayout(settings({ quadrants: "right" }));
+    expect(right.xAxisY).toBe(Math.round(4 * right.pxY)); // 8 blocks up → row 4
+    expect(right.yAxisX).toBe(right.edgeV);
+    expect([right.xAxisBottom, right.yAxisLeft]).toEqual([false, true]);
+
+    const top = computeLayout(settings({ quadrants: "top" }));
+    expect(top.yAxisX).toBe(Math.round(5 * top.pxX)); // 10 blocks across → column 5
+    expect(top.xAxisY).toBe(top.gridH - top.edgeH);
+    expect([top.xAxisBottom, top.yAxisLeft]).toEqual([true, false]);
+  });
+
+  it("puts the origin in the middle for all four quadrants", () => {
+    const all = computeLayout(settings({ quadrants: "all" }));
+    expect(all.yAxisX).toBe(Math.round(5 * all.pxX));
+    expect(all.xAxisY).toBe(Math.round(4 * all.pxY));
+    expect([all.originI, all.originJ]).toEqual([5, 4]);
+    expect([all.xAxisBottom, all.yAxisLeft]).toEqual([false, false]);
+  });
+
+  it("gives the spare block of an odd count to the positive side", () => {
+    const odd = computeLayout(settings({ quadrants: "all", xMajor: 7, yMajor: 5 }));
+    expect(odd.originI).toBe(3); // 3 blocks left of the y-axis, 4 to its right
+    expect(odd.originJ).toBe(3); // 3 blocks above the x-axis, 2 below
+  });
+
+  it("makes room on the left for a left arrow, and nothing for a y-axis off the edge", () => {
+    // A centred y-axis, its arrows and ticks all sit inside the grid.
+    const centred = computeLayout(settings({ quadrants: "all", yAxisLine: true, yTicks: true }));
+    expect(centred.padLeft).toBe(0);
+    // The same axis on the left edge needs room for its line and ticks.
+    expect(computeLayout(settings({ yAxisLine: true, yTicks: true })).padLeft).toBeGreaterThan(0);
+
+    const left = computeLayout(settings({ quadrants: "all", xAxisLine: true, xArrowLeft: true }));
+    expect(left.padLeft).toBeGreaterThan(Math.ceil(left.arrowLen));
+    expect(left.width).toBe(left.gridW + left.padLeft);
+    // The flag alone does nothing while the axis line is off.
+    expect(computeLayout(settings({ xArrowLeft: true })).padLeft).toBe(0);
+  });
+
+  it("keeps an axis that lands on the edge padded, even when asked for the middle", () => {
+    // One block each way: the 'middle' gridlines are the outer ones.
+    const tiny = computeLayout(
+      settings({ quadrants: "all", xMajor: 1, yMajor: 1, xAxisLine: true, xArrowRight: true, yAxisLine: true }),
+    );
+    expect(tiny.yAxisLeft).toBe(true);
+    expect(tiny.xAxisBottom).toBe(true);
+    expect(tiny.padLeft).toBeGreaterThan(0);
+    expect(tiny.height).toBeGreaterThan(tiny.gridH); // room below for the arrowhead
   });
 
   it("flags a sheet too big for a canvas instead of trying to draw it", () => {
@@ -158,6 +210,32 @@ describe("painting", () => {
     expect(ticks.length).toBe(7);
   });
 
+  it("ticks both sides of a centred origin, still leaving the origin out", () => {
+    const v = settings({ quadrants: "all", xMajor: 4, yMajor: 4, xTicks: true, yTicks: true, tickColor: "#ff0000" });
+    const layout = computeLayout(v);
+    const ctx = recorder();
+    paint(ctx, v, layout);
+    const ticks = ctx.lines.filter((l) => l.color === "#ff0000");
+    // 5 columns and 5 rows, each minus the one on the other axis.
+    expect(ticks.length).toBe(8);
+    const xTicks = ticks.filter((t) => t.from[0] === t.to[0]);
+    expect(xTicks.map((t) => t.from[0])).not.toContain(Math.round(2 * layout.pxX) + 0.5);
+    expect(xTicks.map((t) => t.from[0])).toContain(0.5); // the left edge gets one now
+  });
+
+  it("draws the axes where the layout puts them", () => {
+    const v = settings({ quadrants: "all", xAxisLine: true, yAxisLine: true, xAxisColor: "#00ff00", yAxisColor: "#0000ff" });
+    const layout = computeLayout(v);
+    const ctx = recorder();
+    paint(ctx, v, layout);
+    const [x] = ctx.lines.filter((l) => l.color === "#00ff00");
+    const [y] = ctx.lines.filter((l) => l.color === "#0000ff");
+    expect(x.from[1]).toBe(layout.xAxisY);
+    expect(x.to[1]).toBe(layout.xAxisY);
+    expect(y.from[0]).toBe(layout.yAxisX);
+    expect(y.to[0]).toBe(layout.yAxisX);
+  });
+
   it("fills one arrowhead per arrow asked for", () => {
     const none = recorder();
     paint(none, settings(), computeLayout(settings()));
@@ -167,6 +245,11 @@ describe("painting", () => {
     const arrows = recorder();
     paint(arrows, v, computeLayout(v));
     expect(arrows.fills).toBe(2);
+
+    const four = settings({ ...v, quadrants: "all", yArrowBottom: true, xArrowLeft: true });
+    const all = recorder();
+    paint(all, four, computeLayout(four));
+    expect(all.fills).toBe(4);
   });
 });
 

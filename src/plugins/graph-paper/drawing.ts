@@ -17,7 +17,12 @@ const BASE_MM = 10;
 /** Arrowhead width ÷ length — keeps the head's shape at any size. */
 const ARROW_RATIO = 22 / 55;
 
-export type XAxisPosition = "bottom" | "middle";
+/**
+ * Which quadrants the sheet shows, and so where the axes cross:
+ * "first" — origin bottom-left; "top" — quadrants 1 & 2, the y-axis up the middle;
+ * "right" — quadrants 1 & 4, the x-axis across the middle; "all" — both in the middle.
+ */
+export type Quadrants = "first" | "top" | "right" | "all";
 
 export interface GraphPaperSettings {
   /** Major blocks across and up. */
@@ -44,7 +49,8 @@ export interface GraphPaperSettings {
   yArrowBottom: boolean;
   xAxisLine: boolean;
   xArrowRight: boolean;
-  xAxisPosition: XAxisPosition;
+  xArrowLeft: boolean;
+  quadrants: Quadrants;
   /** Arrowhead length in millimetres. */
   arrowSize: number;
 
@@ -82,7 +88,8 @@ export const DEFAULT_GRAPH_PAPER: GraphPaperSettings = {
   yArrowBottom: false,
   xAxisLine: true,
   xArrowRight: true,
-  xAxisPosition: "bottom",
+  xArrowLeft: false,
+  quadrants: "first",
   arrowSize: 2,
 
   xTicks: true,
@@ -127,9 +134,14 @@ export interface GraphPaperLayout {
   /** Outer major gridlines are inset by half their width so they aren't clipped. */
   edgeV: number;
   edgeH: number;
+  /** The major gridlines the axes sit on: column from the left, row from the top. */
+  originI: number;
+  originJ: number;
   /** Axis positions, sitting exactly on those gridlines. */
   yAxisX: number;
   xAxisY: number;
+  /** An axis on the outer edge needs room outside the grid for its arrows and ticks. */
+  yAxisLeft: boolean;
   xAxisBottom: boolean;
   /** True when the drawing would exceed what a canvas can hold. */
   tooLarge: boolean;
@@ -163,16 +175,26 @@ export function computeLayout(v: GraphPaperSettings): GraphPaperLayout {
 
   const edgeV = Math.ceil(majorWv / 2);
   const edgeH = Math.ceil(majorWh / 2);
-  const yAxisX = edgeV; // the i = 0 vertical major gridline
-  const xAxisBottom = v.xAxisPosition === "bottom";
-  const xAxisY = xAxisBottom
-    ? gridH - edgeH // the last horizontal major gridline
-    : Math.min(Math.max(Math.round(Math.round(v.yMajor / 2) * pxY), edgeH), gridH - edgeH);
+  // A centred axis sits on the middle major gridline. With an odd number of
+  // blocks the spare one goes to the positive side: right of the y-axis, above
+  // the x-axis.
+  const yAxisMiddle = v.quadrants === "top" || v.quadrants === "all";
+  const xAxisMiddle = v.quadrants === "right" || v.quadrants === "all";
+  const originI = yAxisMiddle ? Math.floor(v.xMajor / 2) : 0;
+  const originJ = xAxisMiddle ? Math.round(v.yMajor / 2) : v.yMajor;
+  const yAxisLeft = originI === 0;
+  const xAxisBottom = originJ === v.yMajor;
+  // Placed exactly where paint() draws that major gridline.
+  const yAxisX = Math.min(Math.max(Math.round(originI * pxX), edgeV), gridW - edgeV);
+  const xAxisY = Math.min(Math.max(Math.round(originJ * pxY), edgeH), gridH - edgeH);
 
   // Padding so axis lines, arrowheads and ticks sit outside the grid uncut.
   const padLeft = Math.max(
-    v.yAxisLine ? Math.ceil(Math.max(arrowHalf, axisWy / 2)) + 2 : 0,
-    v.yTicks ? Math.ceil(yTickHalf + yTickWpx / 2) + 2 : 0,
+    v.yAxisLine && yAxisLeft ? Math.ceil(Math.max(arrowHalf, axisWy / 2)) + 2 : 0,
+    v.yTicks && yAxisLeft ? Math.ceil(yTickHalf + yTickWpx / 2) + 2 : 0,
+    v.xAxisLine && v.xArrowLeft ? Math.ceil(arrowLen) + 2 : 0,
+    // With the y-axis off the edge, the x-axis has a tick on the left edge too.
+    v.xTicks && !yAxisLeft ? Math.ceil(xTickWpx / 2) + 1 : 0,
   );
   const padTop = Math.max(
     v.yAxisLine && v.yArrowTop ? Math.ceil(arrowLen) + 2 : 0,
@@ -181,7 +203,7 @@ export function computeLayout(v: GraphPaperSettings): GraphPaperLayout {
   const padBottom = Math.max(
     v.yAxisLine && v.yArrowBottom ? Math.ceil(arrowLen) + 2 : 0,
     v.xAxisLine && xAxisBottom
-      ? Math.ceil(v.xArrowRight ? Math.max(arrowHalf, axisWx / 2) : axisWx / 2) + 2
+      ? Math.ceil(v.xArrowRight || v.xArrowLeft ? Math.max(arrowHalf, axisWx / 2) : axisWx / 2) + 2
       : 0,
     v.xTicks && xAxisBottom ? Math.ceil(xTickHalf + xTickWpx / 2) + 2 : 0,
     v.yTicks ? Math.ceil(yTickWpx / 2) + 1 : 0,
@@ -217,8 +239,11 @@ export function computeLayout(v: GraphPaperSettings): GraphPaperLayout {
     yTickWpx,
     edgeV,
     edgeH,
+    originI,
+    originJ,
     yAxisX,
     xAxisY,
+    yAxisLeft,
     xAxisBottom,
     tooLarge: width > MAX_CANVAS_PX || height > MAX_CANVAS_PX,
   };
@@ -243,7 +268,7 @@ function arrowhead(
   ctx: PaintContext,
   tipX: number,
   tipY: number,
-  dir: "up" | "down" | "right",
+  dir: "up" | "down" | "left" | "right",
   len: number,
   half: number,
 ): void {
@@ -256,6 +281,10 @@ function arrowhead(
     ctx.moveTo(tipX, tipY);
     ctx.lineTo(tipX - half, tipY - len);
     ctx.lineTo(tipX + half, tipY - len);
+  } else if (dir === "left") {
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX + len, tipY - half);
+    ctx.lineTo(tipX + len, tipY + half);
   } else {
     ctx.moveTo(tipX, tipY);
     ctx.lineTo(tipX - len, tipY - half);
@@ -344,6 +373,9 @@ export function paint(ctx: PaintContext, v: GraphPaperSettings, layout: GraphPap
     if (v.xArrowRight) {
       arrowhead(ctx, w + layout.arrowLen, layout.xAxisY, "right", layout.arrowLen, layout.arrowHalf);
     }
+    if (v.xArrowLeft) {
+      arrowhead(ctx, -layout.arrowLen, layout.xAxisY, "left", layout.arrowLen, layout.arrowHalf);
+    }
   }
 
   // Ticks straddle their axis, and the one at the origin is left out.
@@ -352,8 +384,8 @@ export function paint(ctx: PaintContext, v: GraphPaperSettings, layout: GraphPap
   if (v.xTicks) {
     ctx.lineWidth = layout.xTickWpx;
     ctx.beginPath();
-    for (let i = 1; i <= v.xMajor; i++) {
-      // i = 0 would sit on the y-axis, so start at 1
+    for (let i = 0; i <= v.xMajor; i++) {
+      if (i === layout.originI) continue; // where the y-axis crosses
       const cx = Math.round(i * layout.pxX) + 0.5;
       ctx.moveTo(cx, layout.xAxisY - layout.xTickHalf);
       ctx.lineTo(cx, layout.xAxisY + layout.xTickHalf);
@@ -362,11 +394,10 @@ export function paint(ctx: PaintContext, v: GraphPaperSettings, layout: GraphPap
   }
 
   if (v.yTicks) {
-    const originJ = layout.xAxisBottom ? v.yMajor : Math.round(v.yMajor / 2);
     ctx.lineWidth = layout.yTickWpx;
     ctx.beginPath();
     for (let j = 0; j <= v.yMajor; j++) {
-      if (j === originJ) continue; // where the x-axis crosses
+      if (j === layout.originJ) continue; // where the x-axis crosses
       const cy = Math.round(j * layout.pxY) + 0.5;
       ctx.moveTo(layout.yAxisX - layout.yTickHalf, cy);
       ctx.lineTo(layout.yAxisX + layout.yTickHalf, cy);

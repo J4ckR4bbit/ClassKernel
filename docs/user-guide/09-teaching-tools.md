@@ -114,7 +114,7 @@ Builds graph paper and axes at an exact size, for worksheets and tests.
 | --- | --- |
 | **Grid** | Blocks across and up, minor squares in each block, and the block width and height in mm. |
 | **Line weights** | **Automatic** (scaled to the block size), or set each line's weight in mm. |
-| **Axes & arrows** | Dark lines on the x- and y-axes, arrows at their ends, the **x-axis position** (bottom for quadrant 1, or middle for quadrants 1 and 4), and the arrowhead size. |
+| **Axes & arrows** | The **quadrants**: quadrant 1 only (the axes cross bottom-left), quadrants 1 & 2 (top half), quadrants 1 & 4 (right half) or all four (the axes cross in the middle). Then dark lines on the x- and y-axes, arrows at any of their four ends, and the arrowhead size. With an odd number of blocks, the spare one goes on the positive side. |
 | **Tick marks** | Ticks on either axis, with their length and weight. |
 | **Colours** | Major and minor gridlines, each axis, and the ticks. |
 
