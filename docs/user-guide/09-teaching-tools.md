@@ -19,6 +19,7 @@ as you need. Switch any of them on under [Settings → Tools](10-settings.md#too
 | [Practical graph plotter](#practical-graph-plotter) | Readings in, graph and gradient out. |
 | [Motion graph builder](#motion-graph-builder) | x–t, v–t and a–t graphs that always agree. |
 | [Block on a slope](#block-on-a-slope) | Will it slide? A slope question run, with its free-body diagrams. |
+| [Generator](#generator) | Turn the coil; Φ, ΔΦ/Δt and the emf are drawn against time. |
 | [Circuit builder](#circuit-builder) | Build an exam-style circuit, run it and read the meters. |
 | [Galvanic cell animator](#galvanic-cell-animator) | An animated cell whose reading follows the Nernst equation. |
 | [Chemistry reference](#chemistry-reference) | The periodic table, with every element's details a tap away. |
@@ -220,6 +221,46 @@ with the sketch and the readings beside the diagrams. **Save the sketch…** sav
 300 dpi PNG for a question paper (F and the angles labelled; with question mode on, F without its size), and **Save
 the diagrams…** the free-body diagrams for a memo. g = 9,8 m·s⁻². The set-up is remembered on this computer;
 nothing is saved to your data.
+
+## Generator
+
+An AC or DC generator drawn the way the papers draw it, and the three graphs they ask about — the flux, its rate
+of change and the emf against time — drawn as the coil turns.
+
+![The generator, turned at full speed and then at half speed](../images/generator.png)
+
+**The generator**
+
+- **AC: slip rings** or **DC: commutator** (a split ring). A rectangular coil between **N** and **S**, brushes leading
+  to the terminals **X** and **Y**, and a centre-zero meter between them whose needle swings both ways for AC and one
+  way for DC.
+- Beside it, the coil **seen along its axis**: the coil as a line between the poles with its sides **P** and **Q**
+  marked ⊙ or ⊗ with the induced current, the normal to the coil and the angle **θ** between it and B (as in
+  Φ = BA cos θ), and the crank.
+- **Turns N**, **field B** and **area A**; whether the coil's plane starts **parallel** or **perpendicular** to the field.
+
+**Turning it**
+
+- **Turn it** turns the coil steadily at the chosen **speed** (revolutions a second), **clockwise** or
+  **anticlockwise** as seen from the rings, until the graphs are full (or round and round, with *Stop when the graphs
+  are full* off). **Reset** puts the coil back to its start with clear graphs.
+- Or **drag the crank** to turn it by hand — fast, slow, backwards or not at all. The coil follows with a little
+  inertia, the graphs show exactly what your hand did, and holding it still shows the emf dropping to zero.
+
+**The graphs** — Φ (Wb), ΔΦ/Δt (Wb·s⁻¹) and the emf across X and Y (V) against time, 1, 2, 4 or 8 seconds across,
+drawn as the coil turns. Dotted lines mark where the coil's plane is **perpendicular** to the field (⊥: Φ largest,
+emf zero) and **parallel** to it (∥: Φ zero, emf largest). **Keep these graphs** holds them dashed so the next run
+can be compared; **Compare at half speed** does it in one go — Φ is just as big, but ΔΦ/Δt and the emf halve and
+the period doubles, the change the papers ask candidates to draw. Numbers on the axes can be turned off for
+shape-only sketches.
+
+**The notes** under it say where the coil is and what that means, and give Φ = BA cos θ, **Faraday's law** and
+**Lenz's law** in the SAG's words (emf = −N ΔΦ/Δt), the peak emf NBAω and the period, and what the slip rings or
+the commutator do.
+
+The SAG examines these relationships **qualitatively**; the numbers are there to compare runs. **Save the
+generator…** and **Save the graphs…** save black-and-white 300 dpi PNGs; **Show to class** puts the generator and the
+graphs side by side across the screen. The set-up is remembered on this computer; nothing is saved to your data.
 
 ## Circuit builder
 
