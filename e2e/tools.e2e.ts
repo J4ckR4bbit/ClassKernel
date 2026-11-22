@@ -422,6 +422,47 @@ test("galvanic cell: the electrons still move with Windows set to show fewer ani
   await expect.poll(wire, { timeout: 3_000 }).not.toBe(before);
 });
 
+test("electrolytic cell: what forms at each electrode, Faraday's law for a set time, question mode hides it", async ({ page }) => {
+  await enableTools(page, ["electrolytic-cell"]);
+  await openTool(page, "Electrolytic cell");
+  const memo = page.locator(".ec-memo");
+  // CuCl₂ with carbon electrodes.
+  await expect(memo).toContainText("Cu²⁺(aq) + 2e⁻ → Cu(s)");
+  await expect(memo).toContainText("2Cl⁻(aq) → Cl₂(g) + 2e⁻");
+  await expect(memo).toContainText("−1,02 V");
+  // Brine: water is reduced, not Na⁺.
+  await page.getByLabel("Set-up").selectOption("brine");
+  await expect(memo).toContainText("2H₂O(l) + 2e⁻ → H₂(g) + 2OH⁻(aq)");
+  await expect(memo).toContainText("2NaCl(aq) + 2H₂O(l) → 2NaOH(aq) + H₂(g) + Cl₂(g)");
+  // Dilute, and oxygen comes off the anode instead of chlorine.
+  await page.getByLabel("Concentration of NaCl in mol·dm⁻³").fill("0.1");
+  await expect(memo).toContainText("2H₂O(l) → O₂(g) + 4H⁺(aq) + 4e⁻");
+  await expect(page.getByLabel("Set-up")).toHaveValue("");
+  // CuCl₂ again: 2,00 A for 30 minutes, run at ×600.
+  await page.getByLabel("Set-up").selectOption("cucl2");
+  await page.getByRole("button", { name: "×600" }).click();
+  await page.getByRole("button", { name: "Switch on" }).click();
+  await expect(page.getByRole("button", { name: "Switch off" })).toBeVisible();
+  await expect(page.locator(".ec-clock")).toContainText("t = 30 min 00 s", { timeout: 15_000 });
+  await expect(page.getByRole("button", { name: "Switch on" })).toBeDisabled();
+  await expect(memo).toContainText("Q = It = 2,00 A × 1 800 s = 3 600 C");
+  await expect(memo).toContainText("n(e⁻) = Q / F = 3 600 / 96 500 = 0,0373 mol");
+  await expect(memo).toContainText("m(Cu) = nM = 0,0187 × 63,5 = 1,18 g");
+  await expect(memo).toContainText("V(Cl₂) = nVm = 0,0187 × 22,4 = 0,418 dm³");
+  // Question mode hides the memo; Reset starts again.
+  await page.getByLabel(/Question mode/).check();
+  await expect(memo).toHaveCount(0);
+  await expect(page.locator(".gc-hidden")).toBeVisible();
+  await page.getByLabel(/Question mode/).uncheck();
+  await page.getByRole("button", { name: "Reset" }).click();
+  await expect(page.locator(".ec-clock")).toContainText("t = 0 min 00 s");
+  await expect(page.getByRole("button", { name: "Switch on" })).toBeEnabled();
+  // A PNG of the picture.
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Save PNG…" }).click();
+  expect((await download).suggestedFilename()).toBe("electrolysis_cucl2_c_c.png");
+});
+
 test("chemistry reference: the periodic table, its views and highlights, and an element's pop-up", async ({ page }) => {
   await enableTools(page, ["chemistry-reference"]);
   await openTool(page, "Chemistry reference");

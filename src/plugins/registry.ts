@@ -162,6 +162,15 @@ export const PLUGINS: PluginManifest[] = [
     load: () => import("./galvanic-cell/GalvanicCell").then((m) => m.default),
   },
   {
+    id: "electrolytic-cell",
+    name: "Electrolytic cell",
+    tagline: "Switch on the supply and see what forms at each electrode, and how much.",
+    description:
+      "An electrolytic cell for the board: a DC supply and an ammeter, one beaker and two electrodes. Choose a set-up — CuCl₂ or CuSO₄ with carbon electrodes, copper electrodes, refining impure copper (with the anode sludge), copper-, silver- or nickel-plating a spoon, brine in the chlor-alkali membrane cell, dilute NaCl, acidified water with the gases collected (2 : 1), KI, molten NaCl or molten PbBr₂ — or pick your own electrolyte, concentration and electrodes, and the tool works out what is reduced and oxidised from the standard electrode potentials (concentrated chloride gives Cl₂, dilute gives O₂). Switch on and watch the electrons, the ions moving to the electrodes, the bubbles, the metal plating out, the anode dissolving and the colour fading; set the current and switch off after a set time. Under the picture, the memo: the competing species at each electrode and why one wins, the half-reactions and net equation, the least voltage needed and Faraday's law (Q = It, n(e⁻), the mass plated and the gas volume at STP), with the usual exam points. Question mode hides the answers but leaves what the class can see; Show to class fills the screen. Saves a PNG of the picture; nothing is saved to your data.",
+    icon: "bolt",
+    load: () => import("./electrolytic-cell/ElectrolyticCell").then((m) => m.default),
+  },
+  {
     id: "chemistry-reference",
     name: "Chemistry reference",
     tagline: "The periodic table, colour-coded, with every element's details a tap away.",

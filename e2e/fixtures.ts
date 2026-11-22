@@ -73,6 +73,7 @@ export const ALL_TOOLS = [
   "generator",
   "circuit-builder",
   "galvanic-cell",
+  "electrolytic-cell",
   "chemistry-reference",
   "titration",
   "noise-meter",

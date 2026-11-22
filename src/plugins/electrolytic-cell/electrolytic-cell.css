@@ -1,0 +1,9 @@
+/* Electrolytic cell: the galvanic cell's layout (galvanic-cell.css), with a few pieces of its own. */
+.ec-stage { aspect-ratio: 1000 / 660; }
+.ec-stage.class-view { aspect-ratio: auto; }
+.ec-stop { gap: 8px; }
+.ec-stop .gc-check { margin: 0; flex: 1; }
+.ec-stop input[type="number"] { width: 72px; text-align: right; }
+.ec-clock { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.ec-clock .muted { font-size: 12px; }
+.ec-candidate td { background: color-mix(in srgb, var(--accent-soft) 45%, transparent); }

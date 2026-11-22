@@ -22,6 +22,7 @@ as you need. Switch any of them on under [Settings → Tools](10-settings.md#too
 | [Generator](#generator) | Turn the coil; Φ, ΔΦ/Δt and the emf are drawn against time. |
 | [Circuit builder](#circuit-builder) | Build an exam-style circuit, run it and read the meters. |
 | [Galvanic cell animator](#galvanic-cell-animator) | An animated cell whose reading follows the Nernst equation. |
+| [Electrolytic cell](#electrolytic-cell) | Switch on the supply: what forms at each electrode, and how much. |
 | [Chemistry reference](#chemistry-reference) | The periodic table, with every element's details a tap away. |
 | [Titration simulator](#titration-simulator) | A burette, a flask, an indicator and the pH curve. |
 | [Class noise meter](#class-noise-meter) | Warns the class when it's too loud. |
@@ -368,6 +369,62 @@ concentrations have turned a cell round compared with standard conditions, it sa
 
 **Save PNG…** saves the picture as it is — answers shown or hidden — for a worksheet or a memo. Nothing is saved to
 your data.
+
+## Electrolytic cell
+
+An electrolytic cell for the board, for the Grade 12 electrochemistry work: a DC supply with an ammeter, one beaker
+and two electrodes. The tool works out what is reduced at the cathode and oxidised at the anode from the standard
+electrode potentials, so it gives the right answer for any electrolyte and electrodes you choose, not only the
+textbook set-ups.
+
+![The electrolytic cell](../images/electrolytic-cell.png)
+
+**The cell**
+
+- **Set-up** picks one of the usual cells: CuCl₂(aq) or CuSO₄(aq) with carbon electrodes, CuSO₄(aq) with copper
+  electrodes, **refining** impure copper, copper-, silver- or nickel-**plating** a spoon, **brine** in the
+  chlor-alkali membrane cell, dilute NaCl(aq), **acidified water** with the gases collected, KI(aq), and molten NaCl
+  or PbBr₂.
+- Or build your own: choose the **electrolyte** (CuCl₂, CuSO₄, NaCl, KI, dilute H₂SO₄, AgNO₃ or NiSO₄ solution, or
+  molten NaCl or PbBr₂), its **concentration** (250 cm³ of it), the **anode (+)** and the **cathode (−)**: carbon or
+  platinum (inert), copper, impure copper, silver, nickel, iron, or an iron spoon. The set-up then reads *Your own*.
+- **Membrane between the electrodes** (NaCl solution only) keeps the chlorine and the sodium hydroxide apart.
+- **Collect the gases in tubes** stands a graduated tube over each electrode, so the volumes can be compared —
+  hydrogen and oxygen 2 : 1 from acidified water.
+
+**What it decides, and how.** At the cathode the strongest oxidising agent (the highest E°) is reduced; at the anode
+the strongest reducing agent (the lowest E°) is oxidised — an active anode itself, an anion, or water. In a solution,
+water competes at both electrodes; in a melt there is no water. The one exception the course teaches is built in: a
+**concentrated chloride** solution (at least 0,5 mol·dm⁻³ Cl⁻) gives Cl₂ at the anode, although water's E° is lower;
+a dilute one gives O₂. As the cell runs, what is used up runs out: when the Cu²⁺ has gone, hydrogen forms at the
+cathode instead, and an active anode that has dissolved away breaks the circuit.
+
+**Running it**
+
+**Switch on** turns the supply on: electrons move along the wires, cations move to the cathode and anions to the
+anode, gas bubbles off, metal plates out (the cathode thickens, a spoon takes on the metal's colour), an active anode
+thins, a blue Cu²⁺ solution fades, iodine browns the solution, impure copper leaves sludge under the anode, and a
+molten metal collects (sodium floats, lead sinks). Set the **current** (0,1 A to 5 A) — it stays steady, whatever
+voltage that takes. **Speed** ×1 (real time), ×60 (a minute a second) or ×600; **Switch off after** a set number of
+minutes stops it exactly there, for a "2,00 A for 30 minutes" question. **Reset** starts the same cell again. Like the
+galvanic cell, everything moves even when Windows is set to show fewer animations.
+
+**Question mode** hides the anode and cathode labels, the half-reactions, which way the electrons and ions go, the
+gas names and the memo — but the bubbles and the plating still show, for the class to observe and explain.
+**Show to class** fills the screen with the picture and a small bar of buttons (Switch on, Question mode, Close — or
+Esc).
+
+**The memo** under the picture: what is in the cell; at each electrode, every species that could react with its E°,
+which one does and why (the chloride exception explained when it applies), and the half-reaction; the net equation
+(or "no net reaction" for refining and plating); E°cell = E°cathode − E°anode, negative, and so the least voltage the
+supply must give; **Faraday's law** for the charge that has passed — Q = It, n(e⁻) = Q / F, and the mass of metal
+plated or the volume of gas at STP at each electrode (F = 96 500 C·mol⁻¹, Vm = 22,4 dm³·mol⁻¹); and the points to
+make: the electrode signs compared with a galvanic cell, where the electrons and ions go, the energy change, inert
+electrodes, why water and not Na⁺ is reduced from brine, the uses of the chlor-alkali products, the colour and mass
+changes, the sludge in refining, and why an object to be plated must be the cathode.
+
+**Save PNG…** saves the picture as it is — answers shown or hidden, with the ammeter showing the current — for a
+worksheet or a memo. Nothing is saved to your data.
 
 ## Chemistry reference
 
