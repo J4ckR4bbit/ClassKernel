@@ -404,6 +404,24 @@ test("galvanic cell: the reading follows the half-cells and the salt bridge, que
   expect((await download).suggestedFilename()).toBe("galvanic_cell_zn_ag.png");
 });
 
+test("galvanic cell: the electrons still move with Windows set to show fewer animations", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await enableTools(page, ["galvanic-cell"]);
+  await openTool(page, "Galvanic cell animator");
+  // The top quarter of the picture: the wire, its electrons and the voltmeter.
+  const wire = () =>
+    page.locator("canvas.gc-canvas").evaluate((c: HTMLCanvasElement) => {
+      const data = c.getContext("2d")!.getImageData(0, 0, c.width, Math.round(c.height / 4)).data;
+      let hash = 0;
+      for (let i = 0; i < data.length; i += 4) hash = (hash * 31 + data[i] + 3 * data[i + 1] + 7 * data[i + 2]) >>> 0;
+      return hash;
+    });
+  expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
+  await page.waitForTimeout(300);
+  const before = await wire();
+  await expect.poll(wire, { timeout: 3_000 }).not.toBe(before);
+});
+
 test("chemistry reference: the periodic table, its views and highlights, and an element's pop-up", async ({ page }) => {
   await enableTools(page, ["chemistry-reference"]);
   await openTool(page, "Chemistry reference");

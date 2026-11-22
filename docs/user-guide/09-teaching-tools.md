@@ -352,8 +352,8 @@ potentials and the **Nernst equation**, so it answers every "what happens to the
 **Run the cell** lets it discharge: the reactant concentration falls, the product concentration rises, the anode
 thins and the cathode thickens, a coloured solution fades, and the reading drops until the reaction reaches
 equilibrium (Q = K) and the cell is **flat** at 0 V. **Speed** ×1, ×5 or ×20; **Pause** holds it; **Reset** puts
-the chosen half-cells back at standard conditions. When Windows is set to show fewer animations the particles
-stand still, but the arrows still give the directions and the reading still follows.
+the chosen half-cells back at standard conditions. The electrons and ions keep moving even when Windows is set to
+show fewer animations: here the movement is what the class is watching.
 
 **Question mode** hides the reading (the voltmeter shows **?**), the anode / cathode labels, the electron and ion
 directions and the memo, for the class to predict first. **Show to class** fills the screen with the picture and a

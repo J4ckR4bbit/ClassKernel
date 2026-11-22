@@ -3,7 +3,6 @@ import { useAppPick } from "../../store/appStore";
 import { savePluginFile } from "../host";
 import { canvasToPng } from "../png";
 import { formatNumber, formatSigFigs } from "../numbers";
-import { prefersReducedMotion } from "../../lib/motion";
 import { enterFullscreen, restoreWindow } from "../../lib/teachingWindow";
 import Icon from "../../components/Icon";
 import Segmented from "../../components/Segmented";
@@ -171,8 +170,10 @@ export default function GalvanicCell() {
   }, [fit, classView]);
 
   // The loop: move the cell on, move the particles, draw.
+  // The electrons, ions and bubbles keep moving even when the computer asks
+  // for fewer animations (Windows' "Animation effects" off, common on school
+  // machines): here the movement is the lesson, not decoration.
   useEffect(() => {
-    const motion = prefersReducedMotion() ? 0 : 1;
     let frame = 0;
     let last = performance.now();
     let lastPublished = last;
@@ -197,7 +198,7 @@ export default function GalvanicCell() {
         }
         if (!a.running) setRunning(false);
       }
-      const scene = buildScene(s, a, { showAnswers: !current.questionMode, discharged: d, motion });
+      const scene = buildScene(s, a, { showAnswers: !current.questionMode, discharged: d });
       animator.current.update(dt, scene);
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
@@ -242,7 +243,7 @@ export default function GalvanicCell() {
       if (!ctx) throw new Error("No 2D canvas");
       ctx.setTransform(canvas.width / SCENE_W, 0, 0, canvas.height / SCENE_H, 0, 0);
       const current = live.current;
-      animator.current.draw(ctx, buildScene(current.state, current.analysis, { showAnswers: !current.questionMode, discharged: current.discharged, motion: 1 }));
+      animator.current.draw(ctx, buildScene(current.state, current.analysis, { showAnswers: !current.questionMode, discharged: current.discharged }));
       const bytes = await canvasToPng(canvas);
       const name = fileNameFor(current.analysis);
       const outcome = await savePluginFile({ name, extension: "png", label: "PNG image", bytes });

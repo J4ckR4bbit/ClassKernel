@@ -85,7 +85,7 @@ export function ionCount(amount: number): number {
 export function buildScene(
   state: CellState,
   a: Analysis,
-  options: { showAnswers: boolean; discharged: number; motion: number },
+  options: { showAnswers: boolean; discharged: number },
 ): Scene {
   const el = electrolyteById(state.electrolyte);
   const side = (which: Side): SideScene => {
@@ -138,7 +138,7 @@ export function buildScene(
     anion: el.anion,
     temperatureLabel: `T = ${formatNumber(state.temperature, 0)} K (${formatNumber(state.temperature - 273, 0)} °C)`,
     anodeSide: a.anodeSide,
-    flow: options.showAnswers ? a.flow * options.motion : 0,
+    flow: options.showAnswers ? a.flow : 0,
     showAnswers: options.showAnswers,
     large: state.largeElectrodes,
     note,
