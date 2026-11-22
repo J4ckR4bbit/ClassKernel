@@ -3,6 +3,10 @@ name: Tools website
 # Publishes the teaching tools as a website (GitHub Pages) from main, so they
 # can be opened in a browser without installing ClassKernel. It needs Pages
 # switched on once: repository Settings → Pages → Source: GitHub Actions.
+#
+# It must be the only workflow that publishes to Pages: another one (such as
+# GitHub's sample Jekyll workflow) publishes the repository's unbuilt files
+# over it, and the site opens on a blank page.
 
 on:
   push:
