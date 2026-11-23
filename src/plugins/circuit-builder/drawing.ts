@@ -58,8 +58,8 @@ export interface Look {
   wirePath?: Pt[] | null;
   /** Wire ends and terminals joined to nothing. */
   looseEnds?: Pt[];
-  /** The current, as moving dots (or arrows when the computer asks for less motion). */
-  flow?: { phase: Map<string, number>; electrons: boolean; arrows: boolean } | null;
+  /** The current, as moving dots. */
+  flow?: { phase: Map<string, number>; electrons: boolean } | null;
 }
 
 /** The extent of everything drawn, for cropping the saved picture. */
@@ -367,21 +367,6 @@ function dotsAlong(ctx: CanvasRenderingContext2D, a: { x: number; y: number }, b
   }
 }
 
-function arrowAlong(ctx: CanvasRenderingContext2D, a: { x: number; y: number }, b: { x: number; y: number }, forward: boolean) {
-  const [from, to] = forward ? [a, b] : [b, a];
-  const mx = (from.x + to.x) / 2;
-  const my = (from.y + to.y) / 2;
-  const len = Math.hypot(to.x - from.x, to.y - from.y);
-  const ux = (to.x - from.x) / len;
-  const uy = (to.y - from.y) / len;
-  ctx.beginPath();
-  ctx.moveTo(mx + ux * 6, my + uy * 6);
-  ctx.lineTo(mx - ux * 4 - uy * 5, my - uy * 4 + ux * 5);
-  ctx.lineTo(mx - ux * 4 + uy * 5, my - uy * 4 - ux * 5);
-  ctx.closePath();
-  ctx.fill();
-}
-
 /** Parts that carry current along their own line (a voltmeter, an open switch and a blocking diode don't). */
 function carries(r: PartReading | undefined): boolean {
   return !!r && Math.abs(r.I) > 1e-9 && Math.abs(r.I) < SHORT_CURRENT;
@@ -469,18 +454,16 @@ export function drawCircuit(ctx: CanvasRenderingContext2D, c: Circuit, solution:
 
   // The current, between the wires and the parts' bodies so it seems to pass through them.
   if (look.flow && solution) {
-    const sign = look.flow.electrons ? -1 : 1;
     ctx.fillStyle = look.flow.electrons ? "#1565c0" : "#d84315";
     for (const w of c.wires) {
       const I = solution.wires[w] ?? 0;
       if (Math.abs(I) < 1e-9 || Math.abs(I) >= SHORT_CURRENT) continue;
       const [p, q] = edgeEnds(w).map(px);
-      if (look.flow.arrows) arrowAlong(ctx, p, q, I * sign > 0);
-      else dotsAlong(ctx, p, q, look.flow.phase.get(w) ?? 0, DOT_SPACING);
+      dotsAlong(ctx, p, q, look.flow.phase.get(w) ?? 0, DOT_SPACING);
     }
     for (const p of c.parts) {
       const r = solution.parts[p.id];
-      if (!carries(r) || look.flow.arrows) continue;
+      if (!carries(r)) continue;
       const t = terminals(p);
       dotsAlong(ctx, px(t.a), px(t.b), look.flow.phase.get(p.id) ?? 0, DOT_SPACING);
     }

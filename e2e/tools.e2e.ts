@@ -327,6 +327,23 @@ test.describe("circuit builder", () => {
     await expect(meterRow(page, /^A1$/)).toContainText("0,50 A");
   });
 
+  test("the current still moves with Windows set to show fewer animations", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
+    await page.getByLabel("Example circuit").selectOption("two-switches");
+    await expect(meterRow(page, /^A$/)).toContainText("1,00 A");
+    const picture = () =>
+      page.locator(".cb-canvas").evaluate((c: HTMLCanvasElement) => {
+        const data = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data;
+        let hash = 0;
+        for (let i = 0; i < data.length; i += 4) hash = (hash * 31 + data[i] + 3 * data[i + 1] + 7 * data[i + 2]) >>> 0;
+        return hash;
+      });
+    await page.waitForTimeout(300);
+    const before = await picture();
+    await expect.poll(picture, { timeout: 3_000 }).not.toBe(before);
+  });
+
   test("an example: closing S2 puts R3 in parallel and the readings follow; question mode hides them", async ({ page }) => {
     await page.getByLabel("Example circuit").selectOption("two-switches");
     await expect(page.locator(".cb-memo")).toContainText("The memo");

@@ -296,8 +296,7 @@ the wires.
   close switches, so a lamp that dims really is using less power; **Set it to the brightest lamp now** rescales it.
 - A **fuse** blows when the current is over its rating and stays blown until you tap it to replace it.
 - **Show the current moving** animates conventional current (orange dots, + to −) or, ticked, electron flow (blue,
-  − to +), faster where the current is bigger. With fewer animations set in Windows, arrows show the direction
-  instead.
+  − to +), faster where the current is bigger. It moves even when Windows is set to show fewer animations.
 - **Question mode** turns every reading into “?” for the class to predict; **Show to class** fills the screen.
 
 **The memo** under the circuit: every meter's reading; for each cell the current, the terminal voltage worked as
