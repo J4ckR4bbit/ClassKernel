@@ -268,7 +268,7 @@ export default function CircuitBuilder() {
       moving: d?.kind === "move" && d.moved ? d.id : null,
       wirePath: d?.kind === "wire" ? d.path : null,
       looseEnds: run ? [] : L.loose,
-      flow: run && L.options.flow ? { phase: phase.current, electrons: L.options.electrons, arrows: prefersReducedMotion() } : null,
+      flow: run && L.options.flow ? { phase: phase.current, electrons: L.options.electrons } : null,
     };
   }, []);
 
@@ -306,7 +306,10 @@ export default function CircuitBuilder() {
   const target = useRef<{ circuit: Circuit | null; mode: Mode | null; view: View }>({ circuit: null, mode: null, view: FULL_VIEW });
   const scratch = useRef<CanvasRenderingContext2D | null>(null);
 
-  // The loop: move the current on, and draw when anything changed.
+  // The loop: move the current on, and draw when anything changed. The
+  // current moves even when the computer asks for fewer animations (Windows'
+  // "Animation effects" off, common on school machines): here the movement is
+  // the lesson. Only the glide to the zoomed view is skipped then.
   useEffect(() => {
     let frame = 0;
     let last = performance.now();
@@ -316,7 +319,7 @@ export default function CircuitBuilder() {
       last = now;
       const L = live.current;
       const still = prefersReducedMotion();
-      const animate = L.mode === "run" && L.options.flow && !still;
+      const animate = L.mode === "run" && L.options.flow;
       if (animate) advanceFlow(phase.current, L.shown, L.solution, dt, L.options.electrons);
       if (target.current.circuit !== L.shown || target.current.mode !== L.mode) {
         scratch.current ??= document.createElement("canvas").getContext("2d");

@@ -371,16 +371,21 @@ export function termText(t: Term, withPhase = true): string {
 
 const joinTerms = (terms: Term[]) => terms.map((t) => termText(t)).join(" + ");
 
+/** "2e⁻", or "e⁻" for one, as the data sheet writes it: "Ag⁺ + e⁻ → Ag". */
+export function electronsText(n: number): string {
+  return `${n > 1 ? n : ""}e⁻`;
+}
+
 /** The reduction half-reaction, times `factor`: "Cu²⁺(aq) + 2e⁻ → Cu(s)". */
 export function reductionText(cell: HalfCell, factor = 1): string {
   const times = (terms: Term[]) => terms.map((t) => ({ ...t, coef: t.coef * factor }));
-  return `${joinTerms(times(cell.ox))} + ${cell.n * factor}e⁻ → ${joinTerms(times(cell.red))}`;
+  return `${joinTerms(times(cell.ox))} + ${electronsText(cell.n * factor)} → ${joinTerms(times(cell.red))}`;
 }
 
 /** The oxidation half-reaction, times `factor`: "Zn(s) → Zn²⁺(aq) + 2e⁻". */
 export function oxidationText(cell: HalfCell, factor = 1): string {
   const times = (terms: Term[]) => terms.map((t) => ({ ...t, coef: t.coef * factor }));
-  return `${joinTerms(times(cell.red))} → ${joinTerms(times(cell.ox))} + ${cell.n * factor}e⁻`;
+  return `${joinTerms(times(cell.red))} → ${joinTerms(times(cell.ox))} + ${electronsText(cell.n * factor)}`;
 }
 
 /** A concentration or pressure the way it is written on the board. */

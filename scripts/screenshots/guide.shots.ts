@@ -490,7 +490,7 @@ test("tools: switching on, dashboards and parent reports", async ({ page }) => {
 
 test("teaching tools", async ({ page }) => {
   await prep(page);
-  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "slope-simulator", "generator", "circuit-builder", "galvanic-cell", "chemistry-reference", "titration", "noise-meter"]);
+  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "slope-simulator", "generator", "circuit-builder", "galvanic-cell", "electrolytic-cell", "chemistry-reference", "titration", "noise-meter"]);
 
   await openTool(page, "Test timer");
   await shot(page, "test-timer-setup");
@@ -570,6 +570,13 @@ test("teaching tools", async ({ page }) => {
   await openTool(page, "Galvanic cell animator");
   await page.waitForTimeout(1500);
   await shot(page, "galvanic-cell", 800);
+
+  await openTool(page, "Electrolytic cell");
+  await page.getByLabel("Set-up").selectOption("brine");
+  await page.getByRole("button", { name: "×600" }).click();
+  await page.getByRole("button", { name: "Switch on" }).click();
+  await shot(page, "electrolytic-cell", 1000);
+  await page.getByRole("button", { name: "Switch off" }).click();
 
   await openTool(page, "Chemistry reference");
   await shot(page, "periodic-table", 400);

@@ -14,7 +14,7 @@ a folder for your data — ideally inside OneDrive or Google Drive, so it's back
 
 Once installed, it updates itself when you ask: **Settings → General → Updates → Check for updates**.
 
-The teaching tools (timer, clock, graph makers, block on a slope, generator, circuit builder, galvanic cell, periodic table…) also open in any browser, with nothing
+The teaching tools (timer, clock, graph makers, block on a slope, generator, circuit builder, galvanic and electrolytic cells, periodic table…) also open in any browser, with nothing
 to install: **[ClassKernel tools](https://j4ckr4bbit.github.io/ClassKernel/)**.
 
 ## What it does
@@ -55,6 +55,7 @@ the light colours.
 | **Chemistry reference** | The periodic table, colour-coded and tap-for-details (shell and Aufbau diagrams, configurations, ionisation energies…), common substances with their structures, bond enthalpies and polarity, the polyatomic ions with Lewis diagrams, a quiz, the data sheet's tables and an equation balancer. |
 | **Titration simulator** | A burette, a flask, the usual acids, bases and indicators, and the pH curve as the titrant runs in. |
 | **Galvanic cell animator** | An animated galvanic cell: electrons, ions, the salt bridge and a voltmeter that follows the Nernst equation, with the memo under it. |
+| **Electrolytic cell** | A DC supply drives the cell: what forms at each electrode and why (by E°, with the concentrated-chloride exception), the ions, bubbles, plating and sludge, and Faraday's law for the current and time. |
 | **Class noise meter** | Shows the room's noise against a limit and warns the class when it's too loud. |
 
 ## Your data
