@@ -125,6 +125,9 @@ const outcome = await savePluginFile({
 | `numbers.ts` | Classroom number formatting. |
 | `scale.ts` | Axis scales on round values, and their tick labels. |
 | `shared/FlipDigits.tsx` | The split-flap digits the timer and the clock share (styles in `shared/flip-digits.css`). |
+| `shared/canvas.ts` | Sizing a canvas to its box, the print canvas, lines, arrows, text with subscripts, and a seeded random-number generator — for the simulations (collisions, photoelectric effect, reaction rates). |
+| `shared/graph.ts` | Graph axes the way a paper draws them (arrows, the x-axis through zero, labels with units) and plotting on them. |
+| `shared/SimControls.tsx` | The simulations' number fields (decimal comma, optional slider) and memo layout; styles and the shared two-pane layout in `shared/sim-controls.css`. |
 | `shared/tool-layout.css` | The two-pane layout the graph tools and the noise meter share: controls left, sheet right. |
 | `src/components/TimerMini.tsx` | The test timer's corner pop-up — the one plugin with a piece outside the plugin pane. |
 | `src/components/PluginView.tsx` | Lazy loading, the error boundary, the chrome. |

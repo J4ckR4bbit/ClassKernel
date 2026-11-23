@@ -135,6 +135,15 @@ export const PLUGINS: PluginManifest[] = [
     load: () => import("./slope/SlopeSimulator").then((m) => m.default),
   },
   {
+    id: "collisions",
+    name: "Collisions and impulse",
+    tagline: "Two trolleys collide: momentum, kinetic energy and the impulse, before and after.",
+    description:
+      "Two trolleys on a frictionless track, A on the left and B on the right. Choose what happens — they stick together, an elastic collision, A's velocity after is given (as the papers usually give it), or a spring pushes them apart — with their masses, velocities and the contact time, or start from an example. Run it and watch them collide, slowed down through the contact, with their velocity arrows; the graphs draw velocity and momentum against time (the total momentum a flat line) and the force on each during the contact, equal and opposite, the area under it — the impulse — shaded, with the average force Δp/Δt. Compare at double the contact time keeps the first force graph dashed: the same area, half the height. The memo works it the IEB way: a sign convention (right or left positive), Σp before = Σp after solved for the unknown, the kinetic energy before and after to decide elastic or inelastic, Δp of each, and the impulse and average force with Newton's third law; it says when the numbers can't happen (A passing through B, or kinetic energy gained in a collision). Question mode hides what happens after; Show to class fills the screen. Saves the sketch and the graphs as 300 dpi PNGs; nothing is saved to your data.",
+    icon: "compare_arrows",
+    load: () => import("./collisions/CollisionsView").then((m) => m.default),
+  },
+  {
     id: "generator",
     name: "Generator",
     tagline: "Turn the coil and watch Φ, ΔΦ/Δt and the emf drawn against time.",
@@ -151,6 +160,24 @@ export const PLUGINS: PluginManifest[] = [
       "Draw a circuit the way the exam papers do — black-and-white IEC symbols on a grid: cells and batteries (with internal resistance), resistors, lamps, rheostats, ammeters, voltmeters, switches, fuses and diodes — or start from an example (series and parallel lamps, internal resistance, two switches, a rheostat, diodes, a fuse, meters connected wrongly). Run it and every ammeter and voltmeter shows its reading, each lamp glows with the power it uses, and the current moves round the wires (conventional or electron flow). Tap a switch to open or close it, slide the rheostat, change any value and watch the readings follow. Under the circuit, the memo: each meter, the cell's terminal voltage and lost volts, and V, I and P for every part. Question mode hides the readings; Show to class fills the screen. Saves the diagram as a 300 dpi PNG for a paper, with or without the readings, and the circuit itself as a file to open again. Nothing is saved to your data; this computer remembers the circuit you were last working on.",
     icon: "electrical_services",
     load: () => import("./circuit-builder/CircuitBuilder").then((m) => m.default),
+  },
+  {
+    id: "photoelectric",
+    name: "Photoelectric effect and spectra",
+    tagline: "Shine light on a metal: photons in, electrons out — and the lines atoms give out.",
+    description:
+      "A vacuum photocell for the board: choose the metal (or type a paper's work function) and the light — its wavelength or frequency, and its intensity — and watch the photons arrive and the photoelectrons leave for the collector, or nothing happen below the threshold frequency however bright the light. A microammeter reads the photocurrent. Beside it, the graphs the papers ask about: Eₖ(max) against frequency (gradient h, f₀ on one axis and −W₀ on the other, with a second metal's parallel line to compare) and Eₖ(max) and the current against intensity. The memo works it all with the data sheet's constants — nm to m, f = c/λ, E = hf, eV to J, f₀ and λ₀, E = W₀ + Eₖ(max) and v_max. A second tab, Emission spectra, has hydrogen's energy-level diagram: tap a level to excite the electron or make it fall, or run the discharge tube, and the photon given out and its line on the spectrum appear, with the working; and the line spectra of hydrogen, helium, neon, sodium and mercury tubes, with a mystery tube to identify. Question mode hides the answers; Show to class fills the screen. Saves the pictures and graphs as 300 dpi PNGs; nothing is saved to your data.",
+    icon: "flare",
+    load: () => import("./photoelectric/PhotoelectricView").then((m) => m.default),
+  },
+  {
+    id: "reaction-rates",
+    name: "Reaction rates",
+    tagline: "Collision theory in a beaker: who collides, who reacts, and the Maxwell–Boltzmann curve.",
+    description:
+      "A metal reacting with an acid, seen as particles: the acid's particles move through the solution, each with its reactive end, glowing when it has at least the activation energy, and hit the metal at the bottom of the beaker. A collision with enough energy and the right orientation is effective — the metal atom dissolves and a bubble of gas forms; the others bounce off, marked as not enough energy or the wrong way round. Change the temperature, the acid's concentration, the surface area of the metal (one lump, six pieces or a powder, the same mass each way) or add a catalyst, and watch the rate change. Beside it, the Maxwell–Boltzmann distribution drawn from the beaker's own particles, with Eₐ (and the catalyst's lower Eₐ) and the particles beyond it shaded, and the gas formed against time, levelling off when the limiting reagent runs out. Keep one run dashed, change one condition and run again to compare the curves; the notes explain the difference by collision theory. Question mode hides the explanations; Show to class fills the screen. Saves the beaker and the graphs as 300 dpi PNGs; nothing is saved to your data.",
+    icon: "bubble_chart",
+    load: () => import("./reaction-rates/ReactionRates").then((m) => m.default),
   },
   {
     id: "galvanic-cell",

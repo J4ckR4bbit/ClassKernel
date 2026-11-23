@@ -265,6 +265,177 @@ test.describe("generator", () => {
   });
 });
 
+test.describe("collisions", () => {
+  test.beforeEach(async ({ page }) => {
+    await enableTools(page, ["collisions"]);
+    await openTool(page, "Collisions and impulse");
+  });
+  const readout = (page: Page, label: string) => page.locator(".sim-readout", { hasText: label }).locator(".sim-readout-value");
+
+  test("they stick together: momentum conserved, kinetic energy lost, and the memo works it", async ({ page }) => {
+    await expect(readout(page, "Σp before")).toHaveText("11,00 kg·m·s⁻¹");
+    await expect(readout(page, "Σp after")).toHaveText("11,00 kg·m·s⁻¹");
+    await expect(readout(page, "ΣEₖ before")).toHaveText("17,50 J");
+    await expect(readout(page, "ΣEₖ after")).toHaveText("12,10 J");
+    await expect(readout(page, "The collision")).toHaveText("Inelastic");
+    await expect(page.locator(".sim-notes")).toContainText("(2)(4) + (3)(1) = (2 + 3)vf");
+    await expect(page.locator(".sim-notes")).toContainText("vf = 2,20 m·s⁻¹ (to the right), both together");
+    await expect(page.locator(".sim-notes")).toContainText("ΔpA = mA(vA − uA) = (2)(2,20 − 4) = −3,60 kg·m·s⁻¹");
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Run", exact: true })).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("A's velocity given: B's from momentum; left as positive flips the signs; impossible numbers are refused", async ({ page }) => {
+    await page.getByLabel("Example").selectOption("given-bounce");
+    await expect(page.locator(".sim-notes")).toContainText("vB = 2,00 m·s⁻¹ (to the right)");
+    await expect(readout(page, "ΣEₖ after")).toHaveText("2,60 J");
+    await page.getByRole("button", { name: "To the left" }).click();
+    await expect(page.getByLabel("Velocity of A before in m·s⁻¹")).toHaveValue("−5");
+    await expect(page.locator(".sim-notes")).toContainText("To the left is positive.");
+    await expect(page.locator(".sim-notes")).toContainText("vB = −2,00 m·s⁻¹ (to the right)");
+    await page.getByRole("button", { name: "To the right" }).click();
+    await page.getByLabel("Velocity of A after in m·s⁻¹").fill("3");
+    await expect(page.locator(".sim-warn")).toContainText("Impossible");
+    await expect(page.getByRole("button", { name: "Run", exact: true })).toBeDisabled();
+    await expect(readout(page, "The collision")).toHaveText("Impossible");
+  });
+
+  test("compare at double the contact time, and save the graphs", async ({ page }) => {
+    await page.getByRole("button", { name: "Compare at double the contact time" }).click();
+    await expect(page.locator(".sim-controls")).toContainText("Dashed: the force on B at Δt = 0,1 s.");
+    await expect(page.getByLabel("Contact time, Δt in s")).toHaveValue("0,2");
+    await expect(page.locator(".sim-notes")).toContainText("= 3,60/0,2 = 18,00 N on B (to the right)");
+    await expect(page.getByRole("button", { name: "Run", exact: true })).toBeVisible({ timeout: 15_000 });
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Save the graphs…" }).click();
+    expect((await download).suggestedFilename()).toBe("collision_stick_graphs.png");
+  });
+});
+
+test.describe("photoelectric effect and spectra", () => {
+  test.beforeEach(async ({ page }) => {
+    await enableTools(page, ["photoelectric"]);
+    await openTool(page, "Photoelectric effect and spectra");
+  });
+  const readout = (page: Page, label: string) => page.locator(".sim-readout", { hasText: label }).locator(".sim-readout-value");
+
+  test("blue light frees electrons from sodium, worked with the data sheet's constants; red light frees none, however intense", async ({ page }) => {
+    await expect(readout(page, "Photon energy E")).toHaveText("2,75 eV");
+    await expect(readout(page, "Eₖ(max)")).toHaveText("0,35 eV");
+    await expect(readout(page, "Current")).toHaveText("6,0 µA");
+    await expect(page.locator(".sim-notes")).toContainText("E = hf = (6,6 × 10⁻³⁴)(6,67 × 10¹⁴) = 4,40 × 10⁻¹⁹ J");
+    await expect(page.locator(".sim-notes")).toContainText("EK(max) = E − W0 = 4,40 × 10⁻¹⁹ − 3,84 × 10⁻¹⁹ = 5,60 × 10⁻²⁰ J");
+    await page.getByLabel("Wavelength, λ in nm").fill("650");
+    await page.getByLabel("Intensity in %").fill("100");
+    await expect(readout(page, "Eₖ(max)")).toHaveText("none");
+    await expect(readout(page, "Current")).toHaveText("0,0 µA");
+    await expect(page.locator(".sim-notes")).toContainText("No electrons are emitted, however intense the light");
+    // Question mode hides the answers.
+    await page.getByRole("button", { name: "Question mode" }).click();
+    await expect(readout(page, "Photon energy E")).toHaveText("?");
+    await expect(page.locator(".sim-notes")).toContainText("Question mode: the working is hidden.");
+  });
+
+  test("by frequency, another metal to compare, and the pictures save", async ({ page }) => {
+    await page.getByRole("button", { name: "By frequency" }).click();
+    await page.getByLabel("Frequency, f in × 10¹⁴ Hz").fill("10");
+    await expect(page.locator(".sim-notes")).toContainText("λ = c/f = (3 × 10⁸)/(1,00 × 10¹⁵) = 3,00 × 10⁻⁷ m = 300 nm");
+    await page.getByLabel("Compare with").selectOption("zinc");
+    await page.getByLabel("Metal").selectOption("custom");
+    await page.getByLabel("Work function, W₀ in eV").fill("3,5");
+    await expect(readout(page, "Work function W₀")).toHaveText("3,5 eV");
+    const cell = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Save the photocell…" }).click();
+    expect((await cell).suggestedFilename()).toBe("photocell_metal_x_300nm.png");
+    const graph = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Save the graph…" }).click();
+    expect((await graph).suggestedFilename()).toBe("photoelectric_graph_ek-f.png");
+  });
+
+  test("hydrogen: a fall from n = 3 to n = 2 gives the red line, with its working; tap a level to excite or drop", async ({ page }) => {
+    await page.getByRole("button", { name: "Emission spectra" }).click();
+    await page.getByLabel("From level").selectOption("3");
+    await page.getByLabel("To level").selectOption("2");
+    await page.getByRole("button", { name: "Fall", exact: true }).click();
+    await expect(page.locator(".sim-notes")).toContainText("ΔE = E3 − E2 = (−1,51) − (−3,4) = 1,89 eV");
+    await expect(page.locator(".sim-notes")).toContainText("= 655 nm");
+    await expect(page.locator(".sim-notes")).toContainText("Visible: red light — Balmer series");
+    // Tap n = 5 (above: excite), then n = 1 (below: fall, ultraviolet).
+    const levels = page.locator("canvas[aria-label^=\"Hydrogen's energy levels\"]");
+    const box = (await levels.boundingBox())!;
+    const y = (frac: number) => box.y + ((70 + frac * 430) / 560) * box.height;
+    await page.mouse.click(box.x + 0.3 * box.width, y(0.205));
+    await expect(levels).toHaveAttribute("aria-label", /n = 5$/);
+    await page.mouse.click(box.x + 0.3 * box.width, y(1));
+    await expect(page.locator(".sim-notes")).toContainText("The memo: n = 5 → n = 1");
+    await expect(page.locator(".sim-notes")).toContainText("Ultraviolet: not visible — Lyman series");
+  });
+
+  test("element fingerprints and the mystery tube", async ({ page }) => {
+    await page.getByRole("button", { name: "Emission spectra" }).click();
+    await page.getByRole("button", { name: "Element fingerprints" }).click();
+    await page.getByRole("button", { name: "Mystery tube" }).click();
+    await expect(page.locator(".sim-controls")).toContainText("Which gas is in the mystery tube?");
+    await page.getByRole("button", { name: "Reveal" }).click();
+    await expect(page.locator(".sim-controls")).toContainText("The mystery tube is");
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Save the spectrum…" }).click();
+    expect((await download).suggestedFilename()).toBe("emission_spectra.png");
+  });
+
+  test("the photons still move with Windows set to show fewer animations", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const beam = () =>
+      page.locator("canvas[aria-label^=Photocell]").evaluate((c: HTMLCanvasElement) => {
+        const data = c.getContext("2d")!.getImageData(0, 0, Math.round(c.width / 2), Math.round(c.height / 2)).data;
+        let hash = 0;
+        for (let i = 0; i < data.length; i += 4) hash = (hash * 31 + data[i] + 3 * data[i + 1] + 7 * data[i + 2]) >>> 0;
+        return hash;
+      });
+    expect(await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(true);
+    const before = await beam();
+    await expect.poll(beam, { timeout: 3_000 }).not.toBe(before);
+  });
+});
+
+test.describe("reaction rates", () => {
+  test.beforeEach(async ({ page }) => {
+    await enableTools(page, ["reaction-rates"]);
+    await openTool(page, "Reaction rates");
+  });
+  const readout = (page: Page, label: string) => page.locator(".sim-readout", { hasText: label }).locator(".sim-readout-value");
+  const count = async (page: Page, label: string) => Number((await readout(page, label).innerText()).split(" ")[0].replace(/\s/g, ""));
+
+  test("runs: the particles collide with the metal, only some effectively, and the gas graph rises", async ({ page }) => {
+    await page.getByRole("button", { name: "Powder" }).click();
+    await page.getByLabel("Add a catalyst").check();
+    await page.getByRole("button", { name: "×8" }).click();
+    await expect(readout(page, "Left")).toHaveText("60 acid · 96 metal");
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    await expect.poll(() => count(page, "Effective"), { timeout: 10_000 }).toBeGreaterThan(2);
+    await page.getByRole("button", { name: "Pause" }).click();
+    expect(await count(page, "Collisions with the metal")).toBeGreaterThan(await count(page, "Effective"));
+    await expect(page.locator(".sim-notes")).toContainText("of the collisions so far were effective");
+  });
+
+  test("keep a run, warm it up: the notes explain the difference by collision theory", async ({ page }) => {
+    await page.getByRole("button", { name: "×8" }).click();
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    await page.waitForTimeout(600);
+    await page.getByRole("button", { name: "Pause" }).click();
+    await page.getByRole("button", { name: "Keep this run and start again" }).click();
+    await expect(page.locator(".sim-controls")).toContainText("Dashed: 25 °C, 1 mol·dm⁻³, one lump.");
+    await page.getByLabel("Temperature in °C").fill("60");
+    await expect(page.locator(".sim-notes")).toContainText("Higher temperature: the particles have more kinetic energy");
+    await page.getByRole("button", { name: "Question mode" }).click();
+    await expect(page.locator(".sim-notes")).toContainText("Question mode: the explanations are hidden.");
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Save the graphs…" }).click();
+    expect((await download).suggestedFilename()).toBe("reaction_rate_graphs.png");
+  });
+});
+
 test.describe("circuit builder", () => {
   // While building, the canvas shows the whole grid: 24 × 16 steps across its width and height.
   const at = async (page: Page, gx: number, gy: number) => {

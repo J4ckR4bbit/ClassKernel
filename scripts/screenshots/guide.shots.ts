@@ -490,7 +490,7 @@ test("tools: switching on, dashboards and parent reports", async ({ page }) => {
 
 test("teaching tools", async ({ page }) => {
   await prep(page);
-  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "slope-simulator", "generator", "circuit-builder", "galvanic-cell", "electrolytic-cell", "chemistry-reference", "titration", "noise-meter"]);
+  await enableTools(page, ["test-timer", "clock", "stopwatch", "graph-paper", "practical-graph", "motion-graph", "slope-simulator", "collisions", "generator", "circuit-builder", "photoelectric", "reaction-rates", "galvanic-cell", "electrolytic-cell", "chemistry-reference", "titration", "noise-meter"]);
 
   await openTool(page, "Test timer");
   await shot(page, "test-timer-setup");
@@ -553,6 +553,14 @@ test("teaching tools", async ({ page }) => {
   await toTop(page, ".sl-controls");
   await shot(page, "slope-simulator", 800);
 
+  await openTool(page, "Collisions and impulse");
+  await page.getByLabel("Example").selectOption("given-bounce");
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Run", exact: true })).toBeVisible({ timeout: 15_000 });
+  await toTop(page, ".sim-controls");
+  await page.locator(".sim-main").evaluate((e) => (e.scrollTop = 40));
+  await shot(page, "collisions", 400);
+
   await openTool(page, "Generator");
   await page.getByRole("button", { name: "Turn it" }).click();
   await expect(page.getByRole("button", { name: "Turn it" })).toBeVisible({ timeout: 10_000 });
@@ -566,6 +574,37 @@ test("teaching tools", async ({ page }) => {
   await page.getByLabel("Example circuit").selectOption("series-parallel-lamps");
   await toTop(page, ".cb-controls");
   await shot(page, "circuit-builder", 1200);
+
+  await openTool(page, "Photoelectric effect and spectra");
+  await page.getByLabel("Compare with").selectOption("zinc");
+  await page.waitForTimeout(1500);
+  await toTop(page, ".sim-controls");
+  await page.locator(".sim-main").evaluate((e) => (e.scrollTop = 60));
+  await shot(page, "photoelectric", 300);
+  await page.getByRole("button", { name: "Emission spectra" }).click();
+  for (const [from, to] of [["5", "2"], ["4", "2"], ["2", "1"], ["4", "3"], ["3", "2"]]) {
+    await page.getByLabel("From level").selectOption(from);
+    await page.getByLabel("To level").selectOption(to);
+    await page.getByRole("button", { name: "Fall", exact: true }).click();
+  }
+  await page.waitForTimeout(1300);
+  await toTop(page, ".sim-controls");
+  await toTop(page, ".sim-main");
+  await shot(page, "emission-spectra", 300);
+
+  await openTool(page, "Reaction rates");
+  await page.getByRole("button", { name: "×8" }).click();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.waitForTimeout(4000);
+  await page.getByRole("button", { name: "Pause" }).click();
+  await page.getByRole("button", { name: "Keep this run and start again" }).click();
+  await page.getByLabel("Temperature in °C").fill("75");
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.waitForTimeout(4000);
+  await page.getByRole("button", { name: "Pause" }).click();
+  await toTop(page, ".sim-controls");
+  await page.locator(".sim-main").evaluate((e) => (e.scrollTop = 250));
+  await shot(page, "reaction-rates", 300);
 
   await openTool(page, "Galvanic cell animator");
   await page.waitForTimeout(1500);

@@ -19,8 +19,11 @@ as you need. Switch any of them on under [Settings → Tools](10-settings.md#too
 | [Practical graph plotter](#practical-graph-plotter) | Readings in, graph and gradient out. |
 | [Motion graph builder](#motion-graph-builder) | x–t, v–t and a–t graphs that always agree. |
 | [Block on a slope](#block-on-a-slope) | Will it slide? A slope question run, with its free-body diagrams. |
+| [Collisions and impulse](#collisions-and-impulse) | Two trolleys collide: momentum, kinetic energy and the impulse. |
 | [Generator](#generator) | Turn the coil; Φ, ΔΦ/Δt and the emf are drawn against time. |
 | [Circuit builder](#circuit-builder) | Build an exam-style circuit, run it and read the meters. |
+| [Photoelectric effect and spectra](#photoelectric-effect-and-spectra) | Photons in, photoelectrons out; hydrogen's energy levels and line spectrum. |
+| [Reaction rates](#reaction-rates) | Collision theory in a beaker, with the Maxwell–Boltzmann curve. |
 | [Galvanic cell animator](#galvanic-cell-animator) | An animated cell whose reading follows the Nernst equation. |
 | [Electrolytic cell](#electrolytic-cell) | Switch on the supply: what forms at each electrode, and how much. |
 | [Chemistry reference](#chemistry-reference) | The periodic table, with every element's details a tap away. |
@@ -223,6 +226,45 @@ with the sketch and the readings beside the diagrams. **Save the sketch…** sav
 the diagrams…** the free-body diagrams for a memo. g = 9,8 m·s⁻². The set-up is remembered on this computer;
 nothing is saved to your data.
 
+## Collisions and impulse
+
+Two trolleys on a frictionless horizontal track — A on the left, B on the right — for the momentum, impulse and
+Newton's third law work in Paper 1. They collide (or a spring pushes them apart), and the tool draws what happens and
+works the memo the IEB way.
+
+![A bounces back off B: the trolleys after the collision, the v–t, p–t and F–t graphs](../images/collisions.png)
+
+**Setting it up**
+
+- **Example** starts from one of the usual questions: A catches B and they stick together; a head-on collision; an
+  elastic collision of equal masses (they swap velocities); a light ball bouncing off a heavy one; A's velocity after
+  is given, find B's; a spring pushes two trolleys apart; a car runs into a truck.
+- Or choose **what happens** yourself: *they stick together*, *an elastic collision*, *A's velocity after is given* (as
+  the papers usually give it) or *a spring pushes them apart* — with the two **masses**, the **velocities before**
+  (with their signs) and, where it is given, **A's velocity after**.
+- **Contact time, Δt** — how long they push on each other.
+
+**Running it.** **Run** plays the run: they approach, collide — slowed down through the contact so the class can see
+it (*Slow motion through the collision*) — and move apart, each with a velocity arrow and its speed. The bumpers are
+springs for a bounce, putty pads when they stick, and a thread holds the spring compressed before an explosion.
+**Reset** starts again.
+
+**The graphs**, drawn as it runs: velocity and momentum against time for A and B — the total momentum a flat line —
+and the force on each during the contact, equal and opposite, with the area under B's curve (the impulse, Δp) shaded
+and the average force Δp/Δt dashed beside it. **Compare at double the contact time** keeps the first force graph
+dashed and runs it again: the same area, half the height — airbags and crumple zones.
+
+**The memo** under it: the sign convention, the momenta before, Σp before = Σp after solved for the unknown velocity,
+ΣEₖ before and after to decide **elastic** or **inelastic** (and where the kinetic energy went), Δp of each, and the
+impulse and the average force with Newton's third law. It says so when the numbers can't happen — A passing through B,
+or kinetic energy gained in a collision. **Positive is to the right / to the left** turns the whole memo and the
+graphs round, the velocities you type included.
+
+**Question mode** hides what happens after the collision (the velocities, Σp and Eₖ after, the numbers on the graphs
+and the memo);
+**Show to class** puts the track and the graphs side by side across the screen. **Save the sketch…** and **Save the
+graphs…** save black-and-white 300 dpi PNGs. The set-up is remembered on this computer; nothing is saved to your data.
+
 ## Generator
 
 An AC or DC generator drawn the way the papers draw it, and the three graphs they ask about — the flux, its rate
@@ -320,6 +362,102 @@ nodal analysis; a cell with no internal resistance and nothing but wire across i
 on a printed paper), without the grid, the glow or the current — tick *Put the meter readings in the picture* for a
 memo version. **Save circuit…** writes the circuit to a small `.json` file and **Open circuit…** reads one back. This
 computer remembers the circuit you were working on; nothing goes into your data folder.
+
+## Photoelectric effect and spectra
+
+Photons and electrons, for the last topic of Paper 1, in two tabs. Every number is worked with the data sheet's
+constants — h = 6,6 × 10⁻³⁴ J·s, c = 3 × 10⁸ m·s⁻¹, mₑ = 9,1 × 10⁻³¹ kg, 1 eV = 1,6 × 10⁻¹⁹ J — so it matches what a
+candidate gets.
+
+![Blue light on sodium: the photocell, and the Eₖ(max)–f graph with zinc to compare](../images/photoelectric.png)
+
+**Photoelectric effect**
+
+- A vacuum photocell: light from a source falls on a curved **metal surface**; the photons are drawn as wave packets in
+  the light's colour (grey for ultraviolet and infrared, which can't be seen), the **photoelectrons** cross to the
+  **collector**, and a **microammeter** reads the current.
+- **The light**: set it **by wavelength** (100–1 000 nm) or **by frequency** (3–30 × 10¹⁴ Hz), and its **intensity** —
+  here, the number of photons arriving each second. **Light off** stops it.
+- **The metal**: caesium, potassium, sodium, calcium, magnesium, aluminium, zinc, tungsten, copper, gold or platinum,
+  with typical work functions — or **Your own work function** for the value a paper gives. Its f₀ and λ₀ are shown.
+- Below the threshold frequency the photons are absorbed and **no electrons are emitted**, however intense the
+  light; above it, more intense light means more electrons a second (a bigger current), and a higher frequency means
+  faster ones (a bigger Eₖ(max)).
+- **The graph**: **Eₖ(max) against frequency** — a straight line with gradient h, f₀ where it meets the frequency axis
+  and −W₀ where it meets the energy axis (*Extend the line*), the light now marked on it; **Compare with** another metal
+  draws its parallel line. Or **Eₖ(max) against intensity** (flat) and **current against intensity** (through the
+  origin). Energy in J or eV; *Show the gradient (h)* adds a gradient triangle.
+- **The memo**: nm to m and f = c/λ (or λ = c/f), E = hf in J and eV, W₀ in J, f₀ and λ₀, the comparison that decides
+  whether electrons are emitted, E = W₀ + Eₖ(max), v_max from Eₖ(max) = ½mv², and the electrons a second at that
+  intensity. **Exam points** sum up what the examiners look for (electrons not atoms; compare f with f₀ or E with W₀;
+  intensity versus frequency; the significance of the effect).
+
+![Hydrogen's energy levels after five falls, and the line spectrum they make](../images/emission-spectra.png)
+
+**Emission spectra**
+
+- **Hydrogen's levels**: the energy-level diagram (n = 1 to 6 and n = ∞, −13,6 eV to 0 eV, as the papers give them;
+  not to scale, or *to scale*), with the electron on its level. **Tap a level** above the electron to excite it, or
+  below it to make it fall — or choose **from n = … to n = …** and press **Fall**. Each fall draws its arrow, sends out a
+  photon with its energy and wavelength, and adds its line to the spectrum: the **visible strip** a spectroscope shows,
+  and **all the lines** from ultraviolet to infrared on a log scale. **Run the discharge tube** excites atom after atom
+  so the lines build up; **Clear** starts again.
+- The memo for the last fall: ΔE = E(upper) − E(lower) in eV and J, f = E/h, λ = c/f in m and nm, the colour and the
+  series. (With the data sheet's rounded constants the red line comes out at 655 nm; measured, it is 656 nm.)
+- **Element fingerprints**: the line spectra of hydrogen, helium, neon, sodium and mercury tubes (measured lines), with
+  the tube glowing its colour. **Mystery tube** adds an unnamed spectrum for the class to identify; **Reveal** names it.
+
+**Question mode** hides the photon energy, Eₖ(max), v_max, the current and the memos; **Show to class** fills the screen
+with the pictures and a small bar of buttons. **Save the photocell…**, **Save the graph…**, **Save the levels…** and
+**Save the spectrum…** save black-and-white 300 dpi PNGs. Photons and electrons keep moving even when Windows is set to
+show fewer animations. The set-up is remembered on this computer; nothing is saved to your data.
+
+## Reaction rates
+
+Collision theory for the Grade 11 and 12 rates work in Paper 2: a metal reacting with an acid (like magnesium in
+hydrochloric acid), seen as particles, with the two graphs the papers draw.
+
+![A run at 75 °C beside one kept at 25 °C: the beaker, the Maxwell–Boltzmann curves and the gas formed](../images/reaction-rates.png)
+
+**The beaker.** The acid's particles move through the solution and hit the metal at the bottom. Each particle has a
+**reactive end** (its red half), and **glows** when its kinetic energy is at least the activation energy. A collision
+with enough energy and the reactive end facing the metal is **effective** — a burst, the metal atom dissolves, the acid
+particle is used up and a bubble of gas rises; the others bounce off, marked as *not enough energy* (grey) or *the
+wrong way round* (purple). A key beside the beaker says which is which.
+
+**The conditions**
+
+- **Temperature** (0–100 °C) and **Add a catalyst** change the run as it goes: watch more particles glow, or the
+  catalyst's lower Eₐ appear on the graph.
+- **Acid concentration** (0,5–2 mol·dm⁻³) and **the metal** — *one lump*, *six pieces* or a *powder*, the same number of
+  atoms each way, so more exposed — start a new run.
+- **Run**, **Pause** and **Reset**; **speed** ×1 to ×8.
+
+**The graphs**
+
+- **The Maxwell–Boltzmann distribution**: number of particles against kinetic energy for the conditions now, with
+  **Eₐ** marked (and the catalysed Eₐ, further left) and the particles beyond it **shaded**. *Show the beaker's particles
+  under the curve* adds bars of the particles actually in the beaker — they follow the curve, and shrink as the acid is
+  used up.
+- **Gas formed against time**: steep at first, levelling off as the acid is used up, and flat once the limiting reagent
+  has run out (the dotted line, hidden in question mode, shows where).
+
+**Compare two experiments.** **Keep this run and start again** keeps both graphs dashed; change one condition and run
+again. The notes then say what changed and why, in collision-theory terms — more particles with Eₖ ≥ Eₐ, more
+collisions per unit time, so more effective collisions per unit time. **Exam points** list the rest: the definition of
+a catalyst, the effect of each factor on the curve, ways of measuring a rate, and why the final amount depends only on
+the limiting reagent.
+
+**Readings** under the pictures: collisions with the metal, how many were effective (and what percentage), the
+particles with Eₖ ≥ Eₐ now, the rate over the last 5 s and what is left of each reactant.
+
+**It is a model.** One effective collision stands for one metal atom reacting (magnesium really takes two H⁺), and
+the activation energy is scaled down so the shaded tail is big enough to see; a real reaction is far more sensitive to
+temperature than this beaker. The notes say so too.
+
+**Question mode** hides the explanations and where the gas graph will level off; **Show to class** puts the beaker and
+the graphs side by side. **Save the particles…** and **Save the graphs…** save black-and-white 300 dpi PNGs. The
+conditions are remembered on this computer; nothing is saved to your data.
 
 ## Galvanic cell animator
 
