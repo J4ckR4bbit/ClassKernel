@@ -1,0 +1,59 @@
+/* The number fields and memo the simulations share (shared/SimControls.tsx). */
+.sim-field { margin-bottom: 8px; }
+.sim-field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sim-field-label { flex: 1; font-size: 13px; }
+.sim-number { display: flex; align-items: center; gap: 6px; }
+.sim-number input { width: 84px; text-align: right; font-variant-numeric: tabular-nums; }
+.sim-number input.sim-bad { border-color: var(--md-error); }
+.sim-unit { min-width: 0; font-size: 13px; }
+.sim-field input[type="range"] { width: 100%; margin-top: 4px; }
+
+.sim-steps { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; font-size: 13px; }
+.sim-steps dt { font-weight: 600; color: var(--text-dim); }
+.sim-steps dd { margin: 0; line-height: 1.55; }
+
+/* The layout the three simulations share: controls left, the board and the memo right. */
+.sim-tool { display: grid; grid-template-columns: minmax(300px, 360px) 1fr; gap: 16px; height: 100%; }
+.sim-tool.class-view { display: block; }
+.sim-controls { overflow-y: auto; padding-right: 4px; }
+.sim-controls .panel { padding: 14px; }
+.sim-controls h3, .sim-main h3 { font-size: 14px; margin-bottom: 10px; }
+.sim-note { font-size: 12px; margin: 8px 0; }
+.sim-status { font-size: 13px; margin-top: 8px; word-break: break-all; }
+.sim-row { margin-top: 10px; align-items: center; flex-wrap: wrap; }
+.sim-seg { margin-bottom: 10px; }
+.sim-select { width: 100%; margin-bottom: 8px; }
+.sim-check { display: flex; align-items: center; gap: 9px; font-size: 13px; margin: 8px 0; cursor: pointer; }
+.sim-warn { font-size: 13px; color: var(--on-warning-container); background: var(--warning-container); border-radius: var(--md-shape-s); padding: 6px 10px; margin: 6px 0 0; }
+.sim-banner { font-size: 14px; font-weight: 600; color: var(--on-good-container); background: var(--good-container); border-radius: var(--md-shape-s); padding: 6px 12px; margin: 0; }
+
+.sim-main { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; }
+/* The board: tinted, so the white pictures read as sheets on a desk. Canvases are sized from their boxes in script. */
+.sim-board { display: flex; flex-direction: column; gap: 10px; padding: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); flex: none; }
+.sim-canvas-box { min-width: 0; min-height: 0; display: flex; justify-content: center; }
+.sim-canvas { display: block; background: #fff; border: 1px solid var(--border); border-radius: 6px; }
+.sim-canvas.sim-picture { box-shadow: 0 2px 10px rgba(29, 39, 51, 0.12); touch-action: none; user-select: none; }
+.sim-readouts { display: flex; flex-wrap: wrap; gap: 6px 26px; }
+.sim-readout { display: flex; flex-direction: column; min-width: 96px; }
+.sim-readout-label { font-size: 12px; color: var(--text-dim); }
+.sim-readout-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Shown to the class: the board fills the screen, with a bar of buttons along the bottom. */
+.sim-board.class-view {
+  position: fixed; inset: 0; z-index: var(--z-class-view); border-radius: 0; padding: 20px 24px 76px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 14px;
+}
+.sim-board.class-view .sim-canvas-box { align-items: center; }
+.sim-board.class-view .sim-readouts { grid-column: 1 / -1; justify-content: center; }
+.sim-board.class-view .sim-readout-value { font-size: 26px; }
+.sim-class-bar { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; white-space: nowrap; z-index: calc(var(--z-class-view) + 1); }
+
+.sim-notes { padding: 14px 18px; }
+.sim-now { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+.sim-hidden { font-size: 13px; margin: 0; }
+
+@media (max-width: 900px) {
+  .sim-tool { grid-template-columns: 1fr; overflow-y: auto; }
+  .sim-controls, .sim-main { overflow: visible; }
+}
+.sim-board.class-view .sim-wide { grid-column: 1 / -1; }
