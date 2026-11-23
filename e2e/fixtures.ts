@@ -52,10 +52,13 @@ export async function enableTools(page: Page, ids: string[]) {
   for (const id of ids) await page.locator(`#plugin-${id}`).check();
 }
 
-/** Open a tool from its card on Home. */
+/**
+ * Open a tool from its card on Home, by its exact name: "Generator" must not
+ * also match "Graph paper generator".
+ */
 export async function openTool(page: Page, name: string) {
   await nav(page, "Home");
-  await page.locator(".tool-card", { hasText: name }).click();
+  await page.locator(".tool-card").filter({ has: page.getByText(name, { exact: true }) }).click();
   await expect(page.locator(".top-bar-title")).toHaveText(name);
 }
 
