@@ -12,7 +12,7 @@
 // Vm = 22,4 dm³·mol⁻¹ at STP; molar masses as on the periodic table.
 
 import { formatFixed, formatSigFigs } from "../numbers";
-import { F, voltsText } from "../galvanic-cell/cell";
+import { F, electronsText, voltsText } from "../galvanic-cell/cell";
 
 export { F, voltsText };
 
@@ -662,9 +662,6 @@ export function termText(t: Term, molten = false): string {
 }
 
 const joinTerms = (terms: Term[], molten: boolean) => terms.map((t) => termText(t, molten)).join(" + ");
-
-/** "2e⁻", or "e⁻" for one, as the data sheet writes it. */
-const electronsText = (n: number) => `${n > 1 ? n : ""}e⁻`;
 
 /** "Cu²⁺(aq) + 2e⁻ → Cu(s)". */
 export function reductionText(couple: Couple, molten = false): string {

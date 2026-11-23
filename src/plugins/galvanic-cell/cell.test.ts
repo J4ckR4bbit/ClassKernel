@@ -190,6 +190,14 @@ describe("the standard hydrogen electrode and platinum couples", () => {
     expect(pressed.E).toBeGreaterThan(a.E);
   });
 
+  it("writes one electron as e⁻, as the data sheet does, and more with their number", () => {
+    const silver = halfCellById("ag");
+    expect(reductionText(silver)).toBe("Ag⁺(aq) + e⁻ → Ag(s)");
+    expect(oxidationText(silver)).toBe("Ag(s) → Ag⁺(aq) + e⁻");
+    expect(reductionText(silver, 2)).toBe("2Ag⁺(aq) + 2e⁻ → 2Ag(s)");
+    expect(reductionText(halfCellById("fe3"))).toBe("Fe³⁺(aq) + e⁻ → Fe²⁺(aq)");
+  });
+
   it("writes the Fe³⁺ / Fe²⁺ couple with a comma, both ions in the same phase", () => {
     const state = cell("zn", "fe3");
     const a = analyse(state);
