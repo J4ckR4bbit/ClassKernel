@@ -51,7 +51,7 @@ the light colours.
 | **Motion graph builder** | x–t, v–t and a–t graphs from one journey, so they always agree. |
 | **Block on a slope** | An inclined-plane question run: the block stays put or slides as Fnet = ma says, with its free-body diagrams to scale, a v–t graph and the memo; a hanging mass over a pulley, tilt until it slips, cut the string. |
 | **Collisions and impulse** | Two trolleys collide (stick, bounce, or a spring pushes them apart): momentum and Eₖ before and after, v–t, p–t and F–t graphs with the impulse shaded, and the memo; compare at double the contact time. |
-| **Generator** | An AC (slip rings) or DC (commutator) generator turned steadily or by hand on a crank, with Φ, ΔΦ/Δt and the emf drawn against time as it turns; compare at half speed. |
+| **Generator** | An AC (slip rings) or DC (commutator) generator turned steadily or by hand on a crank, with Φ, ΔΦ/Δt and the emf drawn against time or the angle of rotation as it turns; compare at half speed. |
 | **Circuit builder** | Exam-style circuits (IEC symbols) built on a grid and run: the meters read, the lamps glow with their power, the current moves; saved as a 300 dpi PNG for a paper. |
 | **Photoelectric effect and spectra** | Light on a metal in a photocell: photons in, photoelectrons out (or none below f₀), the Eₖ(max)–f graph and the memo with the data sheet's constants; hydrogen's energy levels and line spectrum, and the discharge tubes' fingerprints. |
 | **Reaction rates** | Collision theory in a beaker: acid particles hit a metal, effective only with Eₖ ≥ Eₐ and the right orientation; temperature, concentration, surface area and a catalyst, with the Maxwell–Boltzmann curve and the gas formed against time. |

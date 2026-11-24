@@ -6,12 +6,31 @@ import { formatFixed, formatNumber, formatSigFigs } from "../numbers";
 import { enterFullscreen, restoreWindow } from "../../lib/teachingWindow";
 import Icon from "../../components/Icon";
 import Segmented from "../../components/Segmented";
-import { APP_H, APP_W, END_VIEW, GRAPH_H, GRAPH_W, drawApparatus, drawGraphs } from "./drawing";
-import { Kind, StartPlane, angleStep, degrees, drive, driveOmega, flux, fluxRate, outputEmf, peakEmf, position, sample } from "./generator";
-import { useGenerator } from "./generatorStore";
+import { APP_H, APP_W, Across, END_VIEW, GRAPH_H, GRAPH_W, drawApparatus, drawGraphs } from "./drawing";
+import { GenParams, Kind, StartPlane, angleStep, degrees, drive, driveOmega, flux, fluxRate, outputEmf, peakEmf, position, sample, turned } from "./generator";
+import { GenOptions, GenState, GraphAxis, useGenerator } from "./generatorStore";
 import "./generator.css";
 
 const WINDOWS = [1, 2, 4, 8].map((s) => ({ value: s, label: `${s} s` }));
+const TURNS = [
+  { value: 1, label: "1 turn" },
+  { value: 2, label: "2 turns" },
+];
+
+/** How far the coil has turned since this sweep began, in degrees, in the direction it is set to turn. */
+function turnedNow(st: Pick<GenState, "params" | "samples" | "theta">): number {
+  return st.samples.length ? turned(st.params.clockwise, st.samples[0].theta, st.theta) : 0;
+}
+
+/** What the graphs are plotted against, for drawing them. */
+function acrossFor(p: GenParams, o: GenOptions, heldClockwise: boolean): Across {
+  return o.axis === "angle" ? { kind: "angle", span: 360 * o.turns, clockwise: p.clockwise, heldClockwise } : { kind: "time", window: o.window };
+}
+
+/** Has this sweep reached the end of the graphs? */
+function sweepDone(st: Pick<GenState, "params" | "samples" | "theta" | "t" | "options">): boolean {
+  return st.options.axis === "angle" ? Math.abs(turnedNow(st)) >= 360 * st.options.turns - 1e-6 : st.t >= st.options.window - 1e-9;
+}
 /** The saved pictures: millimetres per scene unit (about 15 cm wide). */
 const PRINT_MM_PER_UNIT = 0.15;
 
@@ -161,7 +180,9 @@ export default function GeneratorView() {
         const raw = dt > 0 ? (target - st.theta) / dt : 0;
         const w = st.omega + (raw - st.omega) * (1 - Math.exp(-dt / 0.04));
         let t1 = st.t + dt;
-        if (t1 > window) {
+        const past =
+          st.options.axis === "angle" ? Math.abs(turned(st.params.clockwise, st.samples[0]?.theta ?? st.theta, target)) > 360 * st.options.turns : t1 > window;
+        if (past) {
           st.newSweep();
           t1 = dt;
         }
@@ -172,8 +193,13 @@ export default function GeneratorView() {
         let t0 = st.t;
         let left = dt;
         let th = st.theta;
+        const byAngle = st.options.axis === "angle";
+        const degPerSecond = 360 * st.params.speed;
         while (left > 1e-9) {
-          const span = Math.min(left, window - t0);
+          // Up to the end of the graphs: a time, or (against the angle) the time to finish the turns.
+          const now = useGenerator.getState();
+          const toEnd = byAngle ? (360 * st.options.turns - turned(st.params.clockwise, now.samples[0]?.theta ?? th, th)) / degPerSecond : window - t0;
+          const span = Math.min(left, Math.max(0, toEnd));
           if (span <= 1e-9) {
             if (st.options.pauseAtEnd) {
               useGenerator.getState().setRunning(false);
@@ -181,6 +207,7 @@ export default function GeneratorView() {
             }
             useGenerator.getState().newSweep();
             t0 = 0;
+            if (byAngle && degPerSecond <= 0) break;
             continue;
           }
           const step = drive(st.params, t0, th, span);
@@ -213,8 +240,8 @@ export default function GeneratorView() {
       const w = Math.abs(driveOmega(st.params));
       drawGraphs(
         graph,
-        st.options.window,
-        st.t,
+        acrossFor(st.params, st.options, st.heldClockwise),
+        st.options.axis === "angle" ? turnedNow(st) : st.t,
         st.samples,
         st.held,
         { flux: st.params.field * st.params.area, rate: st.params.field * st.params.area * w, emf: peak },
@@ -258,7 +285,7 @@ export default function GeneratorView() {
   // ---------- actions ----------
 
   const run = () => {
-    if (!running && t >= o.window - 1e-9) s.newSweep();
+    if (!running && sweepDone(useGenerator.getState())) s.newSweep();
     s.setRunning(!running);
   };
   const compareHalf = () => {
@@ -308,7 +335,7 @@ export default function GeneratorView() {
         drawApparatus(ctx, p, theta, omega, outputEmf(p, theta, omega), peak, { screen: false, current: o.current, normal: o.normal });
       } else {
         const w = Math.abs(driveOmega(p));
-        drawGraphs(ctx, o.window, t, s.samples, s.held, { flux: p.field * p.area, rate: p.field * p.area * w, emf: peak }, { screen: false, values: o.values, markers: false });
+        drawGraphs(ctx, acrossFor(p, o, s.heldClockwise), o.axis === "angle" ? turnedNow(s) : t, s.samples, s.held, { flux: p.field * p.area, rate: p.field * p.area * w, emf: peak }, { screen: false, values: o.values, markers: false });
       }
       const bytes = await canvasToPng(canvas);
       const name = what === "apparatus" ? `${p.kind}_generator.png` : `${p.kind}_generator_graphs.png`;
@@ -333,6 +360,10 @@ export default function GeneratorView() {
       <div className="gen-readout">
         <span className="gen-readout-label">θ (B to the normal)</span>
         <span className="gen-readout-value">{Math.round(degrees(theta))}°</span>
+      </div>
+      <div className="gen-readout">
+        <span className="gen-readout-label">Turned</span>
+        <span className="gen-readout-value">{Math.round(turnedNow(s))}°</span>
       </div>
       <div className="gen-readout">
         <span className="gen-readout-label">Φ</span>
@@ -447,8 +478,28 @@ export default function GeneratorView() {
           <div className="panel">
             <h3>Display</h3>
             <div className="row gen-row">
+              <span className="gen-field-label">Plot against</span>
+              <Segmented<GraphAxis>
+                small
+                label="Plot the graphs against"
+                options={[
+                  { value: "time", label: "Time" },
+                  { value: "angle", label: "Angle of rotation" },
+                ]}
+                value={o.axis}
+                onChange={(v) => {
+                  s.setOptions({ axis: v });
+                  s.newSweep();
+                }}
+              />
+            </div>
+            <div className="row gen-row">
               <span className="gen-field-label">Across the graphs</span>
-              <Segmented<number> small label="Time across the graphs" options={WINDOWS} value={o.window} onChange={(v) => s.setOptions({ window: v })} />
+              {o.axis === "angle" ? (
+                <Segmented<number> small label="Turns across the graphs" options={TURNS} value={o.turns} onChange={(v) => s.setOptions({ turns: v })} />
+              ) : (
+                <Segmented<number> small label="Time across the graphs" options={WINDOWS} value={o.window} onChange={(v) => s.setOptions({ window: v })} />
+              )}
             </div>
             <label className="gen-check">
               <input type="checkbox" checked={o.pauseAtEnd} onChange={(e) => s.setOptions({ pauseAtEnd: e.target.checked })} />
@@ -530,7 +581,7 @@ export default function GeneratorView() {
               <dd>
                 NBAω = ({formatNumber(p.turns, 0)})({formatNumber(p.field, 3)})({formatNumber(p.area, 4)})(2π × {formatNumber(p.speed, 2)}) ={" "}
                 {signed(peakEmf(p))} V at {formatNumber(p.speed, 2)} rev·s⁻¹; one turn takes T = {sig(1 / p.speed)} s. Turn it at half the speed
-                and the peak halves while the period doubles.
+                and the peak halves; against time the period doubles, but against the angle of rotation it stays one cycle per 360°.
               </dd>
               <dt>{ac ? "Slip rings" : "The commutator"}</dt>
               <dd>

@@ -290,11 +290,14 @@ of change and the emf against time — drawn as the coil turns.
 - Or **drag the crank** to turn it by hand — fast, slow, backwards or not at all. The coil follows with a little
   inertia, the graphs show exactly what your hand did, and holding it still shows the emf dropping to zero.
 
-**The graphs** — Φ (Wb), ΔΦ/Δt (Wb·s⁻¹) and the emf across X and Y (V) against time, 1, 2, 4 or 8 seconds across,
-drawn as the coil turns. Dotted lines mark where the coil's plane is **perpendicular** to the field (⊥: Φ largest,
+**The graphs** — Φ (Wb), ΔΦ/Δt (Wb·s⁻¹) and the emf across X and Y (V), drawn as the coil turns, **against time**
+(1, 2, 4 or 8 seconds across) or **against the angle of rotation** (one or two turns across, marked every 90°, 0°
+where the coil started — the axes the papers give for "sketch the emf against the angle of rotation"). Against the
+angle a run stops after its turns, and the **Turned** reading says how far the coil has gone. Dotted lines mark where the coil's plane is **perpendicular** to the field (⊥: Φ largest,
 emf zero) and **parallel** to it (∥: Φ zero, emf largest). **Keep these graphs** holds them dashed so the next run
-can be compared; **Compare at half speed** does it in one go — Φ is just as big, but ΔΦ/Δt and the emf halve and
-the period doubles, the change the papers ask candidates to draw. Numbers on the axes can be turned off for
+can be compared; **Compare at half speed** does it in one go — Φ is just as big, but ΔΦ/Δt and the emf halve. Against
+time the period doubles; against the angle of rotation it doesn't — still one cycle per 360°, only half as tall —
+the two changes the papers ask candidates to draw. Numbers on the axes can be turned off for
 shape-only sketches.
 
 **The notes** under it say where the coil is and what that means, and give Φ = BA cos θ, **Faraday's law** and

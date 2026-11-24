@@ -17,11 +17,17 @@ export interface GenOptions {
   markers: boolean;
   /** Stop at the end of each sweep of the graphs (otherwise start a new one). */
   pauseAtEnd: boolean;
-  /** Seconds across the graphs. */
+  /** Seconds across the graphs (plotted against time). */
   window: number;
+  /** Plot against time, or against the angle the coil has turned through. */
+  axis: GraphAxis;
+  /** Turns across the graphs (plotted against the angle). */
+  turns: number;
 }
 
-const DEFAULT_OPTIONS: GenOptions = { current: true, normal: true, values: true, markers: true, pauseAtEnd: true, window: 2 };
+export type GraphAxis = "time" | "angle";
+
+const DEFAULT_OPTIONS: GenOptions = { current: true, normal: true, values: true, markers: true, pauseAtEnd: true, window: 2, axis: "time", turns: 1 };
 
 const PARAMS_KEY = "classkernel.generator.params";
 const OPTIONS_KEY = "classkernel.generator.options";
@@ -33,6 +39,8 @@ function load<T extends object>(key: string, fallback: T): T {
     for (const k of Object.keys(fallback) as Array<keyof T>) {
       if (typeof saved[k] === typeof fallback[k] && (typeof saved[k] !== "number" || Number.isFinite(saved[k]))) out[k] = saved[k] as T[keyof T];
     }
+    const o = out as Record<string, unknown>;
+    if ("axis" in o && o.axis !== "time" && o.axis !== "angle") o.axis = "time";
     return out;
   } catch {
     return { ...fallback };
@@ -55,9 +63,10 @@ export interface GenState {
   omega: number;
   running: boolean;
   samples: Sample[];
-  /** A sweep kept for comparison, and what it was. */
+  /** A sweep kept for comparison, what it was, and which way it was turned (for its angles). */
   held: Sample[] | null;
   heldLabel: string;
+  heldClockwise: boolean;
   options: GenOptions;
 
   setParams(patch: Partial<GenParams>): void;
@@ -84,6 +93,7 @@ export const useGenerator = create<GenState>((set, get) => {
     ...fresh(params),
     held: null,
     heldLabel: "",
+    heldClockwise: true,
     options: load(OPTIONS_KEY, DEFAULT_OPTIONS),
 
     setParams: (patch) => {
@@ -105,7 +115,7 @@ export const useGenerator = create<GenState>((set, get) => {
       const s = get();
       set({ t: 0, samples: [sample(s.params, 0, s.theta, s.omega)] });
     },
-    hold: (label) => set({ held: get().samples, heldLabel: label }),
+    hold: (label) => set({ held: get().samples, heldLabel: label, heldClockwise: get().params.clockwise }),
     clearHeld: () => set({ held: null, heldLabel: "" }),
   };
 });
