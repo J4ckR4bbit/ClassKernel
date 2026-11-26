@@ -11,7 +11,7 @@
 // time — drawn as the coil turns, with an optional held trace to compare.
 
 import { Scale, formatTick, niceScale, tickValues } from "../scale";
-import { GenParams, Sample, coilEmf, crossings, degrees } from "./generator";
+import { GenParams, Sample, coilEmf, crossings, degrees, turned } from "./generator";
 
 export const APP_W = 1000;
 export const APP_H = 600;
@@ -476,13 +476,19 @@ interface Trace {
   samples: Sample[];
   colour: string;
   dashed: boolean;
+  /** Which way it was turned, for its angles of rotation. */
+  clockwise: boolean;
 }
 
+/** What the graphs are plotted against: time across `window` seconds, or the angle of rotation across `span` degrees. */
+export type Across = { kind: "time"; window: number } | { kind: "angle"; span: number; clockwise: boolean; heldClockwise: boolean };
+
 /** Scales for the three graphs that fit the current sweep, the held trace and the steady peak. */
-function scales(window: number, all: Sample[], peakFlux: number, peakRate: number, peakEmf: number) {
+function scales(across: Across, all: Sample[], peakFlux: number, peakRate: number, peakEmf: number) {
   const max = (pick: (s: Sample) => number, floor: number) => Math.max(floor, ...all.map((s) => Math.abs(pick(s)))) * 1.08;
   return {
-    t: niceScale(0, window, true, 8),
+    // An angle axis is marked every 90°, as the papers mark it.
+    t: across.kind === "time" ? niceScale(0, across.window, true, 8) : { min: 0, max: across.span, step: 90 },
     flux: niceScale(-max((s) => s.flux, peakFlux), max((s) => s.flux, peakFlux), true, 4),
     rate: niceScale(-max((s) => s.rate, peakRate), max((s) => s.rate, peakRate), true, 4),
     emf: niceScale(-max((s) => s.emf, peakEmf), max((s) => s.emf, peakEmf), true, 4),
@@ -490,12 +496,14 @@ function scales(window: number, all: Sample[], peakFlux: number, peakRate: numbe
 }
 
 /**
- * The three graphs against time, stacked: Φ, ΔΦ/Δt and the emf across the
- * terminals. `held` is drawn dashed underneath, for comparison.
+ * The three graphs stacked — Φ, ΔΦ/Δt and the emf across the terminals —
+ * against time or against the angle of rotation (0° where the sweep began).
+ * `held` is drawn dashed underneath, for comparison; `now` is the time, or the
+ * angle turned, at which to draw the cursor.
  */
 export function drawGraphs(
   ctx: CanvasRenderingContext2D,
-  window: number,
+  across: Across,
   now: number,
   samples: Sample[],
   held: Sample[] | null,
@@ -503,7 +511,11 @@ export function drawGraphs(
   look: GraphLook,
   height = GRAPH_H,
 ) {
-  const sc = scales(window, [...samples, ...(held ?? [])], peaks.flux, peaks.rate, peaks.emf);
+  const sc = scales(across, [...samples, ...(held ?? [])], peaks.flux, peaks.rate, peaks.emf);
+  const byAngle = across.kind === "angle";
+  /** Where a sample goes along the x-axis: its time, or how far its trace had turned. */
+  const along = (tr: Pick<Trace, "samples" | "clockwise">, s: Sample) => (byAngle ? turned(tr.clockwise, tr.samples[0].theta, s.theta) : s.t);
+  const current = { samples, clockwise: byAngle ? across.clockwise : true };
   const rows: Array<{ key: "flux" | "rate" | "emf"; label: [string, string]; unit: string; scale: Scale; colour: string }> = [
     { key: "flux", label: ["Φ", ""], unit: "Wb", scale: sc.flux, colour: COLOURS.flux },
     { key: "rate", label: ["ΔΦ/Δt", ""], unit: "Wb·s⁻¹", scale: sc.rate, colour: COLOURS.rate },
@@ -539,11 +551,13 @@ export function drawGraphs(
     }
     // Where the coil was perpendicular or parallel to the field.
     for (const m of marks) {
+      const mx = byAngle ? turned(current.clockwise, samples[0].theta, m.theta) : m.t;
+      if (mx < -1e-9 || mx > sc.t.max + 1e-9) continue;
       ctx.strokeStyle = m.kind === "perpendicular" ? "rgba(21,101,192,0.35)" : "rgba(198,40,40,0.3)";
       ctx.setLineDash([3, 4]);
-      line(ctx, X(m.t), top, X(m.t), bottom);
+      line(ctx, X(mx), top, X(mx), bottom);
       ctx.setLineDash([]);
-      if (i === 0) text(ctx, m.kind === "perpendicular" ? "⊥" : "∥", X(m.t), top - 8, "center", 13, m.kind === "perpendicular" ? COLOURS.flux : COLOURS.emf, "700");
+      if (i === 0) text(ctx, m.kind === "perpendicular" ? "⊥" : "∥", X(mx), top - 8, "center", 13, m.kind === "perpendicular" ? COLOURS.flux : COLOURS.emf, "700");
     }
     // Axes, with the time axis along zero.
     ctx.strokeStyle = INK;
@@ -553,28 +567,32 @@ export function drawGraphs(
     arrowHead(ctx, left, top - 8, -Math.PI / 2, 9);
     line(ctx, left, Y(0), right + 10, Y(0));
     arrowHead(ctx, right + 16, Y(0), 0, 9);
-    text(ctx, "t (s)", right + 4, Y(0) + 18, "right", 14, INK);
+    text(ctx, byAngle ? "angle of rotation (°)" : "t (s)", right + 4, Y(0) + 18, "right", 14, INK);
     subText(ctx, row.label[0], row.label[1], 44, (top + bottom) / 2 - 10, 19, look.screen ? row.colour : INK);
     text(ctx, `(${row.unit})`, 44, (top + bottom) / 2 + 13, "center", 13, look.screen ? "#5f6b76" : INK);
     // The traces: held (dashed), then this sweep.
     const traces: Trace[] = [];
-    if (held?.length) traces.push({ samples: held, colour: look.screen ? COLOURS.held : "#777", dashed: true });
-    traces.push({ samples, colour: look.screen ? row.colour : INK, dashed: false });
+    if (held?.length) traces.push({ samples: held, colour: look.screen ? COLOURS.held : "#777", dashed: true, clockwise: byAngle ? across.heldClockwise : true });
+    traces.push({ samples, colour: look.screen ? row.colour : INK, dashed: false, clockwise: current.clockwise });
     for (const tr of traces) {
       if (tr.samples.length < 2) continue;
       ctx.strokeStyle = tr.colour;
       ctx.lineWidth = tr.dashed ? 2 : 2.6;
       ctx.setLineDash(tr.dashed ? [7, 5] : []);
       ctx.beginPath();
-      let started = false;
+      // Off the axis (turned back past the start, or past its end) the line breaks rather than running along the edge.
+      let pen = false;
       for (const s of tr.samples) {
-        if (s.t > sc.t.max) break;
-        const x = X(s.t);
+        const v = along(tr, s);
+        if (v < -1e-9 || v > sc.t.max + 1e-9) {
+          pen = false;
+          continue;
+        }
+        const x = X(v);
         const y = Y(s[row.key]);
-        if (!started) {
-          ctx.moveTo(x, y);
-          started = true;
-        } else ctx.lineTo(x, y);
+        if (pen) ctx.lineTo(x, y);
+        else ctx.moveTo(x, y);
+        pen = true;
       }
       ctx.stroke();
       ctx.setLineDash([]);

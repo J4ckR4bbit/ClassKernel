@@ -243,6 +243,26 @@ test.describe("generator", () => {
     await expect(page.locator(".gen-notes")).toContainText("3,14 V at 0,5 rev·s⁻¹");
   });
 
+  test("against the angle of rotation: it stops after one turn, and at half speed it still takes one turn", async ({ page }) => {
+    await page.getByRole("button", { name: "Angle of rotation" }).click();
+    await page.getByRole("button", { name: "Turn it" }).click();
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Turn it" })).toBeVisible({ timeout: 8_000 });
+    await expect(readout(page, "Turned")).toHaveText("360°");
+    await expect(readout(page, "θ (B to the normal)")).toHaveText("90°");
+    await page.getByRole("button", { name: "Compare at half speed" }).click();
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Turn it" })).toBeVisible({ timeout: 8_000 });
+    await expect(readout(page, "Turned")).toHaveText("360°");
+    await expect(page.locator(".gen-notes")).toContainText("against the angle of rotation it stays one cycle per 360°");
+    // Two turns across the graphs.
+    await page.getByRole("button", { name: "2 turns" }).click();
+    await page.getByRole("button", { name: "Turn it" }).click();
+    await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Turn it" })).toBeVisible({ timeout: 10_000 });
+    await expect(readout(page, "Turned")).toHaveText("720°");
+  });
+
   test("a DC generator, turned by hand on the crank", async ({ page }) => {
     await page.getByRole("button", { name: "DC: commutator" }).click();
     await expect(page.locator(".gen-notes")).toContainText("The split ring swaps the coil's connections");

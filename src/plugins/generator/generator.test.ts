@@ -15,6 +15,7 @@ import {
   peakEmf,
   position,
   startAngle,
+  turned,
 } from "./generator";
 
 const P = (patch: Partial<GenParams> = {}): GenParams => ({ ...DEFAULT_PARAMS, ...patch });
@@ -125,5 +126,41 @@ describe("turning", () => {
     expect(perp[0]).toBeCloseTo(0.25, 3);
     expect(perp[1]).toBeCloseTo(0.75, 3);
     expect(par[0]).toBeCloseTo(0.5, 3);
+  });
+});
+
+describe("the angle of rotation", () => {
+  it("counts from the starting position in the direction of turning: 90° a quarter-turn on, either way", () => {
+    expect(turned(true, deg(90), deg(0))).toBeCloseTo(90, 9); // clockwise: θ falls
+    expect(turned(false, deg(90), deg(180))).toBeCloseTo(90, 9); // anticlockwise: θ rises
+    expect(turned(true, deg(90), deg(120))).toBeCloseTo(-30, 9); // turned back the wrong way
+    expect(turned(true, deg(90), deg(90 - 720))).toBeCloseTo(720, 9);
+  });
+
+  it("against the angle, half the speed keeps the period (one cycle a turn) and halves the emf", () => {
+    const fast = P({ speed: 1, start: "parallel" });
+    const slow = P({ speed: 0.5, start: "parallel" });
+    const th0 = startAngle(fast);
+    // The emf at the same angle of rotation, at each speed.
+    for (const a of [0, 45, 90, 200, 300]) {
+      const th = th0 - deg(a); // clockwise
+      const ef = outputEmf(fast, th, driveOmega(fast));
+      const es = outputEmf(slow, th, driveOmega(slow));
+      expect(es).toBeCloseTo(ef / 2, 12);
+    }
+    // One whole cycle in 360°: the emf at 0° and at 360° agree, and it crosses zero at 90° and 270°.
+    expect(outputEmf(fast, th0 - deg(360), driveOmega(fast))).toBeCloseTo(outputEmf(fast, th0, driveOmega(fast)), 9);
+    expect(outputEmf(fast, th0 - deg(90), driveOmega(fast))).toBeCloseTo(0, 9);
+    expect(outputEmf(fast, th0 - deg(270), driveOmega(fast))).toBeCloseTo(0, 9);
+  });
+
+  it("puts the crossings at 90° and 270° of rotation from a start along the field", () => {
+    const p = P({ speed: 1, start: "parallel" });
+    const { samples } = drive(p, 0, startAngle(p), 1);
+    const perp = crossings(samples)
+      .filter((c) => c.kind === "perpendicular")
+      .map((c) => turned(true, startAngle(p), c.theta));
+    expect(perp[0]).toBeCloseTo(90, 3);
+    expect(perp[1]).toBeCloseTo(270, 3);
   });
 });

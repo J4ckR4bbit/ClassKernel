@@ -147,9 +147,26 @@ export function drive(p: GenParams, t: number, theta: number, dt: number, every 
   return { theta: theta + omega * dt, samples };
 }
 
-/** Times in a run of samples where the coil passed perpendicular (Φ largest) or parallel (Φ = 0) to the field. */
-export function crossings(samples: Sample[]): Array<{ t: number; kind: "perpendicular" | "parallel" }> {
-  const out: Array<{ t: number; kind: "perpendicular" | "parallel" }> = [];
+/**
+ * How far the coil has turned since θ0, in degrees, counted in the direction it
+ * is meant to turn (clockwise or not): the "angle of rotation" the papers
+ * graph the emf against, 0° at the starting position. Turned the other way,
+ * it goes negative.
+ */
+export function turned(clockwise: boolean, theta0: number, theta: number): number {
+  return ((theta0 - theta) * (clockwise ? 1 : -1) * 180) / Math.PI;
+}
+
+export interface Crossing {
+  t: number;
+  /** The coil's angle there. */
+  theta: number;
+  kind: "perpendicular" | "parallel";
+}
+
+/** Where in a run of samples the coil passed perpendicular (Φ largest) or parallel (Φ = 0) to the field. */
+export function crossings(samples: Sample[]): Crossing[] {
+  const out: Crossing[] = [];
   for (let i = 1; i < samples.length; i++) {
     const a = samples[i - 1];
     const b = samples[i];
@@ -160,10 +177,10 @@ export function crossings(samples: Sample[]): Array<{ t: number; kind: "perpendi
     ] as const) {
       const fa = f(a.theta);
       const fb = f(b.theta);
-      if (fa === 0 && i === 1) out.push({ t: a.t, kind });
+      if (fa === 0 && i === 1) out.push({ t: a.t, theta: a.theta, kind });
       if ((fa < 0 && fb >= 0) || (fa > 0 && fb <= 0)) {
         const k = Math.abs(fa) / (Math.abs(fa) + Math.abs(fb) || 1);
-        out.push({ t: a.t + (b.t - a.t) * k, kind });
+        out.push({ t: a.t + (b.t - a.t) * k, theta: a.theta + (b.theta - a.theta) * k, kind });
       }
     }
   }
